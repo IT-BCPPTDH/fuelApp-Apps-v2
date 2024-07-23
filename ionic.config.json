@@ -1,0 +1,7 @@
+{
+  "name": "Hanggar-Nusantara",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react-vite"
+}

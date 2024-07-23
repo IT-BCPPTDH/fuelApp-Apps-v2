@@ -1,0 +1,61 @@
+.logo-login{
+    padding-top: 2lvh;
+    padding-bottom: 2lvh;
+}
+.background-content{
+    background-color: black;
+}
+.sub-title{
+    font-size: 30px;
+    font-weight: 600;
+    color: #57575a;
+}
+.mt{
+    margin-top: 200px;
+}
+
+.check-button{
+    --background:#73A33F;
+
+  }
+  .title-checkin{
+    font-size: 16px;
+    font-weight: 400;
+    margin-left: 5px;
+    margin-bottom: 16px;
+  }
+  .content{
+    padding: 80px;
+  }
+  .warning{
+    text-align: center;
+    font-size: 16px;
+    
+  }
+  .bg-text{
+    background:#e94f47;
+    color: white;
+    border-radius: 4px;
+    margin-top: 20px;
+    margin-left: 6px;
+    margin-right: 6px;
+  }
+  .mr-content{
+    margin-top: 20px;
+  }
+
+
+.ion-content {
+    background-image: url('../../assets/Login.png'); 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 100%;
+}
+.bg-card{
+    background: #ffffffdb;
+}
+.ion-padding{
+    padding: 40px;
+}
+

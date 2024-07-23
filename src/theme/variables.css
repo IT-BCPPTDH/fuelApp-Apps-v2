@@ -1,0 +1,65 @@
+
+
+:root {
+	--ion-color-hn: #8D2026;
+	--ion-color-hn-rgb: 141,32,38;
+	--ion-color-hn-contrast: #ffffff;
+	--ion-color-hn-contrast-rgb: 255,255,255;
+	--ion-color-hn-shade: #7c1c21;
+	--ion-color-hn-tint: #98363c;
+}
+
+.ion-color-hn {
+	--ion-color-base: var(--ion-color-hn);
+	--ion-color-base-rgb: var(--ion-color-hn-rgb);
+	--ion-color-contrast: var(--ion-color-hn-contrast);
+	--ion-color-contrast-rgb: var(--ion-color-hn-contrast-rgb);
+	--ion-color-shade: var(--ion-color-hn-shade);
+	--ion-color-tint: var(--ion-color-hn-tint);
+}
+
+.primary-button{
+    --background:#73a33f;
+    --background-hover: #6B0C11;
+    --background-activated: #6B0C11;
+    --background-focused: #6B0C11;
+    --border-radius: 8px;
+    --color: white;
+
+    --ripple-color: deeppink;
+  
+    --padding-top: 18px;
+    --padding-bottom: 18px;
+
+}
+ .mb0{
+  margin-bottom: 0;
+ }
+ .mt0{
+  margin-top: 0
+ }
+ .m0{
+  margin: 0;
+ }
+ .mt10{
+  margin-top:10px
+ }
+
+.cardRounded{
+  border: 1px solid #8D2026;
+  border-radius: 8px;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  -ms-border-radius: 8px;
+  -o-border-radius: 8px;
+}
+.pad10{
+  padding: 10px
+}
+.padTop10{
+  padding-top:10px
+}
+.padTopBot0{
+  padding-top:0;
+  padding-bottom:0
+}

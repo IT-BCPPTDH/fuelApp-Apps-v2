@@ -1,0 +1,32 @@
+.lineImage{
+    width: 2px;
+    position: absolute;
+    top: 145px;
+    left: 35px;
+}
+.lineSeparate{
+    width: 100%;
+    height: 2px;
+    border-bottom: 1px solid #ccc;
+}
+.imageCar{
+    width: 100px;
+}
+.nameCar{
+    margin: 0;
+    font-size: 14px;
+    color: #8D2026;
+}
+.justify-content-end{
+    display: flex;
+    justify-content: end;
+    padding-inline-end: 20px;
+}
+.buttonOrder{
+    margin-top: 40px;
+    margin-inline-start: 18px;
+    margin-inline-end: 18px;
+}
+.select-text{
+    font-size: 20px;
+}

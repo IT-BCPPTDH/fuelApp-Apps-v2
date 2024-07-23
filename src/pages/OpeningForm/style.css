@@ -1,0 +1,154 @@
+.custom-header {
+	--background: #73A33F;
+    --color: #fff;
+}
+
+.item-no-border{
+	--inner-border-width: 0
+}
+
+
+
+.mainContent {
+	z-index: 100;
+}
+.title{
+	font-size: 30px;
+	font-weight: 600;
+}
+.customBackButton {
+	position: absolute;
+	top: 1rem;
+	left: 1rem;
+	font-size: 1.75rem;
+	display: flex;
+	flex-direction: row;
+	align-content: center;
+	align-items: center;
+	justify-content: center;
+    color: #fff;
+}
+
+.customBackButton2 {
+	position: absolute;
+	top: 1rem;
+	right: 1rem;
+	font-size: 1.75rem;
+	display: flex;
+	flex-direction: row;
+	align-content: center;
+	align-items: center;
+	justify-content: center;
+    color: #fff;
+}
+
+.customBackButton svg, .customBackButton2 svg {
+	color: rgb(255, 255, 255);
+	height: 1.75rem;
+	width: 1.75rem;
+}
+
+.positionChart{
+    margin-top: 5ch
+}
+.chartTitle{
+    position: relative;
+    top: 1rem;
+    color: #fff;
+}
+.logoDashboard{
+    width: 30vw;
+}
+.floatingCard{
+	width: 100%;
+	position: relative;
+	margin-top: -1.3em;
+}
+.cardStatistik{
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: stretch;
+}
+.imageIcon{
+	width: 30px;
+}
+.stat{
+	color:#8D2026;
+	font-size: 14px;
+	margin-left: 5lvw;
+}
+.buttonImage{
+    text-align: center;
+    border: 1px solid #8e2026;
+    border-radius: 10px;
+    padding: 20px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    -ms-border-radius: 10px;
+    -o-border-radius: 10px;
+}
+
+.buttonImage ion-img{
+	height: 100px;
+}
+.buttonImage p{
+	margin: 0;
+}
+.custom-card{
+	height: 100px;
+	/* background: #fff; */
+}
+.custom-color{
+	color: #070606;
+	
+}
+.riwayat{
+	margin-top: 20px;
+	font-size: 20px;
+	margin-left: -80px;
+}
+.bg-header{
+	background-color: #8D202614;
+}
+.title-history{
+	margin-left: 15px;
+	font-size: 24px;
+}
+.label-end{
+	float: right;
+}
+.label-price{
+	margin-left: 30px;
+}
+.row-content{
+	display: inline-flex;
+	gap: 5px;
+	
+}
+.mr-top{
+	margin-top: 30px;
+}
+
+.padding-content{
+	padding: 20px;
+}
+.radio-display{
+	display: inline-flex;
+}
+.btn-start{
+	float: inline-end;
+	
+}
+.check-button{
+	--background:#73A33F;
+	
+}
+.input-highlight {
+    /* Define your highlighting styles here */
+    border: 1px solid #a1a4a8;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+ 
+  }
