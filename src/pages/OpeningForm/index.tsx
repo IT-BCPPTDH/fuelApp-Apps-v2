@@ -56,7 +56,7 @@ const OpeningForm = () => {
  
   const [showError, setShowError] = useState<boolean>(false);
   
-  // Handler for form submission
+ 
   const handleClick = () => {
     // Validate inputs
     if (
@@ -73,10 +73,10 @@ const OpeningForm = () => {
       setShowError(true);
       return;
     }
-    
-    // Navigate to the dashboard if validation passes
-    route.push('/dashboard');
+    route.push('/');
+   
   };
+  
   
   return (
     <IonPage>

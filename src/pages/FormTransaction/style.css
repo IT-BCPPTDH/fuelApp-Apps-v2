@@ -190,3 +190,12 @@
 	transition: transform 200ms ease 0s, -webkit-transform 200ms ease 0s;
 	background: #73a33f;
   }
+  .select-text {
+    flex: 1 1 0%;
+    min-width: 16px;
+    font-size: inherit;
+    text-overflow: ellipsis;
+    white-space: inherit;
+    overflow: hidden;
+    margin: 15px;
+  }

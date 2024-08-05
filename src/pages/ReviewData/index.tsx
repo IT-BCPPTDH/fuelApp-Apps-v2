@@ -35,7 +35,6 @@ const ReviewData: React.FC = () => {
                     <IonList>
                         <IonListHeader>
                             <IonLabel>Review Data</IonLabel>
-                            <IonButton>See All</IonButton>
                         </IonListHeader>
                         <IonItem>
                             <IonLabel>Open Sonding / Dip:</IonLabel>

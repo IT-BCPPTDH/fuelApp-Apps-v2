@@ -44,7 +44,7 @@ const Login: React.FC = () => {
 
   const mutation = useMutation({
     mutationFn: async ({ unit, jde }: { unit: string; jde: string }): Promise<UserData> => {
-      // Simulated login process or actual API call can be placed here
+     
       return {
         session_token: "dummy_session_token",
         data: {},
@@ -61,7 +61,7 @@ const Login: React.FC = () => {
   });
 
   const validateJde = (jde: string): boolean => {
-    // Replace this with actual validation logic
+
     return jde === "abcd1234";
   };
 
@@ -74,7 +74,7 @@ const Login: React.FC = () => {
         if (validateJde(jde)) {
           try {
             await mutation.mutateAsync({ unit: selectedUnit, jde });
-            setShowJdeError(false); // Hide error message if login is successful
+            setShowJdeError(false); 
           } catch (error) {
             console.error("Login failed:", error);
           }
@@ -82,7 +82,7 @@ const Login: React.FC = () => {
           setShowJdeError(true);
         }
       } else {
-        setShowJdeError(true); // Show error if unit or JDE is missing
+        setShowJdeError(true); 
       }
     } else {
       formErrors.forEach((error) => {
@@ -119,6 +119,7 @@ const Login: React.FC = () => {
                   <IonLabel>Select Unit</IonLabel>
                   <IonSelect
                     fill="solid"
+                    interface="popover" 
                     labelPlacement="floating"
                     value={selectedUnit}
                     onIonChange={(e) => setSelectedUnit(e.detail.value as string)}
@@ -131,7 +132,7 @@ const Login: React.FC = () => {
                   <IonInput
                     className="custom-input"
                     type="password"
-                    placeholder="Input password"
+                    placeholder="Employee ID "
                     value={jde}
                     onIonInput={(e) => setJde(e.detail.value as string)}
                   ></IonInput>
