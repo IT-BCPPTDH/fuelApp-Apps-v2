@@ -1,16 +1,37 @@
-import { IonImg, IonRouterLink, IonCardTitle, IonCol, IonContent, IonGrid, IonHeader, IonIcon, IonNote, IonPage, IonRow, useIonRouter, useIonViewWillEnter, IonRippleEffect, IonCard, IonCardHeader, IonCardContent, IonCardSubtitle, IonTitle, IonButton, IonLabel, IonSearchbar } from '@ionic/react';
-import { logOut, push } from 'ionicons/icons';
-import { useEffect, useState } from 'react';
-import './style.css'
-import ChartDonut from '../../components/Chart';
-import FloatingCard from '../../components/FloatingCard';
+import React from 'react';
+import {
+  IonImg,
+  IonRouterLink,
+  IonCardTitle,
+  IonCol,
+  IonContent,
+  IonGrid,
+  IonHeader,
+  IonIcon,
+  IonNote,
+  IonPage,
+  IonRow,
+  IonCard,
+  IonCardHeader,
+  IonCardContent,
+  IonCardSubtitle,
+  IonTitle,
+  IonButton,
+  IonLabel,
+  useIonRouter,
+  IonSearchbar
+ 
+} from '@ionic/react';
+import { logOut, push, saveOutline } from 'ionicons/icons';
+import './style.css';
+
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { QUERY_KEY } from '../../helper/queryKeys';
 import { useAtom } from 'jotai';
 import { unitTypeAtom, dataObj } from '../../data/atoms';
 import Cookies from 'js-cookie';
-import ListContent from '../../components/ListCard';
-import { Icon } from 'ionicons/dist/types/components/icon/icon';
+
+import TableData from '../../components/Table'; // Import the TableData component
 
 interface UserData {
     session_token: string;
@@ -20,7 +41,7 @@ interface UserData {
 }
 
 const DashboardFuelMan = () => {
-    const router = useIonRouter();
+    const route = useIonRouter();
     const queryClient = useQueryClient();
     const mutation = useMutation({
         mutationFn: async ({ data, session_token }: UserData): Promise<any> => {
@@ -43,21 +64,23 @@ const DashboardFuelMan = () => {
         onSuccess: () => {
             queryClient.removeQueries({
                 queryKey: [QUERY_KEY.user]
-            })
+            });
 
-            router.push('/login')
+            route.push('/login');
         }
-    })
-  
-    const handleClick = ()=>{
-        
-        const route =useIonRouter()
+    });
+
+    const handleClick = () => {
         route.push('/transaction');
-    }
+    };
+
+    const handleClickQouta = () => {
+        route.push('/transaction-qouta');
+    };
 
     const handleLogout = () => {
         Cookies.remove('session_token');
-        router.push('/login');
+        route.push('/closing-data');
     };
 
     const cardData = [
@@ -70,7 +93,7 @@ const DashboardFuelMan = () => {
         { title: 'Balance', subtitle: '20000 Liter', icon: 'balance.svg' },
         { title: 'Cosing Deep', subtitle: '5000 Liter', icon: 'close.svg' },
         { title: 'Flow Meter  Awal', subtitle: '5000 Liter', icon: 'flwawal.svg' },
-        { title: 'Flow Meter Akhir', subtitle: '5000 Liter' ,icon: 'flwakhir.svg' },
+        { title: 'Flow Meter Akhir', subtitle: '5000 Liter', icon: 'flwakhir.svg' },
         { title: 'Total Flow Meter', subtitle: '50000 Liter', icon: 'total.svg' },
         { title: 'Variance', subtitle: '50000 Liter', icon: 'variance.svg' },
     ];
@@ -79,10 +102,18 @@ const DashboardFuelMan = () => {
         <IonPage>
             <IonContent>
                 <IonHeader className="header-dash">
-                    <div className='logoDashboard'>
-                        <IonImg src="logodh.png" alt='logo-dashboard' />
-                    </div>
+                    <IonRow>
+                        <IonCol>
+                            <div className='logoDashboard'>
+                                <IonImg src="logodh.png" alt='logo-dashboard' />
+                            </div>
+                        </IonCol>
+                        <IonCol>
+                            <div className='indicator'>Online</div>
+                        </IonCol>
+                    </IonRow>
                 </IonHeader>
+
                 <div className='content'>
                     <div className='btn-start'>
                         <IonButton color="primary">
@@ -103,33 +134,32 @@ const DashboardFuelMan = () => {
                             <IonCol size="4" key={index}>
                                 <IonCard>
                                     <IonCardHeader>
-                                      <IonCardSubtitle style={{fontSize:"20px"}}>{card.title}</IonCardSubtitle>
-                                      <div style={{display:"inline-flex", gap:"10px"}}>
-                                        <IonImg   src={card.icon} alt={card.title}  style={{ width: '30px', height: '30px', marginTop:"10px" }}  />
-                                        <IonCardContent style={{fontSize:"18px", fontWeight:"600"}}>{card.subtitle}</IonCardContent>
-                                      </div>
+                                        <IonCardSubtitle style={{fontSize:"20px"}}>{card.title}</IonCardSubtitle>
+                                        <div style={{display:"inline-flex", gap:"10px"}}>
+                                            <IonImg src={card.icon} alt={card.title} style={{ width: '30px', height: '30px', marginTop:"10px" }} />
+                                            <IonCardContent style={{fontSize:"18px", fontWeight:"600"}}>{card.subtitle}</IonCardContent>
+                                        </div>
                                     </IonCardHeader>
                                 </IonCard>
                             </IonCol>
                         ))}
                     </IonRow>
                 </IonGrid>
-                <div className='padding-content'>
-                <p style={{color:"red"}}>* Sebelum Logout Pastikan Data Sonding Dip /Stock diisi , Klik Tombol  ‘Dip ‘ Untuk Membuka Formnya , Terima kasih </p>
-                    <IonButton color="success" onClick={handleClick}>Tambah Data</IonButton>
-                    <IonButton color="danger">Isi Closing Dip</IonButton>
-                    <IonButton color="tertiary">Nozel 1</IonButton>
-                  
+                <div className='content'>
+                    <p style={{color:"red"}}>* Sebelum Logout Pastikan Data Sonding Dip /Stock diisi , Klik Tombol  ‘Dip ‘ Untuk Membuka Formnya , Terima kasih </p>
+                    <IonButton className='ion-button' onClick={handleClick}>
+                        <IonImg src='plus.svg'></IonImg><span style={{marginLeft:"10px"}}>Tambah Data</span>
+                    </IonButton>
+                    {/* <IonButton className='ion-button-kouta' onClick={handleClickQouta}>
+                        <IonImg src='plus.svg'></IonImg><span style={{marginLeft:"10px"}}>Tambah Kouta</span>
+                    </IonButton> */}
                 </div>
-                <IonRow>
-                    <IonCol>
-                         <p className='padding-content'>LKF0001</p>
-                    </IonCol>
-                    <IonCol>
-                        <IonSearchbar  className='padding-content' placeholder="Serach Data"></IonSearchbar>
-                    </IonCol>
-                </IonRow>
+              
+                <TableData />
+              
+                
             </IonContent>
+           
         </IonPage>
     );
 };

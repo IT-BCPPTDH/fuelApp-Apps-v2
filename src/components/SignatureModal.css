@@ -1,0 +1,12 @@
+/* src/components/SignatureModal.css */
+
+.signature-modal {
+    width: 100%; /* Adjust width as needed */
+    --max-width: 500px; /* Set a max-width to make sure it doesn’t get too wide */
+    --height: 40%; /* Adjust height as needed */
+    --max-height:350px; /* Set a max-height to make sure it doesn’t get too tall */
+}
+
+.modal-buttons {
+    margin: 20px;
+}
