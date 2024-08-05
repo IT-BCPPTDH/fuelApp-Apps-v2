@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Redirect, Route } from 'react-router-dom';
+import { Redirect, Route, useHistory } from 'react-router-dom'; // Import useHistory
 import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Cookies from 'js-cookie'; // Import js-cookie library
@@ -25,21 +25,18 @@ import '@ionic/react/css/display.css';
 
 /* Theme variables */
 import './theme/variables.css';
-// import Home from './pages/Home';
 import Login from './pages/Login';
-
-// import MapSearch from './pages/MapSearch';
-// import Sukses from './pages/Sukses';
-// import WaitingDriver from './pages/DriverSearch';
 import OpeningForm from './pages/OpeningForm';
 import DashboardFuelMan from './pages/Dashboard/Dashbord';
-import TransactionForm from './pages/FormTransaction/FomInput';
+import FormTrx from './pages/FormTransaction/FomInput';
+import FormClosing from './pages/ClosingData';
+import ReviewData from './pages/ReviewData';
+import FormTRXKouta from './pages/FormTransaction/FomInputKouta';
 
 setupIonicReact();
 
 const App: React.FC = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-
     useEffect(() => {
         const isLoggedInCookie = Cookies.get('isLoggedIn') === 'true';
         setIsLoggedIn(isLoggedInCookie);
@@ -48,39 +45,28 @@ const App: React.FC = () => {
     return (
         <IonApp>
             <IonReactRouter>
-                <IonRouterOutlet>
-                    <Route exact path="/">
-                        {isLoggedIn ? <Redirect to="/opening" /> : <Login />}
-                    </Route>
-                    <Route exact path="/opening">
-                        <OpeningForm/>
-                    </Route>
-                   
-                    <Route exact path="/login">
-                        {isLoggedIn ? <OpeningForm /> : <Redirect to="/login" />}
-                    </Route>
-
-                    <Route exact path="/login">
-                        {isLoggedIn ? <DashboardFuelMan /> : <Redirect to="/dashboard" />}
-                    </Route>
-
-                    <Route exact path="/transaction">
-                        {isLoggedIn ? <TransactionForm /> : <Redirect to="/login" />}
-                    </Route>
-{/* 
-                    <Route exact path="/map-search">
-                        {isLoggedIn ? <MapSearch /> : <Redirect to="/login" />}
-                    </Route>
-                    <Route exact path="/sukses">
-                        {isLoggedIn ? <Sukses /> : <Redirect to="/login" />}
-                    </Route>
-                    <Route exact path="/menunggu">
-                            {isLoggedIn ? <WaitingDriver /> : <Redirect to="/login" />}
-                    </Route> */}
-                  
-                    
-                    <Redirect to="/" />
-                </IonRouterOutlet>
+                <Route exact path="/">
+                    {isLoggedIn ? <Redirect to="/dashboard" /> : <Login />}
+                </Route>
+                <Route exact path="/opening">
+                    <OpeningForm />
+                </Route>
+                <Route exact path="/transaction">
+                    <FormTrx />
+                </Route>
+                <Route exact path="/dashboard">
+                    {isLoggedIn ? <DashboardFuelMan /> : <Redirect to="/" />}
+                </Route>
+                <Route exact path="/transaction-qouta">
+                    {isLoggedIn ? <FormTRXKouta /> : <Redirect to="/" />}
+                </Route>
+                <Route exact path="/closing-data">
+                    {isLoggedIn ? <FormClosing /> : <Redirect to="/login" />}
+                </Route>
+                <Route exact path="/review-data">
+                    <ReviewData />
+                </Route>
+                <Redirect to="/" />
             </IonReactRouter>
         </IonApp>
     );

@@ -152,3 +152,37 @@
     border-right: none;
  
   }
+  .custom-input{
+	
+    border-radius: 4px;
+    /* color: black; */
+    border: solid 0.8px #6e7276;
+	text-align: center;
+	height: 56px;
+  }
+
+  .sc-ion-input-md-h {
+    --placeholder-color: initial;
+    --placeholder-font-style: initial;
+    --placeholder-font-weight: initial;
+    --placeholder-opacity: var(--ion-placeholder-opacity, 0.6);
+    --padding-top: 0px;
+    --padding-end: 0px;
+    --padding-bottom: 0px;
+    --padding-start: 0px;
+    --background: transparent;
+    --color: initial;
+    --border-style: solid;
+    --highlight-color-focused: var(--ion-color-primary, #0054e9);
+    --highlight-color-valid: var(--ion-color-success, #2dd55b);
+    --highlight-color-invalid: var(--ion-color-danger, #c5000f);
+    --highlight-color: #73a33f;
+    display: block;
+    position: relative;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 !important;
+    color: var(--color);
+    font-family: var(--ion-font-family, inherit);
+    z-index: 2;
+  }
