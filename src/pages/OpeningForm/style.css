@@ -185,4 +185,8 @@
     color: var(--color);
     font-family: var(--ion-font-family, inherit);
     z-index: 2;
+	margin-top: 8px;
+  }
+  .wrapper-content{
+	padding: 15px;
   }
