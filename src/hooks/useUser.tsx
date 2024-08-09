@@ -6,16 +6,15 @@ import * as userLocalStorage from '../data/user.storage';
 export interface User {
     accessToken: string;
     user: {
-        email: string;
         id: number;
-        phone: number;
-        name: string;
+        station: string;
+        jde_operator: string;
     };
 }
 
 export async function getUser(user: User): Promise<User | null> {
     if (!user) return null;
-    const response = await fetch(`/api/users/${user.user.id}`, {
+    const response = await fetch(`/api-user/get-all${user.user.id}`, {
         headers: {
             Authorization: `Bearer ${user.accessToken}`
         }
@@ -26,4 +25,5 @@ export async function getUser(user: User): Promise<User | null> {
 
     return await response.json();
 }
+
 

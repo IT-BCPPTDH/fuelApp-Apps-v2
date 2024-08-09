@@ -17,9 +17,11 @@ import {
   IonToast,
   IonDatetime,
   IonDatetimeButton,
-  IonModal
+  IonModal,
+  useIonToast
 } from "@ionic/react";
 import "./style.css";
+import { postOpening } from "../../hooks/serviceApi";
 
 interface Shift {
   id: number;
@@ -28,56 +30,102 @@ interface Shift {
 }
 
 const shift: Shift[] = [
-  {
-    id: 1,
-    name: "Day",
-    type: "",
-  },
-  {
-    id: 2,
-    name: "Night",
-    type: "",
-  },
+  { id: 1, name: "Day", type: "" },
+  { id: 2, name: "Night", type: "" },
 ];
+
+interface PostOpeningResult {
+  status: number;
+}
 
 const compareWith = (o1: Shift, o2: Shift) => o1.id === o2.id;
 
 const OpeningForm = () => {
   const route = useIonRouter();
-  
-  // State variables for form inputs
-  const [date, setDate] = useState<string>('');
+
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
   const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(undefined);
   const [hmAwal, setHmAwal] = useState<number | undefined>(undefined);
-  
-  // State variable for toast and error message
- 
+  const [site, setSite] = useState<string | undefined>(undefined);
+  const [station, setStation] = useState<string | undefined>(undefined);
+  const [fuelmanid, setFuelmanID] = useState<string | undefined>(undefined);
+  const [shiftSelected, setShiftSelected] = useState<Shift | undefined>(undefined);
   const [showError, setShowError] = useState<boolean>(false);
-  
- 
-  const handleClick = () => {
-    // Validate inputs
+  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [presentToast] = useIonToast();
+  const handleDateChange = (e: CustomEvent) => {
+    const selectedDate = new Date(e.detail.value);
+    setDate(selectedDate);
+  };
+
+  const handlePost = async () => {
     if (
-      openingSonding === undefined ||
-      openingDip === undefined ||
-      flowMeterAwal === undefined ||
+      !date ||
+      !shiftSelected ||
       hmAwal === undefined ||
-      openingSonding < 100 ||
-      openingDip < 100 ||
-      flowMeterAwal < 100 ||
-      hmAwal < 100
+      openingDip === undefined ||
+      openingSonding === undefined ||
+      flowMeterAwal === undefined ||
+      site === undefined ||
+      fuelmanid === undefined ||
+      station === undefined
     ) {
-     
       setShowError(true);
+      console.log('Validation failed');
       return;
     }
-    route.push('/');
-   
+  
+    const dataPost = {
+      date: date.toISOString(),
+      shift: shiftSelected.name,
+      hm_start: hmAwal,
+      opening_dip: openingDip,
+      opening_sonding: openingSonding,
+      flow_meter_start: flowMeterAwal,
+      site: site,
+      fuelman_id: fuelmanid,
+      station: station,
+    };
+  
+    try {
+      const result: PostOpeningResult = await postOpening(dataPost);
+  
+      if (result.status === 200) {
+        presentToast({
+          message: 'Data posted successfully!',
+          duration: 2000,
+          position: 'top',
+          color: 'success',
+        });
+        
+        
+      } else {
+        setShowError(true);
+        presentToast({
+          message: `Data posted successfully! ${result.status}`,
+          duration: 2000,
+          position: 'top',
+          color: 'success',
+        });
+        setTimeout(() => {
+          window.location.reload(); 
+        }, 2000); 
+       
+        route.push('/');
+      }
+    } catch (error) {
+      setShowError(true);
+      presentToast({
+        message: 'An error occurred while posting data.',
+        duration: 2000,
+        position: 'top',
+        color: 'danger',
+      });
+    }
+    localStorage.setItem('awalData', JSON.stringify(dataPost));
   };
-  
-  
+
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -86,12 +134,51 @@ const OpeningForm = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
+        <div className="wrapper-content">
         <IonRow className="padding-content">
+          <IonCol>
+            <IonInput
+              type="text"
+              label="Employee ID"
+              value={fuelmanid}
+              onIonInput={(e) => setFuelmanID(String(e.detail.value))}
+            />
+          </IonCol>
+          <IonCol></IonCol>
+          <IonCol>
+            <IonLabel style={{ marginLeft: "10px" }}>Date</IonLabel>
+            <IonDatetimeButton datetime="datetime"></IonDatetimeButton>
+            <IonModal keepContentsMounted={true}>
+              <IonDatetime
+                id="datetime"
+                onIonChange={handleDateChange}
+              />
+            </IonModal>
+          </IonCol>
+
+        </IonRow>
+        <IonRow className="padding-content">
+          <IonCol>
+            <IonInput
+              label="Site"
+              type="text"
+              value={site}
+              onIonInput={(e) => setSite(String(e.detail.value))}
+            />
+          </IonCol>
+          <IonCol>
+            <IonInput
+              label="Station"
+              type="text"
+              value={station}
+              onIonInput={(e) => setStation(String(e.detail.value))}
+            />
+          </IonCol>
           <IonCol>
             <IonRadioGroup
               className="radio-display"
               compareWith={compareWith}
-              onIonChange={(ev) => console.log('Current value:', JSON.stringify(ev.detail.value))}
+              onIonChange={(ev) => setShiftSelected(ev.detail.value)}
             >
               {shift.map((shift) => (
                 <IonItem key={shift.id} className="item-no-border">
@@ -102,14 +189,8 @@ const OpeningForm = () => {
               ))}
             </IonRadioGroup>
           </IonCol>
-          <IonCol>
-            <IonLabel>Date</IonLabel>
-            <IonDatetimeButton datetime="datetime"></IonDatetimeButton>
-            <IonModal keepContentsMounted={true}>
-              <IonDatetime id="datetime"></IonDatetime>
-            </IonModal>
-          </IonCol>
         </IonRow>
+        
         <div className="padding-content">
           <IonLabel>Opening Sonding (Cm) *</IonLabel>
           <IonInput
@@ -120,7 +201,7 @@ const OpeningForm = () => {
             onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
           />
           {showError && openingSonding !== undefined && openingSonding < 100 && (
-            <p style={{color: "red"}}>* Data HM/KM diambil dari data sebelumnya</p>
+            <p style={{ color: "red" }}>* Data HM/KM diambil dari data sebelumnya</p>
           )}
         </div>
         <div className="padding-content">
@@ -133,7 +214,7 @@ const OpeningForm = () => {
             onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
           />
           {showError && openingDip !== undefined && openingDip < 100 && (
-            <p style={{color: "red"}}>* Data opening sonding dan Dip diambil dari data closing sonding & Dip shift sebelumnya</p>
+            <p style={{ color: "red" }}>* Data opening sonding dan Dip diambil dari data closing sonding & Dip shift sebelumnya</p>
           )}
         </div>
         <div className="padding-content">
@@ -146,7 +227,7 @@ const OpeningForm = () => {
             onIonInput={(e) => setFlowMeterAwal(Number(e.detail.value))}
           />
           {showError && flowMeterAwal !== undefined && flowMeterAwal < 100 && (
-            <p style={{color: "red"}}>* Data start meter diambil dari data close meter sebelumnya</p>
+            <p style={{ color: "red" }}>* Data start meter diambil dari data close meter sebelumnya</p>
           )}
         </div>
         <div className="padding-content">
@@ -154,22 +235,21 @@ const OpeningForm = () => {
           <IonInput
             className="custom-input"
             type="number"
-            placeholder="Input HM awal"
+            placeholder="Berikan 0 jika di fuel station"
             value={hmAwal}
             onIonInput={(e) => setHmAwal(Number(e.detail.value))}
           />
           {showError && hmAwal !== undefined && hmAwal < 100 && (
-            <p style={{color: "red"}}>* Berikan 0 jika di fuel station</p>
+            <p style={{ color: "red" }}>* Berikan 0 jika di fuel station</p>
           )}
         </div>
         <IonRow className="padding-content btn-start">
-          <IonButton className="check-button" onClick={handleClick}>
+          <IonButton className="check-button" onClick={handlePost}>
             Mulai Kerja
           </IonButton>
         </IonRow>
+        </div>
       </IonContent>
-
-    
     </IonPage>
   );
 };
