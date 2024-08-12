@@ -14,6 +14,9 @@ export class ResponseError extends Error {
     }
 }
 
+interface PostAuthParams {
+    
+}
 export const postAuth = async ({ station, jde_operator }: { station: string; jde_operator: string }) => {
     const url = `${LINK_BACKEND}/api/login`; 
 

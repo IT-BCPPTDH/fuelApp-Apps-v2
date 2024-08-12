@@ -1,4 +1,7 @@
-const BE_USER='http://127.0.0.1:9001'
+// Assume `User` is an interface defining the user object
+const BE_USER = 'http://localhost:9001';
+
+
 export interface User {
     accessToken: string;
     // other user fields if needed
@@ -14,13 +17,13 @@ export interface User {
     }
   }
   
-  export async function getUser(user: User): Promise<User | null> {
-    const url = `${BE_USER}/api-user/auth`; 
+  export async function getAlllUser(user: User): Promise<User | null> {
+    const url = `${BE_USER}/api-user/get-all`; 
     if (!user) return null;
   
     const response = await fetch(url, {
       headers: {
-        Authorization: `Bearer ${user.accessToken}`,
+        method: 'GET',
       },
     });
   

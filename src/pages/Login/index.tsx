@@ -18,17 +18,31 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Cookies from "js-cookie";
 import { QUERY_KEY } from "../../helper/queryKeys";
-import { validateForm } from "../../data/utils";
 import { ResponseError } from "../../helper/responseError";
 import "./style.css";
 import { useLoginFields } from "../../data/field";
-import { postAuth } from "../../hooks/serviceApi";
+import { postAuthLogin } from "../../hooks/useAuth";
 import { getStation as fetchStation } from "../../hooks/useStation";
+import { User } from "../../hooks/useUser";
 
-type Error = {
+const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  NO_CONTENT: 204,
+  UNAUTHORIZED: 401,
+};
+
+const STATUS_MESSAGE = {
+  INVALID_JDE: "Invalid JDE.",
+  CRED_NOT_FOUND: "Credentials not found.",
+  ERR_AUTH: "Error during authentication.",
+};
+
+
+interface Error {
   id: string;
   message: string;
-};
+}
 
 interface UserData {
   session_token: string;
@@ -41,112 +55,99 @@ interface Station {
   fuel_station_name: string;
 }
 
+interface PostAuthParams {
+  date: string;
+  station: string;
+  jde: string;
+  site: string;
+}
+
 const Login: React.FC = () => {
   const fields = useLoginFields();
   const [errors, setErrors] = useState<Error[]>([]);
   const [jdeOperator, setJdeOperator] = useState<string>("");
   const [stationData, setStationData] = useState<{ value: string; label: string }[]>([]);
-  const [selectedUnit, setSelectedUnit] = useState<string>(""); // Changed to default empty string
-  const [showJdeError, setShowJdeError] = useState<boolean>(false);
-
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isJdeValid, setIsJdeValid] = useState<boolean>(true);
+  const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true);
+  const [userData, setUserData] = useState<User | null>(null); 
   const queryClient = useQueryClient();
   const router = useIonRouter();
 
-  const mutation = useMutation({
-    mutationFn: async ({ station, jde_operator }: { station: string; jde_operator: string }): Promise<any> => {
-      console.log("Posting auth with:", { station, jde_operator });
-      return await postAuth({
-        station, jde_operator,
-        date: ""
-      });
-    },
-    onSuccess: (data: UserData) => {
-      console.log("Login successful:", data);
-      queryClient.setQueryData([QUERY_KEY.user], data);
-      Cookies.set("isLoggedIn", "true", { expires: 1 });
-      router.push("/opening");
-    },
-    onError: (error: any) => {
-      console.error("Login error:", error);
-      throw new ResponseError(`Error during login:`, error);
-    },
-  });
-
- useEffect(() => {
-  const fetchStationData = async () => {
-    try {
-      const cachedData = localStorage.getItem('stationData');
-      if (cachedData) {
-        const parsedData = JSON.parse(cachedData);
-        setStationData(parsedData);
-      } else {
-        const response = await fetchStation();
-        if (response?.data && Array.isArray(response.data)) {
-          const stations = response.data.map((station: Station) => ({
-            value: station.fuel_station_name,
-            label: station.fuel_station_name,
-          }));
-          localStorage.setItem('stationData', JSON.stringify(stations));
-          setStationData(stations);
-          console.log("Fetched and cached station data:", stations);
+  useEffect(() => {
+    const fetchStationData = async () => {
+      try {
+        const cachedData = localStorage.getItem('stationData');
+        if (cachedData) {
+          const parsedData = JSON.parse(cachedData);
+          setStationData(parsedData);
         } else {
-          console.error("Invalid response data:", response.data);
+          const response = await fetchStation();
+          if (response?.data && Array.isArray(response.data)) {
+            const stations = response.data.map((station: Station) => ({
+              value: station.fuel_station_name,
+              label: station.fuel_station_name,
+            }));
+            localStorage.setItem('stationData', JSON.stringify(stations));
+            setStationData(stations);
+            console.log("Fetched and cached station data:", stations);
+          } else {
+            console.error("Invalid response data:", response.data);
+          }
         }
+      } catch (error) {
+        console.error("Failed to fetch or load station data:", error);
+        setErrorMessage("Failed to load station data.");
       }
-    } catch (error) {
-      console.error("Failed to fetch or load station data:", error);
-    }
-  };
+    };
 
-  fetchStationData();
-}, []);
+    fetchStationData();
+  }, []);
 
+  const handleLogin = async () => {
+    if (!jdeOperator || !selectedUnit) {
+        setIsJdeValid(!!jdeOperator);
+        setIsPasswordValid(!!selectedUnit);
+        setErrorMessage("Employee ID atau Username Salah.");
+        return;
+    }
 
+    const currentDate = new Date().toISOString();
 
-const handleLogin = async () => {
-    // Validation checks
-    if (!selectedUnit || !jdeOperator) {
-     
-      return;
-    }
-    if (typeof selectedUnit !== 'string' || selectedUnit.trim().length === 0) {
-      return;
-    }
-    if (typeof jdeOperator !== 'string' || jdeOperator.trim().length === 0) {
-      return;
-    }
-  
-    const timeout = 10000; 
-  
-    // Create a timeout promise
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timed out')), timeout)
-    );
-  
-  
-  
     try {
-      const response = await Promise.race([
-        mutation.mutateAsync({
-          station: selectedUnit,
-          jde_operator: jdeOperator,
-        }),
-        timeoutPromise
-      ]);
+        console.log("login data:", {
+            station: selectedUnit,
+            date: currentDate,
+            jde: jdeOperator,
+            site: "",
+        });
 
+        const response = await postAuthLogin({
+            station: selectedUnit,
+            date: currentDate,
+            jde: jdeOperator,
+            site: "",
+        });
 
-      if (response) {
-        localStorage.setItem('logLoginUser', JSON.stringify({
-          jdeOperator,
-         
-        }));
-      }
+        console.log("Login API response:", response);
+
+        if (response.success) {
+            localStorage.setItem("session_token", response.data.token); // Store the token
+            setUserData(response.data);
+            Cookies.set("isLoggedIn", "true", { expires: 1 });
+            router.push("/opening");
+            window.location.reload();
+        } else {
+            setErrorMessage(response.message || STATUS_MESSAGE.ERR_AUTH);
+        }
     } catch (error) {
-     
+        console.error("Error during login:", error);
+        setErrorMessage(STATUS_MESSAGE.ERR_AUTH);
     }
 };
 
-  
+
   
 
   return (
@@ -164,8 +165,8 @@ const handleLogin = async () => {
               <IonRow className="mt-content">
                 <span className="title-checkin">Please Sign In to Continue</span>
                 <IonCol size="12">
-                  <IonLabel>Select Unit</IonLabel>
-                  <IonSelect style={{marginTop:"10px"}}
+                  <IonLabel>Select Station</IonLabel>
+                  <IonSelect style={{ marginTop: "10px" }}
                     fill="solid"
                     labelPlacement="floating"
                     value={selectedUnit}
@@ -188,7 +189,7 @@ const handleLogin = async () => {
                   </IonSelect>
                 </IonCol>
                 <IonCol size="12" className="mt10">
-                <IonLabel>Employe ID</IonLabel>
+                  <IonLabel>Employee ID</IonLabel>
                   <IonInput
                     className="custom-input input-custom"
                     type="password"
@@ -204,9 +205,9 @@ const handleLogin = async () => {
                   </IonButton>
                 </IonCol>
               </IonRow>
-              {showJdeError && (
+              {errorMessage && (
                 <div className="bg-text mr-content">
-                  <IonText className="warning">Unit atau JDE Salah Harap Periksa Kembali!!</IonText>
+                  <IonText className="warning">{errorMessage}</IonText>
                 </div>
               )}
             </IonGrid>

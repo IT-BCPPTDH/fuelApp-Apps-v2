@@ -167,7 +167,7 @@ const FormTRX: React.FC = () => {
                             <IonRow>
                                 <IonCol>
                                     <IonLabel>Select Unit *</IonLabel>
-                                    <IonSelect fill="solid" interface="popover" labelPlacement="floating" onIonChange={handleUnitChange}>
+                                    <IonSelect style={{marginTop:"10px"}}  fill="solid" interface="popover" labelPlacement="floating" onIonChange={handleUnitChange}>
                                         {unitOptions.map((unit) => (
                                             <IonSelectOption key={unit.value} value={unit.value}>
                                                 {unit.label}
