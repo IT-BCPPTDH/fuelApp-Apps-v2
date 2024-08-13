@@ -12,9 +12,8 @@ import {
   IonRadioGroup,
   IonRow,
   IonTitle,
-  useIonRouter,
+  useIonRouter,  // Use useIonRouter from @ionic/react
   IonLabel,
-  IonToast,
   IonDatetime,
   IonDatetimeButton,
   IonModal,
@@ -34,15 +33,10 @@ const shift: Shift[] = [
   { id: 2, name: "Night", type: "" },
 ];
 
-interface PostOpeningResult {
-  status: number;
-}
-
 const compareWith = (o1: Shift, o2: Shift) => o1.id === o2.id;
 
 const OpeningForm = () => {
-  const route = useIonRouter();
-
+ 
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
   const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(undefined);
@@ -56,13 +50,13 @@ const OpeningForm = () => {
   const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
 
   const [presentToast] = useIonToast();
-
+ 
   useEffect(() => {
-    const userData = localStorage.getItem("logLoginUser");
+    const userData = localStorage.getItem("loginData");
     if (userData) {
       const parsedData = JSON.parse(userData);
       setDataUserLog(parsedData);
-      setFuelmanID(parsedData.jdeOperator);
+      setFuelmanID(parsedData.jde);
       setStation(parsedData.station);
     }
   }, []);
@@ -98,21 +92,31 @@ const OpeningForm = () => {
       site: site,
       fuelman_id: fuelmanid,
       station: station,
+      jde: dataUserLog.jde,
     };
-
+  
     try {
-      const result: PostOpeningResult = await postOpening(dataPost);
-      if (result.status === 200) {
+      const result = await postOpening(dataPost);
+  
+      console.log('Server Response:', result); 
+  
+      if (result.status === '201' && result.message === 'Data Created') {
         presentToast({
-          message: `Data posted successfully!`,
+          message: 'Data posted successfully!',
           duration: 2000,
           position: 'top',
           color: 'success',
         });
         localStorage.setItem('awalData', JSON.stringify(dataPost));
-        route.push('/');
+        window.location.reload()
       } else {
         setShowError(true);
+        presentToast({
+          message: 'Failed to post data.',
+          duration: 2000,
+          position: 'top',
+          color: 'danger',
+        });
       }
     } catch (error) {
       setShowError(true);
@@ -124,6 +128,9 @@ const OpeningForm = () => {
       });
     }
   };
+
+
+
 
   return (
     <IonPage>

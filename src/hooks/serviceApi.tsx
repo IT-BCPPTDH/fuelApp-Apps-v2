@@ -12,10 +12,8 @@ export class ResponseError extends Error {
     }
 }
 
-
-
 interface PostOpeningParams {
-    date: string; // Use ISO string or adjust as needed
+    date: string; 
     shift: string;
     hm_start: number;
     site: string;
@@ -39,24 +37,33 @@ export const postOpening = async (params: PostOpeningParams): Promise<any> => {
             body: JSON.stringify(params),
         });
 
+        // Ensure the response is not empty
+        const responseData = await response.text();
+        const parsedResponseData = responseData ? JSON.parse(responseData) : {};
+
+        console.log('Server Response Data:', parsedResponseData); // Log the response data
+
         if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Response Error:', errorData);
-            throw new ResponseError('Failed to post opening data', response, errorData);
+            // Handle non-200 status codes
+            console.error('Response Error:', parsedResponseData);
+            throw new ResponseError('Failed to post opening data', response, parsedResponseData);
         }
 
-        // Return parsed JSON result
-        return await response.json();
+        // Save the response data to localStorage if status is 201 and message is "Data Created"
+        if (response.status === 201 && parsedResponseData.message === 'Data Created') {
+            localStorage.setItem('postedData', JSON.stringify(parsedResponseData));
+        }
+
+        return parsedResponseData;
     } catch (error) {
         if (error instanceof ResponseError) {
             throw error;
         } else {
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
             console.error('Error Details:', message);
-            throw new ResponseError(`Error during postOpening: ${message}`, new Response());
+            // Provide a default response for the ResponseError
+            const defaultResponse = new Response(null, { status: 500, statusText: 'Internal Server Error' });
+            throw new ResponseError(`Error during postOpening: ${message}`, defaultResponse);
         }
     }
 };
-
-
-
