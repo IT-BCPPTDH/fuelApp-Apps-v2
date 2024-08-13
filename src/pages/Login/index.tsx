@@ -78,11 +78,19 @@ const Login: React.FC = () => {
   
       if (response.status === '200' && response.message === 'Data Created') {
         const { token, ...userData } = response.data;
-        localStorage.setItem("session_token", token);
+        Cookies.set("session_token", token, { expires: 1 });
         Cookies.set("isLoggedIn", "true", { expires: 1 });
+  
+        // Simpan station dan jde sebagai satu objek dalam localStorage
+        const loginData = {
+          station: selectedUnit,
+          jde: jde,
+        };
+        localStorage.setItem("loginData", JSON.stringify(loginData));
   
         console.log("Navigasi ke /opening");
         router.push("/opening");
+        
       } else {
         console.error("Respons tidak terduga:", response);
       }
@@ -90,9 +98,6 @@ const Login: React.FC = () => {
       console.error("Kesalahan saat login:", error);
     }
   };
-  
-  
-
   return (
     <IonPage>
       <IonContent fullscreen className="ion-content">

@@ -51,11 +51,11 @@ const App: React.FC = () => {
                 <Route exact path="/opening">
                     <OpeningForm />
                 </Route>
+                <Route exact path="/dashboard">
+                     <DashboardFuelMan />
+                </Route>
                 <Route exact path="/transaction">
                     <FormTrx />
-                </Route>
-                <Route exact path="/dashboard">
-                    {isLoggedIn ? <DashboardFuelMan /> : <Redirect to="/" />}
                 </Route>
                 <Route exact path="/transaction-qouta">
                     {isLoggedIn ? <FormTRXKouta /> : <Redirect to="/" />}
