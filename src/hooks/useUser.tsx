@@ -1,5 +1,9 @@
 const BE_USER='http://127.0.0.1:9001'
 export interface User {
+    division: string;
+    position: string;
+    fullname: string;
+    jde: string;
     accessToken: string;
     // other user fields if needed
   }
