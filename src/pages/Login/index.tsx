@@ -11,68 +11,22 @@ import {
   IonSelect,
   IonSelectOption,
   IonInput,
-  IonText,
   useIonRouter,
   IonLabel,
 } from "@ionic/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Cookies from "js-cookie";
-import { QUERY_KEY } from "../../helper/queryKeys";
-import { ResponseError } from "../../helper/responseError";
-import "./style.css";
-import { useLoginFields } from "../../data/field";
 import { postAuthLogin } from "../../hooks/useAuth";
 import { getStation as fetchStation } from "../../hooks/useStation";
-import { User } from "../../hooks/useUser";
-
-const HTTP_STATUS = {
-  OK: 200,
-  CREATED: 201,
-  NO_CONTENT: 204,
-  UNAUTHORIZED: 401,
-};
-
-const STATUS_MESSAGE = {
-  INVALID_JDE: "Invalid JDE.",
-  CRED_NOT_FOUND: "Credentials not found.",
-  ERR_AUTH: "Error during authentication.",
-};
-
-
-interface Error {
-  id: string;
-  message: string;
-}
-
-interface UserData {
-  session_token: string;
-  data: any;
-  status: string;
-  message: string;
-}
+import "./style.css";
 
 interface Station {
   fuel_station_name: string;
 }
 
-interface PostAuthParams {
-  date: string;
-  station: string;
-  jde: string;
-  site: string;
-}
-
 const Login: React.FC = () => {
-  const fields = useLoginFields();
-  const [errors, setErrors] = useState<Error[]>([]);
-  const [jdeOperator, setJdeOperator] = useState<string>("");
+  const [jde, setJdeOperator] = useState<string>("");
   const [stationData, setStationData] = useState<{ value: string; label: string }[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isJdeValid, setIsJdeValid] = useState<boolean>(true);
-  const [isPasswordValid, setIsPasswordValid] = useState<boolean>(true);
-  const [userData, setUserData] = useState<User | null>(null); 
-  const queryClient = useQueryClient();
   const router = useIonRouter();
 
   useEffect(() => {
@@ -91,14 +45,10 @@ const Login: React.FC = () => {
             }));
             localStorage.setItem('stationData', JSON.stringify(stations));
             setStationData(stations);
-            console.log("Fetched and cached station data:", stations);
-          } else {
-            console.error("Invalid response data:", response.data);
           }
         }
       } catch (error) {
         console.error("Failed to fetch or load station data:", error);
-        setErrorMessage("Failed to load station data.");
       }
     };
 
@@ -106,48 +56,41 @@ const Login: React.FC = () => {
   }, []);
 
   const handleLogin = async () => {
-    if (!jdeOperator || !selectedUnit) {
-        setIsJdeValid(!!jdeOperator);
-        setIsPasswordValid(!!selectedUnit);
-        setErrorMessage("Employee ID atau Username Salah.");
-        return;
+    if (!jde || !selectedUnit) {
+      console.error("Employee ID dan Station harus diisi.");
+      return;
     }
-
+  
     const currentDate = new Date().toISOString();
-
+  
     try {
-        console.log("login data:", {
-            station: selectedUnit,
-            date: currentDate,
-            jde: jdeOperator,
-            site: "",
-        });
-
-        const response = await postAuthLogin({
-            station: selectedUnit,
-            date: currentDate,
-            jde: jdeOperator,
-            site: "",
-        });
-
-        console.log("Login API response:", response);
-
-        if (response.success) {
-            localStorage.setItem("session_token", response.data.token); // Store the token
-            setUserData(response.data);
-            Cookies.set("isLoggedIn", "true", { expires: 1 });
-            router.push("/opening");
-            window.location.reload();
-        } else {
-            setErrorMessage(response.message || STATUS_MESSAGE.ERR_AUTH);
-        }
+      const response = await postAuthLogin({
+        station: selectedUnit,
+        date: currentDate,
+        JDE: jde,
+      });
+  
+      // Log respons untuk memeriksa strukturnya
+      console.log("Respons dari server:", response);
+      console.log("Status Respons:", response.status);
+      console.log("Message Respons:", response.message);
+      console.log("Data Respons:", response.data);
+  
+      if (response.status === '200' && response.message === 'Data Created') {
+        const { token, ...userData } = response.data;
+        localStorage.setItem("session_token", token);
+        Cookies.set("isLoggedIn", "true", { expires: 1 });
+  
+        console.log("Navigasi ke /opening");
+        router.push("/opening");
+      } else {
+        console.error("Respons tidak terduga:", response);
+      }
     } catch (error) {
-        console.error("Error during login:", error);
-        setErrorMessage(STATUS_MESSAGE.ERR_AUTH);
+      console.error("Kesalahan saat login:", error);
     }
-};
-
-
+  };
+  
   
 
   return (
@@ -166,7 +109,8 @@ const Login: React.FC = () => {
                 <span className="title-checkin">Please Sign In to Continue</span>
                 <IonCol size="12">
                   <IonLabel>Select Station</IonLabel>
-                  <IonSelect style={{ marginTop: "10px" }}
+                  <IonSelect
+                    style={{ marginTop: "10px" }}
                     fill="solid"
                     labelPlacement="floating"
                     value={selectedUnit}
@@ -174,7 +118,6 @@ const Login: React.FC = () => {
                     onIonChange={(e) => {
                       const selectedValue = e.detail.value as string;
                       setSelectedUnit(selectedValue);
-                      console.log("Selected station:", selectedValue);
                     }}
                   >
                     {stationData.length > 0 ? (
@@ -192,11 +135,9 @@ const Login: React.FC = () => {
                   <IonLabel>Employee ID</IonLabel>
                   <IonInput
                     className="custom-input input-custom"
-                    type="password"
-                    errorText="Invalid employee ID"
                     placeholder="Employee ID"
-                    value={jdeOperator}
-                    onIonInput={(e) => setJdeOperator(e.detail.value as string)}
+                    value={jde}
+                    onIonInput={(e) => setJdeOperator(String(e.detail.value))}
                   ></IonInput>
                 </IonCol>
                 <IonCol className="mr-content">
@@ -205,11 +146,6 @@ const Login: React.FC = () => {
                   </IonButton>
                 </IonCol>
               </IonRow>
-              {errorMessage && (
-                <div className="bg-text mr-content">
-                  <IonText className="warning">{errorMessage}</IonText>
-                </div>
-              )}
             </IonGrid>
           </IonCard>
         </div>

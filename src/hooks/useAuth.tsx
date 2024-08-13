@@ -1,17 +1,12 @@
 const LINK_BACKEND = 'http://localhost:3033';
 
-
-
 interface PostAuthParams {
     date: string;
     station: string;
-    jde: string;
-    site: string;
-    fullname?: string;  
+    JDE: string; 
+  
+  
 }
-
-
-
 
 export class ResponseError extends Error {
     public response: Response;
@@ -25,7 +20,6 @@ export class ResponseError extends Error {
     }
 }
 
-// Define the function for making the POST request
 export const postAuthLogin = async (params: PostAuthParams): Promise<any> => {
     const url = `${LINK_BACKEND}/api/login`;
 
@@ -38,14 +32,21 @@ export const postAuthLogin = async (params: PostAuthParams): Promise<any> => {
             body: JSON.stringify(params),
         });
 
+        // Check if the response is not OK
         if (!response.ok) {
-            const errorData = await response.json(); // Parse the error response
-            console.error('Response Error:', errorData);
+            const errorData = await response.json();
+            console.error('Response Error:', {
+                status: response.status,
+                statusText: response.statusText,
+                ...errorData,
+            });
             throw new ResponseError('Failed to post auth login data', response, errorData);
         }
 
         // Return parsed JSON result
-        return await response.json(); 
+        const data = await response.json();
+        console.log('API response data:', data);
+        return data;
     } catch (error) {
         if (error instanceof ResponseError) {
             throw error;
