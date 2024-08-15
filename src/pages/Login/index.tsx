@@ -13,6 +13,7 @@ import {
   IonInput,
   useIonRouter,
   IonLabel,
+  IonTitle,
 } from "@ionic/react";
 import Cookies from "js-cookie";
 import { postAuthLogin } from "../../hooks/useAuth";
@@ -21,83 +22,101 @@ import "./style.css";
 
 interface Station {
   fuel_station_name: string;
+  site: string; 
+  fuel_station_typpe:string
+  
 }
 
 const Login: React.FC = () => {
   const [jde, setJdeOperator] = useState<string>("");
-  const [stationData, setStationData] = useState<{ value: string; label: string }[]>([]);
+  const [stationData, setStationData] = useState<{ value: string; label: string; site: string }[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
+  const [showError, setShowError] = useState<boolean>(false);
   const router = useIonRouter();
 
+  const fetchAllStationData = async () => {
+    try {
+      const response = await fetchStation();
+      if (response?.data && Array.isArray(response.data)) {
+        const stations = response.data.map((station: Station) => ({
+          value: station.fuel_station_name, 
+          label: `${station.fuel_station_name}`, 
+          site: station.site,
+          fuel_station_type:station.fuel_station_name
+        }));
+        localStorage.setItem('stationData', JSON.stringify(stations));
+        setStationData(stations);
+      } else {
+        console.error("No station data found");
+      }
+    } catch (error) {
+      console.error("Failed to fetch station data:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchStationData = async () => {
-      try {
-        const cachedData = localStorage.getItem('stationData');
-        if (cachedData) {
-          const parsedData = JSON.parse(cachedData);
-          setStationData(parsedData);
-        } else {
-          const response = await fetchStation();
-          if (response?.data && Array.isArray(response.data)) {
-            const stations = response.data.map((station: Station) => ({
-              value: station.fuel_station_name,
-              label: station.fuel_station_name,
-            }));
-            localStorage.setItem('stationData', JSON.stringify(stations));
-            setStationData(stations);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch or load station data:", error);
+    const loadStationData = async () => {
+      const cachedData = localStorage.getItem('stationData');
+      if (cachedData) {
+        setStationData(JSON.parse(cachedData));
+      } else {
+        await fetchAllStationData();
       }
     };
 
-    fetchStationData();
+    loadStationData();
   }, []);
 
   const handleLogin = async () => {
     if (!jde || !selectedUnit) {
       console.error("Employee ID dan Station harus diisi.");
+      setShowError(true);
       return;
     }
-  
+    
+    const stationData = localStorage.getItem('stationData');
+    const stations = stationData ? JSON.parse(stationData) : [];
+    const selectedStation = stations.find((station: { value: string; }) => station.value === selectedUnit);
+
+    if (!selectedStation) {
+      console.error("Selected station not found");
+      setShowError(true);
+      return;
+    }
+
     const currentDate = new Date().toISOString();
-  
+
     try {
       const response = await postAuthLogin({
         station: selectedUnit,
         date: currentDate,
         JDE: jde,
       });
-  
-      // Log respons untuk memeriksa strukturnya
-      console.log("Respons dari server:", response);
-      console.log("Status Respons:", response.status);
-      console.log("Message Respons:", response.message);
-      console.log("Data Respons:", response.data);
-  
+
       if (response.status === '200' && response.message === 'Data Created') {
         const { token, ...userData } = response.data;
         Cookies.set("session_token", token, { expires: 1 });
         Cookies.set("isLoggedIn", "true", { expires: 1 });
-  
-        // Simpan station dan jde sebagai satu objek dalam localStorage
+
         const loginData = {
           station: selectedUnit,
           jde: jde,
+          site: selectedStation.site,
+          
         };
         localStorage.setItem("loginData", JSON.stringify(loginData));
-  
-        console.log("Navigasi ke /opening");
+
         router.push("/opening");
-        
       } else {
         console.error("Respons tidak terduga:", response);
+        setShowError(true);
       }
     } catch (error) {
       console.error("Kesalahan saat login:", error);
+      setShowError(true);
     }
   };
+
   return (
     <IonPage>
       <IonContent fullscreen className="ion-content">
@@ -151,6 +170,13 @@ const Login: React.FC = () => {
                   </IonButton>
                 </IonCol>
               </IonRow>
+              {showError && (
+                <IonRow className="bg-text">
+                  <IonCol>
+                    <IonTitle style={{ marginTop: "10px" }}>Employee ID atau Username Salah!</IonTitle>
+                  </IonCol>
+                </IonRow>
+              )}
             </IonGrid>
           </IonCard>
         </div>
