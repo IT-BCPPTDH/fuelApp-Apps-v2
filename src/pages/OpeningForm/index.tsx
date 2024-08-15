@@ -12,15 +12,17 @@ import {
   IonRadioGroup,
   IonRow,
   IonTitle,
-  useIonRouter,  // Use useIonRouter from @ionic/react
   IonLabel,
   IonDatetime,
   IonDatetimeButton,
   IonModal,
-  useIonToast
+  useIonToast,
+  useIonRouter
 } from "@ionic/react";
 import "./style.css";
 import { postOpening } from "../../hooks/serviceApi";
+import { addDataToDB, getOfflineData, removeDataFromDB } from "../../utils/insertData";
+import { dataLkf } from "../../models/db";
 
 interface Shift {
   id: number;
@@ -28,41 +30,52 @@ interface Shift {
   type: string;
 }
 
-const shift: Shift[] = [
+const shifts: Shift[] = [
   { id: 1, name: "Day", type: "" },
   { id: 2, name: "Night", type: "" },
 ];
 
 const compareWith = (o1: Shift, o2: Shift) => o1.id === o2.id;
 
-const OpeningForm = () => {
- 
+const OpeningForm: React.FC = () => {
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
   const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(undefined);
   const [hmAwal, setHmAwal] = useState<number | undefined>(undefined);
   const [site, setSite] = useState<string | undefined>(undefined);
   const [station, setStation] = useState<string | undefined>(undefined);
-  const [fuelmanid, setFuelmanID] = useState<string | undefined>(undefined);
+  const [fuelmanId, setFuelmanID] = useState<string | undefined>(undefined);
   const [shiftSelected, setShiftSelected] = useState<Shift | undefined>(undefined);
   const [showError, setShowError] = useState<boolean>(false);
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
-
+  const [lkfId, setLkfId] = useState<string | undefined>(undefined);
+  const router = useIonRouter();
   const [presentToast] = useIonToast();
- 
+
   useEffect(() => {
+    // Generate LKF ID
+    const generateLkfId = () => {
+      const timestamp = Date.now();
+      return (timestamp % 100000000).toString().padStart(8, '0');
+    };
+
+    // Set new LKF ID
+    setLkfId(generateLkfId());
+
+    // Fetch login data
     const userData = localStorage.getItem("loginData");
     if (userData) {
       const parsedData = JSON.parse(userData);
       setDataUserLog(parsedData);
       setFuelmanID(parsedData.jde);
       setStation(parsedData.station);
+      setSite(parsedData.site);
     }
   }, []);
 
   const handleDateChange = (e: CustomEvent) => {
-    const selectedDate = new Date(e.detail.value);
+    const selectedDate = new Date(e.detail.value as string);
     setDate(selectedDate);
   };
 
@@ -75,14 +88,15 @@ const OpeningForm = () => {
       openingSonding === undefined ||
       flowMeterAwal === undefined ||
       site === undefined ||
-      fuelmanid === undefined ||
-      station === undefined
+      fuelmanId === undefined ||
+      station === undefined ||
+      lkfId === undefined
     ) {
       setShowError(true);
       return;
     }
-  
-    const dataPost = {
+
+    const dataPost: dataLkf = {
       date: date.toISOString(),
       shift: shiftSelected.name,
       hm_start: hmAwal,
@@ -90,16 +104,17 @@ const OpeningForm = () => {
       opening_sonding: openingSonding,
       flow_meter_start: flowMeterAwal,
       site: site,
-      fuelman_id: fuelmanid,
+      fuelman_id: fuelmanId,
       station: station,
-      jde: dataUserLog.jde,
+      jde: fuelmanId,
+      lkf_id: lkfId,
     };
-  
+
     try {
       const result = await postOpening(dataPost);
-  
-      console.log('Server Response:', result); 
-  
+
+      console.log('Server Response:', result);
+
       if (result.status === '201' && result.message === 'Data Created') {
         presentToast({
           message: 'Data posted successfully!',
@@ -107,8 +122,10 @@ const OpeningForm = () => {
           position: 'top',
           color: 'success',
         });
-        localStorage.setItem('awalData', JSON.stringify(dataPost));
-        window.location.reload()
+        // Save to IndexedDB
+        await addDataToDB(dataPost);
+        router.push("/dashboard");
+        window.location.reload();
       } else {
         setShowError(true);
         presentToast({
@@ -119,18 +136,49 @@ const OpeningForm = () => {
         });
       }
     } catch (error) {
+      // Save data to IndexedDB when offline
+    
       setShowError(true);
       presentToast({
-        message: 'An error occurred while posting data.',
+        message: 'You are offline. Data saved locally and will be sent when online.',
         duration: 2000,
         position: 'top',
-        color: 'danger',
+        color: 'warning',
       });
+      await addDataToDB(dataPost);
+      router.push("/dashboard");
+      window.location.reload();
     }
   };
 
+  const checkAndSendOfflineData = async () => {
+    if (navigator.onLine) {
+      const offlineData = await getOfflineData();
+      if (offlineData.length > 0) {
+        try {
+          for (const data of offlineData) {
+            const result = await postOpening(data);
+            if (result.status === '201' && result.message === 'Data Created') {
+              await removeDataFromDB(data.lkf_id); 
+            }
+          }
+          presentToast({
+            message: 'Offline data sent successfully!',
+            duration: 2000,
+            position: 'top',
+            color: 'success',
+          });
+        } catch (error) {
+          console.error('Failed to send offline data:', error);
+        }
+      }
+    }
+  };
 
-
+  useEffect(() => {
+    window.addEventListener('online', checkAndSendOfflineData);
+    return () => window.removeEventListener('online', checkAndSendOfflineData);
+  }, []);
 
   return (
     <IonPage>
@@ -141,106 +189,97 @@ const OpeningForm = () => {
       </IonHeader>
       <IonContent>
         <div className="wrapper-content">
-          <IonRow className="padding-content">
-            <IonCol>
-              <IonInput
-                type="text"
-                label="Employee ID"
-                value={fuelmanid}
-                disabled
-                onIonInput={(e) => setFuelmanID(String(e.detail.value))}
-              />
-            </IonCol>
-            <IonCol></IonCol>
-            <IonCol>
-              <IonDatetimeButton style={{ marginTop: "8px" }} datetime="datetime"></IonDatetimeButton>
-              <IonModal keepContentsMounted={true}>
-                <IonDatetime
-                  id="datetime"
-                  presentation="date"
-                  onIonChange={handleDateChange}
-                />
-              </IonModal>
-            </IonCol>
-          </IonRow>
-          <IonRow className="padding-content">
-            <IonCol>
-              <IonInput
-                label="Site"
-                type="text"
-                value={site}
-                onIonInput={(e) => setSite(String(e.detail.value))}
-              />
-            </IonCol>
-            <IonCol>
-              <IonInput
-                label="Station"
-                type="text"
-                disabled
-                value={station}
-                onIonInput={(e) => setStation(String(e.detail.value))}
-              />
-            </IonCol>
-            <IonCol>
-              <IonRadioGroup
-                className="radio-display"
-                compareWith={compareWith}
-                onIonChange={(ev) => setShiftSelected(ev.detail.value)}
-              >
-                {shift.map((shift) => (
-                  <IonItem key={shift.id} className="item-no-border">
-                    <IonRadio value={shift}>
-                      {shift.name}
-                    </IonRadio>
-                  </IonItem>
-                ))}
-              </IonRadioGroup>
-            </IonCol>
-          </IonRow>
-
           <div className="padding-content">
-            <IonLabel>Opening Sonding (Cm) *</IonLabel>
+            <h2 style={{textAlign:"center", fontSize:"30px"}}>LKF ID : {lkfId}</h2>
+            <h4>Employee ID : {fuelmanId}</h4>
+            <h4>Site : {site}</h4>
+            <h4>Station : {station}</h4>
+          </div>
+          <IonRow className="padding-content">
+            <IonDatetimeButton style={{ marginTop: "8px" }} datetime="datetime"></IonDatetimeButton>
+            <IonModal keepContentsMounted={true}>
+              <IonDatetime
+                id="datetime"
+                presentation="date"
+                onIonChange={handleDateChange}
+              />
+            </IonModal>
+            <IonCol>
+              <div style={{textAlign:"end"}}>
+              <IonLabel>
+              Shift *
+            </IonLabel>
+                <IonRadioGroup
+                  className="radio-display"
+                  compareWith={compareWith}
+                  onIonChange={(ev) => setShiftSelected(ev.detail.value)}
+                >
+                  {shifts.map((shift) => (
+                    <IonItem key={shift.id} className="item-no-border">
+                      <IonRadio value={shift}>
+                        {shift.name}
+                      </IonRadio>
+                    </IonItem>
+                  ))}
+                </IonRadioGroup>
+              </div>
+            </IonCol>
+          </IonRow>
+          
+          <div className="padding-content">
+            <IonLabel className={showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "error" : ""}>
+              Opening Sonding (Cm) *
+            </IonLabel>
             <IonInput
-              className="custom-input"
+              className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
               type="number"
               placeholder="Input opening sonding dalam cm"
               value={openingSonding}
               onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
             />
-            {showError && openingSonding !== undefined && openingSonding < 100 && (
-              <p style={{ color: "red" }}>* Data HM/KM diambil dari data sebelumnya</p>
+            {showError && openingSonding === undefined && (
+              <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
+          
           <div className="padding-content">
-            <IonLabel>Opening Dip (Liter) *</IonLabel>
+            <IonLabel className={showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "error" : ""}>
+              Opening Dip (Liter) *
+            </IonLabel>
             <IonInput
-              className="custom-input"
+              className={`custom-input ${showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "input-error" : ""}`}
               type="number"
               placeholder="Input opening dip dalam liter"
               value={openingDip}
               onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
             />
-            {showError && openingDip !== undefined && openingDip < 100 && (
-              <p style={{ color: "red" }}>* Data opening sonding dan Dip diambil dari data closing sonding & Dip shift sebelumnya</p>
+            {showError && openingDip === undefined && (
+              <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
+          
           <div className="padding-content">
-            <IonLabel>Flow Meter Awal **</IonLabel>
+            <IonLabel className={showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "error" : ""}>
+              Flow Meter Awal **
+            </IonLabel>
             <IonInput
-              className="custom-input"
+              className={`custom-input ${showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "input-error" : ""}`}
               type="number"
               placeholder="Input flow meter awal"
               value={flowMeterAwal}
               onIonInput={(e) => setFlowMeterAwal(Number(e.detail.value))}
             />
-            {showError && flowMeterAwal !== undefined && flowMeterAwal < 100 && (
-              <p style={{ color: "red" }}>* Data start meter diambil dari data close meter sebelumnya</p>
+            {showError && flowMeterAwal === undefined && (
+              <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
+          
           <div className="padding-content">
-            <IonLabel>HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)</IonLabel>
+            <IonLabel className={showError && (hmAwal === undefined || (station !== "Fuel Truck" && hmAwal === 0)) ? "error" : ""}>
+              HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
+            </IonLabel>
             <IonInput
-              className="custom-input"
+              className={`custom-input ${showError && (hmAwal === undefined || (station !== "Fuel Truck" && hmAwal === 0)) ? "input-error" : ""}`}
               type="number"
               placeholder={station === "Fuel Truck" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
               value={hmAwal}
@@ -255,10 +294,11 @@ const OpeningForm = () => {
                 }
               }}
             />
-            {showError && station !== "Fuel Truck" && hmAwal === 0 && (
-              <p style={{ color: "red" }}>* HM Awal tidak boleh 0 jika bukan Fuel Truck</p>
+            {showError && hmAwal === undefined && (
+              <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
+          
           <IonRow className="padding-content btn-start">
             <IonButton className="check-button" onClick={handlePost}>
               Mulai Kerja

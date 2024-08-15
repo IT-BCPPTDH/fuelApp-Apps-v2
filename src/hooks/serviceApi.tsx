@@ -23,6 +23,8 @@ interface PostOpeningParams {
     opening_dip: number;
     opening_sonding: number;
     flow_meter_start: number;
+    
+
 }
 
 export const postOpening = async (params: PostOpeningParams): Promise<any> => {

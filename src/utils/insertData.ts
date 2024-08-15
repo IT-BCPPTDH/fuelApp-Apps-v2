@@ -1,0 +1,26 @@
+import { db, dataLkf} from '../models/db';
+
+export const addDataToDB = async (data: dataLkf) => {
+  try {
+    await db.openingTrx.add(data);
+  } catch (error) {
+    console.error("Failed to add data to IndexedDB:", error);
+  }
+};
+
+export const getOfflineData = async (): Promise<dataLkf[]> => {
+  try {
+    return await db.openingTrx.toArray();
+  } catch (error) {
+    console.error("Failed to get offline data from IndexedDB:", error);
+    return [];
+  }
+};
+
+export const removeDataFromDB = async (id: number) => {
+  try {
+    await db.openingTrx.delete(id);
+  } catch (error) {
+    console.error("Failed to remove data from IndexedDB:", error);
+  }
+};
