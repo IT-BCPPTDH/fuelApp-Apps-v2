@@ -155,8 +155,6 @@ const FormTRX: React.FC = () => {
 
     const isFormDisabled = !selectedUnit;
 
-  
-
     const handleUnitChange = (event: CustomEvent) => {
         const unitValue = event.detail.value;
         setSelectedUnit(unitValue);
@@ -174,9 +172,10 @@ const FormTRX: React.FC = () => {
             newKoutaLimit = 0;
         }
 
-        setKoutaLimit(newKoutaLimit);
+    
         setShowError(unitValue.startsWith('LV') || unitValue.startsWith('HLV') && newKoutaLimit < 20);
     };
+
     const handleChangeEmployeeId = (event: CustomEvent) => {
         const selectedValue = event.detail.value as string;
         console.log('Selected Employee ID:', selectedValue); // Debugging output
@@ -337,20 +336,7 @@ const FormTRX: React.FC = () => {
 
             <IonContent>
                 <div style={{ marginTop: "20px" }}>
-                {(selectedUnit?.startsWith('LV') || selectedUnit?.startsWith('HLV')) && (
-                        <IonRow>
-                            <IonCol>
-                                <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
-                                    <IonLabel style={{ display: "flex" }}>
-                                        <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                                        <IonTitle style={quotaStyle}>
-                                            {quotaMessage}
-                                        </IonTitle>
-                                    </IonLabel>
-                                </IonItemDivider>
-                            </IonCol>
-                        </IonRow>
-                    )}
+                 
                     <div style={{ marginTop: "30px" }}>
                         <IonGrid>
                             <IonRow>
@@ -431,15 +417,7 @@ const FormTRX: React.FC = () => {
                                     />
                                 </IonCol>
                             </IonRow>
-                            <div style={{ marginLeft: "15px" }}>
-                                {showError && koutaLimit !== undefined && koutaLimit < 20 && (
-                                    <div style={{ color: "red" }}>
-                                        <div>* Kouta pengisian budget sudah melebihi 20 L / Hari</div>
-                                        <div>* Hm/Km tidak boleh kurang dari Hm/Km sebelumnya : 10290</div>
-                                        <div>* Unit tersebut sudah melakukan pengisian sebanyak 20 L dari batas maksimal 20 L. Silahkan hubungi admin jika ingin melakukan pengisian </div>
-                                    </div>
-                                )}
-                            </div>
+                            {/* kouta */}
                            
                             <IonRow>
                                 <IonCol>
