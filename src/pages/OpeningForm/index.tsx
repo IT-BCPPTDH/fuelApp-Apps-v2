@@ -159,7 +159,8 @@ useEffect(() => {
       jde: fuelmanId,
       lkf_id: lkfId,
       issued: undefined,
-      receipt: undefined
+      receipt: undefined,
+      stockOnHand: 0
     };
 
     try {

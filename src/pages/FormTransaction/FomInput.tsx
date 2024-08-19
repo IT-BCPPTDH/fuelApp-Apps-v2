@@ -29,7 +29,7 @@ import { postTransaksi } from '../../hooks/postTrx';
 import { DataFormTrx } from '../../models/db';
 import { db } from '../../models/db';
 import { DataDashboard } from '../../models/db';
-import { addDataDashboard } from '../../utils/insertData';
+import { addDataDashboard, addDataTrxType} from '../../utils/insertData';
 import { getUser } from '../../hooks/getAllUser';
 
 interface Typetrx {
@@ -38,11 +38,11 @@ interface Typetrx {
 }
 
 interface JdeOption {
-    JDE: Key | null | undefined;
-    id: string;
-    label: string;
-    fuelName: string;
+    JDE: string;  // Ensure this matches the actual key used
+    fullname: string;
 }
+
+
 
 const typeTrx: Typetrx[] = [
     { id: 1, name: 'Issued' },
@@ -61,7 +61,7 @@ const FormTRX: React.FC = () => {
     const [photo, setPhoto] = useState<File | null>(null);
     const [signature, setSignature] = useState<File | null>(null);
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
-    const [koutaLimit, setKoutaLimit] = useState<number | undefined>(undefined);
+ 
     const [showError, setShowError] = useState<boolean>(false);
     const [model, setModel] = useState<string>('');
     const [owner, setOwner] = useState<string>('');
@@ -80,8 +80,8 @@ const FormTRX: React.FC = () => {
     const [allUsers , setAllUser] = useState<string>('')
     const route = useIonRouter();
     const [employeeId, setEmployeeId] = useState<string>('');
-    const [jdeOptions, setJdeOptions] = useState<{ JDE: string; id: string; label: string; fullname: string }[]>([]);
-
+    const [jdeOptions, setJdeOptions] = useState<{ JDE: string;  fullname: string }[]>([]);
+    const [koutaLimit, setKoutaLimit] = useState<number | undefined>(undefined);
     useEffect(() => {
         
         const storedData = localStorage.getItem('cardDataDashborad');
@@ -155,6 +155,8 @@ const FormTRX: React.FC = () => {
 
     const isFormDisabled = !selectedUnit;
 
+  
+
     const handleUnitChange = (event: CustomEvent) => {
         const unitValue = event.detail.value;
         setSelectedUnit(unitValue);
@@ -175,21 +177,23 @@ const FormTRX: React.FC = () => {
         setKoutaLimit(newKoutaLimit);
         setShowError(unitValue.startsWith('LV') || unitValue.startsWith('HLV') && newKoutaLimit < 20);
     };
-
     const handleChangeEmployeeId = (event: CustomEvent) => {
         const selectedValue = event.detail.value as string;
-        console.log('Selected Employee ID:', selectedValue);
+        console.log('Selected Employee ID:', selectedValue); // Debugging output
     
-       
         const selectedJdeOption = jdeOptions.find(jde => jde.JDE === selectedValue);
         if (selectedJdeOption) {
-            console.log('Selected JDE Option:', selectedJdeOption);
-            setFullName(selectedJdeOption.fullname); 
+            console.log('Selected JDE Option:', selectedJdeOption); // Debugging output
+            setFullName(selectedJdeOption.fullname);
+            setFuelmanId(selectedValue);
         } else {
             console.log('No matching JDE option found.');
-            setFullName(''); 
+            setFullName('');
+            setFuelmanId('');
         }
     };
+    
+    
     
     
 
@@ -310,6 +314,7 @@ const FormTRX: React.FC = () => {
     
     
 
+ 
     const quotaMessage = selectedUnit?.startsWith('LV') || selectedUnit?.startsWith('HLV')
         ? `SISA KOUTA ${koutaLimit} LITER`
         : '';
@@ -327,11 +332,12 @@ const FormTRX: React.FC = () => {
                 <IonToolbar className="custom-header">
                     <IonTitle>Form Tambah Issued / Transfer / Receipt & Receipt KPC</IonTitle>
                 </IonToolbar>
+                
             </IonHeader>
 
             <IonContent>
                 <div style={{ marginTop: "20px" }}>
-                    {(selectedUnit?.startsWith('LV') || selectedUnit?.startsWith('HLV')) && (
+                {(selectedUnit?.startsWith('LV') || selectedUnit?.startsWith('HLV')) && (
                         <IonRow>
                             <IonCol>
                                 <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
@@ -434,6 +440,7 @@ const FormTRX: React.FC = () => {
                                     </div>
                                 )}
                             </div>
+                           
                             <IonRow>
                                 <IonCol>
                                     <IonLabel>Qty Issued / Receive / Transfer *</IonLabel>
@@ -485,19 +492,19 @@ const FormTRX: React.FC = () => {
                                 <IonCol>
                                     <IonLabel>Employee ID *</IonLabel>
                                     <IonSelect
-                                        fill="solid"
-                                        // interface="popover"
-                                        labelPlacement="floating"
-                                        onIonChange={handleChangeEmployeeId}
-                                        disabled={isFormDisabled}
-                                        value={fuelman_id}
-                                    >
-                                        {jdeOptions.map(jde => (
-                                            <IonSelectOption key={jde.JDE} value={jde.JDE}>
-                                                {jde.JDE}
-                                            </IonSelectOption>
-                                        ))}
-                                    </IonSelect>
+    fill="solid"
+    labelPlacement="floating"
+    onIonChange={handleChangeEmployeeId}
+    disabled={isFormDisabled}
+    value={fuelman_id}
+>
+    {jdeOptions.map(jde => (
+        <IonSelectOption key={jde.JDE} value={jde.JDE}>
+            {jde.JDE} 
+        </IonSelectOption>
+    ))}
+</IonSelect>
+
 
 
                                 </IonCol>
@@ -600,4 +607,3 @@ export default FormTRX;
 function convertToBase64(signature: File): string | PromiseLike<string | null> | null {
     throw new Error('Function not implemented.');
 }
-

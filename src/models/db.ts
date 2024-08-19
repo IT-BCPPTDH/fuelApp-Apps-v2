@@ -16,6 +16,7 @@ interface DataLkf {
   station: string;
   jde: string;
   lkf_id: any;
+  stockOnHand:number
 }
 
 interface DataFormTrx {

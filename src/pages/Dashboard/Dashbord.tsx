@@ -39,9 +39,9 @@ const DashboardFuelMan: React.FC = () => {
     { title: 'Balance', subtitle: 'No Data', icon: 'balance.svg' },
     { title: 'Closing Deep', subtitle: 'No Data', icon: 'close.svg' },
     { title: 'Flow Meter Awal', subtitle: 'No Data', icon: 'flwawal.svg' },
-    { title: 'Flow Meter Akhir', subtitle: '', icon: 'flwakhir.svg' },
-    { title: 'Total Flow Meter', subtitle: '50000 Liter', icon: 'total.svg' },
-    { title: 'Variance', subtitle: '50000 Liter', icon: 'variance.svg' },
+    { title: 'Flow Meter Akhir', subtitle: 'No Data', icon: 'flwakhir.svg' },
+    { title: 'Total Flow Meter', subtitle: 'No Data', icon: 'total.svg' },
+    { title: 'Variance', subtitle: 'No Data', icon: 'variance.svg' },
   ]);
   const [fuelmanName, setFuelmanName] = useState<string>(''); 
   const [loginData, setLoginData] = useState<any>(null); 
@@ -68,7 +68,7 @@ const DashboardFuelMan: React.FC = () => {
   
           const mostRecentFuelmanData = fuelmanData.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
           const mostRecentStationData = stationData.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
-          const receipt = mostRecentFuelmanData?.receipt?.toString() || '0'; // Added receipt handling
+          const receipt = mostRecentFuelmanData?.receipt?.toString() || '0'; 
 
           const openingDip = mostRecentFuelmanData?.opening_dip?.toString() || '0';
           const issued = mostRecentFuelmanData?.issued?.toString() || '0';
@@ -95,12 +95,12 @@ const DashboardFuelMan: React.FC = () => {
   
             // Save to localStorage
             localStorage.setItem('cardDataDashborad', JSON.stringify(updatedCardData));
-            localStorage.setItem('fuelmanName', fuelmanName);
+       
   
             return updatedCardData;
           });
   
-          setFuelmanName(fuelmanName);
+     
   
         } catch (error) {
           console.error("Error fetching data:", error);

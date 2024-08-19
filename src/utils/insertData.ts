@@ -1,4 +1,4 @@
-import { db, DataLkf, DataDashboard} from '../models/db';
+import { db, DataLkf, DataDashboard, DataFormTrx} from '../models/db';
 
 export const addDataToDB = async (data: DataLkf) => {
   try {
@@ -29,6 +29,15 @@ export const removeDataFromDB = async (id: number) => {
 export async function addDataDashboard(data: DataDashboard) {
   try {
     await db.cards.add(data);
+  } catch (error) {
+    console.error("Failed to add data to IndexedDB:", error);
+  }
+}
+
+
+export async function addDataTrxType(data: DataFormTrx) {
+  try {
+    await db.dataTransaksi.add(data);
   } catch (error) {
     console.error("Failed to add data to IndexedDB:", error);
   }
