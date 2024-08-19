@@ -1,7 +1,7 @@
-import { dataLkf, db } from "../models/db";
+import { DataLkf, db } from "../models/db";
 
 // get Data By Fuelman Id
-export const getDataByFuelmanID = async (fuelman_id: string): Promise<dataLkf[]> => {
+export const getDataByFuelmanID = async (fuelman_id: string): Promise<DataLkf[]> => {
   try {
     const allData = await db.openingTrx.where("fuelman_id").equals(fuelman_id).toArray();
     // Ensure latest record by ID
@@ -13,7 +13,7 @@ export const getDataByFuelmanID = async (fuelman_id: string): Promise<dataLkf[]>
 };
 
 // Function to get data by Station
-export const getDataByStation = async (station: string): Promise<dataLkf[]> => {
+export const getDataByStation = async (station: string): Promise<DataLkf[]> => {
   try {
     const allData = await db.openingTrx.where("station").equals(station).toArray();
     // sort data lastest 
@@ -25,7 +25,7 @@ export const getDataByStation = async (station: string): Promise<dataLkf[]> => {
 };
 
 // Function to get data by ID
-export const getDataByID = async (id: number): Promise<dataLkf[]> => {
+export const getDataByID = async (id: number): Promise<DataLkf[]> => {
   try {
     const allData = await db.openingTrx.where("id").equals(id).toArray();
     return allData;
@@ -34,7 +34,6 @@ export const getDataByID = async (id: number): Promise<dataLkf[]> => {
     return [];
   }
 };
-
 
 export const getLatestLkfId = async (): Promise<string | undefined> => {
   try {
@@ -45,3 +44,4 @@ export const getLatestLkfId = async (): Promise<string | undefined> => {
     return undefined;
   }
 };
+

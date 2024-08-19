@@ -18,26 +18,28 @@ import Cookies from 'js-cookie';
 import TableData from '../../components/Table';
 import { getDataByFuelmanID, getDataByStation } from '../../utils/getData';
 
+
 // Define the data structure based on your API response
 interface DataLkf {
   id?: number;
-  opening_dip: string;
+  opening_dip: number;
   station: string;
   shift: string;
+  receipt:number;
 }
 
 const DashboardFuelMan: React.FC = () => {
   const [cardData, setCardData] = useState<any[]>([
-    { title: 'Shift', subtitle: '', icon: 'shit.svg' },
-    { title: 'FS/FT No', subtitle: '', icon: 'fs.svg' },
-    { title: 'Opening Dip', subtitle: '', icon: 'openingdeep.svg' },
-    { title: 'Receipt', subtitle: '10000 Liter', icon: 'receipt.svg' },
-    { title: 'Stock On Hand', subtitle: '10000 Liter', icon: 'stock.svg' },
-    { title: 'QTY Issued', subtitle: '2000 Liter', icon: 'issued.svg' },
-    { title: 'Balance', subtitle: '20000 Liter', icon: 'balance.svg' },
-    { title: 'Closing Deep', subtitle: '5000 Liter', icon: 'close.svg' },
-    { title: 'Flow Meter Awal', subtitle: '5000 Liter', icon: 'flwawal.svg' },
-    { title: 'Flow Meter Akhir', subtitle: '5000 Liter', icon: 'flwakhir.svg' },
+    { title: 'Shift', subtitle: 'No Data', icon: 'shit.svg' },
+    { title: 'FS/FT No', subtitle: 'No Data', icon: 'fs.svg' },
+    { title: 'Opening Dip', subtitle: 'No Data', icon: 'openingdeep.svg' },
+    { title: 'Receipt', subtitle: 'No Data', icon: 'receipt.svg' },
+    { title: 'Stock On Hand', subtitle: 'No Data', icon: 'stock.svg' },
+    { title: 'QTY Issued', subtitle: 'No Data', icon: 'issued.svg' },
+    { title: 'Balance', subtitle: 'No Data', icon: 'balance.svg' },
+    { title: 'Closing Deep', subtitle: 'No Data', icon: 'close.svg' },
+    { title: 'Flow Meter Awal', subtitle: 'No Data', icon: 'flwawal.svg' },
+    { title: 'Flow Meter Akhir', subtitle: '', icon: 'flwakhir.svg' },
     { title: 'Total Flow Meter', subtitle: '50000 Liter', icon: 'total.svg' },
     { title: 'Variance', subtitle: '50000 Liter', icon: 'variance.svg' },
   ]);
@@ -57,43 +59,58 @@ const DashboardFuelMan: React.FC = () => {
     const fetchData = async () => {
       if (loginData) {
         const { jde, station } = loginData;
-
+  
         try {
-        
           const [fuelmanData, stationData] = await Promise.all([
             getDataByFuelmanID(jde),
             getDataByStation(station),
           ]);
-
-
+  
           const mostRecentFuelmanData = fuelmanData.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
           const mostRecentStationData = stationData.sort((a, b) => (b.id || 0) - (a.id || 0))[0];
+          const receipt = mostRecentFuelmanData?.receipt?.toString() || '0'; // Added receipt handling
 
-       
-          const openingDip = mostRecentFuelmanData?.opening_dip || 'N/A';
+          const openingDip = mostRecentFuelmanData?.opening_dip?.toString() || '0';
+          const issued = mostRecentFuelmanData?.issued?.toString() || '0';
+          const stockOnHand = (parseFloat(openingDip) - parseFloat(issued)).toString();
+         
+  
           const shift = mostRecentFuelmanData?.shift || 'N/A';
-
-          setCardData(prevData => 
-            prevData.map(card => 
+  
+          // Accessing the current card data from state
+          setCardData(prevData => {
+            const updatedCardData = prevData.map(card => 
               card.title === 'Opening Dip'
               ? { ...card, subtitle: `${openingDip} Liter` }
               : card.title === 'FS/FT No'
               ? { ...card, subtitle: mostRecentStationData?.station || 'N/A' }
               : card.title === 'Shift'
               ? { ...card, subtitle: shift }
+              : card.title === 'Stock On Hand'
+              ? { ...card, subtitle: `${stockOnHand} Liter` }
               : card
-            )
-          );
+              ? { ...card, subtitle: `${receipt} Liter` }
+              : card
+            );
+  
+            // Save to localStorage
+            localStorage.setItem('cardDataDashborad', JSON.stringify(updatedCardData));
+            localStorage.setItem('fuelmanName', fuelmanName);
+  
+            return updatedCardData;
+          });
+  
           setFuelmanName(fuelmanName);
+  
         } catch (error) {
           console.error("Error fetching data:", error);
         }
       }
     };
-
+  
     fetchData();
-  }, [loginData]);
-
+  }, [loginData,]);
+  
   const handleLogout = () => {
     Cookies.remove('session_token');
     route.push('/closing-data');

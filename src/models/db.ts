@@ -1,7 +1,9 @@
 import Dexie from 'dexie';
 
-// Define the TypeScript interface for your data
-interface dataLkf {
+// Define the TypeScript interfaces for your data
+interface DataLkf {
+  issued: any;
+  receipt: any;
   id?: number;
   date: string; // Change `any` to `string` since date will be in ISO string format
   shift: string;
@@ -12,19 +14,53 @@ interface dataLkf {
   site: string;
   fuelman_id: string;
   station: string;
-  jde:string;
-  lkf_id:any;
+  jde: string;
+  lkf_id: any;
+}
+
+interface DataFormTrx {
+  id?: number;
+  from_data_id: number;
+  unit_no: string;
+  model_unit: string;
+  owner: string;
+  date_trx: string;
+  hm_last: number;
+  hm_km: number;
+  qty_last: number;
+  qty: number;
+  jde_operator: string;
+  name_operator: string;
+  fuelman_id:string,
+  fbr: number;
+  lkf_id: any;
+  signature: any;
+  type: string;
+  start_time:string;
+  end_time:string,
+  status:boolean,
+}
+
+interface DataDashboard {
+  id?: number; // Auto-incremented ID
+  title: string;
+  subtitle: number;
+  icon: string;
 }
 
 // Create and configure the database
 const db = new Dexie('fuelAppDatabase') as Dexie & {
-  openingTrx: Dexie.Table<dataLkf, number>; // Define the table with the type
+  openingTrx: Dexie.Table<DataLkf, number>; // Define the table with the type
+  dataTransaksi: Dexie.Table<DataFormTrx, number>;
+  cards: Dexie.Table<DataDashboard, number>;
 };
 
 // Define the schema
-db.version(2).stores({
-  openingTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station,lkf_id '
+db.version(1).stores({
+  openingTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id',
+  dataTransaksi: '++id, from_data_id, unit_no, model_unit, owner, date_trx, type, hm_last, hm_km, qty_last, qty, jde_operator, name_operator, fbr, lkf_id, signature, fuelman_id',
+  cards: '++id, title, subtitle, icon'
 });
 
-export type { dataLkf };
+export type { DataLkf, DataFormTrx, DataDashboard };
 export { db };

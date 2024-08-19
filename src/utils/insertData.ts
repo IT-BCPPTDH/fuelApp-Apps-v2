@@ -1,6 +1,6 @@
-import { db, dataLkf} from '../models/db';
+import { db, DataLkf, DataDashboard} from '../models/db';
 
-export const addDataToDB = async (data: dataLkf) => {
+export const addDataToDB = async (data: DataLkf) => {
   try {
     await db.openingTrx.add(data);
   } catch (error) {
@@ -8,7 +8,7 @@ export const addDataToDB = async (data: dataLkf) => {
   }
 };
 
-export const getOfflineData = async (): Promise<dataLkf[]> => {
+export const getOfflineData = async (): Promise<DataLkf[]> => {
   try {
     return await db.openingTrx.toArray();
   } catch (error) {
@@ -24,3 +24,12 @@ export const removeDataFromDB = async (id: number) => {
     console.error("Failed to remove data from IndexedDB:", error);
   }
 };
+
+
+export async function addDataDashboard(data: DataDashboard) {
+  try {
+    await db.cards.add(data);
+  } catch (error) {
+    console.error("Failed to add data to IndexedDB:", error);
+  }
+}
