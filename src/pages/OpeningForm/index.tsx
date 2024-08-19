@@ -22,8 +22,9 @@ import {
 import "./style.css";
 import { postOpening } from "../../hooks/serviceApi";
 import { addDataToDB, getOfflineData, removeDataFromDB } from "../../utils/insertData";
-import { dataLkf } from "../../models/db";
-
+import { DataLkf } from "../../models/db";
+import { getUser } from "../../hooks/getAllUser";
+import { getAllUnit } from "../../hooks/getAllUnit";
 interface Shift {
   id: number;
   name: string;
@@ -52,7 +53,8 @@ const OpeningForm: React.FC = () => {
   const [lkfId, setLkfId] = useState<string | undefined>(undefined);
   const router = useIonRouter();
   const [presentToast] = useIonToast();
-
+  const [allUsers , setAllUser] = useState<string>('')
+  const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
   useEffect(() => {
     // Generate LKF ID
     const generateLkfId = () => {
@@ -79,6 +81,54 @@ const OpeningForm: React.FC = () => {
     setDate(selectedDate);
   };
 
+
+  useEffect(() => {
+    const fetchUser = async () => {
+        try {
+            const response = await getUser();
+            // Log the response for debugging
+            console.log('API Response:', response);
+
+            if (response.status === '200' && Array.isArray(response.data)) {
+                // Log the user data before setting the state
+                console.log('Employee:', response.data);
+
+                // Save user data to localStorage
+                localStorage.setItem('employeeData', JSON.stringify(response.data));
+                
+                // Set the state with the fetched user data
+                setAllUser(response.data);
+            } else {
+                console.error('Unexpected data format');
+            }
+        } catch (error) {
+            console.error('Failed to fetch user data', error);
+        }
+    };
+
+    fetchUser();
+}, []);
+
+useEffect(() => {
+  const fetchUnitOptions = async () => {
+      try {
+          const response = await getAllUnit();
+          if (response.status === '200' && Array.isArray(response.data)) {
+            console.log('masterUnit:', response.data);
+
+            // Save user data to localStorage
+            localStorage.setItem('masterUnit', JSON.stringify(response.data));
+              setUnitOptions(response.data);
+          } else {
+              console.error('Unexpected data format');
+          }
+      } catch (error) {
+          console.error('Failed to fetch unit options', error);
+      }
+  };
+
+  fetchUnitOptions();
+}, []);
   const handlePost = async () => {
     if (
       !date ||
@@ -96,7 +146,7 @@ const OpeningForm: React.FC = () => {
       return;
     }
 
-    const dataPost: dataLkf = {
+    const dataPost: DataLkf = {
       date: date.toISOString(),
       shift: shiftSelected.name,
       hm_start: hmAwal,
@@ -108,6 +158,8 @@ const OpeningForm: React.FC = () => {
       station: station,
       jde: fuelmanId,
       lkf_id: lkfId,
+      issued: undefined,
+      receipt: undefined
     };
 
     try {
