@@ -20,27 +20,31 @@ interface DataLkf {
 }
 
 interface DataFormTrx {
-  id?: number;
   from_data_id: number;
   unit_no: string;
-  model_unit: string;
+  model: string;
   owner: string;
   date_trx: string;
   hm_last: number;
   hm_km: number;
   qty_last: number;
   qty: number;
-  jde_operator: string;
   name_operator: string;
-  fuelman_id:string,
   fbr: number;
-  lkf_id: any;
-  signature: any;
+  flow_start: string;
+  flow_end: string;
+  signature: string | null;
   type: string;
-  start_time:string;
-  end_time:string,
-  status:boolean,
+  lkf_id?: number;
+  start_time: string;
+  end_time: string;
+  status: boolean;
+  jde_operator: string;
+  fuelman_id: string;
+ 
 }
+
+
 
 interface DataDashboard {
   id?: number; // Auto-incremented ID

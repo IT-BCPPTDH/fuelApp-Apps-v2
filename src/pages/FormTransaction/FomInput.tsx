@@ -69,6 +69,7 @@ const FormTRX: React.FC = () => {
     const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
     const [quantity, setQuantity] = useState<number | undefined>(undefined);
     const [fbr, setFbr] = useState<number | undefined>(undefined);
+    const [flowStart, setFlowStart] = useState<number | undefined>(undefined);
     const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(undefined);
     const [flowMeterAkhir, setFlowMeterAkhir] = useState<number | undefined>(undefined);
     const [startTime, setStartTime] = useState<string | undefined>(undefined);
@@ -223,23 +224,22 @@ const FormTRX: React.FC = () => {
     };
    
 
-
     const handlePost = async (e: React.FormEvent) => {
         e.preventDefault();
     
-        
+        // Basic validation
         if (!selectedType || !selectedUnit || quantity === undefined || fbr === undefined || flowMeterAwal === undefined || flowMeterAkhir === undefined || !startTime || !endTime) {
             console.error('Form is incomplete');
             return;
         }
     
-        
+        // Retrieve `lkf_id` from local storage
         const storedData = localStorage.getItem('openingtrx');
         let lkf_id: number | undefined = undefined;
         if (storedData) {
             try {
                 const parsedData = JSON.parse(storedData);
-                lkf_id = parsedData.lkf_id; 
+                lkf_id = parsedData.lkf_id;
             } catch (error) {
                 console.error('Failed to parse lkf_id from local storage', error);
             }
@@ -256,7 +256,7 @@ const FormTRX: React.FC = () => {
         const dataPost: DataFormTrx = {
             from_data_id: fromDataId,
             unit_no: selectedUnit,
-            model_unit: model,
+            model: model,
             owner: owner,
             date_trx: new Date().toISOString(),
             hm_last: flowMeterAwal,
@@ -265,6 +265,7 @@ const FormTRX: React.FC = () => {
             qty: quantity,
             name_operator: fullName,
             fbr: fbr || 0,
+            flow_start: flowStart?.toString() || '', 
             signature: signatureBase64,
             type: selectedType.name,
             lkf_id: lkf_id,
@@ -272,15 +273,16 @@ const FormTRX: React.FC = () => {
             end_time: endTime || '',
             status: false,
             jde_operator: '',
-            fuelman_id: fuelman_id
+            fuelman_id: fuelman_id,
+            flow_end: ''
         };
     
         try {
-           
+          
             if (selectedType.name === 'Issued') {
                 const stockRecord = await db.cards.where({ title: 'Stock On Hand' }).first();
                 if (stockRecord && stockRecord.id !== undefined) {
-                    const newStockOnHand = Math.max(0, stockRecord.subtitle - quantity); 
+                    const newStockOnHand = Math.max(0, stockRecord.subtitle - quantity);
     
                     // Update stock in IndexedDB
                     await db.cards.update(stockRecord.id, { subtitle: newStockOnHand });
@@ -304,6 +306,7 @@ const FormTRX: React.FC = () => {
             console.error('Failed to post transaction', error);
         }
     };
+    
     
     
     const handleSignatureConfirm = (newSignature: string) => {
@@ -492,21 +495,18 @@ const FormTRX: React.FC = () => {
                                 <IonCol>
                                     <IonLabel>Employee ID *</IonLabel>
                                     <IonSelect
-    fill="solid"
-    labelPlacement="floating"
-    onIonChange={handleChangeEmployeeId}
-    disabled={isFormDisabled}
-    value={fuelman_id}
->
-    {jdeOptions.map(jde => (
-        <IonSelectOption key={jde.JDE} value={jde.JDE}>
-            {jde.JDE} 
-        </IonSelectOption>
-    ))}
-</IonSelect>
-
-
-
+                                    fill="solid"
+                                        labelPlacement="floating"
+                                        onIonChange={handleChangeEmployeeId}
+                                        disabled={isFormDisabled}
+                                        value={fuelman_id}
+                                    >
+                                        {jdeOptions.map(jde => (
+                                            <IonSelectOption key={jde.JDE} value={jde.JDE}>
+                                                {jde.JDE} 
+                                            </IonSelectOption>
+                                        ))}
+                                    </IonSelect>
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Nama Driver *</IonLabel>

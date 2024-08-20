@@ -12,27 +12,30 @@ export class ResponseError extends Error {
     }
 }
 
-interface PostAuthParams {
-    id?: number;
+type PostAuthParams = {
     from_data_id: number;
     unit_no: string;
-    model_unit: string;
+    model: string;
     owner: string;
-    date_trx: any;
+    date_trx: string;
     hm_last: number;
     hm_km: number;
     qty_last: number;
     qty: number;
-    jde_operator: string;
     name_operator: string;
     fbr: number;
-    lkf_id: number;
+    signature?: string | null; // Allow `null` if appropriate
     type: string;
+    lkf_id?: number;
+    start_time: string;
+    end_time: string;
+    status: boolean;
+    jde_operator: string;
     fuelman_id: string;
-    signature?: string;
-    photo?: string;
-}
-
+    flow_start:string
+    flow_end:string
+    
+};
 
 
 
