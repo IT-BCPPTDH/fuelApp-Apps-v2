@@ -7,17 +7,16 @@ import {
   IonToolbar,
   IonInput,
   IonItem,
-  IonPage,
   IonRadio,
   IonRadioGroup,
   IonRow,
   IonTitle,
   IonLabel,
   IonDatetime,
-  IonDatetimeButton,
   IonModal,
   useIonToast,
-  useIonRouter
+  useIonRouter,
+  IonPage
 } from "@ionic/react";
 import "./style.css";
 import { postOpening } from "../../hooks/serviceApi";
@@ -25,6 +24,7 @@ import { addDataToDB, getOfflineData, removeDataFromDB } from "../../utils/inser
 import { DataLkf } from "../../models/db";
 import { getUser } from "../../hooks/getAllUser";
 import { getAllUnit } from "../../hooks/getAllUnit";
+
 interface Shift {
   id: number;
   name: string;
@@ -48,24 +48,23 @@ const OpeningForm: React.FC = () => {
   const [fuelmanId, setFuelmanID] = useState<string | undefined>(undefined);
   const [shiftSelected, setShiftSelected] = useState<Shift | undefined>(undefined);
   const [showError, setShowError] = useState<boolean>(false);
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<string | undefined>(undefined); // Changed to string to work with IonInput value
   const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
   const [lkfId, setLkfId] = useState<string | undefined>(undefined);
+  const [showDateModal, setShowDateModal] = useState<boolean>(false);
   const router = useIonRouter();
   const [presentToast] = useIonToast();
-  const [allUsers , setAllUser] = useState<string>('')
+  const [allUsers, setAllUser] = useState<string>('');
   const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
+
   useEffect(() => {
-    // Generate LKF ID
     const generateLkfId = () => {
       const timestamp = Date.now();
       return (timestamp % 100000000).toString().padStart(8, '0');
     };
 
-    // Set new LKF ID
     setLkfId(generateLkfId());
 
-    // Fetch login data
     const userData = localStorage.getItem("loginData");
     if (userData) {
       const parsedData = JSON.parse(userData);
@@ -77,58 +76,47 @@ const OpeningForm: React.FC = () => {
   }, []);
 
   const handleDateChange = (e: CustomEvent) => {
-    const selectedDate = new Date(e.detail.value as string);
+    const selectedDate = e.detail.value as string;
     setDate(selectedDate);
+    setShowDateModal(false);
   };
-
 
   useEffect(() => {
     const fetchUser = async () => {
-        try {
-            const response = await getUser();
-            // Log the response for debugging
-            console.log('API Response:', response);
-
-            if (response.status === '200' && Array.isArray(response.data)) {
-                // Log the user data before setting the state
-                console.log('Employee:', response.data);
-
-                // Save user data to localStorage
-                localStorage.setItem('employeeData', JSON.stringify(response.data));
-                
-                // Set the state with the fetched user data
-                setAllUser(response.data);
-            } else {
-                console.error('Unexpected data format');
-            }
-        } catch (error) {
-            console.error('Failed to fetch user data', error);
+      try {
+        const response = await getUser();
+        if (response.status === '200' && Array.isArray(response.data)) {
+          localStorage.setItem('employeeData', JSON.stringify(response.data));
+          setAllUser(response.data);
+        } else {
+          console.error('Unexpected data format');
         }
+      } catch (error) {
+        console.error('Failed to fetch user data', error);
+      }
     };
 
     fetchUser();
-}, []);
+  }, []);
 
-useEffect(() => {
-  const fetchUnitOptions = async () => {
+  useEffect(() => {
+    const fetchUnitOptions = async () => {
       try {
-          const response = await getAllUnit();
-          if (response.status === '200' && Array.isArray(response.data)) {
-            console.log('masterUnit:', response.data);
-
-            // Save user data to localStorage
-            localStorage.setItem('masterUnit', JSON.stringify(response.data));
-              setUnitOptions(response.data);
-          } else {
-              console.error('Unexpected data format');
-          }
+        const response = await getAllUnit();
+        if (response.status === '200' && Array.isArray(response.data)) {
+          localStorage.setItem('masterUnit', JSON.stringify(response.data));
+          setUnitOptions(response.data);
+        } else {
+          console.error('Unexpected data format');
+        }
       } catch (error) {
-          console.error('Failed to fetch unit options', error);
+        console.error('Failed to fetch unit options', error);
       }
-  };
+    };
 
-  fetchUnitOptions();
-}, []);
+    fetchUnitOptions();
+  }, []);
+
   const handlePost = async () => {
     if (
       !date ||
@@ -147,7 +135,7 @@ useEffect(() => {
     }
 
     const dataPost: DataLkf = {
-      date: date.toISOString(),
+      date: new Date(date).toISOString(),
       shift: shiftSelected.name,
       hm_start: hmAwal,
       opening_dip: openingDip,
@@ -160,13 +148,12 @@ useEffect(() => {
       lkf_id: lkfId,
       issued: undefined,
       receipt: undefined,
-      stockOnHand: 0
+      stockOnHand: 0,
+      name: ""
     };
 
     try {
       const result = await postOpening(dataPost);
-
-      console.log('Server Response:', result);
 
       if (result.status === '201' && result.message === 'Data Created') {
         presentToast({
@@ -175,10 +162,8 @@ useEffect(() => {
           position: 'top',
           color: 'success',
         });
-        // Save to IndexedDB
         await addDataToDB(dataPost);
         router.push("/dashboard");
-        window.location.reload();
       } else {
         setShowError(true);
         presentToast({
@@ -189,8 +174,6 @@ useEffect(() => {
         });
       }
     } catch (error) {
-      // Save data to IndexedDB when offline
-    
       setShowError(true);
       presentToast({
         message: 'You are offline. Data saved locally and will be sent when online.',
@@ -212,7 +195,7 @@ useEffect(() => {
           for (const data of offlineData) {
             const result = await postOpening(data);
             if (result.status === '201' && result.message === 'Data Created') {
-              await removeDataFromDB(data.lkf_id); 
+              await removeDataFromDB(data.lkf_id);
             }
           }
           presentToast({
@@ -249,36 +232,42 @@ useEffect(() => {
             <h4>Station : {station}</h4>
           </div>
           <IonRow className="padding-content">
-            <IonDatetimeButton style={{ marginTop: "8px" }} datetime="datetime"></IonDatetimeButton>
-            <IonModal keepContentsMounted={true}>
-              <IonDatetime
-                id="datetime"
-                presentation="date"
-                onIonChange={handleDateChange}
-              />
-            </IonModal>
             <IonCol>
-              <div style={{textAlign:"end"}}>
               <IonLabel>
-              Shift *
-            </IonLabel>
-                <IonRadioGroup
-                  className="radio-display"
-                  compareWith={compareWith}
-                  onIonChange={(ev) => setShiftSelected(ev.detail.value)}
-                >
-                  {shifts.map((shift) => (
-                    <IonItem key={shift.id} className="item-no-border">
-                      <IonRadio value={shift}>
-                        {shift.name}
-                      </IonRadio>
-                    </IonItem>
-                  ))}
-                </IonRadioGroup>
-              </div>
+                Shift *
+              </IonLabel>
+              <IonRadioGroup
+                className="radio-display"
+                compareWith={compareWith}
+                onIonChange={(ev) => setShiftSelected(ev.detail.value)}
+              >
+                {shifts.map((shift) => (
+                  <IonItem key={shift.id} className="item-no-border">
+                    <IonRadio value={shift}>
+                      {shift.name}
+                    </IonRadio>
+                  </IonItem>
+                ))}
+              </IonRadioGroup>
+            </IonCol>
+            <IonCol>
+              <IonItem>
+                <IonInput
+                  value={date}
+                  placeholder="Select Date"
+                  readonly
+                  onClick={() => setShowDateModal(true)}
+                />
+              </IonItem>
+              <IonModal isOpen={showDateModal} onDidDismiss={() => setShowDateModal(false)}>
+                <IonDatetime
+                  presentation="date"
+                  value={date}
+                  onIonChange={handleDateChange}
+                />
+              </IonModal>
             </IonCol>
           </IonRow>
-          
           <div className="padding-content">
             <IonLabel className={showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "error" : ""}>
               Opening Sonding (Cm) *
@@ -294,7 +283,6 @@ useEffect(() => {
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
-          
           <div className="padding-content">
             <IonLabel className={showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "error" : ""}>
               Opening Dip (Liter) *
@@ -310,7 +298,6 @@ useEffect(() => {
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
-          
           <div className="padding-content">
             <IonLabel className={showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "error" : ""}>
               Flow Meter Awal **
@@ -326,7 +313,6 @@ useEffect(() => {
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
-          
           <div className="padding-content">
             <IonLabel className={showError && (hmAwal === undefined || (station !== "Fuel Truck" && hmAwal === 0)) ? "error" : ""}>
               HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
@@ -351,7 +337,6 @@ useEffect(() => {
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
-          
           <IonRow className="padding-content btn-start">
             <IonButton className="check-button" onClick={handlePost}>
               Mulai Kerja

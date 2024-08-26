@@ -14,8 +14,8 @@ export class ResponseError extends Error {
 
 type PostAuthParams = {
     from_data_id: number;
-    unit_no: string;
-    model: string;
+    no_unit: string;
+    model_unit: string;
     owner: string;
     date_trx: string;
     hm_last: number;
@@ -26,15 +26,18 @@ type PostAuthParams = {
     fbr: number;
     signature?: string | null; // Allow `null` if appropriate
     type: string;
-    lkf_id?: number;
+    lkf_id?: string;
     start_time: string;
     end_time: string;
     status: boolean;
     jde_operator: string;
     fuelman_id: string;
-    flow_start:string
-    flow_end:string
-    
+    flow_start:number;
+    flow_end:number;
+    foto:string ;
+    end:string,
+    sonding_start:number,
+   
 };
 
 

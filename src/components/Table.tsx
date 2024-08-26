@@ -88,8 +88,8 @@ const TableData: React.FC = () => {
   };
 
   return (
-    
-      <IonContent>
+  <div style={{padding:"20px", marginTop:"-30px"}}>
+  
         <IonRow className='padding-content'>
           <IonCol><div style={{fontSize:"20px", fontWeight:"600px", color:"#222428"}}>LKF:</div ><span style={{fontSize:"16px", color:"#222428"}}>{nomorLKF || 'Loading...'}</span></IonCol>
           <IonCol>
@@ -140,8 +140,8 @@ const TableData: React.FC = () => {
             <IonIcon slot="start" icon={saveOutline} /> Simpan Data Ke Server
           </IonButton>
         </div>
-      </IonContent>
-   
+     
+  </div>
   );
 };
 

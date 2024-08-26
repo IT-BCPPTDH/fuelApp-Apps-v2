@@ -7,6 +7,7 @@ interface SignatureModalProps {
     onClose: () => void;
     onConfirm: (signature: string) => void;
    
+   
 }
 
 
