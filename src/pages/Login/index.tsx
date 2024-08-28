@@ -121,7 +121,7 @@ const Login: React.FC = () => {
     <IonPage>
       <IonContent fullscreen className="ion-content">
         <div className="content ion-content">
-          <IonCard className="mt bg-card">
+          <IonCard  className="mt bg-card">
             <IonGrid className="ion-padding">
               <IonRow className="ion-justify-content-left logo-login">
                 <IonCol size="5">
@@ -173,7 +173,7 @@ const Login: React.FC = () => {
               {showError && (
                 <IonRow className="bg-text">
                   <IonCol>
-                    <IonTitle style={{ marginTop: "10px" }}>Employee ID atau Username Salah!</IonTitle>
+                    <IonTitle style={{ marginTop: "10px" }}>Unit atau JDE salah!  Periksa kembali </IonTitle>
                   </IonCol>
                 </IonRow>
               )}

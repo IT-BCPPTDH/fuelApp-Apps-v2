@@ -1,31 +1,22 @@
-
-import { db } from "../models/db";
-/**
- * 
- * 
- * 
- * Updates a record in the 'cards' object store.
- * @param id - The ID of the card record to update.
- * @param newSubtitle - The new subtitle value to set.
- */
-async function updateCardRecord(id: number, newSubtitle: number): Promise<void> {
-    try {
-        // Fetch the existing record to check if it exists
-        const existingRecord = await db.cards.get(id);
-        
-        if (existingRecord) {
-            // Update the record with new values
-            await db.cards.put({
-                ...existingRecord, // Spread existing record to retain other fields
-                subtitle: newSubtitle // Update the 'subtitle' field
-            });
-            console.log('Card record updated successfully.');
-        } else {
-            console.error('Record not found.');
-        }
-    } catch (error) {
-        console.error('Failed to update card record', error);
-    }
-}
-
-export default updateCardRecord
+// import { db } from "../models/db";
+// export const updateStockOnHand = async (unitNo: string, quantity: number) => {
+//     try {
+//       // Retrieve current stock data
+//       const stockRecord = await db.cards.get();
+  
+//       if (stockRecord) {
+//         // Update stock quantity
+//         const updatedStock = stockRecord.quantity + quantity;
+  
+//         // Save updated stock data
+//         await db.cards.put({ ...stockRecord, quantity: updatedStock });
+//       } else {
+//         // If no record found, create a new one
+//         await db.cards.add({ unitNo, quantity });
+//       }
+  
+//       console.log(`Stock for unit ${unitNo} updated to ${quantity}`);
+//     } catch (error) {
+//       console.error('Failed to update stock data:', error);
+//     }
+//   };

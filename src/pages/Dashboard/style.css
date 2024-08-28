@@ -51,6 +51,7 @@
 }
 .logoDashboard{
     width: 20vw;
+	height: 30px;
 }
 .floatingCard{
 	width: 100%;
@@ -195,4 +196,8 @@
 	color: #73A33F;
 	font-size: 20px;
 	font-weight: bold;
+  }
+  .table{
+	padding: 20px;
+    margin-top: -60px;
   }

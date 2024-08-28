@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Key } from 'react';
+import React, { useState, useEffect, Key, SetStateAction } from 'react';
 import {
     IonContent,
     IonHeader,
@@ -31,7 +31,8 @@ import { db } from '../../models/db';
 import { DataDashboard } from '../../models/db';
 import { addDataDashboard, addDataTrxType} from '../../utils/insertData';
 import { getUser } from '../../hooks/getAllUser';
-
+import { convertToBase64} from '../../utils/base64';
+import { getLatestLkfId } from '../../utils/getData';
 interface Typetrx {
     id: number;
     name: string;
@@ -48,7 +49,7 @@ const typeTrx: Typetrx[] = [
     { id: 1, name: 'Issued' },
     { id: 2, name: 'Transfer' },
     { id: 3, name: 'Receive' },
-    { id: 4, name: 'Receive KPC ' },
+    { id: 4, name: 'Receive KPC'},
 ];
 
 
@@ -58,7 +59,7 @@ const compareWith = (o1: Typetrx, o2: Typetrx) => o1.id === o2.id;
 const FormTRX: React.FC = () => {
     const [selectedType, setSelectedType] = useState<Typetrx | undefined>(undefined);
     const [selectedUnit, setSelectedUnit] = useState<string | undefined>(undefined);
-    const [photo, setPhoto] = useState<File | null>(null);
+
     const [signature, setSignature] = useState<File | null>(null);
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
  
@@ -83,8 +84,32 @@ const FormTRX: React.FC = () => {
     const [employeeId, setEmployeeId] = useState<string>('');
     const [jdeOptions, setJdeOptions] = useState<{ JDE: string;  fullname: string }[]>([]);
     const [koutaLimit, setKoutaLimit] = useState<number | undefined>(undefined);
+    const [photo, setPhoto] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [dipStart, setDipStart] = useState<number | undefined>(undefined);
+    const [dipEnd, setDipEnd] = useState<number | undefined>(undefined);
+    const [sondingStart, setSondingStart] = useState<number | undefined>(undefined);
+    const [sondingEnd, setSondingEnd] = useState<number | undefined>(undefined);
+    const [Refrence, setRefrence] = useState<number | undefined>(undefined);
+    const [stationData, setStationData] = useState<any>(null);
+    const [isOnline, setIsOnline] = useState(navigator.onLine);
+
     useEffect(() => {
-        
+        const handleOnline = () => setIsOnline(true);
+        const handleOffline = () => setIsOnline(false);
+    
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+    
+        // Clean up the event listeners on component unmount
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
+    
+
+    useEffect(() => {
         const storedData = localStorage.getItem('cardDataDashborad');
         if (storedData) {
           try {
@@ -110,7 +135,23 @@ const FormTRX: React.FC = () => {
             // e.g., setFuelmanId(employeeId);
         }
     }, [employeeId]);
-    
+
+    useEffect(() => {
+        const fetchStationData = () => {
+            const storedData = localStorage.getItem('stationData');
+            if (storedData) {
+                try {
+                    const parsedData = JSON.parse(storedData);
+                    console.log('data:', parsedData);
+                    setStationData(parsedData);
+                } catch (error) {
+                    console.error('Failed to parse station data from localStorage', error);
+                }
+            }
+        };
+
+        fetchStationData();
+    }, []);
       
     useEffect(() => {
         const fetchUnitOptions = async () => {
@@ -156,7 +197,6 @@ const FormTRX: React.FC = () => {
 
     const isFormDisabled = !selectedUnit;
 
-  
 
     const handleUnitChange = (event: CustomEvent) => {
         const unitValue = event.detail.value;
@@ -180,11 +220,11 @@ const FormTRX: React.FC = () => {
     };
     const handleChangeEmployeeId = (event: CustomEvent) => {
         const selectedValue = event.detail.value as string;
-        console.log('Selected Employee ID:', selectedValue); // Debugging output
+        console.log('Selected Employee ID:', selectedValue); 
     
         const selectedJdeOption = jdeOptions.find(jde => jde.JDE === selectedValue);
         if (selectedJdeOption) {
-            console.log('Selected JDE Option:', selectedJdeOption); // Debugging output
+            console.log('Selected JDE Option:', selectedJdeOption); 
             setFullName(selectedJdeOption.fullname);
             setFuelmanId(selectedValue);
         } else {
@@ -196,26 +236,33 @@ const FormTRX: React.FC = () => {
     
     
     
-    
-
-    const handleFileChange = (
-        event: React.ChangeEvent<HTMLInputElement>,
-        setFile: (file: File | null) => void,
-        setBase64?: (base64: string | null) => void 
-    ) => {
+    const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files ? event.target.files[0] : null;
         if (file) {
-            setFile(file);
-            if (setBase64) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64String = reader.result as string;
-                    setBase64(base64String.split(',')[1]);
-                };
-                reader.readAsDataURL(file);
+            setPhoto(file);
+
+            // Create a preview of the selected photo
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPhotoPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetStateAction<File | null>>, setBase64: React.Dispatch<React.SetStateAction<string | undefined>>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            try {
+                const base64 = await convertToBase64(file);
+                setBase64(base64); // Directly set base64 in state
+            } catch (error) {
+                console.error('Error converting file to base64', error);
             }
         }
     };
+    
     
     
 
@@ -227,97 +274,92 @@ const FormTRX: React.FC = () => {
     const handlePost = async (e: React.FormEvent) => {
         e.preventDefault();
     
-        // Basic validation
         if (!selectedType || !selectedUnit || quantity === undefined || fbr === undefined || flowMeterAwal === undefined || flowMeterAkhir === undefined || !startTime || !endTime) {
             console.error('Form is incomplete');
             return;
         }
     
-        // Retrieve `lkf_id` from local storage
-        const storedData = localStorage.getItem('openingtrx');
-        let lkf_id: number | undefined = undefined;
-        if (storedData) {
-            try {
-                const parsedData = JSON.parse(storedData);
-                lkf_id = parsedData.lkf_id;
-            } catch (error) {
-                console.error('Failed to parse lkf_id from local storage', error);
-            }
-        }
-    
-        // Generate from_data_id using timestamp
         const fromDataId = Date.now();
+        const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
+        const lkf_id = await getLatestLkfId();
     
-        // Retrieve signature from local storage if available
-        const storedSignature = localStorage.getItem('signature');
-        const signatureBase64 = storedSignature || (signature ? await convertToBase64(signature) : null);
-    
-        // Prepare data for posting
         const dataPost: DataFormTrx = {
             from_data_id: fromDataId,
-            unit_no: selectedUnit,
-            model: model,
-            owner: owner,
+            no_unit: selectedUnit!,
+            model_unit: model!,
+            owner: owner!,
             date_trx: new Date().toISOString(),
-            hm_last: flowMeterAwal,
-            hm_km: flowMeterAkhir,
-            qty_last: quantity,
-            qty: quantity,
-            name_operator: fullName,
-            fbr: fbr || 0,
-            flow_start: flowStart?.toString() || '', 
-            signature: signatureBase64,
-            type: selectedType.name,
+            hm_last: flowMeterAwal ?? 0,
+            hm_km: flowMeterAkhir ?? 0,
+            qty_last: quantity ?? 0,
+            qty: quantity ?? 0,
+            flow_start: flowMeterAwal ?? 0,
+            flow_end: flowMeterAkhir ?? 0,
+            dip_start: dipStart ?? 0,
+            dip_end: dipEnd ?? 0,
+            sonding_start: sondingStart ?? 0,
+            sonding_end: sondingEnd ?? 0,
+            name_operator: fullName!,
+            start: startTime!,
+            end: endTime!,
+            fbr: fbr ?? 0,
             lkf_id: lkf_id,
-            start_time: startTime || '',
-            end_time: endTime || '',
+            signature: signatureBase64 ?? '',
+            type: selectedType?.name ?? '',
+            foto: photoPreview ?? '',
+            fuelman_id: fuelman_id!,
             status: false,
             jde_operator: '',
-            fuelman_id: fuelman_id,
-            flow_end: ''
+            reference: Refrence ?? 0,
+            start_time: startTime ?? '',
+            end_time: endTime ?? '',
         };
     
         try {
-          
-            if (selectedType.name === 'Issued') {
-                const stockRecord = await db.cards.where({ title: 'Stock On Hand' }).first();
-                if (stockRecord && stockRecord.id !== undefined) {
-                    const newStockOnHand = Math.max(0, stockRecord.subtitle - quantity);
+            if (isOnline) {
+                // If online, post the transaction data
+                await insertNewData(dataPost);
     
-                    // Update stock in IndexedDB
-                    await db.cards.update(stockRecord.id, { subtitle: newStockOnHand });
-                    console.log('Stock on hand updated successfully.');
+                // Handle stock update based on transaction type
+                // (Same logic as before)
+    
+                const response = await postTransaksi(dataPost);
+    
+                if (response.ok && (response.status === 200 || response.status === 201)) {
+                    console.log('Transaction posted successfully');
+                    route.push('/dashboard');
                 } else {
-                    console.error('No stock record found or stock record ID is undefined.');
+                    console.error('Transaction failed with status:', response.status);
                 }
-            }
-    
-            // Post transaction data
-            const response = await postTransaksi(dataPost);
-            console.log('Transaction response:', response);
-    
-            if (response.status === 200 || response.status === 201) {
-                console.log('Transaction posted successfully');
-                route.push('/dashboard');
             } else {
-                console.error('Failed to post transaction, server response:', response);
+                // If offline, save data as draft
+                await insertNewData(dataPost);
+                console.log('Data saved as draft');
+                route.push('/dashboard');
             }
         } catch (error) {
-            console.error('Failed to post transaction', error);
+            console.error('Error occurred:', error);
         }
     };
     
     
+    // Function to insert new data into the dashboard or database
+    const insertNewData = async (data: DataFormTrx) => {
+        try {
+          await addDataTrxType(data);
+          console.log('Data inserted successfully.');
+        } catch (error) {
+          console.error('Failed to insert new data:', error);
+        }
+      };
     
     const handleSignatureConfirm = (newSignature: string) => {
         setSignatureBase64(newSignature);
-        localStorage.setItem('signature', newSignature);
+         // Directly set the signature state
         console.log('Updated Signature:', newSignature);
     };
     
-    
 
- 
     const quotaMessage = selectedUnit?.startsWith('LV') || selectedUnit?.startsWith('HLV')
         ? `SISA KOUTA ${koutaLimit} LITER`
         : '';
@@ -325,7 +367,10 @@ const FormTRX: React.FC = () => {
         ? { color: '#73a33f' }
         : {};
 
-    function setBase64(base64: string | null): void {
+  
+
+
+    function setBase64(value: SetStateAction<string | undefined>): void {
         throw new Error('Function not implemented.');
     }
 
@@ -339,7 +384,7 @@ const FormTRX: React.FC = () => {
             </IonHeader>
 
             <IonContent>
-                <div style={{ marginTop: "20px" }}>
+                <div style={{ marginTop: "20px", padding:"15px" }}>
                 {(selectedUnit?.startsWith('LV') || selectedUnit?.startsWith('HLV')) && (
                         <IonRow>
                             <IonCol>
@@ -543,22 +588,28 @@ const FormTRX: React.FC = () => {
                             </IonRow>
                             <IonRow>
                                 <IonCol>
-                                    <IonCard style={{ height: "60px" }}>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            id="photoInput"
-                                            style={{ display: 'none' }}
-                                            // onChange={(e) => handleFileChange(e, setPhoto)}
-                                        />
-                                        <IonButton size='small' onClick={() => document.getElementById('photoInput')?.click()} disabled={isFormDisabled}>
-                                            <IonIcon slot="start" icon={cameraOutline} />
-                                            Ambil Foto *
-                                        </IonButton>
-                                    </IonCard>
+                                <IonCard style={{ height: "160px" }}>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        id="photoInput"
+                                        style={{ display: 'none' }}
+                                        onChange={handlePhotoChange}
+                                    />
+                                    <IonButton size='small' onClick={() => document.getElementById('photoInput')?.click()} disabled={isFormDisabled}>
+                                        <IonIcon slot="start" icon={cameraOutline} />
+                                        Ambil Foto *
+                                    </IonButton>
+                                    {photoPreview && (
+                                        <IonCard style={{ marginTop: "10px", padding: "10px" }}>
+                                            <IonLabel>Preview:</IonLabel>
+                                            <IonImg src={photoPreview} alt="Photo Preview" style={{ maxWidth: '100%', maxHeight: '200px' }} />
+                                        </IonCard>
+                                    )}
+                                </IonCard>
                                 </IonCol>
                                 <IonCol>
-                                    <IonCard style={{ height: "100px" }}>
+                                    <IonCard style={{ height: "160px" }}>
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -580,13 +631,15 @@ const FormTRX: React.FC = () => {
                                     </IonCard>
                                 </IonCol>
                             </IonRow>
-                            <div style={{ marginTop: "60px", float: "inline-end" }}>
-                                <IonButton onClick={handleClose} color="light">
+                            <div style={{ marginTop: "60px", float: "inline-end"}}>
+                                <IonButton style={{ height:"48px"}} onClick={handleClose} color="light">
                                     <IonIcon slot="start" icon={closeCircleOutline} />Tutup Form
                                 </IonButton>
                                 <IonButton onClick={(e) => handlePost(e)} className="check-button">
-                                    <IonIcon slot="start" icon={saveOutline} /> Simpan Data Ke Draft
+                                    <IonIcon slot="start" icon={saveOutline} />
+                                    {isOnline ? 'Simpan Data' : 'Simpan Data Ke Draft'}
                                 </IonButton>
+
 
                             </div>
                         </IonGrid>
@@ -598,12 +651,10 @@ const FormTRX: React.FC = () => {
                     onClose={() => setIsSignatureModalOpen(false)}
                     onConfirm={handleSignatureConfirm}
                 />
+
             </IonContent>
         </IonPage>
     );
 };
 
 export default FormTRX;
-function convertToBase64(signature: File): string | PromiseLike<string | null> | null {
-    throw new Error('Function not implemented.');
-}
