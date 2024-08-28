@@ -11,7 +11,6 @@ export class ResponseError extends Error {
         this.name = "ResponseError";
     }
 }
-
 type PostAuthParams = {
     from_data_id: number;
     no_unit: string;

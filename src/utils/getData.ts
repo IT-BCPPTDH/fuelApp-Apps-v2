@@ -1,4 +1,4 @@
-import { DataLkf, db } from "../models/db";
+import { DataFormTrx, DataLkf, db } from "../models/db";
 interface ShiftData {
   shift?: string;
   station?: string;
@@ -121,3 +121,14 @@ export const getCalculationReceive = async (lkfId: string): Promise<number | und
 
 
 
+
+
+export const getAllDataTrx = async (): Promise<DataFormTrx[]> => {
+  try {
+    const allData = await db.dataTransaksi.toArray();
+    return allData;
+  } catch (error) {
+    console.error("Failed to fetch data from IndexedDB:", error);
+    return [];
+  }
+};

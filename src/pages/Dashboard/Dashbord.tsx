@@ -17,6 +17,8 @@ import {
 import Cookies from 'js-cookie';
 import TableData from '../../components/Table';
 import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive } from '../../utils/getData';
+import { getHomeByIdLkf } from '../../hooks/getHome';
+
 
 // Define the data structure for the card
 interface CardData {
@@ -27,7 +29,7 @@ interface CardData {
 
 const DashboardFuelMan: React.FC = () => {
   const [cardData, setCardData] = useState<CardData[]>([
-    { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
+    { title: 'Shift', value: 'No Data', icon: 'shit.svg' },
     { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
     { title: 'Opening Dip', value: 'No Data', icon: 'openingdeep.svg' },
     { title: 'Receipt', value: 'No Data', icon: 'receipt.svg' },
@@ -41,8 +43,12 @@ const DashboardFuelMan: React.FC = () => {
     { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
   ]);
 
+  const [stockOnHand, setStockOnHand] = useState<number>(0); // Add state for stockOnHand
   const route = useIonRouter();
-
+  const [loading, setLoading] = useState<boolean>(true);
+  const [lkfId, setLkfId] = useState<string>('defaultLkfId');
+  const [dataHome, setDataHome] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     const fetchShiftData = async () => {
       try {
@@ -71,6 +77,12 @@ const DashboardFuelMan: React.FC = () => {
           const openingDip = shiftData.openingDip ?? 0;
           const stockOnHand = openingDip + qtyReceive - qtyIssued;
 
+          // Calculate Balance as Stock On Hand - QTY Issued
+          const balance = stockOnHand - qtyIssued;
+
+          // Update state
+          setStockOnHand(stockOnHand);
+
           // Update cardData state with fetched shift data
           setCardData([
             { title: 'Shift', value: shiftData.shift || 'No Data', icon: 'shift.svg' },
@@ -79,7 +91,7 @@ const DashboardFuelMan: React.FC = () => {
             { title: 'Receipt', value: qtyReceive || 0, icon: 'receipt.svg' },
             { title: 'Stock On Hand', value: stockOnHand || 0, icon: 'stock.svg' },
             { title: 'QTY Issued', value: qtyIssued || 0, icon: 'issued.svg' },
-            { title: 'Balance', value: shiftData.balance ?? 0, icon: 'balance.svg' },
+            { title: 'Balance', value: balance || 0, icon: 'balance.svg' },
             { title: 'Closing Dip', value: shiftData.closingDip ?? 0, icon: 'close.svg' },
             { title: 'Flow Meter Awal', value: shiftData.flowMeterStart ?? 0, icon: 'flwawal.svg' },
             { title: 'Flow Meter Akhir', value: shiftData.flowMeterEnd ?? 0, icon: 'flwakhir.svg' },
@@ -101,6 +113,31 @@ const DashboardFuelMan: React.FC = () => {
     Cookies.remove('session_token');
     route.push('/closing-data');
   };
+
+  useEffect(() => {
+    const fetchDataHome = async () => {
+      try {
+        if (lkfId) {
+          const data = await getHomeByIdLkf(lkfId);
+          setDataHome(data);
+          console.log(data);
+        } else {
+          throw new Error('lkfId is not defined');
+        }
+      } catch (error) {
+        if (error instanceof Error) {
+          setError(error.message);
+          console.error('Failed to fetch home data:', error.message);
+        } else {
+          setError('An unexpected error occurred.');
+          console.error('Unexpected error:', error);
+        }
+      }
+    };
+
+    fetchDataHome();
+  }, [lkfId])
+
 
   const handleRefresh = () => {
     window.location.reload();
@@ -156,7 +193,12 @@ const DashboardFuelMan: React.FC = () => {
             <p style={{ color: "red", padding: "15px", marginTop: "-40px" }}>
               * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
             </p>
-            <IonButton style={{ padding: "15px", marginTop: "-30px" }} className='check-button' onClick={() => route.push('/transaction')}>
+            <IonButton 
+              style={{ padding: "15px", marginTop: "-30px" }} 
+              className='check-button' 
+              onClick={() => route.push('/transaction')}
+             
+            >
               <IonImg src='plus.svg'/>
               <span style={{ marginLeft: "10px" }}>Tambah Data</span>
             </IonButton>

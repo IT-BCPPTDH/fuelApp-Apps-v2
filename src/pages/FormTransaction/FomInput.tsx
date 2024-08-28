@@ -49,7 +49,7 @@ const typeTrx: Typetrx[] = [
     { id: 1, name: 'Issued' },
     { id: 2, name: 'Transfer' },
     { id: 3, name: 'Receive' },
-    { id: 4, name: 'Receive KPC ' },
+    { id: 4, name: 'Receive KPC'},
 ];
 
 
