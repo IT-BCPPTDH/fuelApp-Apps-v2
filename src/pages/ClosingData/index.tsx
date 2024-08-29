@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     IonContent,
     IonHeader,
@@ -18,32 +18,111 @@ import {
 } from '@ionic/react';
 import { pencilOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';
 import "./style.css";
-import { documentLockOutline } from 'ionicons/icons';
 import Cookies from 'js-cookie';
+import { ResponseError, updateData } from '../../hooks/serviceApi'; 
+import { DataLkf } from '../../models/db';
+import { getLatestLkfId } from '../../utils/getData'; // Make sure this path is correct
 
-interface Typetrx {
-    id: number;
-    name: string;
+interface FormValues {
+    flowMeterEnd: number;
+    closingSonding: number;
+    closingDip: number;
+    hmEnd: number;
+    closingData: number;
+    note: string;
+    signature: File | null;
 }
 
 const FormClosing: React.FC = () => {
-    const [selectedType, setSelectedType] = useState<Typetrx | undefined>(undefined);
-    const [startTime, setStartTime] = useState<string | undefined>(undefined);
-    const [endTime, setEndTime] = useState<string | undefined>(undefined);
-    const [photo, setPhoto] = useState<File | null>(null);
-    const [signature, setSignature] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
     const route = useIonRouter();
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, setFile: (file: File | null) => void) => {
-        const file = event.target.files ? event.target.files[0] : null;
-        if (file) {
-            setFile(file);
+    const [formValues, setFormValues] = useState<FormValues>({
+        flowMeterEnd: 0,
+        closingSonding: 0,
+        closingDip: 0,
+        hmEnd: 0,
+        closingData: 0,
+        note: '',
+        signature: null
+    });
+    
+    const [latestLkfId, setLatestLkfId] = useState<string | undefined>(undefined);
+
+    useEffect(() => {
+        const fetchLatestLkfId = async () => {
+            const id = await getLatestLkfId();
+            setLatestLkfId(id);
+        };
+        
+        fetchLatestLkfId();
+    }, []);
+
+    const handleInputChange = (e: CustomEvent) => {
+        const target = e.target as HTMLIonInputElement;
+        const name = target.name;
+        const value = target.value;
+        
+        if (name) {
+            setFormValues(prev => ({ ...prev, [name]: value }));
         }
     };
 
-    const handleClick = () => {
-        route.push('/review-data');
+    const handleTextareaChange = (e: CustomEvent) => {
+        const target = e.target as HTMLIonTextareaElement;
+        const name = target.name;
+        const value = target.value;
+        
+        if (name) {
+            setFormValues(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
+    const handleSubmit = async () => {
+        const UpdateData: DataLkf = {
+            date: new Date().toISOString().split('T')[0],
+            shift: '', // Sesuaikan jika ada
+            hm_start: 0, // Sesuaikan jika ada
+            site: '', // Sesuaikan jika ada
+            jde: '', // Sesuaikan jika ada
+            fuelman_id: Cookies.get('fuelman_id') || '',
+            station: '', // Sesuaikan jika ada
+            opening_dip: 0, // Sesuaikan jika ada
+            opening_sonding: 0, // Sesuaikan jika ada
+            flow_meter_start: 0, // Sesuaikan jika ada
+            hm_end: formValues.hmEnd,
+            closing_dip: formValues.closingDip,
+            closing_sonding: formValues.closingSonding,
+            flow_meter_end: formValues.flowMeterEnd,
+            note: formValues.note,
+            signature: formValues.signature?.name || '',
+            name: '',
+            issued: undefined,
+            receipt: undefined,
+            stockOnHand: 0,
+            lkf_id: latestLkfId
+        };
+    
+        try {
+            const response = await updateData(UpdateData);
+            if (response.status === 'success') {
+                route.push('/review-data');
+            } else {
+                console.error('Update data failed:', response);
+            }
+        } catch (error) {
+            if (error instanceof ResponseError) {
+                console.error('Update Data Error:', {
+                    message: error.message,
+                    status: error.response.status,
+                    statusText: error.response.statusText,
+                    responseData: error.errorData
+                });
+            } else {
+                console.error('An unexpected error occurred:', {
+                    
+                });
+            }
+        }
     };
 
     return (
@@ -61,23 +140,34 @@ const FormClosing: React.FC = () => {
                             <IonRow>
                                 <IonCol>
                                     <IonLabel>Flow Meter Akhir *</IonLabel>
-                                    <IonInput className="custom-input"
+                                    <IonInput 
+                                        className="custom-input"
                                         type="number"
+                                        name="flowMeterEnd"
+                                        value={formValues.flowMeterEnd}
+                                        onIonChange={handleInputChange}
                                         placeholder="Input Flow Meter"
                                     ></IonInput>
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Sonding ( Cm ) *</IonLabel>
-                                    <IonInput className="custom-input"
+                                    <IonInput 
+                                        className="custom-input"
                                         type="number"
+                                        name="closingSonding"
+                                        value={formValues.closingSonding}
+                                        onIonChange={handleInputChange}
                                         placeholder="Input Close Sonding ( Cm )"
-
                                     ></IonInput>
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Dip ( Liters ) *</IonLabel>
-                                    <IonInput className="custom-input"
+                                    <IonInput 
+                                        className="custom-input"
                                         type="number"
+                                        name="closingDip"
+                                        value={formValues.closingDip}
+                                        onIonChange={handleInputChange}
                                         placeholder="Input Close Dip ( Liters )"
                                     ></IonInput>
                                 </IonCol>
@@ -85,16 +175,24 @@ const FormClosing: React.FC = () => {
                             <IonRow>
                                 <IonCol>
                                     <IonLabel>HM KM Akhir *</IonLabel>
-                                    <IonInput className="custom-input"
+                                    <IonInput 
+                                        className="custom-input"
                                         type="number"
+                                        name="hmEnd"
+                                        value={formValues.hmEnd}
+                                        onIonChange={handleInputChange}
                                         placeholder="HM KM Akhir"
                                     ></IonInput>
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Data *</IonLabel>
-                                    <IonInput className="custom-input"
+                                    <IonInput 
+                                        className="custom-input"
                                         type="number"
-                                        placeholder="Input Close Dip ( Liters )"
+                                        name="closingData"
+                                        value={formValues.closingData}
+                                        onIonChange={handleInputChange}
+                                        placeholder="Input Close Data"
                                     ></IonInput>
                                 </IonCol>
                                 <IonCol>
@@ -104,7 +202,7 @@ const FormClosing: React.FC = () => {
                                             '--highlight-color': 'transparent',
                                         }}
                                         fill="outline"
-                                        label="Variance ( Closing Dip - Closing Balance *"
+                                        label="Variance ( Closing Dip - Closing Balance )"
                                         labelPlacement="stacked"
                                         value="100"
                                         placeholder=""
@@ -113,11 +211,18 @@ const FormClosing: React.FC = () => {
                                 </IonCol>
                             </IonRow>
                             <IonTitle style={{ color: "red", fontSize: "12px" }}>
-                                *  Angka closing dip otomatis tampil sesuai rumus kalibrasi sonding untuk FS/FT yang belum di kalibrasi, silahkan masukan secara manual
+                                * Angka closing dip otomatis tampil sesuai rumus kalibrasi sonding untuk FS/FT yang belum di kalibrasi, silahkan masukan secara manual
                             </IonTitle>
 
                             <IonItem>
-                                <IonTextarea label="Catatan *" labelPlacement="stacked" placeholder="Enter text"></IonTextarea>
+                                <IonTextarea 
+                                    name="note"
+                                    label="Catatan *"
+                                    labelPlacement="stacked"
+                                    placeholder="Enter text"
+                                    value={formValues.note}
+                                    onIonChange={handleTextareaChange}
+                                ></IonTextarea>
                             </IonItem>
                             <IonItem>
                                 <input
@@ -125,7 +230,7 @@ const FormClosing: React.FC = () => {
                                     accept="image/*"
                                     id="signatureInput"
                                     style={{ display: 'none' }}
-                                    onChange={(e) => handleFileChange(e, setSignature)}
+                                    // onChange={handleFileChange}
                                 />
                                 <IonButton
                                     expand="full"
@@ -140,7 +245,7 @@ const FormClosing: React.FC = () => {
                                 <IonButton color="light">
                                     <IonIcon slot="start" icon={closeCircleOutline} />Tutup Form
                                 </IonButton>
-                                <IonButton onClick={handleClick} className="check-close">
+                                <IonButton onClick={handleSubmit} className="check-close">
                                     <IonIcon slot="start" icon={saveOutline} />Close Shift & Logout
                                 </IonButton>
                             </div>

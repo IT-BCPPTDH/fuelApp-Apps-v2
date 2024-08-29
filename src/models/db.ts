@@ -18,6 +18,14 @@ interface DataLkf {
   jde: string;
   lkf_id: any;
   stockOnHand: number;
+  hm_end:number,
+  closing_dip:number;
+  closing_sonding: number;
+  flow_meter_end:number;
+  note:string;
+  signature:string;
+           
+  
 }
 
 interface DataFormTrx {

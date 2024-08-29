@@ -29,7 +29,7 @@ interface CardData {
 
 const DashboardFuelMan: React.FC = () => {
   const [cardData, setCardData] = useState<CardData[]>([
-    { title: 'Shift', value: 'No Data', icon: 'shit.svg' },
+    { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
     { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
     { title: 'Opening Dip', value: 'No Data', icon: 'openingdeep.svg' },
     { title: 'Receipt', value: 'No Data', icon: 'receipt.svg' },

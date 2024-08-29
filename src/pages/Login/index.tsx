@@ -173,7 +173,7 @@ const Login: React.FC = () => {
               {showError && (
                 <IonRow className="bg-text">
                   <IonCol>
-                    <IonTitle style={{ marginTop: "10px" }}>Unit atau JDE salah!  Periksa kembali </IonTitle>
+                    <IonTitle style={{ marginTop: "10px" }}>Unit atau Employee Id salah!  Periksa kembali </IonTitle>
                   </IonCol>
                 </IonRow>
               )}
