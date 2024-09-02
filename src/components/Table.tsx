@@ -11,7 +11,7 @@ import {
   IonSearchbar,
   IonIcon
 } from "@ionic/react";
-import { saveOutline } from 'ionicons/icons';
+import { saveOutline, chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
 import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
 
 // Define the type for table data items
@@ -64,7 +64,7 @@ const TableData: React.FC = () => {
           qty_issued: item.qty ?? 0, // Default to 0 if undefined
           fm_awal: item.flow_start ?? 0, // Default to 0 if undefined
           fm_akhir: item.flow_end ?? 0, // Default to 0 if undefined
-          name: item.fuelman_id|| '',
+          name: item.fuelman_id || '',
           status: item.status || 'Draft'
         }));
         
@@ -107,8 +107,10 @@ const TableData: React.FC = () => {
     <div style={{padding:"20px", marginTop:"-30px"}}>
       <IonRow className='padding-content'>
         <IonCol>
-          <div style={{fontSize:"20px", fontWeight:"600px", color:"#222428"}}>LKF:</div>
-          <span style={{fontSize:"16px", color:"#222428"}}>{nomorLKF || 'Loading...'}</span>
+          <div style={{display:"inline-flex",gap:"10px" }}>
+            <div style={{fontSize:"20px", fontWeight:"600px", color:"#222428"}}>LKF:</div>
+            <span style={{fontSize:"20px", color:"#222428"}}>{nomorLKF || 'Loading...'}</span>
+          </div>
         </IonCol>
         <IonCol>
           <IonSearchbar 
@@ -149,10 +151,23 @@ const TableData: React.FC = () => {
         </IonGrid>
       </IonCard>
       <div style={{ textAlign: 'start', margin: '20px' }}>
-        <IonButton onClick={handlePrevious} disabled={currentPage === 1}>Prev</IonButton>
-        <span style={{ margin: '0 20px' }}>Page {currentPage} of {totalPages}</span>
-        <IonButton onClick={handleNext} disabled={currentPage === totalPages}>Next</IonButton>
-      </div>
+  <IonButton color="ligth"
+    style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
+    onClick={handlePrevious} 
+    disabled={currentPage === 1}
+  >
+    <IonIcon icon={chevronBackOutline} />
+  </IonButton>
+  <span style={{ margin: '0 20px' }}>Page {currentPage} of {totalPages}</span>
+  <IonButton  color="ligth"
+    style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
+    onClick={handleNext} 
+    disabled={currentPage === totalPages}
+  >
+    <IonIcon icon={chevronForwardOutline} />
+  </IonButton>
+</div>
+
     </div>
   );
 };

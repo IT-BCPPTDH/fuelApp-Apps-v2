@@ -1,4 +1,4 @@
-import { db, DataLkf, DataDashboard, DataFormTrx} from '../models/db';
+import { db, DataLkf, DataDashboard, DataFormTrx, SondingData} from '../models/db';
 
 export const addDataToDB = async (data: DataLkf) => {
   try {
@@ -42,3 +42,16 @@ export async function addDataTrxType(data: DataFormTrx) {
     console.error("Failed to add data to IndexedDB:", error);
   }
 }
+
+
+export async function addDataSonding(data: SondingData) {
+  try {
+    await db.sondingMaster.add(data);
+  } catch (error) {
+  
+  }
+}
+
+
+
+

@@ -18,31 +18,34 @@ import {
 import Cookies from "js-cookie";
 import { postAuthLogin } from "../../hooks/useAuth";
 import { getStation as fetchStation } from "../../hooks/useStation";
+import { getAllSonding } from "../../hooks/getAllSonding";
 import "./style.css";
 
 interface Station {
   fuel_station_name: string;
-  site: string; 
-  fuel_station_typpe:string
-  
+  site: string;
+  fuel_station_type: string; // Fixed property name
+  fuel_capacity:string;
 }
 
 const Login: React.FC = () => {
   const [jde, setJdeOperator] = useState<string>("");
-  const [stationData, setStationData] = useState<{ value: string; label: string; site: string }[]>([]);
+  const [stationData, setStationData] = useState<{ value: string; label: string; site: string; fuel_station_type: string }[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
+  const [sondingData, setSondingData] = useState<any[]>([]); // Added state for sonding data
   const router = useIonRouter();
 
   const fetchAllStationData = async () => {
     try {
-      const response = await fetchStation();
+      const response = await fetchStation('some-argument'); // Provide the required argument
       if (response?.data && Array.isArray(response.data)) {
         const stations = response.data.map((station: Station) => ({
-          value: station.fuel_station_name, 
-          label: `${station.fuel_station_name}`, 
+          value: station.fuel_station_name,
+          label: station.fuel_station_name,
           site: station.site,
-          fuel_station_type:station.fuel_station_name
+          fuel_station_type: station.fuel_station_type,
+          fuel_capacity: station.fuel_capacity
         }));
         localStorage.setItem('stationData', JSON.stringify(stations));
         setStationData(stations);
@@ -53,6 +56,13 @@ const Login: React.FC = () => {
       console.error("Failed to fetch station data:", error);
     }
   };
+
+
+
+  
+ 
+  
+  
 
   useEffect(() => {
     const loadStationData = async () => {
@@ -66,6 +76,8 @@ const Login: React.FC = () => {
 
     loadStationData();
   }, []);
+
+
 
   const handleLogin = async () => {
     if (!jde || !selectedUnit) {
@@ -102,7 +114,6 @@ const Login: React.FC = () => {
           station: selectedUnit,
           jde: jde,
           site: selectedStation.site,
-          
         };
         localStorage.setItem("loginData", JSON.stringify(loginData));
 
@@ -121,7 +132,7 @@ const Login: React.FC = () => {
     <IonPage>
       <IonContent fullscreen className="ion-content">
         <div className="content ion-content">
-          <IonCard  className="mt bg-card">
+          <IonCard className="mt bg-card">
             <IonGrid className="ion-padding">
               <IonRow className="ion-justify-content-left logo-login">
                 <IonCol size="5">
@@ -161,7 +172,7 @@ const Login: React.FC = () => {
                     className="custom-input input-custom"
                     placeholder="Employee ID"
                     value={jde}
-                    onIonInput={(e) => setJdeOperator(String(e.detail.value))}
+                    onIonInput={(e) => setJdeOperator(e.detail.value as string)}
                   ></IonInput>
                 </IonCol>
                 <IonCol className="mr-content">
@@ -173,7 +184,7 @@ const Login: React.FC = () => {
               {showError && (
                 <IonRow className="bg-text">
                   <IonCol>
-                    <IonTitle style={{ marginTop: "10px" }}>Unit atau JDE salah!  Periksa kembali </IonTitle>
+                    <IonTitle style={{ marginTop: "10px" }}>Unit atau Employee Id salah! Periksa kembali</IonTitle>
                   </IonCol>
                 </IonRow>
               )}

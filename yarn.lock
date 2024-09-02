@@ -1094,10 +1094,10 @@
     "@elastic/transport" "^8.6.0"
     tslib "^2.4.0"
 
-"@elastic/eui@^95.4.0":
-  version "95.4.0"
-  resolved "https://registry.yarnpkg.com/@elastic/eui/-/eui-95.4.0.tgz#57ac111c2a3e8125db244928a95787bbb2f318c8"
-  integrity sha512-UXmn+xgJj4pwq6MV7xMjM79GN+taTv7LBfrtRfurGwhkmvXJrOjMXWq+mfR8rU44lOS2R4AwzH5gcCBjAafLsA==
+"@elastic/eui@^95.9.0":
+  version "95.9.0"
+  resolved "https://registry.yarnpkg.com/@elastic/eui/-/eui-95.9.0.tgz#23fbafd7613fb6b41b4925ec4977a0c1e075b455"
+  integrity sha512-Ppna5bGjamttqHdwhYYrdXOprF3OpEY0schX7mOVJmtpcBtp7wAMYQq/bBELBVb7idO4NytbzI1Q6R6NYs5Tdg==
   dependencies:
     "@hello-pangea/dnd" "^16.6.0"
     "@types/lodash" "^4.14.202"

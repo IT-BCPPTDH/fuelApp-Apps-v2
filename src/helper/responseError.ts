@@ -2,6 +2,7 @@
 export class ResponseError extends Error {
   response: Response;
   data?: any;
+    responseData: any;
 
   constructor(message: string, response: Response, data?: any) {
       super(message);

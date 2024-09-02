@@ -1,4 +1,4 @@
-import Dexie from 'dexie';
+import Dexie, { Table } from 'dexie';
 
 // Define the TypeScript interfaces for your data
 interface DataLkf {
@@ -18,9 +18,21 @@ interface DataLkf {
   jde: string;
   lkf_id: any;
   stockOnHand: number;
+  hm_end:number,
+  closing_dip:number;
+  closing_sonding: number;
+  flow_meter_end:number;
+  note:string;
+  signature:string;
+           
+  
 }
 
 interface DataFormTrx {
+  site: string;
+  liters: number;
+  cm: number;
+  station: string;
   from_data_id: number;
   no_unit: string;
   model_unit: string;
@@ -43,11 +55,15 @@ interface DataFormTrx {
   status: boolean;
   jde_operator: string;
   fuelman_id: string;
+
   dip_start: number;
   dip_end: number;
+
   sonding_start: number;
   sonding_end: number;
+
   reference: number;
+
   start: string;
   end: string;
 }
@@ -59,19 +75,34 @@ interface DataDashboard {
   icon: string;
 }
 
+interface SondingData {
+  sonding: number;
+  sondingValue: number;
+  id?: number; // Auto-incremented ID
+  station: string;
+  cm: number;
+  liters: number;
+  site:string;
+}
+
+
+
 // Create and configure the database
 const db = new Dexie('fuelAppDatabase') as Dexie & {
   openingTrx: Dexie.Table<DataLkf, number>;
   dataTransaksi: Dexie.Table<DataFormTrx, number>;
   cards: Dexie.Table<DataDashboard, number>;
+  sondingMaster:Table<SondingData,number>
 };
 
+
 // Define the schema
-db.version(2).stores({
-  openingTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id',
+db.version(4).stores({
+  openingTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
   dataTransaksi: '++id, from_data_id, no_unit, model_unit, owner, date_trx, hm_last, hm_km, qty_last, qty, name_operator, fbr, flow_start, flow_end, signature, foto, type, lkf_id, start_time, end_time, status, jde_operator, fuelman_id, dip_start, dip_end, sonding_start, sonding_end, reference, start, end',
-  cards: '++id, title, subtitle, icon'
+  cards: '++id, title, subtitle, icon',
+  sondingMaster:'++id, station, cm , liters, site'
 });
 
-export type { DataLkf, DataFormTrx, DataDashboard };
+export type { DataLkf, DataFormTrx, DataDashboard , SondingData};
 export { db };

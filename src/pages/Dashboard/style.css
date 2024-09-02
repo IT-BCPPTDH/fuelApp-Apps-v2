@@ -50,7 +50,8 @@
     color: #fff;
 }
 .logoDashboard{
-    width: 20vw;
+	margin-left: 15px;
+    width: 150px;
 	height: 30px;
 }
 .floatingCard{
@@ -124,9 +125,9 @@
 	margin-top: 30px;
 }
 .header-dash{
-	padding: 20px;
+	padding: 10px;
 	background: white;
-	height: 60px;
+	height: 100px;
 	
 
 }
@@ -140,9 +141,8 @@
 	float: inline-end;
 	
 }
-.check-button{
-	--background:#73A33F;
-	
+.check-button {
+    --background: #198754;
 }
 .input-highlight {
     /* Define your highlighting styles here */
