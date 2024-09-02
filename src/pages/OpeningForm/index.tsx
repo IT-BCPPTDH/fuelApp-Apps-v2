@@ -24,6 +24,8 @@ import { addDataToDB, getOfflineData, removeDataFromDB } from "../../utils/inser
 import { DataLkf } from "../../models/db";
 import { getUser } from "../../hooks/getAllUser";
 import { getAllUnit } from "../../hooks/getAllUnit";
+import { getStation } from "../../hooks/useStation";
+import { getAllSonding } from "../../hooks/getAllSonding";
 
 interface Shift {
   id: number;
@@ -45,17 +47,21 @@ const OpeningForm: React.FC = () => {
   const [hmAwal, setHmAwal] = useState<number | undefined>(undefined);
   const [site, setSite] = useState<string | undefined>(undefined);
   const [station, setStation] = useState<string | undefined>(undefined);
+  const [capacity, setCapacity] = useState<string | undefined>(undefined);
   const [fuelmanId, setFuelmanID] = useState<string | undefined>(undefined);
   const [shiftSelected, setShiftSelected] = useState<Shift | undefined>(undefined);
   const [showError, setShowError] = useState<boolean>(false);
-  const [date, setDate] = useState<string | undefined>(undefined); // Changed to string to work with IonInput value
+  const [date, setDate] = useState<string | undefined>(undefined);
   const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
   const [lkfId, setLkfId] = useState<string | undefined>(undefined);
   const [showDateModal, setShowDateModal] = useState<boolean>(false);
+  const [allUsers, setAllUser] = useState<any[]>([]);
+  const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
+  const [stationOptions, setStationOptions] = useState<string[]>([]);
+  const [sondingMasterData, setSondingMasterData] = useState<any[]>([]); // Added state to hold sonding master data
+
   const router = useIonRouter();
   const [presentToast] = useIonToast();
-  const [allUsers, setAllUser] = useState<string>('');
-  const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
 
   useEffect(() => {
     const generateLkfId = () => {
@@ -71,15 +77,10 @@ const OpeningForm: React.FC = () => {
       setDataUserLog(parsedData);
       setFuelmanID(parsedData.jde);
       setStation(parsedData.station);
+      setCapacity(parsedData.capacity);
       setSite(parsedData.site);
     }
   }, []);
-
-  const handleDateChange = (e: CustomEvent) => {
-    const selectedDate = e.detail.value as string;
-    setDate(selectedDate);
-    setShowDateModal(false);
-  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -117,6 +118,31 @@ const OpeningForm: React.FC = () => {
     fetchUnitOptions();
   }, []);
 
+  useEffect(() => {
+    const fetchStationOptions = async () => {
+      if (dataUserLog) {
+        try {
+          const response = await getStation(dataUserLog.station);
+          if (response.status === '200' && Array.isArray(response.data)) {
+            setStationOptions(response.data.map((station: { name: any; }) => station.name));
+          } else {
+            console.error('Unexpected data format');
+          }
+        } catch (error) {
+          console.error('Failed to fetch station options', error);
+        }
+      }
+    };
+
+    fetchStationOptions();
+  }, [dataUserLog]);
+
+  const handleDateChange = (e: CustomEvent) => {
+    const selectedDate = e.detail.value as string;
+    setDate(selectedDate);
+    setShowDateModal(false);
+  };
+
   const handlePost = async () => {
     if (
       !date ||
@@ -149,7 +175,13 @@ const OpeningForm: React.FC = () => {
       issued: undefined,
       receipt: undefined,
       stockOnHand: 0,
-      name: ""
+      name: "",
+      hm_end: 0,
+      closing_dip: 0,
+      closing_sonding: 0,
+      flow_meter_end: 0,
+      note: "",
+      signature: ""
     };
 
     try {
@@ -185,6 +217,60 @@ const OpeningForm: React.FC = () => {
       router.push("/dashboard");
       window.location.reload();
     }
+  };
+
+  const fetchSondingMasterData = async () => {
+    try {
+      const response = await getAllSonding();
+      if (response.status === '200' && Array.isArray(response.data)) {
+        return response.data;
+      } else {
+        console.error('Unexpected data format');
+        return [];
+      }
+    } catch (error) {
+      console.error('Failed to fetch sonding master data', error);
+      return [];
+    }
+  };
+
+  useEffect(() => {
+    const updateOpeningDip = async () => {
+      const data = await fetchSondingMasterData();
+      setSondingMasterData(data);
+    };
+
+    updateOpeningDip();
+  }, []);
+
+  useEffect(() => {
+    const updateOpeningDip = async () => {
+      if (openingSonding !== undefined && station !== undefined) {
+        try {
+          if (openingSonding === 0 && station === 'loginData') {
+            setOpeningDip(0);
+          } else {
+            const matchingData = sondingMasterData.find(
+              (item) => item.station === station && item.cm === openingSonding
+            );
+            if (matchingData) {
+              setOpeningDip(matchingData.liters);
+            } else {
+              setOpeningDip(undefined); // Reset if no match is found
+            }
+          }
+        } catch (error) {
+          console.error('Failed to update opening dip', error);
+        }
+      }
+    };
+
+    updateOpeningDip();
+  }, [openingSonding, station, sondingMasterData]);
+
+  const handleOpeningSondingChange = (e: CustomEvent) => {
+    const value = Number(e.detail.value);
+    setOpeningSonding(value);
   };
 
   const checkAndSendOfflineData = async () => {
@@ -226,7 +312,7 @@ const OpeningForm: React.FC = () => {
       <IonContent>
         <div className="wrapper-content">
           <div className="padding-content">
-            <h2 style={{textAlign:"center", fontSize:"30px"}}>LKF ID : {lkfId}</h2>
+            <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {lkfId}</h2>
             <h4>Employee ID : {fuelmanId}</h4>
             <h4>Site : {site}</h4>
             <h4>Station : {station}</h4>
@@ -277,7 +363,7 @@ const OpeningForm: React.FC = () => {
               type="number"
               placeholder="Input opening sonding dalam cm"
               value={openingSonding}
-              onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
+              onIonInput={handleOpeningSondingChange}
             />
             {showError && openingSonding === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
@@ -292,7 +378,8 @@ const OpeningForm: React.FC = () => {
               type="number"
               placeholder="Input opening dip dalam liter"
               value={openingDip}
-              onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
+              disabled
+              readonly={stationOptions.includes(station || '')} // Disable if station exists in options
             />
             {showError && openingDip === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
@@ -325,7 +412,7 @@ const OpeningForm: React.FC = () => {
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
                 if (station !== "Fuel Truck" && value === 0) {
-                  setHmAwal(undefined); 
+                  setHmAwal(undefined);
                   setShowError(true);
                 } else {
                   setHmAwal(value);

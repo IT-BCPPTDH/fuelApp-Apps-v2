@@ -1,4 +1,4 @@
-import { DataFormTrx, DataLkf, db } from "../models/db";
+import { DataFormTrx, DataLkf,SondingData,db } from "../models/db";
 interface ShiftData {
   shift?: string;
   station?: string;
@@ -14,6 +14,8 @@ interface ShiftData {
   totalFlowMeter?:number;
   variance?:number
 }
+
+
 // get Data By Fuelman Id
 export const getDataByFuelmanID = async (fuelman_id: string): Promise<DataLkf[]> => {
   try {
@@ -126,6 +128,16 @@ export const getCalculationReceive = async (lkfId: string): Promise<number | und
 export const getAllDataTrx = async (): Promise<DataFormTrx[]> => {
   try {
     const allData = await db.dataTransaksi.toArray();
+    return allData;
+  } catch (error) {
+    console.error("Failed to fetch data from IndexedDB:", error);
+    return [];
+  }
+};
+
+export const getAllDataSonding = async (): Promise<SondingData[]> => {
+  try {
+    const allData = await db.sondingMaster.toArray();
     return allData;
   } catch (error) {
     console.error("Failed to fetch data from IndexedDB:", error);

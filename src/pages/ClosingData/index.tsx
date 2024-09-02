@@ -22,6 +22,8 @@ import Cookies from 'js-cookie';
 import { ResponseError, updateData } from '../../hooks/serviceApi'; 
 import { DataLkf } from '../../models/db';
 import { getLatestLkfId } from '../../utils/getData'; // Make sure this path is correct
+import { updateDataInDB } from '../../utils/update';
+import SignatureModal from '../../components/SignatureModal';
 
 interface FormValues {
     flowMeterEnd: number;
@@ -35,7 +37,7 @@ interface FormValues {
 
 const FormClosing: React.FC = () => {
     const route = useIonRouter();
-
+    const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
     const [formValues, setFormValues] = useState<FormValues>({
         flowMeterEnd: 0,
         closingSonding: 0,
@@ -45,7 +47,7 @@ const FormClosing: React.FC = () => {
         note: '',
         signature: null
     });
-    
+    const [signatureBase64, setSignatureBase64] = useState<string | undefined>(undefined);
     const [latestLkfId, setLatestLkfId] = useState<string | undefined>(undefined);
 
     useEffect(() => {
@@ -77,6 +79,11 @@ const FormClosing: React.FC = () => {
         }
     };
 
+    const handleSignatureConfirm = (newSignature: string) => {
+        setSignatureBase64(newSignature);
+        console.log('Updated Signature:', newSignature);
+    };
+    
     const handleSubmit = async () => {
         const UpdateData: DataLkf = {
             date: new Date().toISOString().split('T')[0],
@@ -94,22 +101,31 @@ const FormClosing: React.FC = () => {
             closing_sonding: formValues.closingSonding,
             flow_meter_end: formValues.flowMeterEnd,
             note: formValues.note,
-            signature: formValues.signature?.name || '',
-            name: '',
-            issued: undefined,
-            receipt: undefined,
-            stockOnHand: 0,
-            lkf_id: latestLkfId
+            signature: signatureBase64 || '', // Use base64 string
+            name: '', // Sesuaikan jika ada
+            issued: undefined, // Sesuaikan jika ada
+            receipt: undefined, // Sesuaikan jika ada
+            stockOnHand: 0, // Sesuaikan jika ada
+            lkf_id: latestLkfId // ID yang sesuai
         };
     
         try {
+            // Update data via API
             const response = await updateData(UpdateData);
-            if (response.status === 'success') {
+    
+            // Check if the response indicates success
+            if (response.oke && (response.status === 200 || response.status === 201)) {
+                console.log('Updated successfully via API.');
+                
+
+                await updateDataInDB(UpdateData);
+                console.log("Data successfully updated in IndexedDB.");
                 route.push('/review-data');
             } else {
-                console.error('Update data failed:', response);
+                console.error('Transaction failed with status:', response.status);
             }
         } catch (error) {
+         
             if (error instanceof ResponseError) {
                 console.error('Update Data Error:', {
                     message: error.message,
@@ -118,13 +134,15 @@ const FormClosing: React.FC = () => {
                     responseData: error.errorData
                 });
             } else {
+                // Handle unexpected errors
                 console.error('An unexpected error occurred:', {
                     
                 });
             }
         }
     };
-
+    
+    
     return (
         <IonPage>
             <IonHeader translucent={true} className="ion-no-border">
@@ -191,6 +209,7 @@ const FormClosing: React.FC = () => {
                                         type="number"
                                         name="closingData"
                                         value={formValues.closingData}
+                                        disabled
                                         onIonChange={handleInputChange}
                                         placeholder="Input Close Data"
                                     ></IonInput>
@@ -225,17 +244,10 @@ const FormClosing: React.FC = () => {
                                 ></IonTextarea>
                             </IonItem>
                             <IonItem>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    id="signatureInput"
-                                    style={{ display: 'none' }}
-                                    // onChange={handleFileChange}
-                                />
                                 <IonButton
                                     expand="full"
                                     color="primary"
-                                    onClick={() => document.getElementById('signatureInput')?.click()}
+                                    onClick={() => setIsSignatureModalOpen(true)}
                                 >
                                     <IonIcon slot="start" icon={pencilOutline} />
                                     Tanda Tangan Fuelman
@@ -252,6 +264,11 @@ const FormClosing: React.FC = () => {
                         </IonGrid>
                     </div>
                 </div>
+                <SignatureModal
+                    isOpen={isSignatureModalOpen}
+                    onClose={() => setIsSignatureModalOpen(false)}
+                    onConfirm={handleSignatureConfirm}
+                />
             </IonContent>
         </IonPage>
     );

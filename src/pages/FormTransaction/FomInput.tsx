@@ -463,6 +463,7 @@ const FormTRX: React.FC = () => {
                                     <IonInput
                                         className="custom-input"
                                         type="number"
+
                                         placeholder="Input HM awal"
                                         onIonChange={(e) => setFlowMeterAwal(Number(e.detail.value))}
                                         disabled={isFormDisabled}
@@ -517,9 +518,10 @@ const FormTRX: React.FC = () => {
                                     <IonInput
                                         className="custom-input"
                                         type="number"
+                                        readonly
                                         placeholder="Input Flow meter awal"
                                         onIonChange={(e) => setFlowMeterAwal(Number(e.detail.value))}
-                                        disabled={isFormDisabled}
+                                        disabled={true}
                                     />
                                 </IonCol>
                                 <IonCol>

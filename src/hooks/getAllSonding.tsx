@@ -1,9 +1,11 @@
+
+const BELinkMaster='http://127.0.0.1:9003'
+
 import { ResponseError } from "../helper/responseError";
 
-const BELinkMaster = 'http://localhost:9003';
 
-export async function getStation(station: string) {
-    const url = `${BELinkMaster}/master/station`;
+export async function getAllSonding() {
+    const url = `${BELinkMaster }/master/sonding-master`;
 
     try {
         const response = await fetch(url, {
@@ -11,7 +13,7 @@ export async function getStation(station: string) {
         });
 
         if (!response.ok) {
-            throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.statusText}`, response);
+            throw new ResponseError(`Failed to fetch  data. Status: ${response.status} ${response.statusText}`, response);
         }
 
         const data = await response.json();
