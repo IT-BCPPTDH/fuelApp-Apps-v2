@@ -373,7 +373,7 @@ const OpeningForm: React.FC = () => {
             <IonLabel className={showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "error" : ""}>
               Opening Dip (Liter) *
             </IonLabel>
-            <IonInput
+            <IonInput style={{background:"#cfcfcf"}}
               className={`custom-input ${showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "input-error" : ""}`}
               type="number"
               placeholder="Input opening dip dalam liter"

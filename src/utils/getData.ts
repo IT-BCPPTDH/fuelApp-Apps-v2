@@ -144,3 +144,24 @@ export const getAllDataSonding = async (): Promise<SondingData[]> => {
     return [];
   }
 };
+
+
+export const getLatestLkfData = async (): Promise<{ lkf_id?: string; opening_sonding?: number } | undefined> => {
+  try {
+    const latestEntry = await db.openingTrx.orderBy('id').last();
+    if (latestEntry) {
+      return {
+        lkf_id: latestEntry.lkf_id,
+        opening_sonding: latestEntry.opening_sonding,  // Assuming 'opening_sonding' is a property of the entry
+      };
+    } else {
+      return undefined;
+    }
+  } catch (error) {
+    console.error("Failed to fetch the latest LKF data from IndexedDB:", error);
+    return undefined;
+  }
+};
+
+
+

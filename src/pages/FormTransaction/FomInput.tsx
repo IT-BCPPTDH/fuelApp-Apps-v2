@@ -313,6 +313,10 @@ const FormTRX: React.FC = () => {
             reference: Refrence ?? 0,
             start_time: startTime ?? '',
             end_time: endTime ?? '',
+            site: '',
+            liters: 0,
+            cm: 0,
+            station: ''
         };
     
         try {
@@ -518,10 +522,10 @@ const FormTRX: React.FC = () => {
                                     <IonInput
                                         className="custom-input"
                                         type="number"
-                                        readonly
+                                    
                                         placeholder="Input Flow meter awal"
                                         onIonChange={(e) => setFlowMeterAwal(Number(e.detail.value))}
-                                        disabled={true}
+                                        
                                     />
                                 </IonCol>
                                 <IonCol>
@@ -534,7 +538,7 @@ const FormTRX: React.FC = () => {
                                         labelPlacement="stacked"
                                         value={flowMeterAkhir?.toString() || ''}
                                         placeholder=""
-                                        disabled={true}
+                                        
                                     />
                                 </IonCol>
                             </IonRow>

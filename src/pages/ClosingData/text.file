@@ -26,11 +26,25 @@ import { updateDataInDB } from '../../utils/update';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
 import { getStation } from "../../hooks/useStation";
-import { addDataToDB } from '../../utils/insertData';
+
+interface FormValues {
+    flowMeterEnd: any;
+    stockOnHand: any;
+    hmEnd: any;
+    note: string;
+    signature: File | null;
+}
 
 const FormClosing: React.FC = () => {
     const route = useIonRouter();
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
+    const [formValues, setFormValues] = useState<FormValues>({
+        flowMeterEnd: '',
+        stockOnHand: '',
+        hmEnd: '',
+        note: '',
+        signature: null
+    });
     const [signatureBase64, setSignatureBase64] = useState<string | undefined>(undefined);
     const [latestLkfId, setLatestLkfId] = useState<string | undefined>(undefined);
     const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
@@ -40,10 +54,6 @@ const FormClosing: React.FC = () => {
     const [showError, setShowError] = useState<boolean>(false);
     const [stationOptions, setStationOptions] = useState<string[]>([]);
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
-    const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
-    const [hmEnd, setHmEnd] = useState<number>(0);
-    const [stockOnHand, setStockOnHand] = useState<number>(0);
-    const [note, setNote] = useState<string>('');
 
     useEffect(() => {
         const fetchLatestLkfId = async () => {
@@ -54,8 +64,11 @@ const FormClosing: React.FC = () => {
             const shiftData = localStorage.getItem("shiftData");
             if (shiftData) {
                 const parsedData = JSON.parse(shiftData);
-                setFlowMeterEnd(parsedData.flowMeterEnd || 0);
-                setStockOnHand(parsedData.stockOnHand || 0);
+                setFormValues(prev => ({
+                    ...prev,
+                    flowMeterEnd: parsedData.flowMeterEnd || 0,
+                    stockOnHand: parsedData.stockOnHand || 0
+                }));
             }
 
             const userData = localStorage.getItem("loginData");
@@ -127,6 +140,26 @@ const FormClosing: React.FC = () => {
         fetchSondingMasterData();
     }, []);
 
+    const handleInputChange = (e: CustomEvent) => {
+        const target = e.target as HTMLIonInputElement;
+        const name = target.name;
+        const value = target.value;
+        
+        if (name) {
+            setFormValues(prev => ({ ...prev, [name]: Number(value) }));
+        }
+    };
+
+    const handleTextareaChange = (e: CustomEvent) => {
+        const target = e.target as HTMLIonTextareaElement;
+        const name = target.name;
+        const value = target.value;
+        
+        if (name) {
+            setFormValues(prev => ({ ...prev, [name]: value }));
+        }
+    };
+
     const handleSignatureConfirm = (newSignature: string) => {
         setSignatureBase64(newSignature);
         console.log('Updated Signature:', newSignature);
@@ -135,37 +168,39 @@ const FormClosing: React.FC = () => {
     const handleSubmit = async () => {
         const UpdateData: DataLkf = {
             date: new Date().toISOString().split('T')[0],
-            shift: '', // Adjust as needed
-            hm_start: 0, // Adjust as needed
-            site: '', // Adjust as needed
-            jde: '', // Adjust as needed
+            shift: '', // Sesuaikan jika ada
+            hm_start: 0, // Sesuaikan jika ada
+            site: '', // Sesuaikan jika ada
+            jde: '', // Sesuaikan jika ada
             fuelman_id: Cookies.get('fuelman_id') || '',
-            station: '', // Adjust as needed
-            flow_meter_start: 0, // Adjust as needed
-            hm_end: hmEnd,
-            note: note,
+            station: '', // Sesuaikan jika ada
+            opening_dip: closingDip, // Update with form value
+            opening_sonding: closingSonding, // Update with form value
+            flow_meter_start: 0, // Sesuaikan jika ada
+            hm_end: formValues.hmEnd,
+            closing_dip: closingDip,
+            closing_sonding: closingSonding,
+            flow_meter_end: formValues.flowMeterEnd,
+            note: formValues.note,
             signature: signatureBase64 || '', // Use base64 string
-            name: '', // Adjust as needed
-            issued: undefined, // Adjust as needed
-            receipt: undefined, // Adjust as needed
-            stockOnHand: stockOnHand,
-            lkf_id: latestLkfId || '',
-            opening_dip: 0,
-            opening_sonding: 0,
-            flow_meter_end: flowMeterEnd,
-            closing_sonding: closingSonding || 0,
-            closing_dip: closingDip || 0
+            name: '', // Sesuaikan jika ada
+            issued: undefined, // Sesuaikan jika ada
+            receipt: undefined, // Sesuaikan jika ada
+            stockOnHand: formValues.stockOnHand, // Set stockOnHand from form values
+            lkf_id: latestLkfId || '' // Ensure this is set
         };
-    
+
         try {
+            // Update data via API
             const response = await updateData(UpdateData);
+
+            // Check if the response indicates success
             if (response.oke && (response.status === 200 || response.status === 201)) {
                 console.log('Updated successfully via API.');
                 await updateDataInDB(UpdateData);
                 console.log("Data successfully updated in IndexedDB.");
                 route.push('/review-data');
             } else {
-                localStorage.setItem('latestLkfData', JSON.stringify(UpdateData));
                 route.push('/review-data');
                 setShowError(true);
             }
@@ -178,6 +213,7 @@ const FormClosing: React.FC = () => {
                     responseData: error.errorData
                 });
             } else {
+                // Handle unexpected errors
                 console.error('An unexpected error occurred:', {
                     error
                 });
@@ -186,25 +222,10 @@ const FormClosing: React.FC = () => {
         }
     };
 
-    const savedData = localStorage.getItem('latestLkfData');
-    if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        console.log('Retrieved Data:', parsedData);
-    }
-
-
     const handleClosingSondingChange = (e: CustomEvent) => {
         const value = Number(e.detail.value);
         console.log('Handle Closing Sonding Change:', value);
         setClosingSonding(value);
-    };
-
-    const handleHmEndChange = (e: CustomEvent) => {
-        setHmEnd(Number(e.detail.value));
-    };
-
-    const handleStockOnHandChange = (e: CustomEvent) => {
-        setStockOnHand(Number(e.detail.value));
     };
 
     return (
@@ -226,10 +247,10 @@ const FormClosing: React.FC = () => {
                                         className="custom-input"
                                         type="number"
                                         name="flowMeterEnd"
-                                        value={flowMeterEnd}
-                                        onIonChange={(e) => setFlowMeterEnd(Number(e.detail.value))}
+                                        value={formValues.flowMeterEnd}
+                                        onIonChange={handleInputChange}
                                         placeholder="Input Flow Meter"
-                                    />
+                                    ></IonInput>
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Sonding (Cm) *</IonLabel>
@@ -244,36 +265,38 @@ const FormClosing: React.FC = () => {
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Dip (Liters) *</IonLabel>
-                                    <IonInput  style={{background:"#cfcfcf"}}
+                                    <IonInput 
                                         className="custom-input"
                                         type="number"
                                         name="closingDip"
-                                        value={closingDip}      
+                                        value={closingDip}
                                         disabled
                                         placeholder="Input Close Dip (Liters)"
-                                    />
+                                    ></IonInput>
                                 </IonCol>
                             </IonRow>
                             <IonRow>
                                 <IonCol>
                                     <IonLabel>HM KM Akhir *</IonLabel>
-                                    <IonInput
+                                    <IonInput 
                                         className="custom-input"
                                         type="number"
-                                        value={hmEnd}
-                                        onIonChange={handleHmEndChange}
+                                        name="hmEnd"
+                                        value={formValues.hmEnd}
+                                        onIonChange={handleInputChange}
                                         placeholder="HM KM Akhir"
-                                    />
+                                    ></IonInput>
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Data *</IonLabel>
-                                    <IonInput  style={{background:"#cfcfcf"}}
+                                    <IonInput 
                                         className="custom-input"
                                         type="number"
-                                        value={stockOnHand}
+                                        name="closingData"
+                                        value={formValues.stockOnHand} // Use stockOnHand here
                                         disabled
                                         placeholder="Input Close Data"
-                                    />
+                                    ></IonInput>
                                 </IonCol>
                                 <IonCol>
                                     <IonInput
@@ -287,7 +310,7 @@ const FormClosing: React.FC = () => {
                                         value="100"
                                         placeholder=""
                                         disabled={true}
-                                    />
+                                    ></IonInput>
                                 </IonCol>
                             </IonRow>
                             <IonTitle style={{ color: "red", fontSize: "12px" }}>
@@ -295,14 +318,14 @@ const FormClosing: React.FC = () => {
                             </IonTitle>
 
                             <IonItem>
-                                <IonTextarea
+                                <IonTextarea 
                                     name="note"
                                     label="Catatan *"
                                     labelPlacement="stacked"
                                     placeholder="Enter text"
-                                    value={note}
-                                    onIonChange={(e) => setNote(e.detail.value as string)}
-                                />
+                                    value={formValues.note}
+                                    onIonChange={handleTextareaChange}
+                                ></IonTextarea>
                             </IonItem>
                             <IonItem>
                                 <IonButton
@@ -331,9 +354,9 @@ const FormClosing: React.FC = () => {
                     onConfirm={handleSignatureConfirm}
                 />
             </IonContent>
-           
+            <IonContent>
                 <h4 style={{ textAlign: "center" }}>Station: {station}</h4>
-            
+            </IonContent>
         </IonPage>
     );
 };
