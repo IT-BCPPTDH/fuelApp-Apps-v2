@@ -26,7 +26,6 @@ import { updateDataInDB } from '../../utils/update';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
 import { getStation } from "../../hooks/useStation";
-import { addDataToDB } from '../../utils/insertData';
 
 const FormClosing: React.FC = () => {
     const route = useIonRouter();
@@ -37,6 +36,7 @@ const FormClosing: React.FC = () => {
     const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
     const [station, setStation] = useState<string | undefined>(undefined);
     const [closingDip, setClosingDip] = useState<number | undefined>(undefined);
+    const [variance, setVariance] = useState<number | undefined>(undefined);
     const [showError, setShowError] = useState<boolean>(false);
     const [stationOptions, setStationOptions] = useState<string[]>([]);
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
@@ -127,6 +127,13 @@ const FormClosing: React.FC = () => {
         fetchSondingMasterData();
     }, []);
 
+    useEffect(() => {
+        // Calculate variance whenever closingDip or stockOnHand changes
+        if (closingDip !== undefined && stockOnHand !== undefined) {
+            setVariance(closingDip - stockOnHand);
+        }
+    }, [closingDip, stockOnHand]);
+
     const handleSignatureConfirm = (newSignature: string) => {
         setSignatureBase64(newSignature);
         console.log('Updated Signature:', newSignature);
@@ -186,13 +193,6 @@ const FormClosing: React.FC = () => {
         }
     };
 
-    const savedData = localStorage.getItem('latestLkfData');
-    if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        console.log('Retrieved Data:', parsedData);
-    }
-
-
     const handleClosingSondingChange = (e: CustomEvent) => {
         const value = Number(e.detail.value);
         console.log('Handle Closing Sonding Change:', value);
@@ -206,6 +206,9 @@ const FormClosing: React.FC = () => {
     const handleStockOnHandChange = (e: CustomEvent) => {
         setStockOnHand(Number(e.detail.value));
     };
+
+    // Determine text color based on variance value
+    const varianceColor = variance !== undefined && variance < 0 ? 'red' : 'black';
 
     return (
         <IonPage>
@@ -244,11 +247,12 @@ const FormClosing: React.FC = () => {
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Dip (Liters) *</IonLabel>
-                                    <IonInput  style={{background:"#cfcfcf"}}
+                                    <IonInput
+                                        style={{background:"#cfcfcf"}}
                                         className="custom-input"
                                         type="number"
                                         name="closingDip"
-                                        value={closingDip}      
+                                        value={closingDip || 0} // Default to 0 if undefined
                                         disabled
                                         placeholder="Input Close Dip (Liters)"
                                     />
@@ -267,7 +271,8 @@ const FormClosing: React.FC = () => {
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Data *</IonLabel>
-                                    <IonInput  style={{background:"#cfcfcf"}}
+                                    <IonInput
+                                        style={{background:"#cfcfcf"}}
                                         className="custom-input"
                                         type="number"
                                         value={stockOnHand}
@@ -280,11 +285,12 @@ const FormClosing: React.FC = () => {
                                         style={{
                                             '--border-color': 'transparent',
                                             '--highlight-color': 'transparent',
+                                            color: varianceColor // Apply conditional color
                                         }}
                                         fill="outline"
                                         label="Variance (Closing Dip - Closing Balance)"
                                         labelPlacement="stacked"
-                                        value="100"
+                                        value={variance !== undefined ? variance : ''} // Display variance
                                         placeholder=""
                                         disabled={true}
                                     />
@@ -332,7 +338,7 @@ const FormClosing: React.FC = () => {
                 />
             </IonContent>
            
-                <h4 style={{ textAlign: "center" }}>Station: {station}</h4>
+            <h4 style={{ textAlign: "center" }}>Station: {station}</h4>
             
         </IonPage>
     );

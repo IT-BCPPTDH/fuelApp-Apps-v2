@@ -49,7 +49,7 @@ const DashboardFuelMan: React.FC = () => {
   const [variance, setVariance] = useState<number>(0); // State for Variance
   const route = useIonRouter();
   const [loading, setLoading] = useState<boolean>(true);
-  const [lkfId, setLkfId] = useState<string>('defaultLkfId');
+  const [lkfId, setLkfId] = useState<string>('');
   const [dataHome, setDataHome] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -113,7 +113,7 @@ const DashboardFuelMan: React.FC = () => {
   
           setCardData(cardData);
   
-          // Save data to localStorage
+          // Save data to localStorage, clearing old data
           localStorage.setItem('shiftData', JSON.stringify({
             shiftData,
             calculationIssued,
@@ -133,14 +133,15 @@ const DashboardFuelMan: React.FC = () => {
         }
       } catch (error) {
         console.error('Error fetching shift data:', error);
+      } finally {
+        setLoading(false);
       }
     };
   
     fetchShiftData();
   }, []); // Add dependencies if needed
-  
+
   const handleLogout = () => {
-    Cookies.remove('session_token');
     route.push('/closing-data');
   };
 

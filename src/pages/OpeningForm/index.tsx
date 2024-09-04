@@ -41,7 +41,6 @@ const shifts: Shift[] = [
 const compareWith = (o1: Shift, o2: Shift) => o1.id === o2.id;
 
 const OpeningForm: React.FC = () => {
-  const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
   const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(undefined);
   const [hmAwal, setHmAwal] = useState<number | undefined>(undefined);
@@ -53,12 +52,14 @@ const OpeningForm: React.FC = () => {
   const [showError, setShowError] = useState<boolean>(false);
   const [date, setDate] = useState<string | undefined>(undefined);
   const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
-  const [lkfId, setLkfId] = useState<string | undefined>(undefined);
+  const [id, setLkfId] = useState<string| undefined>(undefined);
   const [showDateModal, setShowDateModal] = useState<boolean>(false);
   const [allUsers, setAllUser] = useState<any[]>([]);
   const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
   const [stationOptions, setStationOptions] = useState<string[]>([]);
   const [sondingMasterData, setSondingMasterData] = useState<any[]>([]); // Added state to hold sonding master data
+  const [latestLkfData, setLatestLkfData] = useState<any | undefined>(undefined); // New state to hold latest LKF data
+  const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
 
   const router = useIonRouter();
   const [presentToast] = useIonToast();
@@ -137,6 +138,25 @@ const OpeningForm: React.FC = () => {
     fetchStationOptions();
   }, [dataUserLog]);
 
+  // New Effect to get latest LKF data
+  useEffect(() => {
+    const fetchLatestLkfData = async () => {
+      const storedData = localStorage.getItem("latestLkfData");
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        setLatestLkfData(parsedData);
+        if (parsedData && parsedData.flow_meter_end) {
+          setFlowMeterAwal(parsedData.flow_meter_end); // Set flow meter awal with latest data
+        }
+        if (parsedData && parsedData.closing_sonding) {
+          setOpeningSonding(parsedData.closing_sonding);
+        }
+      }
+    };
+
+    fetchLatestLkfData();
+  }, []);
+
   const handleDateChange = (e: CustomEvent) => {
     const selectedDate = e.detail.value as string;
     setDate(selectedDate);
@@ -154,7 +174,7 @@ const OpeningForm: React.FC = () => {
       site === undefined ||
       fuelmanId === undefined ||
       station === undefined ||
-      lkfId === undefined
+      id === undefined
     ) {
       setShowError(true);
       return;
@@ -171,7 +191,7 @@ const OpeningForm: React.FC = () => {
       fuelman_id: fuelmanId,
       station: station,
       jde: fuelmanId,
-      lkf_id: lkfId,
+      lkf_id: id,
       issued: undefined,
       receipt: undefined,
       stockOnHand: 0,
@@ -185,6 +205,16 @@ const OpeningForm: React.FC = () => {
     };
 
     try {
+      // Fetch offline data
+      const offlineData = await getOfflineData();
+      const existingDataIndex = offlineData.findIndex((data: DataLkf) => data.lkf_id === id);
+
+      if (existingDataIndex !== -1) {
+        // Data already exists, update it
+        await removeDataFromDB(id); // Ensure lkfId is of type string
+      }
+
+      // Post new data
       const result = await postOpening(dataPost);
 
       if (result.status === '201' && result.message === 'Data Created') {
@@ -194,7 +224,7 @@ const OpeningForm: React.FC = () => {
           position: 'top',
           color: 'success',
         });
-        await addDataToDB(dataPost);
+        await addDataToDB(dataPost); // Add new data to local DB
         router.push("/dashboard");
       } else {
         setShowError(true);
@@ -213,10 +243,15 @@ const OpeningForm: React.FC = () => {
         position: 'top',
         color: 'warning',
       });
-      await addDataToDB(dataPost);
+      await addDataToDB(dataPost); // Add new data to local DB
       router.push("/dashboard");
       window.location.reload();
     }
+  };
+
+  const handleOpeningSondingChange = (e: CustomEvent) => {
+    const value = Number(e.detail.value); // Convert to number
+    setOpeningSonding(value);
   };
 
   const fetchSondingMasterData = async () => {
@@ -268,11 +303,6 @@ const OpeningForm: React.FC = () => {
     updateOpeningDip();
   }, [openingSonding, station, sondingMasterData]);
 
-  const handleOpeningSondingChange = (e: CustomEvent) => {
-    const value = Number(e.detail.value);
-    setOpeningSonding(value);
-  };
-
   const checkAndSendOfflineData = async () => {
     if (navigator.onLine) {
       const offlineData = await getOfflineData();
@@ -312,7 +342,7 @@ const OpeningForm: React.FC = () => {
       <IonContent>
         <div className="wrapper-content">
           <div className="padding-content">
-            <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {lkfId}</h2>
+            <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>
             <h4>Employee ID : {fuelmanId}</h4>
             <h4>Site : {site}</h4>
             <h4>Station : {station}</h4>
@@ -361,10 +391,10 @@ const OpeningForm: React.FC = () => {
             <IonInput
               className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
               type="number"
-              placeholder="Input opening sonding dalam cm"
               value={openingSonding}
-              onIonInput={handleOpeningSondingChange}
+              onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
             />
+
             {showError && openingSonding === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
@@ -389,11 +419,12 @@ const OpeningForm: React.FC = () => {
             <IonLabel className={showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "error" : ""}>
               Flow Meter Awal **
             </IonLabel>
-            <IonInput
+            <IonInput  
               className={`custom-input ${showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "input-error" : ""}`}
               type="number"
               placeholder="Input flow meter awal"
               value={flowMeterAwal}
+             
               onIonInput={(e) => setFlowMeterAwal(Number(e.detail.value))}
             />
             {showError && flowMeterAwal === undefined && (
