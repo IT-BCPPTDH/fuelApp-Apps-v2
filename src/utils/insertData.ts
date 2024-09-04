@@ -17,9 +17,14 @@ export const getOfflineData = async (): Promise<DataLkf[]> => {
   }
 };
 
-export const removeDataFromDB = async (id: number) => {
+export const removeDataFromDB = async (id: string) => {
   try {
-    await db.openingTrx.delete(id);
+    // Convert id to number
+    const numericId = Number(id);
+    if (isNaN(numericId)) {
+      throw new Error("Invalid ID format");
+    }
+    await db.openingTrx.delete(numericId);
   } catch (error) {
     console.error("Failed to remove data from IndexedDB:", error);
   }

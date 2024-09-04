@@ -103,12 +103,15 @@ const Login: React.FC = () => {
         station: selectedUnit,
         date: currentDate,
         JDE: jde,
+        userId: "",
+        session_token: "",
+        logId: ""
       });
 
       if (response.status === '200' && response.message === 'Data Created') {
         const { token, ...userData } = response.data;
         Cookies.set("session_token", token, { expires: 1 });
-        Cookies.set("isLoggedIn", "true", { expires: 1 });
+        Cookies.set("isLoggedIn", "true", { expires: 1});
 
         const loginData = {
           station: selectedUnit,

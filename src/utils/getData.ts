@@ -92,9 +92,19 @@ export const getCalculationIssued = async (lkfId: string): Promise<number | unde
       .where('type')
       .equals('Issued')
       .toArray();
-    
-    // Calculate the total quantity issued
-    const totalIssued = issuedTransactions.reduce((sum, transaction) => sum + (transaction.qty || 0), 0);
+
+    // Filter transactions by lkfId if necessary
+    const filteredTransactions = issuedTransactions.filter(transaction => transaction.lkf_id === lkfId);
+
+    // Sort transactions by date in descending order (latest first)
+    filteredTransactions.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateB - dateA; // Latest first
+    });
+
+    // Calculate the total quantity issued from the most recent transactions
+    const totalIssued = filteredTransactions.reduce((sum, transaction) => sum + (transaction.qty || 0), 0);
 
     return totalIssued;
   } catch (error) {
@@ -102,6 +112,7 @@ export const getCalculationIssued = async (lkfId: string): Promise<number | unde
     return undefined;
   }
 };
+
 
 export const getCalculationReceive = async (lkfId: string): Promise<number | undefined> => {
   try {

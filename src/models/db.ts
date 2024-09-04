@@ -29,6 +29,7 @@ interface DataLkf {
 }
 
 interface DataFormTrx {
+  date: string | number | Date;
   site: string;
   liters: number;
   cm: number;
