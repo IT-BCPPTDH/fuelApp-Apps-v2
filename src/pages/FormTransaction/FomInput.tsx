@@ -316,7 +316,8 @@ const FormTRX: React.FC = () => {
             site: '',
             liters: 0,
             cm: 0,
-            station: ''
+            station: '',
+            date: ''
         };
     
         try {
