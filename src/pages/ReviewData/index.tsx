@@ -65,8 +65,7 @@ const ReviewData: React.FC = () => {
         fetchLatestLkfId();
     }, []);
 
-
-const handleLogout = async () => {
+    const handleLogout = async () => {
         try {
             const now = new Date();
             const logout_time = now.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
@@ -86,11 +85,25 @@ const handleLogout = async () => {
     
             // Call the API to log out
             await logoutUser(params);
-        
+    
             // Remove cookies after successful logout
             Cookies.remove('isLoggedIn');
             Cookies.remove('authToken'); // Remove other cookies if necessary
-            localStorage.removeItem('shiftData');
+            
+            // Clear specific shift data from local storage
+            const shiftData = localStorage.getItem('shiftData');
+            if (shiftData) {
+                const parsedShiftData = JSON.parse(shiftData);
+                // Example to remove 'flowMeterEnd' from shiftData if it exists
+                if (parsedShiftData.flowMeterEnd !== undefined) {
+                    delete parsedShiftData.flowMeterEnd;
+                    localStorage.setItem('shiftData', JSON.stringify(parsedShiftData));
+                } else {
+                    // Completely remove shiftData if no specific field to retain
+                    localStorage.removeItem('shiftData');
+                }
+            }
+            
             // Redirect to the home page or login page
             window.location.href = '/';
         } catch (error) {

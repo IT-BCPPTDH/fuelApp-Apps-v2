@@ -176,3 +176,23 @@ export const getLatestLkfData = async (): Promise<{ lkf_id?: string; opening_son
 
 
 
+
+export const getFbrByUnit = async (noUnit: string): Promise<DataFormTrx[]> => {
+  try {
+    // Query the IndexedDB to get the data associated with the noUnit
+    const filteredData = await db.dataTransaksi.where('no_unit').equals(noUnit).toArray();
+
+    // Map through the results to ensure you include the hm_last property
+    const resultWithHmLast = filteredData.map((data) => ({
+      ...data,
+      fbr: data.fbr,
+      hm_last: data.hm_last,
+      qty_last_last: data.qty_last, // Make sure to include hm_last in the return
+    }));
+
+    return resultWithHmLast;
+  } catch (error) {
+    console.error("Failed to fetch data from IndexedDB:", error);
+    return [];
+  }
+};

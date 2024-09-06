@@ -221,6 +221,17 @@ const OpeningForm: React.FC = () => {
       return;
     }
 
+    if (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal) {
+      setShowError(true);
+      presentToast({
+        message: 'Flow Meter Awal cannot be less than the previous value.',
+        duration: 2000,
+        position: 'top',
+        color: 'danger',
+      });
+      return;
+    }
+
     const dataPost: DataLkf = {
       date: new Date(date).toISOString(),
       shift: shiftSelected.name,
@@ -250,11 +261,9 @@ const OpeningForm: React.FC = () => {
       const existingDataIndex = offlineData.findIndex((data: DataLkf) => data.lkf_id === id);
 
       if (existingDataIndex !== -1) {
-        // Data already exists, update it
-        await removeDataFromDB(id); // Ensure lkfId is of type string
+        await removeDataFromDB(id); 
       }
 
-      // Post new data
       const result = await postOpening(dataPost);
 
       if (result.status === '201' && result.message === 'Data Created') {
@@ -264,7 +273,8 @@ const OpeningForm: React.FC = () => {
           position: 'top',
           color: 'success',
         });
-        await addDataToDB(dataPost); // Add new data to local DB
+        await addDataToDB(dataPost); 
+        setPrevFlowMeterAwal(flowMeterAwal); 
         router.push("/dashboard");
       } else {
         setShowError(true);
@@ -283,133 +293,74 @@ const OpeningForm: React.FC = () => {
         position: 'top',
         color: 'warning',
       });
-      await addDataToDB(dataPost); // Add new data to local DB
+      await addDataToDB(dataPost); 
       router.push("/dashboard");
       window.location.reload();
     }
   };
 
-  const handleOpeningSondingChange = (e: CustomEvent) => {
-    const value = Number(e.detail.value); // Convert to number
-    setOpeningSonding(value);
-  };
-
-  useEffect(() => {
-    const checkAndSendOfflineData = async () => {
-      if (navigator.onLine) {
-        const offlineData = await getOfflineData();
-        if (offlineData.length > 0) {
-          try {
-            for (const data of offlineData) {
-              const result = await postOpening(data);
-              if (result.status === '201' && result.message === 'Data Created') {
-                await removeDataFromDB(data.lkf_id);
-              }
-            }
-            presentToast({
-              message: 'Offline data sent successfully!',
-              duration: 2000,
-              position: 'top',
-              color: 'success',
-            });
-          } catch (error) {
-            console.error('Failed to send offline data:', error);
-          }
-        }
-      }
-    };
-
-    window.addEventListener('online', checkAndSendOfflineData);
-    return () => window.removeEventListener('online', checkAndSendOfflineData);
-  }, []);
-
   return (
     <IonPage>
-      <IonHeader translucent={true} className="ion-no-border">
-        <IonToolbar className="custom-header">
-          <IonTitle>Form Opening Data Stock (Dip) & Sonding</IonTitle>
+      <IonHeader>
+        <IonToolbar>
+          <IonTitle>Opening Form</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <div className="wrapper-content">
-          <div className="padding-content">
-            <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>
-            <h4>Employee ID : {fuelmanId}</h4>
-            <h4>Site : {site}</h4>
-            <h4>Station : {station}</h4>
-          </div>
-          <IonRow className="padding-content">
-            <IonCol>
-              <IonLabel>
-                Shift *
-              </IonLabel>
-              <IonRadioGroup
-                className="radio-display"
-                compareWith={compareWith}
-                onIonChange={(ev) => setShiftSelected(ev.detail.value)}
-              >
-                {shifts.map((shift) => (
-                  <IonItem key={shift.id} className="item-no-border">
-                    <IonRadio value={shift}>
-                      {shift.name}
-                    </IonRadio>
-                  </IonItem>
-                ))}
-              </IonRadioGroup>
-            </IonCol>
-            <IonCol>
-              <IonItem>
-                <IonInput
-                  value={date}
-                  placeholder="Select Date"
-                  readonly
-                  onClick={() => setShowDateModal(true)}
-                />
+        <IonModal isOpen={showDateModal} onDidDismiss={() => setShowDateModal(false)}>
+          <IonDatetime
+            onIonChange={handleDateChange}
+            value={date}
+            
+          />
+        </IonModal>
+        <IonItem>
+          <IonLabel>Date</IonLabel>
+          <IonButton onClick={() => setShowDateModal(true)}>
+            {date ? new Date(date).toLocaleDateString() : "Select Date"}
+          </IonButton>
+        </IonItem>
+        <IonItem>
+          <IonLabel>Shift</IonLabel>
+          <IonRadioGroup
+            value={shiftSelected}
+            onIonChange={(e) => setShiftSelected(e.detail.value)}
+          >
+            {shifts.map((shift) => (
+              <IonItem key={shift.id}>
+                <IonLabel>{shift.name}</IonLabel>
+                <IonRadio slot="start" value={shift} />
               </IonItem>
-              <IonModal isOpen={showDateModal} onDidDismiss={() => setShowDateModal(false)}>
-                <IonDatetime
-                  presentation="date"
-                  value={date}
-                  onIonChange={handleDateChange}
-                />
-              </IonModal>
-            </IonCol>
-          </IonRow>
-          <div className="padding-content">
-            <IonLabel className={showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "error" : ""}>
-              Opening Sonding (Cm) *
-            </IonLabel>
-            <IonInput
-              className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
-              type="number"
-              value={openingSonding}
-              onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
-            />
-            {showError && openingSonding === undefined && (
-              <p style={{ color: "red" }}>* Field harus diisi</p>
-            )}
-          </div>
-          <div className="padding-content">
-            <IonLabel className={showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "error" : ""}>
-              Opening Dip (Liter) *
-            </IonLabel>
-            <IonInput style={{background:"#cfcfcf"}}
-              className={`custom-input ${showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "input-error" : ""}`}
-              type="number"
-              placeholder="Input opening dip dalam liter"
-              value={openingDip}
-              disabled
-              readonly={stationOptions.includes(station || '')} 
-            />
-            {showError && openingDip === undefined && (
-              <p style={{ color: "red" }}>* Field harus diisi</p>
-            )}
-          </div>
-          <div className="padding-content">
-            <IonLabel className={showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "error" : ""}>
-              Flow Meter Awal **
-            </IonLabel>
-            <IonInput
+            ))}
+          </IonRadioGroup>
+        </IonItem>
+        <IonItem>
+          <IonLabel>HM Awal</IonLabel>
+          <IonInput
+            type="number"
+            value={hmAwal}
+            onIonInput={(e) => setHmAwal(Number(e.detail.value))}
+          />
+        </IonItem>
+        <IonItem>
+          <IonLabel>Opening Dip</IonLabel>
+          <IonInput
+            type="number"
+            value={openingDip}
+            onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
+          />
+        </IonItem>
+        <IonItem>
+          <IonLabel>Opening Sonding</IonLabel>
+          <IonInput
+            type="number"
+            value={openingSonding}
+            onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
+          />
+        </IonItem>
+        <IonItem>
+          <IonLabel>Flow Meter Awal</IonLabel>
+          <IonInput
             type="number"
             value={flowMeterAwal}
             onIonInput={(e) => {
@@ -422,7 +373,27 @@ const OpeningForm: React.FC = () => {
               }
             }}
           />
-           {showError && (
+        </IonItem>
+        <IonItem>
+          <IonLabel>Site</IonLabel>
+          <IonInput
+            type="text"
+            value={site}
+            onIonInput={(e) => setSite(e.detail.value as string)}
+          />
+        </IonItem>
+        <IonItem>
+          <IonLabel>Station</IonLabel>
+          <IonInput
+            type="text"
+            value={station}
+            onIonInput={(e) => setStation(e.detail.value as string)}
+          />
+        </IonItem>
+        <IonButton expand="full" onClick={handlePost}>
+          Post
+        </IonButton>
+        {showError && (
           <p style={{ color: "red" }}>
             {flowMeterAwal === undefined
               ? '* Field harus diisi'
@@ -432,41 +403,9 @@ const OpeningForm: React.FC = () => {
             }
           </p>
         )}
-          </div>
-          <div className="padding-content">
-            <IonLabel className={showError && (hmAwal === undefined || (station !== "Fuel Truck" && hmAwal === 0)) ? "error" : ""}>
-              HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
-            </IonLabel>
-            <IonInput
-              className={`custom-input ${showError && (hmAwal === undefined || (station !== "Fuel Truck" && hmAwal === 0)) ? "input-error" : ""}`}
-              type="number"
-              placeholder={station === "Fuel Truck" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
-              value={hmAwal}
-              onIonInput={(e) => {
-                const value = Number(e.detail.value);
-                if (station !== "Fuel Truck" && value === 0) {
-                  setHmAwal(undefined);
-                  setShowError(true);
-                } else {
-                  setHmAwal(value);
-                  setShowError(false);
-                }
-              }}
-            />
-            {showError && hmAwal === undefined && (
-              <p style={{ color: "red" }}>* Field harus diisi</p>
-            )}
-          </div>
-          <IonRow className="padding-content btn-start">
-            <IonButton className="check-button" onClick={handlePost}>
-              Mulai Kerja
-            </IonButton>
-          </IonRow>
-        </div>
       </IonContent>
     </IonPage>
   );
 };
 
 export default OpeningForm;
-
