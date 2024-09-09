@@ -145,29 +145,29 @@ const DashboardFuelMan: React.FC = () => {
     route.push('/closing-data');
   };
 
-  useEffect(() => {
-    const fetchDataHome = async () => {
-      try {
-        if (lkfId) {
-          const data = await getHomeByIdLkf(lkfId);
-          setDataHome(data);
-          console.log(data);
-        } else {
-          throw new Error('lkfId is not defined');
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          setError(error.message);
-          console.error('Failed to fetch home data:', error.message);
-        } else {
-          setError('An unexpected error occurred.');
-          console.error('Unexpected error:', error);
-        }
-      }
-    };
+  // useEffect(() => {
+  //   const fetchDataHome = async () => {
+  //     try {
+  //       if (lkfId) {
+  //         const data = await getHomeByIdLkf(lkfId);
+  //         setDataHome(data);
+  //         console.log(data);
+  //       } else {
+  //         throw new Error('lkfId is not defined');
+  //       }
+  //     } catch (error) {
+  //       if (error instanceof Error) {
+  //         setError(error.message);
+  //         console.error('Failed to fetch home data:', error.message);
+  //       } else {
+  //         setError('An unexpected error occurred.');
+  //         console.error('Unexpected error:', error);
+  //       }
+  //     }
+  //   };
 
-    fetchDataHome();
-  }, [lkfId]);
+  //   fetchDataHome();
+  // }, [lkfId]);
 
   const handleRefresh = () => {
     window.location.reload();

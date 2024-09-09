@@ -32,7 +32,7 @@ import { DataDashboard } from '../../models/db';
 import { addDataDashboard, addDataTrxType} from '../../utils/insertData';
 import { getUser } from '../../hooks/getAllUser';
 import { convertToBase64} from '../../utils/base64';
-import { getLatestLkfId } from '../../utils/getData';
+import { getFbrByUnit, getLatestLkfId , } from '../../utils/getData';
 interface Typetrx {
     id: number;
     name: string;
@@ -93,6 +93,10 @@ const FormTRX: React.FC = () => {
     const [Refrence, setRefrence] = useState<number | undefined>(undefined);
     const [stationData, setStationData] = useState<any>(null);
     const [isOnline, setIsOnline] = useState(navigator.onLine);
+    const [hmkmTRX, sethmkmTrx] = useState<number | undefined>(undefined); // HM/KM Transaksi
+    const [hmLast, setHmLast] = useState<number | undefined>(undefined); // HM/KM Unit
+    const [qtyLast, setQtyLast] = useState<number | undefined>(undefined); // Qty Last
+    
 
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -109,11 +113,24 @@ const FormTRX: React.FC = () => {
     }, []);
     
 
+
+    useEffect(() => {
+        const userData = localStorage.getItem("shiftData");
+        if (userData) {
+          const parsedData = JSON.parse(userData);
+          setFlowMeterAwal(parsedData.flowMeterEnd);
+     
+        }
+      }, []);
+
+
+      
     useEffect(() => {
         const storedData = localStorage.getItem('cardDataDashborad');
         if (storedData) {
           try {
             const parsedData = JSON.parse(storedData);
+           
             console.log('Parsed data:', parsedData);
 
             parsedData.forEach(async (item: DataDashboard) => {
@@ -274,10 +291,10 @@ const FormTRX: React.FC = () => {
     const handlePost = async (e: React.FormEvent) => {
         e.preventDefault();
     
-        if (!selectedType || !selectedUnit || quantity === undefined || fbr === undefined || flowMeterAwal === undefined || flowMeterAkhir === undefined || !startTime || !endTime) {
-            console.error('Form is incomplete');
-            return;
-        }
+        // if (!selectedType || !selectedUnit || quantity === undefined || fbr === undefined || flowMeterAwal === undefined || flowMeterAkhir === undefined || !startTime || !endTime) {
+        //     console.error('Form is incomplete');
+        //     return;
+        // }
     
         const fromDataId = Date.now();
         const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
@@ -317,7 +334,8 @@ const FormTRX: React.FC = () => {
             liters: 0,
             cm: 0,
             station: '',
-            date: ''
+            date: '',
+            timestamp: ''
         };
     
         try {
@@ -379,6 +397,65 @@ const FormTRX: React.FC = () => {
         throw new Error('Function not implemented.');
     }
 
+
+    useEffect(() => {
+        const fetchFbrData = async () => {
+            if (selectedUnit) {
+                try {
+                    // Fetch the FBR data for the selected unit
+                    const fbrData = await getFbrByUnit(selectedUnit);
+
+                    // Log the fetched data for debugging
+                    console.log('FBR Data:', fbrData);
+
+                    // Check if data is available and update the state
+                    if (fbrData.length > 0) {
+                        // Assuming fbrData is already sorted and the first entry is the latest
+                        const latestEntry = fbrData[0]; 
+                        setFbr(latestEntry.fbr);
+                        setHmLast(latestEntry.hm_last);
+                        setQtyLast(latestEntry.qty_last);
+                    } else {
+                        // If no data is found, clear the state
+                        setFbr(undefined);
+                        setHmLast(undefined);
+                        setQtyLast(undefined);
+                    }
+                } catch (error) {
+                    // Handle errors and clear the state if an error occurs
+                    console.error('Error fetching FBR data:', error);
+                    setFbr(undefined);
+                    setHmLast(undefined);
+                    setQtyLast(undefined);
+                }
+            }
+        };
+
+        fetchFbrData();
+    }, [selectedUnit]);
+    const calculateFBR = (): string | number => {
+        if (hmkmTRX !== undefined && hmLast !== undefined && qtyLast !== undefined) {
+            const difference = hmkmTRX - hmLast;
+            if (difference !== 0) {
+                return qtyLast / difference;
+            } else {
+                return 'N/A'; // Handle division by zero
+            }
+        }
+        return ''; // Handle cases where any value is undefined
+    };
+    
+    const calculateFlowEnd = (): string | number => {
+        if (flowMeterAwal !== undefined && quantity !== undefined ) {
+            const totaFlowEnd = flowMeterAwal + quantity;
+            if (totaFlowEnd !== 0) {
+                return totaFlowEnd;
+            } else {
+                return 'N/A'; // Handle division by zero
+            }
+        }
+        return ''; // Handle cases where any value is undefined
+    };
     return (
         <IonPage>
             <IonHeader translucent={true} className="ion-no-border">
@@ -468,9 +545,9 @@ const FormTRX: React.FC = () => {
                                     <IonInput
                                         className="custom-input"
                                         type="number"
-
                                         placeholder="Input HM awal"
-                                        onIonChange={(e) => setFlowMeterAwal(Number(e.detail.value))}
+                                        value={hmkmTRX !== null ? hmkmTRX: ''}
+                                        onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                                         disabled={isFormDisabled}
                                     />
                                 </IonCol>
@@ -480,7 +557,8 @@ const FormTRX: React.FC = () => {
                                         className="custom-input"
                                         type="number"
                                         placeholder="Input HM Akhir"
-                                        onIonChange={(e) => setFlowMeterAkhir(Number(e.detail.value))}
+                                        value={hmLast !== null ? hmLast : ''}
+                                        onIonChange={(e) => setHmLast(Number(e.detail.value))}
                                         disabled={isFormDisabled}
                                     />
                                 </IonCol>
@@ -513,6 +591,7 @@ const FormTRX: React.FC = () => {
                                         type="number"
                                         placeholder="Input FBR"
                                         onIonChange={(e) => setFbr(Number(e.detail.value))}
+                                        value={typeof calculateFBR() === 'number' ? calculateFBR() : ''}
                                         disabled={isFormDisabled}
                                     />
                                 </IonCol>
@@ -523,9 +602,9 @@ const FormTRX: React.FC = () => {
                                     <IonInput
                                         className="custom-input"
                                         type="number"
-                                    
+                                        value={flowMeterAwal?.toString() || ''}
                                         placeholder="Input Flow meter awal"
-                                        onIonChange={(e) => setFlowMeterAwal(Number(e.detail.value))}
+                                        disabled={isFormDisabled}
                                         
                                     />
                                 </IonCol>
@@ -537,7 +616,8 @@ const FormTRX: React.FC = () => {
                                             '--highlight-color': 'transparent',
                                         }}
                                         labelPlacement="stacked"
-                                        value={flowMeterAkhir?.toString() || ''}
+                                        onIonChange={(e) => setFlowMeterAkhir(Number(e.detail.value))}
+                                        value={typeof calculateFlowEnd() === 'number' ? calculateFlowEnd() : ''}
                                         placeholder=""
                                         
                                     />

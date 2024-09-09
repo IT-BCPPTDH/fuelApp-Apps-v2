@@ -181,7 +181,6 @@ export const getFbrByUnit = async (noUnit: string): Promise<DataFormTrx[]> => {
   try {
     // Query the IndexedDB to get the data associated with the noUnit
     const filteredData = await db.dataTransaksi.where('no_unit').equals(noUnit).toArray();
-
     // Map through the results to ensure you include the hm_last property
     const resultWithHmLast = filteredData.map((data) => ({
       ...data,
@@ -196,3 +195,7 @@ export const getFbrByUnit = async (noUnit: string): Promise<DataFormTrx[]> => {
     return [];
   }
 };
+
+
+
+
