@@ -97,6 +97,8 @@ const FormTRX: React.FC = () => {
     const [hmLast, setHmLast] = useState<number | undefined>(undefined); // HM/KM Unit
     const [qtyLast, setQtyLast] = useState<number | undefined>(undefined); // Qty Last
     
+    const [prevHmKmUnit, setPrevHmKmUnit] = useState<number | undefined>(undefined);
+    const [prevHmKmTrx, setPrevHmKmTrx] = useState<number | undefined>(undefined);
 
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -306,8 +308,8 @@ const FormTRX: React.FC = () => {
             model_unit: model!,
             owner: owner!,
             date_trx: new Date().toISOString(),
-            hm_last: flowMeterAwal ?? 0,
-            hm_km: flowMeterAkhir ?? 0,
+            hm_last: hmLast ?? 0,
+            hm_km: hmkmTRX ?? 0,
             qty_last: quantity ?? 0,
             qty: quantity ?? 0,
             flow_start: flowMeterAwal ?? 0,
@@ -399,59 +401,64 @@ const FormTRX: React.FC = () => {
 
 
     
-  useEffect(() => {
-    // Track if the component is still mounted
-    let isMounted = true; 
-
-    const fetchFbrData = async () => {
-      if (selectedUnit) {
-        try {
-          // Fetch FBR and HM data concurrently
-          const [fbrData, lastHm] = await Promise.all([
-            getFbrByUnit(selectedUnit),
-            getLatestHmLast(selectedUnit)
-          ]);
-
-          if (isMounted) {
-            console.log('FBR Data:', fbrData);
-            console.log('HM Data:', lastHm);
-
-            if (fbrData.length > 0) {
-              // Assuming fbrData is sorted and the first entry is the latest
-              const latestEntry = fbrData[0];
-              setFbr(latestEntry.fbr);
-              setHmLast(latestEntry.hm_last);
-              setQtyLast(latestEntry.qty_last);
-            } else {
-              // If no data is found, clear the state
-              setFbr(undefined);
-              setHmLast(undefined);
-              setQtyLast(undefined);
-            }
-
-            // Update hmLast with the latest value from getLatestHmLast
-            if (lastHm) {
-              setHmLast(lastHm);
+    useEffect(() => {
+        let isMounted = true;
+    
+        const fetchFbrData = async () => {
+          if (selectedUnit) {
+            try {
+              // Fetch FBR and HM data concurrently
+              const [fbrData, lastHm] = await Promise.all([
+                getFbrByUnit(selectedUnit),
+                getLatestHmLast(selectedUnit)
+              ]);
+    
+              if (isMounted) {
+                console.log('FBR Data:', fbrData);
+                console.log('HM Data:', lastHm);
+    
+                if (fbrData.length > 0) {
+                  // Assuming fbrData is sorted and the first entry is the latest
+                  const latestEntry = fbrData[0];
+                  setFbr(latestEntry.fbr); // Set default value of 0 if fbr is undefined or null
+                  setHmLast(latestEntry.hm_last); // Set default value of 0 if hm_last is undefined or null
+                  setQtyLast(latestEntry.qty_last ); // Set default value of 0 if qty_last is undefined or null
+                  setPrevHmKmUnit(latestEntry.hm_last); 
+                  setPrevHmKmTrx(latestEntry.hm_km );// Set default value of 0 if hm_last is undefined or null
+                } else {
+                  // If no data is found, set state to default values
+                  setFbr(undefined);
+                  setHmLast(undefined);
+                  setQtyLast(undefined);
+                  setPrevHmKmUnit(undefined);
+                }
+    
+                // Update hmLast with the latest value from getLatestHmLast
+                if (lastHm !== undefined && lastHm !== null) {
+                  setHmLast(lastHm);
+                }
+              }
+            } catch (error) {
+              console.error('Error fetching FBR data:', error);
+              if (isMounted) {
+                // Handle error by setting default values
+                setFbr(0);
+                setHmLast(0);
+                setQtyLast(0);
+                setPrevHmKmUnit(0);
+              }
             }
           }
-        } catch (error) {
-          console.error('Error fetching FBR data:', error);
-          if (isMounted) {
-            setFbr(undefined);
-            setHmLast(undefined);
-            setQtyLast(undefined);
-          }
-        }
-      }
-    };
-
-    fetchFbrData();
-
-    return () => {
-      isMounted = false; 
-    };
-  }, [selectedUnit]);
-
+        };
+    
+        fetchFbrData();
+    
+        return () => {
+          isMounted = false;
+        };
+      }, [selectedUnit]);
+    
+     
     const calculateFBR = (): string | number => {
         if (hmkmTRX !== undefined && hmLast !== undefined && qtyLast !== undefined) {
             const difference = hmkmTRX - hmLast;
@@ -475,6 +482,21 @@ const FormTRX: React.FC = () => {
         }
         return ''; // Handle cases where any value is undefined
     };
+
+    const handleHmLastChange = (e: CustomEvent) => {
+        const value = Number(e.detail.value);
+        setHmLast(value);
+       
+        // Check if the current value is less than the previous value
+        if (hmkmTRX !== undefined && value < hmkmTRX) {
+          setShowError(true);
+        } else {
+          setShowError(false);
+        }
+     
+      };
+
+
     return (
         <IonPage>
             <IonHeader translucent={true} className="ion-no-border">
@@ -568,29 +590,59 @@ const FormTRX: React.FC = () => {
                                         value={hmkmTRX !== null ? hmkmTRX: ''}
                                         onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                                         disabled={isFormDisabled}
+                                        onIonInput={(e) => {
+                                            const value = Number(e.detail.value);
+                                            sethmkmTrx(value);
+                                            if (prevHmKmTrx !== undefined && value < prevHmKmTrx) {
+                                            setShowError(true);
+                                            } else {
+                                            setShowError(false);
+                                            }
+                                        }}
                                     />
+                                  
                                 </IonCol>
                                 <IonCol>
-                                    <IonLabel>HM/KM Unit *</IonLabel>
+                                <IonLabel>HM/KM Unit *</IonLabel>
                                     <IonInput
-                                        className="custom-input"
-                                        type="number"
-                                        placeholder="Input HM Akhir"
-                                        value={hmLast !== null ? hmLast : ''}
-                                        onIonChange={(e) => setHmLast(Number(e.detail.value))}
-                                        disabled={isFormDisabled}
-                                    />
-                                </IonCol>
+                                    className="custom-input"
+                                    type="number"
+                                    placeholder="Input HM Akhir"
+                                    value={hmLast !== undefined ? hmLast : ''}
+                                    onIonChange={(e) => setHmLast(Number(e.detail.value))}
+                                    disabled={isFormDisabled}
+                                    readonly
+                                    onIonInput={(e) => {
+                                        const value = Number(e.detail.value);
+                                        sethmkmTrx(value);
+                                        if (prevHmKmUnit !== undefined && value < prevHmKmUnit) {
+                                        setShowError(true);
+                                        } else {
+                                        setShowError(false);
+                                        }
+                                    }}
+                                />
+                               
+                            </IonCol>
                             </IonRow>
-                            <div style={{ marginLeft: "15px" }}>
+                            {showError && (
+                                 <p style={{ color: "red" }}>
+                                    {hmkmTRX === undefined
+                                    ? '* Field harus diisi'
+                                    : (prevHmKmUnit !== undefined && hmkmTRX < prevHmKmUnit)
+                                    ? <div>* Hm/Km tidak boleh kurang dari Hm/Km sebelumnya :{hmLast}</div>
+                                    : ''
+                                    }
+                                        </p>
+                                        )}
+                            {/* <div style={{ marginLeft: "15px" }}>
                                 {showError && koutaLimit !== undefined && koutaLimit < 20 && (
                                     <div style={{ color: "red" }}>
                                         <div>* Kouta pengisian budget sudah melebihi 20 L / Hari</div>
-                                        <div>* Hm/Km tidak boleh kurang dari Hm/Km sebelumnya : 10290</div>
                                         <div>* Unit tersebut sudah melakukan pengisian sebanyak 20 L dari batas maksimal 20 L. Silahkan hubungi admin jika ingin melakukan pengisian </div>
                                     </div>
                                 )}
-                            </div>
+                            </div> */}
                            
                             <IonRow>
                                 <IonCol>

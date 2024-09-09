@@ -406,10 +406,12 @@ const OpeningForm: React.FC = () => {
             )}
           </div>
           <div className="padding-content">
-            <IonLabel className={showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "error" : ""}>
+            
+            <IonLabel className={showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal)) ? "error" : ""}>
               Flow Meter Awal **
             </IonLabel>
             <IonInput
+            className={`custom-input ${showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "input-error" : ""}`}
             type="number"
             value={flowMeterAwal}
             onIonInput={(e) => {

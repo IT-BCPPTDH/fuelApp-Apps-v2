@@ -132,10 +132,6 @@ export const getCalculationReceive = async (lkfId: string): Promise<number | und
   }
 };
 
-
-
-
-
 export const getAllDataTrx = async (): Promise<DataFormTrx[]> => {
   try {
     const allData = await db.dataTransaksi.toArray();
@@ -156,7 +152,6 @@ export const getAllDataSonding = async (): Promise<SondingData[]> => {
   }
 };
 
-
 export const getLatestLkfData = async (): Promise<{ lkf_id?: string; opening_sonding?: number } | undefined> => {
   try {
     const latestEntry = await db.openingTrx.orderBy('id').last();
@@ -173,9 +168,6 @@ export const getLatestLkfData = async (): Promise<{ lkf_id?: string; opening_son
     return undefined;
   }
 };
-
-
-
 
 export const getFbrByUnit = async (noUnit: string): Promise<DataFormTrx[]> => {
   try {
@@ -197,9 +189,6 @@ export const getFbrByUnit = async (noUnit: string): Promise<DataFormTrx[]> => {
 };
 
 
-
-
-
 export const getLatestTrx = async (selectedUnit: string): Promise<number | undefined> => {
   try {
     const latestEntry = await db.dataTransaksi.orderBy('id').last();
@@ -215,16 +204,31 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
   }
 };
 
-export const getLatestHmLast = async (selectedUnit: string): Promise<number | undefined> => {
+export const getLatestHmLast = async (noUnit: string): Promise<number | undefined> => {
   try {
-    // Fetch the latest entry from the database
-    const latestEntry = await db.dataTransaksi.orderBy('id').last();
+    // Fetch the entries that match the selected unit
+    const entries = await db.dataTransaksi
+      .where('unit') // Assuming 'unit' is the field to match
+      .equals(noUnit) // Filter by the selected unit
+      .toArray(); // Retrieve all matching entries
+
+    // Check if there are any entries
+    if (entries.length === 0) {
+      console.warn(`No data found for unit ${noUnit} in the dataTransaksi collection.`);
+      return undefined;
+    }
+    const latestEntry = entries
+      .filter(entry => entry.id !== undefined) // Filter out entries where 'id' is undefined
+      .sort((a, b) => {
+        if (a.id === undefined || b.id === undefined) return 0; // Handle undefined ids gracefully
+        return b.id - a.id; // Sort by 'id' in descending order
+      })[0];
 
     // Check if the entry is found and return the 'hm_last' field
     if (latestEntry && latestEntry.hm_last !== undefined) {
       return latestEntry.hm_last;
     } else {
-      console.warn("No 'hm_last' data found in the dataTransaksi collection.");
+      console.warn(`No 'hm_last' data found for unit ${noUnit} in the dataTransaksi collection.`);
       return undefined;
     }
   } catch (error) {
@@ -233,3 +237,5 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
     return undefined;
   }
 };
+
+
