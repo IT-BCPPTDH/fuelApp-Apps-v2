@@ -199,3 +199,37 @@ export const getFbrByUnit = async (noUnit: string): Promise<DataFormTrx[]> => {
 
 
 
+
+export const getLatestTrx = async (selectedUnit: string): Promise<number | undefined> => {
+  try {
+    const latestEntry = await db.dataTransaksi.orderBy('id').last();
+    if (latestEntry && latestEntry.id) {
+      return latestEntry.id;
+    } else {
+      console.warn("No entries found in the dataTransaksi collection.");
+      return undefined;
+    }
+  } catch (error) {
+    console.error("Failed to fetch the latest LKF ID from IndexedDB:", error);
+    return undefined;
+  }
+};
+
+export const getLatestHmLast = async (selectedUnit: string): Promise<number | undefined> => {
+  try {
+    // Fetch the latest entry from the database
+    const latestEntry = await db.dataTransaksi.orderBy('id').last();
+
+    // Check if the entry is found and return the 'hm_last' field
+    if (latestEntry && latestEntry.hm_last !== undefined) {
+      return latestEntry.hm_last;
+    } else {
+      console.warn("No 'hm_last' data found in the dataTransaksi collection.");
+      return undefined;
+    }
+  } catch (error) {
+    // Log any errors that occur during data retrieval
+    console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
+    return undefined;
+  }
+};

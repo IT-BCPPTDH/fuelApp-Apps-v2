@@ -32,7 +32,7 @@ import { DataDashboard } from '../../models/db';
 import { addDataDashboard, addDataTrxType} from '../../utils/insertData';
 import { getUser } from '../../hooks/getAllUser';
 import { convertToBase64} from '../../utils/base64';
-import { getFbrByUnit, getLatestLkfId , } from '../../utils/getData';
+import { getFbrByUnit, getLatestLkfId,getLatestHmLast } from '../../utils/getData';
 interface Typetrx {
     id: number;
     name: string;
@@ -398,51 +398,70 @@ const FormTRX: React.FC = () => {
     }
 
 
-    useEffect(() => {
-        const fetchFbrData = async () => {
-            if (selectedUnit) {
-                try {
-                    // Fetch the FBR data for the selected unit
-                    const fbrData = await getFbrByUnit(selectedUnit);
+    
+  useEffect(() => {
+    // Track if the component is still mounted
+    let isMounted = true; 
 
-                    // Log the fetched data for debugging
-                    console.log('FBR Data:', fbrData);
+    const fetchFbrData = async () => {
+      if (selectedUnit) {
+        try {
+          // Fetch FBR and HM data concurrently
+          const [fbrData, lastHm] = await Promise.all([
+            getFbrByUnit(selectedUnit),
+            getLatestHmLast(selectedUnit)
+          ]);
 
-                    // Check if data is available and update the state
-                    if (fbrData.length > 0) {
-                        // Assuming fbrData is already sorted and the first entry is the latest
-                        const latestEntry = fbrData[0]; 
-                        setFbr(latestEntry.fbr);
-                        setHmLast(latestEntry.hm_last);
-                        setQtyLast(latestEntry.qty_last);
-                    } else {
-                        // If no data is found, clear the state
-                        setFbr(undefined);
-                        setHmLast(undefined);
-                        setQtyLast(undefined);
-                    }
-                } catch (error) {
-                    // Handle errors and clear the state if an error occurs
-                    console.error('Error fetching FBR data:', error);
-                    setFbr(undefined);
-                    setHmLast(undefined);
-                    setQtyLast(undefined);
-                }
+          if (isMounted) {
+            console.log('FBR Data:', fbrData);
+            console.log('HM Data:', lastHm);
+
+            if (fbrData.length > 0) {
+              // Assuming fbrData is sorted and the first entry is the latest
+              const latestEntry = fbrData[0];
+              setFbr(latestEntry.fbr);
+              setHmLast(latestEntry.hm_last);
+              setQtyLast(latestEntry.qty_last);
+            } else {
+              // If no data is found, clear the state
+              setFbr(undefined);
+              setHmLast(undefined);
+              setQtyLast(undefined);
             }
-        };
 
-        fetchFbrData();
-    }, [selectedUnit]);
+            // Update hmLast with the latest value from getLatestHmLast
+            if (lastHm) {
+              setHmLast(lastHm);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching FBR data:', error);
+          if (isMounted) {
+            setFbr(undefined);
+            setHmLast(undefined);
+            setQtyLast(undefined);
+          }
+        }
+      }
+    };
+
+    fetchFbrData();
+
+    return () => {
+      isMounted = false; 
+    };
+  }, [selectedUnit]);
+
     const calculateFBR = (): string | number => {
         if (hmkmTRX !== undefined && hmLast !== undefined && qtyLast !== undefined) {
             const difference = hmkmTRX - hmLast;
             if (difference !== 0) {
                 return qtyLast / difference;
             } else {
-                return 'N/A'; // Handle division by zero
+                return 'N/A'; 
             }
         }
-        return ''; // Handle cases where any value is undefined
+        return ''; 
     };
     
     const calculateFlowEnd = (): string | number => {
