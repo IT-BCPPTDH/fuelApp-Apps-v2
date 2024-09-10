@@ -48,7 +48,7 @@ interface DataFormTrx {
   name_operator: string;
   fbr: number;
   flow_start: number;
-  flow_end: number;
+  flow_end: number ;
   signature: string | null;
   foto: string;
   type: string;
@@ -66,8 +66,7 @@ interface DataFormTrx {
   sonding_end: number;
 
   reference: number;
-
-  start: string;
+ start:string;
   end: string;
   
 }

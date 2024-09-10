@@ -22,8 +22,8 @@ interface TableDataItem {
   fbr: number;
   type: string;
   qty: number;
-  hm_km: number;
-  hm_last: number;
+  flow_start: number;
+  flow_end: number;
   name_operator: string;
   jde_operator: string;
   status_code: number; // Ensure this field is included
@@ -161,8 +161,8 @@ const TableData: React.FC = () => {
               <IonCol><IonText>{item.fbr}</IonText></IonCol>
               <IonCol><IonText>{item.type}</IonText></IonCol>
               <IonCol><IonText>{item.qty}</IonText></IonCol>
-              <IonCol><IonText>{item.hm_km}</IonText></IonCol>
-              <IonCol><IonText>{item.hm_last}</IonText></IonCol>
+              <IonCol><IonText>{item.flow_start}</IonText></IonCol>
+              <IonCol><IonText>{item.flow_end}</IonText></IonCol>
               <IonCol><IonText>{item.name_operator}</IonText></IonCol>
               <IonCol>
                 <IonText>
