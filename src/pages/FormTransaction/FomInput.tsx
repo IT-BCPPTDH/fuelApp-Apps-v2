@@ -96,7 +96,8 @@ const FormTRX: React.FC = () => {
     const [hmkmTRX, sethmkmTrx] = useState<number | undefined>(undefined); // HM/KM Transaksi
     const [hmLast, setHmLast] = useState<number | undefined>(undefined); // HM/KM Unit
     const [qtyLast, setQtyLast] = useState<number | undefined>(undefined); // Qty Last
-    
+    // Ensure flowEnd is a number
+
 
     useEffect(() => {
         const handleOnline = () => setIsOnline(true);
@@ -291,11 +292,24 @@ const FormTRX: React.FC = () => {
     const handlePost = async (e: React.FormEvent) => {
         e.preventDefault();
     
-        // if (!selectedType || !selectedUnit || quantity === undefined || fbr === undefined || flowMeterAwal === undefined || flowMeterAkhir === undefined || !startTime || !endTime) {
-        //     console.error('Form is incomplete');
-        //     return;
-        // }
+        // Validate form fields
+        if (!selectedType || !selectedUnit || quantity === null || fbr === null || flowMeterAwal === null || flowMeterAkhir === null || !startTime || !endTime) {
+            console.error('Form is incomplete');
+            return;
+        }
     
+        // Log the current values for debugging
+        console.log('Selected Unit:', selectedUnit);
+        console.log('Flow Meter Awal:', flowMeterAwal);
+        console.log('Flow Meter Akhir:', flowMeterAkhir);
+        console.log('FBR:', fbr);
+        console.log('Quantity:', quantity);
+    
+        // Convert values to numbers where necessary
+        const flow_end: number = Number(calculateFlowEnd()) || 0;
+        const calculatedFBR: number = Number(calculateFBR()) || 0;
+    
+        // Prepare form data
         const fromDataId = Date.now();
         const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
         const lkf_id = await getLatestLkfId();
@@ -306,46 +320,44 @@ const FormTRX: React.FC = () => {
             model_unit: model!,
             owner: owner!,
             date_trx: new Date().toISOString(),
-            hm_last: flowMeterAwal ?? 0,
-            hm_km: flowMeterAkhir ?? 0,
-            qty_last: quantity ?? 0,
-            qty: quantity ?? 0,
-            flow_start: flowMeterAwal ?? 0,
-            flow_end: flowMeterAkhir ?? 0,
-            dip_start: dipStart ?? 0,
-            dip_end: dipEnd ?? 0,
-            sonding_start: sondingStart ?? 0,
-            sonding_end: sondingEnd ?? 0,
+            hm_last: Number(hmLast) || 0,
+            hm_km: Number(hmkmTRX) || 0,
+            qty_last: Number(quantity) || 0,
+            qty: Number(quantity) || 0,
+            flow_start: Number(flowMeterAwal) || 0,
+            flow_end: flow_end, // Ensure number type
+            dip_start: Number(dipStart) || 0,
+            dip_end: Number(dipEnd) || 0,
+            sonding_start: Number(sondingStart) || 0,
+            sonding_end: Number(sondingEnd) || 0,
             name_operator: fullName!,
             start: startTime!,
             end: endTime!,
-            fbr: fbr ?? 0,
-            lkf_id: lkf_id,
+            fbr: calculatedFBR, // Ensure number type
+            lkf_id: lkf_id ?? '', // Assuming lkf_id can be an empty string if undefined
             signature: signatureBase64 ?? '',
             type: selectedType?.name ?? '',
             foto: photoPreview ?? '',
             fuelman_id: fuelman_id!,
             status: false,
             jde_operator: '',
-            reference: Refrence ?? 0,
-            start_time: startTime ?? '',
-            end_time: endTime ?? '',
+            reference: Number(Refrence) || 0,
             site: '',
             liters: 0,
             cm: 0,
             station: '',
             date: '',
-            timestamp: ''
+            timestamp: '',
+            start_time: '',
+            end_time: ''
         };
+    
+        console.log('Posting Data:', dataPost); // Log the data to be posted
     
         try {
             if (isOnline) {
                 // If online, post the transaction data
                 await insertNewData(dataPost);
-    
-                // Handle stock update based on transaction type
-                // (Same logic as before)
-    
                 const response = await postTransaksi(dataPost);
     
                 if (response.ok && (response.status === 200 || response.status === 201)) {
@@ -361,9 +373,10 @@ const FormTRX: React.FC = () => {
                 route.push('/dashboard');
             }
         } catch (error) {
-            console.error('Error occurred:', error);
+            console.error('Error occurred while posting data:', error);
         }
     };
+    
     
     
     // Function to insert new data into the dashboard or database

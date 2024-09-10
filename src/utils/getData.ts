@@ -132,10 +132,6 @@ export const getCalculationReceive = async (lkfId: string): Promise<number | und
   }
 };
 
-
-
-
-
 export const getAllDataTrx = async (): Promise<DataFormTrx[]> => {
   try {
     const allData = await db.dataTransaksi.toArray();
@@ -156,7 +152,6 @@ export const getAllDataSonding = async (): Promise<SondingData[]> => {
   }
 };
 
-
 export const getLatestLkfData = async (): Promise<{ lkf_id?: string; opening_sonding?: number } | undefined> => {
   try {
     const latestEntry = await db.openingTrx.orderBy('id').last();
@@ -173,9 +168,6 @@ export const getLatestLkfData = async (): Promise<{ lkf_id?: string; opening_son
     return undefined;
   }
 };
-
-
-
 
 export const getFbrByUnit = async (noUnit: string): Promise<DataFormTrx[]> => {
   try {
@@ -195,9 +187,6 @@ export const getFbrByUnit = async (noUnit: string): Promise<DataFormTrx[]> => {
     return [];
   }
 };
-
-
-
 
 
 export const getLatestTrx = async (selectedUnit: string): Promise<number | undefined> => {
@@ -233,3 +222,6 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
     return undefined;
   }
 };
+
+
+

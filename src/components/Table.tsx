@@ -11,21 +11,22 @@ import {
   IonSearchbar,
   IonIcon
 } from "@ionic/react";
-import { saveOutline, chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
-import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
+import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
+import { getLatestLkfId } from '../utils/getData';
+import { getHomeTable } from '../hooks/getHome';
 
 // Define the type for table data items
 interface TableDataItem {
-  id: number;
-  unit_no: string;
+  no_unit: string;
   model_unit: string;
-  fbr_historis: string;
-  jenis_trx: string;
-  qty_issued: number;
-  fm_awal: number;
-  fm_akhir: number;
-  name: string;
-  status: string;
+  fbr: number;
+  type: string;
+  qty: number;
+  flow_start: number;
+  flow_end: number;
+  name_operator: string;
+  jde_operator: string;
+  status_code: number; // Ensure this field is included
 }
 
 const TableData: React.FC = () => {
@@ -34,55 +35,65 @@ const TableData: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [nomorLKF, setNomorLKF] = useState<string | undefined>(undefined);
   const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
+  const [lkfId, setLkfId] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchLkfId = async () => {
       try {
         const latestLkfId = await getLatestLkfId();
-        setNomorLKF(latestLkfId);
+        if (latestLkfId) {
+          setLkfId(latestLkfId);
+          setNomorLKF(latestLkfId);
+        } else {
+          console.error("No LKF ID returned");
+        }
       } catch (error) {
         console.error("Failed to fetch LKF ID:", error);
       }
     };
-
-    fetchData();
+  
+    fetchLkfId();
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Assume `getAllDataTrx` returns data in a format that needs mapping
-        const rawData = await getAllDataTrx();
-        
-        // Transform data to match TableDataItem type
-        const mappedData: TableDataItem[] = rawData.map((item: any) => ({
-          id: item.id ?? 0, // Default to 0 if undefined
-          unit_no: item.no_unit || '',
-          model_unit: item.model_unit || '',
-          fbr_historis: item.fbr || '',
-          jenis_trx: item.type || '',
-          qty_issued: item.qty ?? 0, // Default to 0 if undefined
-          fm_awal: item.flow_start ?? 0, // Default to 0 if undefined
-          fm_akhir: item.flow_end ?? 0, // Default to 0 if undefined
-          name: item.fuelman_id || '',
-          status: item.status || 'Draft'
-        }));
-        
-        setData(mappedData);
-      } catch (error) {
-        console.error("Failed to fetch data from IndexedDB:", error);
+    const fetchTableSummary = async () => {
+      if (lkfId) {
+        console.log("Fetching data for LKF ID:", lkfId);
+        try {
+          const response = await getHomeTable(lkfId);
+          console.log("Data Table:", response);
+  
+          if (response && response.data && Array.isArray(response.data)) {
+            setData(response.data);
+          } else {
+            console.error("Expected an array in response.data but got:", response);
+            setData([]);
+          }
+        } catch (error) {
+          console.error("Failed to fetch table summary data:", error);
+          setError("Failed to fetch data");
+          setData([]); // Ensure data is cleared in case of error
+        } finally {
+          setLoading(false); // Stop loading indicator
+        }
+      } else {
+        console.log("No LKF ID to fetch data for");
+        setData([]); // Clear data if no LKF ID
+        setLoading(false); // Stop loading indicator
       }
     };
-
-    fetchData();
-  }, []);
-
+  
+    fetchTableSummary();
+  }, [lkfId]);
+  
   const filteredData = (data || []).filter(item =>
-    item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.model_unit.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.fbr_historis.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.jenis_trx.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    (item.no_unit?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (item.model_unit?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (item.fbr?.toString().toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (item.type?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (item.name_operator?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -102,6 +113,14 @@ const TableData: React.FC = () => {
     setSearchQuery(e.detail.value);
     setCurrentPage(1); 
   };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
 
   return (
     <div style={{padding:"20px", marginTop:"-30px"}}>
@@ -136,38 +155,43 @@ const TableData: React.FC = () => {
 
           {/* Table Data */}
           {paginatedData.map((item: TableDataItem) => (
-            <IonRow style={{ width: "900px" }} key={item.id}>
-              <IonCol><IonText>{item.unit_no}</IonText></IonCol>
+            <IonRow style={{ width: "900px" }} key={item.no_unit}>
+              <IonCol><IonText>{item.no_unit}</IonText></IonCol>
               <IonCol><IonText>{item.model_unit}</IonText></IonCol>
-              <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
-              <IonCol><IonText>{item.jenis_trx}</IonText></IonCol>
-              <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
-              <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
-              <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
-              <IonCol><IonText>{item.name}</IonText></IonCol>
-              <IonCol><IonText>{item.status}</IonText></IonCol>
+              <IonCol><IonText>{item.fbr}</IonText></IonCol>
+              <IonCol><IonText>{item.type}</IonText></IonCol>
+              <IonCol><IonText>{item.qty}</IonText></IonCol>
+              <IonCol><IonText>{item.flow_start}</IonText></IonCol>
+              <IonCol><IonText>{item.flow_end}</IonText></IonCol>
+              <IonCol><IonText>{item.name_operator}</IonText></IonCol>
+              <IonCol>
+                <IonText>
+                  {item.status_code === 201 ? 'Sent' : 'Pending'}
+                </IonText>
+              </IonCol>
             </IonRow>
           ))}
         </IonGrid>
       </IonCard>
       <div style={{ textAlign: 'start', margin: '20px' }}>
-  <IonButton color="ligth"
-    style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
-    onClick={handlePrevious} 
-    disabled={currentPage === 1}
-  >
-    <IonIcon icon={chevronBackOutline} />
-  </IonButton>
-  <span style={{ margin: '0 20px' }}>Page {currentPage} of {totalPages}</span>
-  <IonButton  color="ligth"
-    style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
-    onClick={handleNext} 
-    disabled={currentPage === totalPages}
-  >
-    <IonIcon icon={chevronForwardOutline} />
-  </IonButton>
-</div>
-
+        <IonButton 
+          color="light" // Fixed typo from "ligth" to "light"
+          style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
+          onClick={handlePrevious} 
+          disabled={currentPage === 1}
+        >
+          <IonIcon icon={chevronBackOutline} />
+        </IonButton>
+        <span style={{ margin: '0 20px' }}>Page {currentPage} of {totalPages}</span>
+        <IonButton  
+          color="light" // Fixed typo from "ligth" to "light"
+          style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
+          onClick={handleNext} 
+          disabled={currentPage === totalPages}
+        >
+          <IonIcon icon={chevronForwardOutline} />
+        </IonButton>
+      </div>
     </div>
   );
 };
