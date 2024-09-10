@@ -320,8 +320,8 @@ const FormTRX: React.FC = () => {
             model_unit: model!,
             owner: owner!,
             date_trx: new Date().toISOString(),
-            hm_last: Number(flowMeterAwal) || 0,
-            hm_km: Number(flowMeterAkhir) || 0,
+            hm_last: Number(hmLast) || 0,
+            hm_km: Number(hmkmTRX) || 0,
             qty_last: Number(quantity) || 0,
             qty: Number(quantity) || 0,
             flow_start: Number(flowMeterAwal) || 0,
@@ -376,7 +376,6 @@ const FormTRX: React.FC = () => {
             console.error('Error occurred while posting data:', error);
         }
     };
-    
     
     
     
