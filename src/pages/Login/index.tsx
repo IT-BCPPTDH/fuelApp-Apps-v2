@@ -19,6 +19,7 @@ import Cookies from "js-cookie";
 import { postAuthLogin } from "../../hooks/useAuth";
 import { getStation as fetchStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
+import { getAllUnit } from "../../hooks/getAllUnit";
 import "./style.css";
 
 interface Station {
@@ -35,7 +36,7 @@ const Login: React.FC = () => {
   const [showError, setShowError] = useState<boolean>(false);
   const [sondingData, setSondingData] = useState<any[]>([]); // Added state for sonding data
   const router = useIonRouter();
-
+  const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
   const fetchAllStationData = async () => {
     try {
       const response = await fetchStation('some-argument'); // Provide the required argument
@@ -59,11 +60,28 @@ const Login: React.FC = () => {
 
 
 
-  
- 
-  
-  
+  useEffect(() => {
+    const fetchUnitOptions = async () => {
+        try {
+            const response = await getAllUnit();
+            if (response.status === '200' && Array.isArray(response.data)) {
+                const unitData = response.data;
+                setUnitOptions(unitData);
 
+                // Store data in localStorage
+                localStorage.setItem('allUnit', JSON.stringify(unitData));
+            } else {
+                console.error('Unexpected data format');
+            }
+        } catch (error) {
+            console.error('Failed to fetch unit options', error);
+        }
+    };
+
+    fetchUnitOptions();
+}, []);
+
+ 
   useEffect(() => {
     const loadStationData = async () => {
       const cachedData = localStorage.getItem('stationData');
@@ -147,7 +165,7 @@ const Login: React.FC = () => {
                 <span className="title-checkin">Please Sign In to Continue</span>
                 <IonCol size="12">
                   <IonLabel>Select Station</IonLabel>
-                  <IonSelect
+                  <IonSelect className="select-custom"
                     style={{ marginTop: "10px" }}
                     fill="solid"
                     labelPlacement="floating"

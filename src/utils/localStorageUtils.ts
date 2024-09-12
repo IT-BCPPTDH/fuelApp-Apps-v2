@@ -9,3 +9,4 @@ export const updateLocalStorageCardData = (cardData: any): void => {
     // Add the new card data to localStorage
     localStorage.setItem('cardDataDashboard', JSON.stringify(cardData));
 };
+

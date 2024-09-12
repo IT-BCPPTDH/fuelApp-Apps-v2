@@ -123,7 +123,7 @@ const TableData: React.FC = () => {
   }
 
   return (
-    <div style={{padding:"20px", marginTop:"-30px"}}>
+    <div style={{padding:"20px", marginTop:"-80px"}}>
       <IonRow className='padding-content'>
         <IonCol>
           <div style={{display:"inline-flex",gap:"10px" }}>
@@ -166,7 +166,7 @@ const TableData: React.FC = () => {
               <IonCol><IonText>{item.name_operator}</IonText></IonCol>
               <IonCol>
                 <IonText>
-                  {item.status_code === 201 ? 'Sent' : 'Pending'}
+                  {item.status_code === 201 ? 'Pending' : 'Sent'}
                 </IonText>
               </IonCol>
             </IonRow>

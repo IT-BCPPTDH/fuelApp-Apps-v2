@@ -29,6 +29,7 @@ interface DataLkf {
 }
 
 interface DataFormTrx {
+  unit: string;
   timestamp: any;
   id?: number; // Auto-incremented ID
   date: string | number | Date;

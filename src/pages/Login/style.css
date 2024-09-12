@@ -102,3 +102,23 @@
   width: 260px;
   height: 52px;
 }
+
+.select-custom {
+  --background: white; /* Set the background to white */
+  --color: black; /* Optional: Set the text color to black for contrast */
+
+}
+ 
+.radio-display {
+  display: inline-flex;
+  margin-left: -15px;
+}
+
+.radio-inner {
+  border-radius: var(--inner-border-radius);
+  width: calc(50% + var(--border-width));
+  height: calc(50% + var(--border-width));
+  transform: scale3d(0, 0, 0);
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1), -webkit-transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  background: #73a33f;
+}

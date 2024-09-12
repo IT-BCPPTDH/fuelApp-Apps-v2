@@ -19,17 +19,15 @@ import TableData from '../../components/Table';
 import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive } from '../../utils/getData';
 import { getHomeByIdLkf } from '../../hooks/getHome';
 
-
 // Define the data structure for the card
 interface CardData {
   title: string;
-  value: string | number; 
+  value: string | number;
   icon: string;
 }
 
 const DashboardFuelMan: React.FC = () => {
-  const [data, setData] = useState<any>(null); // Adjust the type based on your data structure
-
+  const [data, setData] = useState<any>(null);
   const [cardData, setCardData] = useState<CardData[]>([
     { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
     { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
@@ -48,8 +46,10 @@ const DashboardFuelMan: React.FC = () => {
   const [stockOnHand, setStockOnHand] = useState<number>(0);
   const [flowMeterStart, setFlowMeterStart] = useState<number>(0);
   const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
-  const [qtyIssued, setQtyIssued] = useState<number>(0); // State for Quantity Issued
-  const [variance, setVariance] = useState<number>(0); // State for Variance
+  const [qtyIssued, setQtyIssued] = useState<number>(0);
+  const [variance, setVariance] = useState<number>(0);
+  const [fullname, setFuelman] = useState<string>(''); // New state for Fuelman
+  const [currentDate, setCurrentDate] = useState<string>(''); // State for current date
   const route = useIonRouter();
   const [loading, setLoading] = useState<boolean>(true);
   const [lkfId, setLkfId] = useState<string>('');
@@ -57,21 +57,43 @@ const DashboardFuelMan: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [shiftData, setShiftData] = useState<any>(null);
 
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
   useEffect(() => {
+    const handleOnlineStatus = () => {
+      setIsOnline(navigator.onLine);
+    };
+
+    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('offline', handleOnlineStatus);
+
+    return () => {
+      window.removeEventListener('online', handleOnlineStatus);
+      window.removeEventListener('offline', handleOnlineStatus);
+    };
+  }, []);
+
+
+    useEffect(() => {
+      // Function to format date as "Tanggal : 25 Januari 2025"
+      const formatDate = (date: Date): string => {
+        const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+        return `Tanggal : ${new Intl.DateTimeFormat('id-ID', options).format(date)}`;
+      };
+
+      const today = new Date();
+    setCurrentDate(formatDate(today));
+
     const fetchLkfIdAndData = async () => {
       try {
-        // Step 1: Fetch the latest LKF ID
         const id = await getLatestLkfId();
         if (id) {
           setLkfId(id);
 
-          // Step 2: Fetch shift data using the LKF ID
           const shiftData = await getShiftDataByLkfId(id);
           const calculationIssued = await getCalculationIssued(id);
           const calculationReceive = await getCalculationReceive(id);
 
-          // Calculate necessary values
           const qtyReceive = typeof calculationReceive === 'number' ? calculationReceive : 0;
           const qtyIssued = typeof calculationIssued === 'number' ? calculationIssued : 0;
           setQtyIssued(qtyIssued);
@@ -85,12 +107,10 @@ const DashboardFuelMan: React.FC = () => {
           const totalFlowMeter = qtyIssued;
           setVariance(totalFlowMeter - qtyIssued);
 
-          // Update state
           setStockOnHand(stockOnHand);
           setFlowMeterStart(flowMeterStart);
           setFlowMeterEnd(flowMeterEnd);
 
-          // Update cardData state
           const cardData = [
             { title: 'Shift', value: shiftData.shift || 'No Data', icon: 'shift.svg' },
             { title: 'FS/FT No', value: shiftData.station || 'No Data', icon: 'fs.svg' },
@@ -105,10 +125,9 @@ const DashboardFuelMan: React.FC = () => {
             { title: 'Total Flow Meter', value: totalFlowMeter, icon: 'total.svg' },
             { title: 'Variance', value: variance, icon: 'variance.svg' }
           ];
-          
+
           setCardData(cardData);
 
-          // Save data to localStorage
           localStorage.setItem('shiftData', JSON.stringify({
             shiftData,
             calculationIssued,
@@ -124,9 +143,21 @@ const DashboardFuelMan: React.FC = () => {
             cardData
           }));
 
-          // Fetch additional data using lkfId
           const homeData = await getHomeByIdLkf(id);
-          setShiftData(homeData); // Or use a different state for this data if needed
+          setShiftData(homeData);
+
+          // Retrieve and set fuelman from localStorage based on jde
+          const loginData = localStorage.getItem('loginData');
+          if (loginData) {
+            const { jde } = JSON.parse(loginData);
+            if (homeData && homeData.fullname) {
+              const matchedEmployee = homeData.fullname.find((fullname: any) => fullname.jde === jde);
+              if (matchedEmployee) {
+                setFuelman(matchedEmployee.fullname);
+              }
+            }
+          }
+
         } else {
           setError('No LKF ID found');
         }
@@ -145,60 +176,9 @@ const DashboardFuelMan: React.FC = () => {
     fetchLkfIdAndData();
   }, []);
 
-
   const handleLogout = () => {
     route.push('/closing-data');
   };
-
-  useEffect(() => {
-    const fetchLkfId = async () => {
-      try {
-        const data = await getLatestLkfId();
-        if (data) {
-          setLkfId(data);
-          console.log('data',data)  // Set lkfId only if it is not undefined
-        } else {
-          // Handle the case when `id` is undefined
-          setError('Failed to fetch lkfId.');
-        }
-      } catch (err) {
-        if (err instanceof Error) {
-          setError(`Error fetching lkfId: ${err.message}`);
-        } else {
-          setError('An unexpected error occurred.');
-        }
-      }
-    };
-
-    fetchLkfId();
-  }, []);
-  
-  useEffect(() => {
-    const fetchDataSummary = async () => {
-      try {
-        if (lkfId) {
-          // Fetch data using lkfId
-          const data = await getHomeByIdLkf(lkfId);
-          setData(data);
-          console.log('data', data);
-        } else {
-          throw new Error('lkfId is not defined');
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          setError(error.message);
-          console.error('Failed to fetch home data:', error.message);
-        } else {
-          setError('An unexpected error occurred.');
-          console.error('Unexpected error:', error);
-        }
-      }
-    };
-
-    if (lkfId) {
-      fetchDataSummary();
-    }
-  }, [lkfId]);
 
   const handleRefresh = () => {
     window.location.reload();
@@ -207,11 +187,30 @@ const DashboardFuelMan: React.FC = () => {
   return (
     <IonPage>
       <IonContent>
-        <IonHeader className="header-dash">
+        <IonHeader style={{height:"60px"}}>
           <IonRow>
             <IonCol>
               <div className='logoDashboard'>
-                <IonImg src="logodh.png" alt='logo-dashboard' />
+                <IonImg style={{ padding:"10px", marginLeft:"15px"}} src="logodh.png" alt='logo-dashboard' />
+              </div>
+            </IonCol>
+            <IonCol style={{ textAlign: 'right' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                marginRight: '15px',
+                marginTop:"10px"
+              }}>
+                <div
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    borderRadius: '50%',
+                    backgroundColor: isOnline ? '#73A33F' : 'red',
+                    marginRight: '5px'
+                  }}
+                />
+                <span>{isOnline ? 'Online' : 'Offline'}</span>
               </div>
             </IonCol>
           </IonRow>
@@ -223,43 +222,50 @@ const DashboardFuelMan: React.FC = () => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Refresh
             </IonButton>
-            <IonButton color="warning" onClick={handleLogout}>
+            <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout}>
               Close LFK & Logout
             </IonButton>
           </div>
         </div>
 
-        <div className='padding-content mr20'>
-          <h4 style={{ padding: "15px" }}>Hello </h4>
+        <div className='padding-content mr20' style={{ marginTop: "20px" }}>
+          <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <h4 style={{ padding: '15px' }}>Fuelman : {fullname || 'No Data'}</h4>
+            <h4 style={{ padding: '15px', marginLeft: '370px', position:"absolute"}}>  {currentDate}</h4>
+          </IonRow>
         </div>
-
-        <div>
-     
-    </div>
-
-        <IonGrid>
+        
+        <IonGrid style={{ marginTop: "20px" }}>
           <IonRow style={{ padding: "15px", marginTop: "-60px" }}>
             {cardData.map((card, index) => (
               <IonCol size="4" key={index}>
                 <IonCard>
                   <IonCardHeader>
-                    <IonCardSubtitle style={{ fontSize: "20px" }}>{card.title}</IonCardSubtitle>
+                    <IonCardSubtitle style={{ fontSize: "16px" }}>{card.title}</IonCardSubtitle>
                     <div style={{ display: "inline-flex", gap: "10px" }}>
                       <IonImg src={card.icon} alt={card.title} style={{ width: '30px', height: '30px', marginTop: "10px" }} />
-                      <IonCardContent style={{ fontSize: "18px", fontWeight: "600" }}>{card.value}</IonCardContent>
+                      <IonCardContent style={{ fontSize: "24px", fontWeight: "500" }}>{card.value}</IonCardContent>
                     </div>
                   </IonCardHeader>
                 </IonCard>
               </IonCol>
             ))}
+            <p style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexDirection: 'column',
+            }}>
+              <p style={{ color: "#E16104", textAlign: 'justify', padding:"15px", marginTop:"-20px" }}>
+                * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
+                * QTY Issued adalah Issued + Transfer
+              </p>
+            </p>
           </IonRow>
        
           <div className='content'>
-            <p style={{ color: "red", padding: "15px", marginTop: "-40px" }}>
-              * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
-            </p>
             <IonButton 
-              style={{ padding: "15px", marginTop: "-30px" }} 
+              style={{ padding: "15px", marginTop: "-110px" }} 
               className='check-button' 
               onClick={() => route.push('/transaction')}
             >
@@ -269,6 +275,7 @@ const DashboardFuelMan: React.FC = () => {
           </div>
           <TableData />
         </IonGrid>
+        
       </IonContent>
     </IonPage>
   );

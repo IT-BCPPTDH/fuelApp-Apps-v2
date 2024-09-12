@@ -84,13 +84,12 @@ export const getShiftDataByLkfId = async (lkfId: string): Promise<ShiftData> => 
 };
 
 
-
 export const getCalculationIssued = async (lkfId: string): Promise<number | undefined> => {
   try {
-    // Retrieve all transactions where type is 'Issued'
+    // Retrieve all transactions where type is either 'Issued' or 'Transfer'
     const issuedTransactions = await db.dataTransaksi
       .where('type')
-      .equals('Issued')
+      .anyOf(['Issued', 'Transfer'])
       .toArray();
 
     // Filter transactions by lkfId if necessary
@@ -103,8 +102,8 @@ export const getCalculationIssued = async (lkfId: string): Promise<number | unde
       return dateB - dateA; // Latest first
     });
 
-    // Calculate the total quantity issued from the most recent transactions
-    const totalIssued = filteredTransactions.reduce((sum, transaction) => sum + (transaction.qty || 0), 0);
+    // Calculate the total quantity issued from the filtered transactions
+    const totalIssued = filteredTransactions.reduce((sum, transaction) => sum + (transaction.qty ?? 0), 0);
 
     return totalIssued;
   } catch (error) {
@@ -114,12 +113,13 @@ export const getCalculationIssued = async (lkfId: string): Promise<number | unde
 };
 
 
+
 export const getCalculationReceive = async (lkfId: string): Promise<number | undefined> => {
   try {
     // Retrieve all transactions where type is 'Receive'
     const receiptTransactions = await db.dataTransaksi
       .where('type')
-      .equals('Receive')
+      .equals('Receipt')
       .toArray();
     
     // Calculate the total quantity Receive

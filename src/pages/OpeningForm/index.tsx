@@ -50,7 +50,7 @@ const OpeningForm: React.FC = () => {
   const [fuelmanId, setFuelmanID] = useState<string | undefined>(undefined);
   const [shiftSelected, setShiftSelected] = useState<Shift | undefined>(undefined);
   const [showError, setShowError] = useState<boolean>(false);
-  const [date, setDate] = useState<string | undefined>(undefined);
+  // const [date, setDate] = useState<string | undefined>(undefined);
   const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
   const [id, setLkfId] = useState<string| undefined>(undefined);
   const [showDateModal, setShowDateModal] = useState<boolean>(false);
@@ -61,9 +61,38 @@ const OpeningForm: React.FC = () => {
   const [latestLkfData, setLatestLkfData] = useState<any | undefined>(undefined); 
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
+  const [date, setDate] = useState<string>(new Date().toISOString()); // Initialize with current date
 
   const router = useIonRouter();
   const [presentToast] = useIonToast();
+
+
+
+  useEffect(() => {
+    const determineShift = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+
+      // Define shift time ranges
+      const isDayShift = currentHour >= 6 && currentHour < 18;
+      const isNightShift = currentHour >= 18 || currentHour < 6;
+
+      if (isDayShift) {
+        setShiftSelected(shifts.find((shift) => shift.name === "Day"));
+      } else if (isNightShift) {
+        setShiftSelected(shifts.find((shift) => shift.name === "Night"));
+      }
+    };
+
+    determineShift();
+  }, [])
+
+
+
+  const handleShiftChange = (selectedShift: Shift) => {
+    setShiftSelected(selectedShift);
+  };
+
 
   useEffect(() => {
     const generateLkfId = () => {
@@ -200,9 +229,12 @@ const OpeningForm: React.FC = () => {
 
   const handleDateChange = (e: CustomEvent) => {
     const selectedDate = e.detail.value as string;
-    setDate(selectedDate);
-    setShowDateModal(false);
+    if (selectedDate) {
+      setDate(selectedDate);
+      setShowDateModal(false);
+    }
   };
+  
 
   const handlePost = async () => {
     if (
@@ -323,6 +355,9 @@ const OpeningForm: React.FC = () => {
     return () => window.removeEventListener('online', checkAndSendOfflineData);
   }, []);
 
+
+  
+
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -339,45 +374,52 @@ const OpeningForm: React.FC = () => {
             <h4>Station : {station}</h4>
           </div>
           <IonRow className="padding-content">
-            <IonCol>
+            <IonCol style={{display:"grid"}}>
               <IonLabel>
-                Shift *
+                Shift  <span style={{color:"red", marginLeft:"20px"}}>*</span>
               </IonLabel>
               <IonRadioGroup
                 className="radio-display"
                 compareWith={compareWith}
-                onIonChange={(ev) => setShiftSelected(ev.detail.value)}
+                value={shiftSelected}
+                onIonChange={(ev) => handleShiftChange(ev.detail.value)}
               >
-                {shifts.map((shift) => (
-                  <IonItem key={shift.id} className="item-no-border">
-                    <IonRadio value={shift}>
-                      {shift.name}
-                    </IonRadio>
-                  </IonItem>
-                ))}
-              </IonRadioGroup>
+               {shifts.map((shift) => (
+        <IonItem key={shift.id} className="item-no-border">
+          <IonRadio slot="start" value={shift} />
+          <IonLabel>{shift.name}</IonLabel>
+        </IonItem>
+      ))}
+      </IonRadioGroup>
             </IonCol>
             <IonCol>
+            <IonLabel style={{marginLeft:"20px"}}>
+                Date <span style={{color:"red", marginLeft:"20px"}}>*</span>
+              </IonLabel>
               <IonItem>
-                <IonInput
-                  value={date}
+              <IonInput
+                  value={new Date(date).toLocaleDateString()} // Ensure date is not undefined
                   placeholder="Select Date"
                   readonly
                   onClick={() => setShowDateModal(true)}
                 />
+             
               </IonItem>
-              <IonModal isOpen={showDateModal} onDidDismiss={() => setShowDateModal(false)}>
+              <IonModal isOpen={showDateModal}>
                 <IonDatetime
-                  presentation="date"
-                  value={date}
+                  value={date || new Date().toISOString()} // Default to current date if `date` is undefined
                   onIonChange={handleDateChange}
+                  max={new Date().toISOString()}  // Set minimum date to current date
+                 
                 />
+                <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>
               </IonModal>
+
             </IonCol>
           </IonRow>
           <div className="padding-content">
             <IonLabel className={showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "error" : ""}>
-              Opening Sonding (Cm) *
+              Opening Sonding (Cm) <span style={{color:"red"}}>*</span>
             </IonLabel>
             <IonInput
               className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
@@ -391,7 +433,7 @@ const OpeningForm: React.FC = () => {
           </div>
           <div className="padding-content">
             <IonLabel className={showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "error" : ""}>
-              Opening Dip (Liter) *
+              Opening Dip (Liter) <span style={{color:"red"}}>*</span>
             </IonLabel>
             <IonInput style={{background:"#cfcfcf"}}
               className={`custom-input ${showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "input-error" : ""}`}
@@ -408,7 +450,7 @@ const OpeningForm: React.FC = () => {
           <div className="padding-content">
             
             <IonLabel className={showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal)) ? "error" : ""}>
-              Flow Meter Awal **
+              Flow Meter Awal <span style={{color:"red"}}>*</span>
             </IonLabel>
             <IonInput
             className={`custom-input ${showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "input-error" : ""}`}

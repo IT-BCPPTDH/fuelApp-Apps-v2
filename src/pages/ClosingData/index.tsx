@@ -21,7 +21,7 @@ import "./style.css";
 import Cookies from 'js-cookie';
 import { ResponseError, updateData } from '../../hooks/serviceApi'; 
 import { DataLkf } from '../../models/db';
-import { getLatestLkfId } from '../../utils/getData'; // Ensure this path is correct
+import { getLatestLkfId } from '../../utils/getData';
 import { updateDataInDB } from '../../utils/update';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
@@ -43,7 +43,13 @@ const FormClosing: React.FC = () => {
     const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
     const [hmEnd, setHmEnd] = useState<number>(0);
     const [stockOnHand, setStockOnHand] = useState<number>(0);
+    
     const [note, setNote] = useState<string>('');
+    const [receiptKPC, setReceiptKPC] = useState<number>(0); // Assuming you have this value
+    const [receipt, setReceipt] = useState<number>(0); // Assuming you have this value
+    const [issued, setIssued] = useState<number>(0); // Assuming you have this value
+    const [transfer, setTransfer] = useState<number>(0); // Assuming you have this value
+    const [openingDip, setOpeningDip] = useState<number>(0); // Assuming you have this value
 
     useEffect(() => {
         const fetchLatestLkfId = async () => {
@@ -56,6 +62,11 @@ const FormClosing: React.FC = () => {
                 const parsedData = JSON.parse(shiftData);
                 setFlowMeterEnd(parsedData.flowMeterEnd || 0);
                 setStockOnHand(parsedData.stockOnHand || 0);
+                setReceiptKPC(parsedData.receiptKPC || 0); // Update as needed
+                setReceipt(parsedData.receipt || 0); // Update as needed
+                setIssued(parsedData.issued || 0); // Update as needed
+                setTransfer(parsedData.transfer || 0);
+                setOpeningDip(parsedData.openingDip|| 0); // Update as needed
             }
 
             const userData = localStorage.getItem("loginData");
@@ -93,7 +104,7 @@ const FormClosing: React.FC = () => {
                     const matchingData = sondingMasterData.find(
                         (item) => item.station === station && item.cm === closingSonding
                     );
-    
+
                     if (matchingData) {
                         console.log('Matching data found:', matchingData);
                         setClosingDip(matchingData.liters);
@@ -103,9 +114,9 @@ const FormClosing: React.FC = () => {
                 } catch (error) {
                     console.error('Failed to update closing dip', error);
                 }
-            } 
+            }
         };
-    
+
         updateClosingDip();
     }, [closingSonding, station, sondingMasterData]);
 
@@ -123,7 +134,7 @@ const FormClosing: React.FC = () => {
                 console.error('Failed to fetch sonding master data', error);
             }
         };
-    
+
         fetchSondingMasterData();
     }, []);
 
@@ -133,6 +144,11 @@ const FormClosing: React.FC = () => {
             setVariance(closingDip - stockOnHand);
         }
     }, [closingDip, stockOnHand]);
+
+    // Calculate Close Data
+    const calculateCloseData = () => {
+        return (openingDip + receiptKPC + receipt - issued - transfer);
+    };
 
     const handleSignatureConfirm = (newSignature: string) => {
         setSignatureBase64(newSignature);
@@ -153,8 +169,8 @@ const FormClosing: React.FC = () => {
             note: note,
             signature: signatureBase64 || '', // Use base64 string
             name: '', // Adjust as needed
-            issued: undefined, // Adjust as needed
-            receipt: undefined, // Adjust as needed
+            issued: issued,
+            receipt: receipt,
             stockOnHand: stockOnHand,
             lkf_id: latestLkfId || '',
             opening_dip: 0,
@@ -163,7 +179,7 @@ const FormClosing: React.FC = () => {
             closing_sonding: closingSonding || 0,
             closing_dip: closingDip || 0
         };
-    
+
         try {
             const response = await updateData(UpdateData);
             if (response.oke && (response.status === 200 || response.status === 201)) {
@@ -275,7 +291,7 @@ const FormClosing: React.FC = () => {
                                         style={{background:"#cfcfcf"}}
                                         className="custom-input"
                                         type="number"
-                                        value={stockOnHand}
+                                        value={calculateCloseData()} // Automatically calculate Close Data
                                         disabled
                                         placeholder="Input Close Data"
                                     />

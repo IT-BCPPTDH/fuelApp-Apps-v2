@@ -190,3 +190,40 @@
   .wrapper-content{
 	padding: 10px;
   }
+
+
+  .item-inner {
+    margin-left: -15px;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: var(--inner-padding-top);
+    padding-bottom: var(--inner-padding-bottom);
+    padding-right: calc(var(--ion-safe-area-right, 0px) + var(--inner-padding-end));
+    padding-left: var(--inner-padding-start);
+    display: -ms-flexbox;
+    display: flex;
+    position: relative;
+    -ms-flex: 1;
+    flex: 1;
+    -ms-flex-direction: inherit;
+    flex-direction: inherit;
+    -ms-flex-align: inherit;
+    align-items: inherit;
+    -ms-flex-item-align: stretch;
+    align-self: stretch;
+    min-height: inherit;
+    border-width: var(--inner-border-width);
+    border-style: var(--border-style);
+    border-color: var(--border-color);
+    -webkit-box-shadow: var(--inner-box-shadow);
+    box-shadow: var(--inner-box-shadow);
+    overflow: inherit;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.radio-inner {
+
+    background: #73a33f;
+}
