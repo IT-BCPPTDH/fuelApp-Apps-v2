@@ -584,7 +584,7 @@ const FormTRX: React.FC = () => {
 
   const handleHmLastChange = (e: CustomEvent) => {
     const newValue = Number(e.detail.value);
-    if (hmkmTRX !== undefined && newValue > hmkmTRX) {
+    if ( hmLast!== undefined && newValue > hmLast) {
       setShowError(true);
     } else {
       setShowError(false);
@@ -593,7 +593,7 @@ const FormTRX: React.FC = () => {
   };
 
   const isSaveButtonDisabled = () => {
-    return hmLast !== undefined && hmkmTRX !== undefined && hmkmTRX > hmLast;
+    return hmLast !== undefined && hmkmTRX !== undefined && hmkmTRX < hmLast;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
@@ -746,7 +746,7 @@ const FormTRX: React.FC = () => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    value={hmkmTRX !== null ? hmkmTRX : ""}
+                    // value={hmkmTRX !== null ? hmkmTRX : ""}
                     onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
                   />

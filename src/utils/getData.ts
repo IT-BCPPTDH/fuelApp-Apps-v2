@@ -210,15 +210,36 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
     const latestEntry = await db.dataTransaksi.orderBy('id').last();
 
     // Check if the entry is found and return the 'hm_last' field
-    if (latestEntry && latestEntry.hm_last !== undefined) {
-      return latestEntry.hm_last;
+    if (latestEntry && latestEntry.hm_km != null) {
+      return latestEntry.hm_km;
     } else {
-      console.warn("No 'hm_last' data found in the dataTransaksi collection.");
+      console.warn("No valid 'hm_last' data found in the dataTransaksi collection.");
       return undefined;
     }
   } catch (error) {
     // Log any errors that occur during data retrieval
     console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
+    return undefined;
+  }
+};
+
+
+
+export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {
+  try {
+    const latestEntry = await db.openingTrx.orderBy('id').reverse().limit(1).toArray();
+
+    if (latestEntry.length > 0) {
+      const entry = latestEntry[0];
+      return {
+        lkf_id: entry.lkf_id,
+        date: typeof entry.date === 'string' ? String(entry.date) : entry.date,
+      };
+    } else {
+      return undefined;
+    }
+  } catch (error) {
+    console.error("Failed to fetch the latest LKF data from IndexedDB:", error);
     return undefined;
   }
 };
