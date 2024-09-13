@@ -14,6 +14,7 @@ import {
 import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
 import { getLatestLkfId } from '../utils/getData';
 import { getHomeTable } from '../hooks/getHome';
+import { getAllDataTrx } from '../utils/getData';
 
 // Define the type for table data items
 interface TableDataItem {
@@ -27,18 +28,41 @@ interface TableDataItem {
   name_operator: string;
   jde_operator: string;
   status_code: number; // Ensure this field is included
+  
 }
 
+// Define the type for offline data items
+interface DataFormTrx {
+  no_unit: string;
+  model_unit: string;
+  fbr: number;
+  type: string;
+  qty: number;
+  flow_start: number;
+  flow_end: number;
+  name_operator: string;
+  jde_operator: string;
+  // status_code is not available in DataFormTrx
+}
+
+
+interface TableDataProps {
+  data: any; 
+}
 const TableData: React.FC = () => {
   const itemsPerPage = 3;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [nomorLKF, setNomorLKF] = useState<string | undefined>(undefined);
   const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
+  const [offlineData, setOfflineData] = useState<TableDataItem[] | undefined>(undefined);
   const [lkfId, setLkfId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  
 
+  // Fetch LKF ID
   useEffect(() => {
     const fetchLkfId = async () => {
       try {
@@ -53,41 +77,91 @@ const TableData: React.FC = () => {
         console.error("Failed to fetch LKF ID:", error);
       }
     };
-  
+
     fetchLkfId();
   }, []);
 
+  // Fetch table summary based on online/offline status
   useEffect(() => {
     const fetchTableSummary = async () => {
       if (lkfId) {
         console.log("Fetching data for LKF ID:", lkfId);
         try {
-          const response = await getHomeTable(lkfId);
-          console.log("Data Table:", response);
-  
-          if (response && response.data && Array.isArray(response.data)) {
-            setData(response.data);
+          let response: TableDataItem[]; // Define the expected type
+
+          if (isOnline) {
+            response = await getHomeTable(lkfId); // Fetch from backend
+            setOfflineData(response); // Cache data when online
           } else {
-            console.error("Expected an array in response.data but got:", response);
+            response = offlineData || []; // Use cached offline data
+          }
+
+          if (Array.isArray(response)) {
+            setData(response);
+          } else {
+            console.error("Expected an array but got:", response);
             setData([]);
           }
         } catch (error) {
           console.error("Failed to fetch table summary data:", error);
           setError("Failed to fetch data");
-          setData([]); // Ensure data is cleared in case of error
+          setData([]);
         } finally {
-          setLoading(false); // Stop loading indicator
+          setLoading(false);
         }
       } else {
         console.log("No LKF ID to fetch data for");
-        setData([]); // Clear data if no LKF ID
-        setLoading(false); // Stop loading indicator
+        setData([]);
+        setLoading(false);
       }
     };
-  
+
     fetchTableSummary();
-  }, [lkfId]);
-  
+  }, [lkfId, isOnline]);
+
+  // Fetch offline data when going offline
+  useEffect(() => {
+    const fetchOfflineData = async () => {
+      if (!isOnline) {
+        try {
+          const response: DataFormTrx[] = await getAllDataTrx(); // Fetch offline data
+          
+          if (Array.isArray(response)) {
+            // Transform DataFormTrx to TableDataItem
+            const transformedData: TableDataItem[] = response.map(item => ({
+              ...item,
+              status_code: 201 // Default status_code for offline data
+            }));
+            setOfflineData(transformedData);
+          } else {
+            console.error("Expected an array but got:", response);
+            setOfflineData([]);
+          }
+        } catch (error) {
+          console.error("Failed to fetch offline data:", error);
+          setOfflineData([]);
+        }
+      }
+    };
+
+    fetchOfflineData();
+  }, [isOnline]);
+
+  // Handle online/offline status changes
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Filter data based on search query
   const filteredData = (data || []).filter(item =>
     (item.no_unit?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
     (item.model_unit?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
@@ -111,7 +185,7 @@ const TableData: React.FC = () => {
 
   const handleSearchChange = (e: CustomEvent) => {
     setSearchQuery(e.detail.value);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
   if (loading) {
@@ -126,7 +200,7 @@ const TableData: React.FC = () => {
     <div style={{padding:"20px", marginTop:"-80px"}}>
       <IonRow className='padding-content'>
         <IonCol>
-          <div style={{display:"inline-flex",gap:"10px" }}>
+          <div style={{display:"inline-flex", gap:"10px" }}>
             <div style={{fontSize:"20px", fontWeight:"600px", color:"#222428"}}>LKF:</div>
             <span style={{fontSize:"20px", color:"#222428"}}>{nomorLKF || 'Loading...'}</span>
           </div>
@@ -175,7 +249,7 @@ const TableData: React.FC = () => {
       </IonCard>
       <div style={{ textAlign: 'start', margin: '20px' }}>
         <IonButton 
-          color="light" // Fixed typo from "ligth" to "light"
+          color="light"
           style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
           onClick={handlePrevious} 
           disabled={currentPage === 1}
@@ -183,8 +257,8 @@ const TableData: React.FC = () => {
           <IonIcon icon={chevronBackOutline} />
         </IonButton>
         <span style={{ margin: '0 20px' }}>Page {currentPage} of {totalPages}</span>
-        <IonButton  
-          color="light" // Fixed typo from "ligth" to "light"
+        <IonButton
+          color="light"
           style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
           onClick={handleNext} 
           disabled={currentPage === totalPages}
