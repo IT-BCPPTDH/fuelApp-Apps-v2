@@ -579,7 +579,7 @@ const FormTRX: React.FC = () => {
     } else {
       setShowError(false);
     }
-    setHmLast(value);
+    sethmkmTrx(value);
   };
 
   const handleHmLastChange = (e: CustomEvent) => {
@@ -733,7 +733,7 @@ const FormTRX: React.FC = () => {
                     type="number"
                     placeholder="Input HM/KM Unit"
                     onIonChange={handleHmLastChange}
-                    value={hmkmTRX !== null ? hmkmTRX : ""}
+                    value={hmLast !== null ? hmLast : ""}
                     onKeyDown={handleKeyDown}
                   />
                 </IonCol>
@@ -746,7 +746,7 @@ const FormTRX: React.FC = () => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    value={hmLast !== null ? hmLast : ""}
+                    value={hmkmTRX !== null ? hmkmTRX : ""}
                     onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
                   />
