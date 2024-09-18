@@ -26,9 +26,7 @@ type PostAuthParams = {
     signature?: string | null; // Allow `null` if appropriate
     type: string;
     lkf_id?: string;
-    start_time: string;
-    end_time: string;
-    status: boolean;
+    status: number;
     jde_operator: string;
     fuelman_id: string;
     flow_start:number;
@@ -36,7 +34,6 @@ type PostAuthParams = {
     foto:string ;
     end:string,
     sonding_start:number,
-   
 };
 
 

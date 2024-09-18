@@ -20,6 +20,7 @@ import { postAuthLogin } from "../../hooks/useAuth";
 import { getStation as fetchStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
 import { getAllUnit } from "../../hooks/getAllUnit";
+import { getDataLastLkfByStation } from "../../hooks/openingData";
 import "./style.css";
 
 interface Station {
@@ -37,6 +38,9 @@ const Login: React.FC = () => {
   const [sondingData, setSondingData] = useState<any[]>([]); // Added state for sonding data
   const router = useIonRouter();
   const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
+  const [openigForm, setopeningForm] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
+
+  
   const fetchAllStationData = async () => {
     try {
       const response = await fetchStation('some-argument'); // Provide the required argument
@@ -66,7 +70,7 @@ const Login: React.FC = () => {
             const response = await getAllUnit();
             if (response.status === '200' && Array.isArray(response.data)) {
                 const unitData = response.data;
-                setUnitOptions(unitData);
+                setopeningForm(unitData);
 
                 // Store data in localStorage
                 localStorage.setItem('allUnit', JSON.stringify(unitData));
@@ -81,6 +85,7 @@ const Login: React.FC = () => {
     fetchUnitOptions();
 }, []);
 
+
  
   useEffect(() => {
     const loadStationData = async () => {
@@ -94,6 +99,59 @@ const Login: React.FC = () => {
 
     loadStationData();
   }, []);
+
+
+  useEffect(() => {
+    const fetchDataFormAwal = async () => {
+        try {
+            const storedStation = localStorage.getItem('stationData');
+
+            if (!storedStation) {
+                console.warn('No station data found in localStorage. Using default station.');
+                const defaultStation = 'FT1116'
+                const response = await getDataLastLkfByStation(defaultStation);
+
+                console.log('API Response (default):', response);
+
+                if (response.data && Array.isArray(response.data)) {
+                    if (response.data.length === 0) {
+                        console.warn('Response data is empty.');
+                    }
+                    const openingDataForm = response.data;
+                    setUnitOptions(openingDataForm);
+                    localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
+                } else {
+                    console.error('Unexpected data format. Response:', response);
+                }
+                return;
+            }
+
+            const station = JSON.parse(storedStation);
+            console.log('Fetched station from localStorage:', station);
+
+            const response = await getDataLastLkfByStation(station);
+
+            console.log('API Response:', response);
+
+            if (response.data && Array.isArray(response.data)) {
+                if (response.data.length === 0) {
+                    console.warn('Response data is empty.');
+                }
+                const openingDataForm = response.data;
+                setUnitOptions(openingDataForm);
+                localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
+            } else {
+                console.error('Unexpected data format. Response:', response);
+            }
+        } catch (error) {
+            console.error('Failed to fetch unit options', error);
+        }
+    };
+
+    fetchDataFormAwal();
+}, []);
+
+
 
 
 

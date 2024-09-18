@@ -1,6 +1,8 @@
 
 const BE_USER='http://127.0.0.1:9001'
 
+import { CapacitorHttp } from '@capacitor/core';
+
 import { ResponseError } from "../helper/responseError";
 
 
@@ -31,3 +33,5 @@ export async function getOperator() {
         }
     }
 }
+
+

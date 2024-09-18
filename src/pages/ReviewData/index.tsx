@@ -7,6 +7,7 @@ import { getLatestLkfId, getLatestLkfData } from '../../utils/getData';
 import { logoutUser } from '../../hooks/useAuth';
 
 import './style.css';
+import { removeDataFromDBTrx } from '../../utils/insertData';
 
 const ReviewData: React.FC = () => {
     const route = useIonRouter();
@@ -21,11 +22,6 @@ const ReviewData: React.FC = () => {
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
     const [station, setStation] = useState<string | undefined>(undefined);
 
-    
-    
-    
-    
-    
 
     useEffect(() => {
         const fetchLatestLkfId = async () => {
@@ -75,7 +71,7 @@ const ReviewData: React.FC = () => {
             const params = {
                 logout_time: logout_time,
                 time: time,
-                station: '',  // Add other parameters as needed
+                station: '', 
                 JDE: '',
                 userId: '',
                 isLoggin: '',
@@ -89,7 +85,7 @@ const ReviewData: React.FC = () => {
             // Remove cookies after successful logout
             Cookies.remove('isLoggedIn');
             Cookies.remove('authToken'); // Remove other cookies if necessary
-            
+    
             // Clear specific shift data from local storage
             const shiftData = localStorage.getItem('shiftData');
             if (shiftData) {
@@ -103,7 +99,11 @@ const ReviewData: React.FC = () => {
                     localStorage.removeItem('shiftData');
                 }
             }
+    
+           
+            // Delete dataTransaksi from IndexedDB
             
+    
             // Redirect to the home page or login page
             window.location.href = '/';
         } catch (error) {
@@ -111,6 +111,9 @@ const ReviewData: React.FC = () => {
             // Handle logout failure, e.g., show an error message
         }
     };
+    
+
+
     
     return (
         <IonPage>
@@ -154,7 +157,7 @@ const ReviewData: React.FC = () => {
                         </IonItem>
                     </IonList>
                     <div style={{ marginTop: "20px", float: "inline-end" }}>
-                        <IonButton color="light" onClick={() => route.push('/') }>
+                        <IonButton color="light" onClick={() => route.push('/closing-data') }>
                             <IonIcon slot="start" icon={closeCircleOutline} />Batal
                         </IonButton>
                         <IonButton onClick={handleLogout} className="check-close">
@@ -163,7 +166,7 @@ const ReviewData: React.FC = () => {
                     </div>
                 </div>
             </IonContent>
-            <h4 style={{ textAlign: "center" }}>Station: {station}</h4>
+          
         </IonPage>
     );
 };

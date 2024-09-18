@@ -129,6 +129,8 @@ const FormTRX: React.FC = () => {
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
+  const [status, setStatus] = useState<number>(0); 
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -321,15 +323,23 @@ const FormTRX: React.FC = () => {
     route.push("/dashboard");
   };
 
+ 
+  // Function to insert new data into the dashboard or database
+
+
+  
+
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log("Initial Status:", status);
+  
     if (isSaveButtonDisabled()) {
-      setModalMessage(
-        "HM/KM Unit Tidak Bole Kecil Dari HM/KM Terakhir Transaksi"
-      );
+      setModalMessage("HM/KM Unit Tidak Bole Kecil Dari HM/KM Terakhir Transaksi");
       setErrorModalOpen(true);
       return;
     }
+  
     // Validate form fields
     if (
       !selectedType ||
@@ -345,25 +355,16 @@ const FormTRX: React.FC = () => {
       setErrorModalOpen(true);
       return;
     }
-
-    // Log the current values for debugging
-    console.log("Selected Unit:", selectedUnit);
-    console.log("Flow Meter Awal:", flowMeterAwal);
-    console.log("Flow Meter Akhir:", flowMeterAkhir);
-    console.log("FBR:", fbr);
-    console.log("Quantity:", quantity);
-
+  
     // Convert values to numbers where necessary
     const flow_end: number = Number(calculateFlowEnd()) || 0;
     const calculatedFBR: number = Number(calculateFBR()) || 0;
-
+  
     // Prepare form data
     const fromDataId = Date.now();
-    const signatureBase64 = signature
-      ? await convertToBase64(signature)
-      : undefined;
+    const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
     const lkf_id = await getLatestLkfId();
-
+  
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -375,7 +376,7 @@ const FormTRX: React.FC = () => {
       qty_last: Number(quantity) || 0,
       qty: Number(quantity) || 0,
       flow_start: Number(flowMeterAwal) || 0,
-      flow_end: flow_end, // Ensure number type
+      flow_end: flow_end,
       dip_start: Number(dipStart) || 0,
       dip_end: Number(dipEnd) || 0,
       sonding_start: Number(sondingStart) || 0,
@@ -383,57 +384,64 @@ const FormTRX: React.FC = () => {
       name_operator: fullName!,
       start: startTime!,
       end: endTime!,
-      fbr: calculatedFBR, // Ensure number type
-      lkf_id: lkf_id ?? "", // Assuming lkf_id can be an empty string if undefined
+      fbr: calculatedFBR,
+      lkf_id: lkf_id ?? "",
       signature: signatureBase64 ?? "",
       type: selectedType?.name ?? "",
       foto: photoPreview ?? "",
       fuelman_id: fuelman_id!,
-      status: false,
+      status: status ,
       jde_operator: "",
       reference: Number(Refrence) || 0,
-      site: "",
       liters: 0,
       cm: 0,
-      station: "",
-      date: "",
-      timestamp: "",
-      start_time: "",
-      end_time: "",
-      unit: "",
+      date: ""
     };
-
-    console.log("Posting Data:", dataPost); // Log the data to be posted
-
+  
     try {
-      if (isOnline) {
-        // If online, post the transaction data
-        await insertNewData(dataPost);
-        const response = await postTransaksi(dataPost);
-
-        if (
-          response.ok &&
-          (response.status === 200 || response.status === 201)
-        ) {
-          setModalMessage("Transaction posted successfully");
-          setSuccessModalOpen(true);
-          route.push("/dashboard");
-        } else {
-        }
-      } else {
-        // If offline, save data as draft
+      if (status === 0) {
+        // Save data as draft in IndexedDB
+        console.log("Saving data as draft to IndexedDB...");
         await insertNewData(dataPost);
         setModalMessage("Data saved as draft");
         setSuccessModalOpen(true);
         route.push("/dashboard");
+      } else if (status === 1) {
+        // If status is 1, post data to backend
+        if (isOnline) {
+          console.log("Posting data to backend...");
+          const response = await postTransaksi(dataPost);
+  
+          console.log("API Response Status:", response.status);
+          console.log("API Response OK:", response.ok);
+  
+          if (response.ok && (response.status === 201)) {
+            // Save data to IndexedDB after successful post
+            console.log("Saving data to IndexedDB after successful post...");
+            await insertNewData(dataPost);
+            
+            setModalMessage("Transaction posted successfully and saved locally");
+            setSuccessModalOpen(true);
+            route.push("/dashboard");
+          } else {
+            setModalMessage("Failed to post transaction. Please try again.");
+            setErrorModalOpen(true);
+          }
+        } else {
+          console.log("Saving data as draft (offline)...");
+          await insertNewData(dataPost);
+          setModalMessage("Data saved as draft (offline)");
+          setSuccessModalOpen(true);
+          route.push("/dashboard");
+        }
       }
     } catch (error) {
+      console.error("Error occurred while posting data:", error);
       setModalMessage("Error occurred while posting data: " + error);
       setErrorModalOpen(true);
     }
   };
-
-  // Function to insert new data into the dashboard or database
+  
   const insertNewData = async (data: DataFormTrx) => {
     try {
       await addDataTrxType(data);
@@ -442,6 +450,7 @@ const FormTRX: React.FC = () => {
       console.error("Failed to insert new data:", error);
     }
   };
+
 
   const handleSignatureConfirm = (newSignature: string) => {
     setSignatureBase64(newSignature);

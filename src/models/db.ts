@@ -24,19 +24,17 @@ interface DataLkf {
   flow_meter_end:number;
   note:string;
   signature:string;
+
            
   
 }
 
 interface DataFormTrx {
-  unit: string;
-  timestamp: any;
-  id?: number; // Auto-incremented ID
   date: string | number | Date;
-  site: string;
+  date: string | number | Date;
+  id?: number; // Auto-incremented ID
   liters: number;
   cm: number;
-  station: string;
   from_data_id: number;
   no_unit: string;
   model_unit: string;
@@ -54,9 +52,7 @@ interface DataFormTrx {
   foto: string;
   type: string;
   lkf_id?: string;
-  start_time: string;
-  end_time: string;
-  status: boolean;
+  status: number;
   jde_operator: string;
   fuelman_id: string;
   dip_start: number;

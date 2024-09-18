@@ -132,15 +132,22 @@ export const getCalculationReceive = async (lkfId: string): Promise<number | und
   }
 };
 
-export const getAllDataTrx = async (): Promise<DataFormTrx[]> => {
+export const getAllDataTrx = async (lkfId: string): Promise<DataFormTrx[]> => {
   try {
     const allData = await db.dataTransaksi.toArray();
-    return allData;
+    
+    // Assuming `date_trx` is a Date object or can be compared as such
+    const sortedData = allData.sort((a, b) => {
+      return new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime();
+    });
+
+    return sortedData;
   } catch (error) {
     console.error("Failed to fetch data from IndexedDB:", error);
     return [];
   }
 };
+
 
 export const getAllDataSonding = async (): Promise<SondingData[]> => {
   try {
@@ -244,5 +251,16 @@ export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: 
   }
 };
 
+
+
+export const getLatestLkfIdHm = async (): Promise<number | undefined> => {
+  try {
+    const latestEntry = await db.openingTrx.orderBy('id').last();
+    return latestEntry ? latestEntry.hm_start : undefined;
+  } catch (error) {
+    console.error("Failed to fetch the latest LKF ID from IndexedDB:", error);
+    return undefined;
+  }
+};
 
 

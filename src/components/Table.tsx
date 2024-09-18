@@ -9,67 +9,42 @@ import {
   IonText,
   IonButton,
   IonSearchbar,
-  IonIcon
+  IonIcon,
+  IonBadge
 } from "@ionic/react";
 import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
-import { getLatestLkfId } from '../utils/getData';
-import { getHomeTable } from '../hooks/getHome';
-import { getAllDataTrx } from '../utils/getData';
+import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
 
 // Define the type for table data items
 interface TableDataItem {
-  no_unit: string;
+  id: number;
+  unit_no: string;
   model_unit: string;
-  fbr: number;
-  type: string;
-  qty: number;
-  flow_start: number;
-  flow_end: number;
-  name_operator: string;
-  jde_operator: string;
-  status_code: number; // Ensure this field is included
-  
+  fbr_historis: string;
+  jenis_trx: string;
+  qty_issued: number;
+  fm_awal: number;
+  fm_akhir: number;
+  name: string;
+  status: string;
 }
 
-// Define the type for offline data items
-interface DataFormTrx {
-  no_unit: string;
-  model_unit: string;
-  fbr: number;
-  type: string;
-  qty: number;
-  flow_start: number;
-  flow_end: number;
-  name_operator: string;
-  jde_operator: string;
-  // status_code is not available in DataFormTrx
-}
-
-
-interface TableDataProps {
-  data: any; 
-}
 const TableData: React.FC = () => {
   const itemsPerPage = 3;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [nomorLKF, setNomorLKF] = useState<string | undefined>(undefined);
   const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
-  const [offlineData, setOfflineData] = useState<TableDataItem[] | undefined>(undefined);
-  const [lkfId, setLkfId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  
 
-  // Fetch LKF ID
   useEffect(() => {
     const fetchLkfId = async () => {
       try {
         const latestLkfId = await getLatestLkfId();
         if (latestLkfId) {
-          setLkfId(latestLkfId);
           setNomorLKF(latestLkfId);
+          await fetchData(latestLkfId); // Fetch data with the latest LKF ID
         } else {
           console.error("No LKF ID returned");
         }
@@ -81,93 +56,40 @@ const TableData: React.FC = () => {
     fetchLkfId();
   }, []);
 
-  // Fetch table summary based on online/offline status
-  useEffect(() => {
-    const fetchTableSummary = async () => {
-      if (lkfId) {
-        console.log("Fetching data for LKF ID:", lkfId);
-        try {
-          let response: TableDataItem[]; // Define the expected type
+  const fetchData = async (lkfId: string) => {
+    try {
+      const rawData = await getAllDataTrx(lkfId);
+      console.log("Raw Data:", rawData); // Log raw data to verify status values
+      const mappedData: TableDataItem[] = rawData.map((item: any) => ({
+        id: item.id ?? 0,
+        unit_no: item.no_unit || '',
+        model_unit: item.model_unit || '',
+        fbr_historis: item.fbr || '',
+        jenis_trx: item.type || '',
+        qty_issued: item.qty ?? 0,
+        fm_awal: item.flow_start ?? 0,
+        fm_akhir: item.flow_end ?? 0,
+        name: item.fuelman_id || '',
+        status: item.status === 0 ? 'Pending' : 'Sent', // Ensure mapping is correct
+      }));
+  
+      setData(mappedData);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      setError("Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  
 
-          if (isOnline) {
-            response = await getHomeTable(lkfId); // Fetch from backend
-            setOfflineData(response); // Cache data when online
-          } else {
-            response = offlineData || []; // Use cached offline data
-          }
-
-          if (Array.isArray(response)) {
-            setData(response);
-          } else {
-            console.error("Expected an array but got:", response);
-            setData([]);
-          }
-        } catch (error) {
-          console.error("Failed to fetch table summary data:", error);
-          setError("Failed to fetch data");
-          setData([]);
-        } finally {
-          setLoading(false);
-        }
-      } else {
-        console.log("No LKF ID to fetch data for");
-        setData([]);
-        setLoading(false);
-      }
-    };
-
-    fetchTableSummary();
-  }, [lkfId, isOnline]);
-
-  // Fetch offline data when going offline
-  useEffect(() => {
-    const fetchOfflineData = async () => {
-      if (!isOnline) {
-        try {
-          const response: DataFormTrx[] = await getAllDataTrx(); // Fetch offline data
-          
-          if (Array.isArray(response)) {
-            // Transform DataFormTrx to TableDataItem
-            const transformedData: TableDataItem[] = response.map(item => ({
-              ...item,
-              status_code: 201 // Default status_code for offline data
-            }));
-            setOfflineData(transformedData);
-          } else {
-            console.error("Expected an array but got:", response);
-            setOfflineData([]);
-          }
-        } catch (error) {
-          console.error("Failed to fetch offline data:", error);
-          setOfflineData([]);
-        }
-      }
-    };
-
-    fetchOfflineData();
-  }, [isOnline]);
-
-  // Handle online/offline status changes
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  // Filter data based on search query
   const filteredData = (data || []).filter(item =>
-    (item.no_unit?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (item.model_unit?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (item.fbr?.toString().toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (item.type?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (item.name_operator?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+    item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.model_unit.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.fbr_historis.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.jenis_trx.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -185,7 +107,7 @@ const TableData: React.FC = () => {
 
   const handleSearchChange = (e: CustomEvent) => {
     setSearchQuery(e.detail.value);
-    setCurrentPage(1);
+    setCurrentPage(1); 
   };
 
   if (loading) {
@@ -197,13 +119,11 @@ const TableData: React.FC = () => {
   }
 
   return (
-    <div style={{padding:"20px", marginTop:"-80px"}}>
+    <div >
       <IonRow className='padding-content'>
-        <IonCol>
-          <div style={{display:"inline-flex", gap:"10px" }}>
-            <div style={{fontSize:"20px", fontWeight:"600px", color:"#222428"}}>LKF:</div>
-            <span style={{fontSize:"20px", color:"#222428"}}>{nomorLKF || 'Loading...'}</span>
-          </div>
+        <IonCol style={{display:"flex", gap:"10px", marginTop:"20px"}}>
+          <div style={{ fontSize: "20px", fontWeight: "600px", color: "#222428" }}>LKF:</div>
+          <span style={{ fontSize: "20px", color: "#222428"  }}>{nomorLKF || 'Loading...'}</span>
         </IonCol>
         <IonCol>
           <IonSearchbar 
@@ -229,28 +149,22 @@ const TableData: React.FC = () => {
 
           {/* Table Data */}
           {paginatedData.map((item: TableDataItem) => (
-            <IonRow style={{ width: "900px" }} key={item.no_unit}>
-              <IonCol><IonText>{item.no_unit}</IonText></IonCol>
+            <IonRow style={{ width: "900px" }} key={item.id}>
+              <IonCol><IonText>{item.unit_no}</IonText></IonCol>
               <IonCol><IonText>{item.model_unit}</IonText></IonCol>
-              <IonCol><IonText>{item.fbr}</IonText></IonCol>
-              <IonCol><IonText>{item.type}</IonText></IonCol>
-              <IonCol><IonText>{item.qty}</IonText></IonCol>
-              <IonCol><IonText>{item.flow_start}</IonText></IonCol>
-              <IonCol><IonText>{item.flow_end}</IonText></IonCol>
-              <IonCol><IonText>{item.name_operator}</IonText></IonCol>
-              <IonCol>
-                <IonText>
-                  {item.status_code === 201 ? 'Pending' : 'Sent'}
-                </IonText>
-              </IonCol>
+              <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
+              <IonCol><IonText>{item.jenis_trx}</IonText></IonCol>
+              <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
+              <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
+              <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
+              <IonCol><IonText>{item.name}</IonText></IonCol>
+              <IonCol><IonText>{item.status}</IonText></IonCol>
             </IonRow>
           ))}
         </IonGrid>
       </IonCard>
       <div style={{ textAlign: 'start', margin: '20px' }}>
         <IonButton 
-          color="light"
-          style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
           onClick={handlePrevious} 
           disabled={currentPage === 1}
         >
@@ -258,14 +172,17 @@ const TableData: React.FC = () => {
         </IonButton>
         <span style={{ margin: '0 20px' }}>Page {currentPage} of {totalPages}</span>
         <IonButton
-          color="light"
-          style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
           onClick={handleNext} 
           disabled={currentPage === totalPages}
         >
           <IonIcon icon={chevronForwardOutline} />
-        </IonButton>
+          
+        </IonButton>   
       </div>
+      <IonGrid style={{float:"inline-end"}}>
+        <IonButton  className='check-button'  > Save Data To Server</IonButton>
+      </IonGrid>
+ 
     </div>
   );
 };

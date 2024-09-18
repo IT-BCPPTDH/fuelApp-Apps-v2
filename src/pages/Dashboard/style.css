@@ -203,5 +203,12 @@
     margin-top: -60px;
   }
 
+  .card-md{
+	height: 90px;
+  }
+
+  .btn-server{
+    float: inline-end;
+  }
 
   

@@ -209,7 +209,7 @@ const DashboardFuelMan: React.FC = () => {
         </IonHeader>
 
         <div className='content'>
-          <div className='btn-start' style={{ padding: "15px" }}>
+          <div className='btn-start'>
             <IonButton color="primary" onClick={handleRefresh}>
               <IonImg src='refresh.svg' alt="Refresh" />
               Refresh
@@ -221,50 +221,60 @@ const DashboardFuelMan: React.FC = () => {
         </div>
 
         <div className='padding-content mr20' style={{ marginTop: "20px" }}>
+          <IonGrid>
+            <IonRow >
+              <IonCol></IonCol>
+            </IonRow>
+          </IonGrid>
           <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <h4 style={{ padding: '15px' }}>Fuelman : {fullname}</h4>
-            <h4 style={{ padding: '15px', marginLeft: '370px', position:"absolute"}}>{latestDate}</h4>
+          <h4 >Fuelman : {fullname}</h4>
+          <h4 >{latestDate}</h4>
           </IonRow>
         </div>
         
-        <IonGrid style={{ marginTop: "20px" }}>
-          <IonRow style={{ padding: "15px", marginTop: "-60px" }}>
+        <IonGrid >
+          <IonRow >
             {cardData.map((card, index) => (
               <IonCol size="4" key={index}>
-                <IonCard>
+                <IonCard style={{height:"90px"}} >
                   <IonCardHeader>
                     <IonCardSubtitle style={{ fontSize: "16px" }}>{card.title}</IonCardSubtitle>
                     <div style={{ display: "inline-flex", gap: "10px" }}>
                       <IonImg src={card.icon} alt={card.title} style={{ width: '30px', height: '30px', marginTop: "10px" }} />
-                      <IonCardContent style={{ fontSize: "24px", fontWeight: "500" }}>{card.value}</IonCardContent>
+                      <IonCardContent style={{ fontSize: "24px", fontWeight: "500" , marginTop:"-10px"}}>{card.value}</IonCardContent>
                     </div>
+                    
                   </IonCardHeader>
+                  
                 </IonCard>
               </IonCol>
             ))}
-            <p style={{
+          <IonRow>
+          <p style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               flexDirection: 'column',
             }}>
-              <p style={{ color: "#E16104", textAlign: 'justify', padding:"15px", marginTop:"-20px" }}>
-                * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
-                * QTY Issued adalah Issued + Transfer
-              </p>
+            <p style={{ 
+              color: "#E16104", 
+              textAlign: 'justify', 
+              marginLeft: "15px", 
+              marginRight: "15px" 
+            }}>
+              * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
+              * QTY Issued adalah Issued + Transfer
+            </p>
             </p>
           </IonRow>
-       
-          <div className='content'>
+          </IonRow>
             <IonButton 
-              style={{ padding: "15px", marginTop: "-110px" }} 
+              style={{ padding: "15px" }} 
               className='check-button' 
-              onClick={() => route.push('/transaction')}
-            >
+              onClick={() => route.push('/transaction')}>
               <IonImg src='plus.svg'/>
               <span style={{ marginLeft: "10px" }}>Tambah Data</span>
             </IonButton>
-          </div>
           <TableData />
         </IonGrid>
         
