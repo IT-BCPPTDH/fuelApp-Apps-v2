@@ -260,7 +260,8 @@ const DashboardFuelMan: React.FC = () => {
               color: "#E16104", 
               textAlign: 'justify', 
               marginLeft: "15px", 
-              marginRight: "15px" 
+              marginRight: "15px", 
+              marginTop:"-15px"
             }}>
               * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
               * QTY Issued adalah Issued + Transfer
@@ -269,7 +270,7 @@ const DashboardFuelMan: React.FC = () => {
           </IonRow>
           </IonRow>
             <IonButton 
-              style={{ padding: "15px" }} 
+              style={{ padding: "15px", marginTop:"-40px" }} 
               className='check-button' 
               onClick={() => route.push('/transaction')}>
               <IonImg src='plus.svg'/>
