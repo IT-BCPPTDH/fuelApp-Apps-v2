@@ -11,8 +11,9 @@ export class ResponseError extends Error {
         this.name = "ResponseError";
     }
 }
-type PostAuthParams = {
-    from_data_id: string;
+
+type PostBulkInsert = {
+    from_data_id: number;
     no_unit: string;
     model_unit: string;
     owner: string;
@@ -23,23 +24,22 @@ type PostAuthParams = {
     qty: number;
     name_operator: string;
     fbr?: number;
-    signature?: string | null; // Allow `null` if appropriate
+    signature?: string | null;
     type: string;
     lkf_id?: string;
-    status: number;
+    status?: number; 
     jde_operator: string;
-    fuelman_id: string;
-    flow_start:number;
-    flow_end:number;
-    foto:string ;
-    end:string,
-    sonding_start:number,
+    flow_start: number;
+    flow_end: number;
+    foto?: string;
+    end: string;
+    sonding_start?: number;
+    created_by?:string;
 };
 
-
-
-export const postTransaksi = async (params: PostAuthParams) => {
-    const url = `${LINK_BACKEND}/api/operator/post-data`;
+// Function to post bulk data
+export const postBulkData = async (bulkData: PostBulkInsert[]) => {
+    const url = `${LINK_BACKEND}/api/operator/bulk-insert`;
 
     try {
         const response = await fetch(url, {
@@ -47,7 +47,7 @@ export const postTransaksi = async (params: PostAuthParams) => {
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(params), 
+            body: JSON.stringify(bulkData),  // Wrap bulkData in an object
         });
 
         if (!response.ok) {
@@ -67,3 +67,4 @@ export const postTransaksi = async (params: PostAuthParams) => {
         }
     }
 };
+

@@ -40,8 +40,8 @@ const DashboardFuelMan: React.FC = () => {
     { title: 'Total Flow Meter', value: 'No Data', icon: 'total.svg' },
     { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
   ]);
-
-  const [fullname, setFuelman] = useState<string>(''); // New state for Fuelman
+  const [fullname, setFullname] = useState('');
+   // New state for Fuelman
   const [currentDate, setCurrentDate] = useState<string>(''); // State for current date
   const [latestDate, setLatestDate] = useState<string>(''); // State for latest date
   const route = useIonRouter();
@@ -49,7 +49,7 @@ const DashboardFuelMan: React.FC = () => {
   const [lkfId, setLkfId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-
+  const [jde, setJde] = useState<string>(''); 
   useEffect(() => {
     const handleOnlineStatus = () => {
       setIsOnline(navigator.onLine);
@@ -143,9 +143,10 @@ const DashboardFuelMan: React.FC = () => {
             if (homeData && homeData.fullname) {
               const matchedEmployee = homeData.fullname.find((employee: any) => employee.JDE === jde);
               if (matchedEmployee) {
-                setFuelman(matchedEmployee.fullname);
+             
+                setJde(matchedEmployee.jde);
               } else {
-                setFuelman('No Employee Found');
+               
               }
             }
           }
@@ -175,6 +176,41 @@ const DashboardFuelMan: React.FC = () => {
   const handleRefresh = () => {
     window.location.reload();
   };
+
+
+ 
+  useEffect(() => {
+   
+    const storedLoginData = localStorage.getItem('loginData');
+    const storedEmployeeData = localStorage.getItem('employeeData');
+
+    if (storedLoginData) {
+        const loginData = JSON.parse(storedLoginData);
+        setJde(loginData.jde || ''); 
+    }
+
+    if (storedEmployeeData) {
+        const employeeData = JSON.parse(storedEmployeeData);
+        console.log('emp', employeeData);
+
+     
+        const employee = employeeData.find((emp: { jde: string; }) => emp.jde === (jde || ''));
+        setFullname(employee ? employee.fullname : ''); 
+    }
+}, []); 
+
+
+useEffect(() => {
+    const storedEmployeeData = localStorage.getItem('employeeData');
+    if (storedEmployeeData) {
+        const employeeData = JSON.parse(storedEmployeeData);
+        console.log('emp', employeeData);
+
+       
+        const employee = employeeData.find((emp: { jde: string; }) => emp.jde === jde);
+        setFullname(employee ? employee.fullname : '');
+    }
+}, [jde]);
 
   return (
     <IonPage>
@@ -227,7 +263,8 @@ const DashboardFuelMan: React.FC = () => {
             </IonRow>
           </IonGrid>
           <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <h4 >Fuelman : {fullname}</h4>
+          <h4 >Fuelman : {jde}</h4>
+          
           <h4 >{latestDate}</h4>
           </IonRow>
         </div>
@@ -260,7 +297,8 @@ const DashboardFuelMan: React.FC = () => {
               color: "#E16104", 
               textAlign: 'justify', 
               marginLeft: "15px", 
-              marginRight: "15px" 
+              marginRight: "15px", 
+              marginTop:"-15px"
             }}>
               * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
               * QTY Issued adalah Issued + Transfer
@@ -269,7 +307,7 @@ const DashboardFuelMan: React.FC = () => {
           </IonRow>
           </IonRow>
             <IonButton 
-              style={{ padding: "15px" }} 
+              style={{ padding: "15px", marginTop:"-40px" }} 
               className='check-button' 
               onClick={() => route.push('/transaction')}>
               <IonImg src='plus.svg'/>
