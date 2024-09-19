@@ -275,7 +275,8 @@ const OpeningForm: React.FC = () => {
       flow_meter_end: 0,
       note: "",
       signature: "",
-     
+      close_data: 0,
+      variance: 0
     };
 
     try {
