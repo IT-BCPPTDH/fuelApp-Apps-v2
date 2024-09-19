@@ -24,6 +24,8 @@ interface DataLkf {
   flow_meter_end:number;
   note:string;
   signature:string;
+  close_data:number,
+  variance:number,
 
            
   
@@ -34,7 +36,7 @@ interface DataFormTrx {
   id?: number; // Auto-incremented ID
   liters: number;
   cm: number;
-  from_data_id: number;
+  from_data_id: string;
   no_unit: string;
   model_unit: string;
   owner: string;

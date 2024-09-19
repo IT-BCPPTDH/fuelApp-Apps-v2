@@ -19,15 +19,17 @@ import { checkmarkCircleOutline } from 'ionicons/icons';
 import { updateDataInTrx } from '../utils/update';
 // Define the type for table data items
 interface TableDataItem {
-  id: number;
+  from_data_id: number;
   unit_no: string;
   model_unit: string;
+  owner:string;
   fbr_historis: string;
   jenis_trx: string;
   qty_issued: number;
   fm_awal: number;
   fm_akhir: number;
-  name: string;
+  jde_operator: string;
+  name_operator:string;
   status: string;
 }
 
@@ -64,15 +66,17 @@ const TableData: React.FC = () => {
     try {
       const rawData = await getAllDataTrx(lkfId);
       const mappedData: TableDataItem[] = rawData.map((item: any) => ({
-        id: item.id ?? 0,
+        from_data_id: item.from_data_id ?? 0,
         unit_no: item.no_unit || '',
         model_unit: item.model_unit || '',
-        fbr_historis: item.fbr || '',
+        owner: item.owner || '',
+        fbr_historis: item.fbr ??  '',
         jenis_trx: item.type || '',
         qty_issued: item.qty ?? 0,
         fm_awal: item.flow_start ?? 0,
         fm_akhir: item.flow_end ?? 0,
-        name: item.fuelman_id || '',
+        jde_operator: item.fuelman_id || '',
+        name_operator:item.fullname,
         status: item.status === 0 ? 'Pending' : 'Sent',
       }));
 
@@ -100,10 +104,10 @@ const TableData: React.FC = () => {
     }
 
     const bulkData = data.map(item => ({
-      from_data_id: item.id,
+      from_data_id: item.from_data_id,
       no_unit: item.unit_no,
       model_unit: item.model_unit,
-      owner: '',
+      owner: item.owner,
       date_trx: new Date().toISOString(),
       hm_last: 0,
       hm_km: 0,
@@ -111,13 +115,13 @@ const TableData: React.FC = () => {
       qty: item.qty_issued,
       flow_start: item.fm_awal,
       flow_end: item.fm_akhir,
-      name_operator: item.name,
+      name_operator: item.jde_operator,
       fbr: parseFloat(item.fbr_historis),
       signature: '',
       photo: '',
       type: item.jenis_trx,
       lkf_id: nomorLKF || undefined,
-      jde_operator: '',
+      jde_operator:item.jde_operator,
       created_by: createdBy,
       start: new Date().toISOString(),
       end: new Date().toISOString(),
@@ -152,7 +156,7 @@ const TableData: React.FC = () => {
     item.model_unit.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.fbr_historis.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.jenis_trx.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    item.jde_operator.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -212,7 +216,7 @@ const TableData: React.FC = () => {
 
           {/* Table Data */}
           {paginatedData.map((item: TableDataItem) => (
-            <IonRow style={{ width: "900px" }} key={item.id}>
+            <IonRow style={{ width: "900px" }} key={item.from_data_id}>
               <IonCol><IonText>{item.unit_no}</IonText></IonCol>
               <IonCol><IonText>{item.model_unit}</IonText></IonCol>
               <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
@@ -220,7 +224,7 @@ const TableData: React.FC = () => {
               <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
               <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
               <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
-              <IonCol><IonText>{item.name}</IonText></IonCol>
+              <IonCol><IonText>{item.jde_operator}</IonText></IonCol>
               <IonCol><IonText>{item.status}</IonText></IonCol>
             </IonRow>
           ))}

@@ -12,7 +12,7 @@ export class ResponseError extends Error {
     }
 }
 type PostAuthParams = {
-    from_data_id: number;
+    from_data_id: string;
     no_unit: string;
     model_unit: string;
     owner: string;
@@ -22,7 +22,7 @@ type PostAuthParams = {
     qty_last: number;
     qty: number;
     name_operator: string;
-    fbr: number;
+    fbr?: number;
     signature?: string | null; // Allow `null` if appropriate
     type: string;
     lkf_id?: string;

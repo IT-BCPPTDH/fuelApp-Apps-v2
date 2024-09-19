@@ -373,7 +373,7 @@ const FormTRX: React.FC = () => {
     const calculatedFBR: number = Number(calculateFBR()) || 0;
 
     // Prepare form data
-    const fromDataId = Date.now();
+    const fromDataId = Date.now().toString();
     const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
     const lkf_id = await getLatestLkfId();
 
@@ -995,43 +995,9 @@ const FormTRX: React.FC = () => {
           onClose={() => setIsSignatureModalOpen(false)}
           onConfirm={handleSignatureConfirm}
         />
-
-        <IonModal
-          isOpen={successModalOpen}
-          onDidDismiss={() => setSuccessModalOpen(false)}
-        >
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle>Success</IonTitle>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent>
-            <IonLabel>{modalMessage}</IonLabel>
-            <IonButton expand="full" onClick={() => setSuccessModalOpen(false)}>
-              Close
-            </IonButton>
-          </IonContent>
-        </IonModal>
-
         {/* Error Modal */}
-        <IonModal
-          isOpen={errorModalOpen}
-          onDidDismiss={() => setErrorModalOpen(false)}
-        >
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle>Error</IonTitle>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent>
-            <IonLabel>{modalMessage}</IonLabel>
-            <IonButton expand="full" onClick={() => setErrorModalOpen(false)}>
-              Close
-            </IonButton>
-          </IonContent>
-        </IonModal>
+       
       </IonContent>
-      <DynamicAlert />
     </IonPage>
   );
 };

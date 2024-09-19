@@ -58,6 +58,8 @@ const FormClosing: React.FC = () => {
 
     const [jde, setjde] = useState<string>('');
 
+    const [variant, setVariant] = useState<number>(0);
+    const [closeData, setClo] = useState<number>(0);
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
@@ -173,6 +175,7 @@ const FormClosing: React.FC = () => {
 
 
     const handleSubmit = async () => {
+        const closeData = calculateCloseData();
         const UpdateData: DataLkf = {
             date: new Date().toISOString().split('T')[0],
             shift: '', // Adjust as needed
@@ -195,6 +198,8 @@ const FormClosing: React.FC = () => {
             flow_meter_end: flowMeterEnd,
             closing_sonding: closingSonding || 0,
             closing_dip: closingDip || 0,
+            close_data: closeData,
+            variance: variance || 0, 
            
         };
 
