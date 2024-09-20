@@ -7,7 +7,7 @@ import { getLatestLkfId, getLatestLkfData } from '../../utils/getData';
 import { logoutUser } from '../../hooks/useAuth';
 
 import './style.css';
-import { removeDataFromDBTrx } from '../../utils/insertData';
+import { removeDataFromDB } from '../../utils/insertData';
 
 const ReviewData: React.FC = () => {
     const route = useIonRouter();
@@ -102,7 +102,7 @@ const ReviewData: React.FC = () => {
     
            
             // Delete dataTransaksi from IndexedDB
-            
+        //    await deleteData()
     
             // Redirect to the home page or login page
             window.location.href = '/';

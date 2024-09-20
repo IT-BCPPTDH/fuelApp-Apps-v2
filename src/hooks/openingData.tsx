@@ -92,7 +92,7 @@ export const postOpening = async ({ station, jde_operator }: { station: string; 
 
 
 export async function getDataLastLkfByStation(station: string): Promise<any> {
-    const url = `${LINK_BACKEND}/api/operator/last-lkf/${station}`;
+    const url = `${LINK_BACKEND}/api/operator/last-lkf/station}`;
 
     try {
         const response = await fetch(url, { method: 'GET' });
