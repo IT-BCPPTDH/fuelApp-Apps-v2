@@ -1,7 +1,7 @@
 import { CapacitorHttp } from '@capacitor/core';
 import { ResponseError } from "../helper/responseError";
 
-const BE_USER = import.meta.env.VITE_BE_USER_URL || 'http://localhost:9001';
+const BE_USER = import.meta.env.VITE_BE_USER_URL;
 
 export async function getUser() {
     const url = `${BE_USER}/api-user/get-all`;

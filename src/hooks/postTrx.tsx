@@ -1,7 +1,7 @@
 import { CapacitorHttp } from '@capacitor/core';
 import { ResponseError } from './serviceApi';
 
-const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3033';
+const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL;
 
 
 

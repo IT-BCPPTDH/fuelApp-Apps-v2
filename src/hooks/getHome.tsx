@@ -1,6 +1,6 @@
 import { CapacitorHttp } from '@capacitor/core';
 
-const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3033';
+const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL;
 
 // Custom error class for handling API response errors
 export class ResponseError extends Error {
