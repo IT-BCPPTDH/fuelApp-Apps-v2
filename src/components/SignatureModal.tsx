@@ -6,10 +6,7 @@ interface SignatureModalProps {
     isOpen: boolean;
     onClose: () => void;
     onConfirm: (signature: string) => void;
-   
-   
 }
-
 
 const SignatureModal: React.FC<SignatureModalProps> = ({ isOpen, onClose, onConfirm }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);

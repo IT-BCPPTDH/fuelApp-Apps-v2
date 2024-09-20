@@ -3,7 +3,7 @@ import { ResponseError } from '../helper/responseError';
 
 const BELinkMaster = import.meta.env.VITE_BELINK_MASTER_URL
 
-export async function getStation(station: string) {
+export async function getStation() {
     
     const url = `${BELinkMaster}/master/station`;
 
@@ -12,8 +12,7 @@ export async function getStation(station: string) {
             url,
             headers: {
                 'Content-Type': 'application/json',
-            },
-            params: { station }
+            }
         });
 
         if (response.status !== 200) {

@@ -6,7 +6,7 @@ interface DataLkf {
   issued: any;
   receipt: any;
   id?: number;
-  date: string; // Change `any` to `string` since date will be in ISO string format
+  date: string; 
   shift: string;
   hm_start: number;
   opening_dip: number;

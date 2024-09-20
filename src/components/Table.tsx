@@ -13,8 +13,7 @@ import {
 import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
 import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
 import { postBulkData } from '../hooks/bulkInsert';
-import { checkmarkCircleOutline } from 'ionicons/icons';
-import { updateDataInTrx } from '../utils/update';
+
 // Define the type for table data items
 interface TableDataItem {
   from_data_id: number;
@@ -147,9 +146,6 @@ const TableData: React.FC = () => {
     }
   };
 
-
- 
-  
   const filteredData = (data || []).filter(item =>
     item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.model_unit.toLowerCase().includes(searchQuery.toLowerCase()) ||

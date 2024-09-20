@@ -41,7 +41,7 @@ const Login: React.FC = () => {
 
   const fetchAllStationData = async () => {
     try {
-      const response = await fetchStation('some-argument');
+      const response = await fetchStation();
       if (response?.data && Array.isArray(response.data)) {
         const stations = response.data.map((station: Station) => ({
           value: station.fuel_station_name,

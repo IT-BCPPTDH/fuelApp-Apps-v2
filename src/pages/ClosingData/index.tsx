@@ -18,15 +18,13 @@ import {
 } from '@ionic/react';
 import { pencilOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';
 import "./style.css";
-// import Cookies from 'js-cookie';
 import { ResponseError, updateData } from '../../hooks/serviceApi'; 
 import { DataLkf } from '../../models/db';
 import { getLatestLkfId, getLatestLkfIdHm } from '../../utils/getData';
-import { updateDataInDB } from '../../utils/update';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
 import { getStation } from "../../hooks/useStation";
-import { addDataClosing, addDataToDB } from '../../utils/insertData';
+import { addDataToDB } from '../../utils/insertData';
 
 
 const FormClosing: React.FC = () => {
@@ -55,7 +53,6 @@ const FormClosing: React.FC = () => {
     const [receipt, setReceipt] = useState<number>(0); // Assuming you have this value
     const [issued, setIssued] = useState<number>(0); // Assuming you have this value
     const [transfer, setTransfer] = useState<number>(0); // Assuming you have this value
-   
     const [latestLkfIdhm, setLatestLkfIdHm] = useState<number | undefined>(undefined);
     const [prevHmAkhir, setPrevHmAkhir] = useState<number | undefined>(undefined);
 
