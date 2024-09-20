@@ -29,7 +29,7 @@ export default defineConfig({
       manifest: {
         name: 'Hanggar Sales App',
         short_name: 'Sales App',
-        description: 'Aplikasi Sales Hanggar Nusantara',
+        description: 'Aplikasi Fuel App BCP',
         theme_color: '#ffffff',
         start_url: "/",
         display: "standalone",

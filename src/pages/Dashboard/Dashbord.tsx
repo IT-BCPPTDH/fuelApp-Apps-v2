@@ -42,7 +42,7 @@ const DashboardFuelMan: React.FC = () => {
   ]);
   const [fullname, setFullname] = useState('');
    // New state for Fuelman
-  const [currentDate, setCurrentDate] = useState<string>(''); // State for current date
+  //const [currentDate, setCurrentDate] = useState<string>(''); // State for current date
   const [latestDate, setLatestDate] = useState<string>(''); // State for latest date
   const route = useIonRouter();
   const [loading, setLoading] = useState<boolean>(true);
@@ -193,7 +193,6 @@ const DashboardFuelMan: React.FC = () => {
         const employeeData = JSON.parse(storedEmployeeData);
         console.log('emp', employeeData);
 
-     
         const employee = employeeData.find((emp: { jde: string; }) => emp.jde === (jde || ''));
         setFullname(employee ? employee.fullname : ''); 
     }
@@ -206,7 +205,6 @@ useEffect(() => {
         const employeeData = JSON.parse(storedEmployeeData);
         console.log('emp', employeeData);
 
-       
         const employee = employeeData.find((emp: { jde: string; }) => emp.jde === jde);
         setFullname(employee ? employee.fullname : '');
     }

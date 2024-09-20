@@ -1,10 +1,12 @@
-const LINK_BACKEND = 'http://localhost:3033';
+import { CapacitorHttp } from '@capacitor/core';
+
+const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3033';
 
 export class ResponseError extends Error {
-    public response: Response;
+    public response: any;
     public errorData?: any;
 
-    constructor(message: string, response: Response, errorData?: any) {
+    constructor(message: string, response: any, errorData?: any) {
         super(message);
         this.response = response;
         this.errorData = errorData;
@@ -44,42 +46,36 @@ interface UpdateData {
     lkf_id: string;
 }
 
-
 export const postOpening = async (params: PostOpeningParams): Promise<any> => {
     const url = `${LINK_BACKEND}/api/operator/post-lkf`;
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
+        const response = await CapacitorHttp.post({
+            url,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(params),
+            data: params,
         });
 
-        const responseData = await response.text();
-        const parsedResponseData = responseData ? JSON.parse(responseData) : {};
+        const responseData = response.data || {};
+        console.log('Server Response Data:', responseData);
 
-        console.log('Server Response Data:', parsedResponseData);
-
-        if (!response.ok) {
-            console.error('Response Error:', parsedResponseData);
-            throw new ResponseError('Failed to post opening data', response, parsedResponseData);
+        if (response.status !== 201 || responseData.message !== 'Data Created') {
+            console.error('Response Error:', responseData);
+            throw new ResponseError('Failed to post opening data', response, responseData);
         }
 
-        if (response.status === 201 && parsedResponseData.message === 'Data Created') {
-            localStorage.setItem('postedData', JSON.stringify(parsedResponseData));
-        }
-
-        return parsedResponseData;
+        // Save posted data to local storage
+        localStorage.setItem('postedData', JSON.stringify(responseData));
+        return responseData;
     } catch (error) {
         if (error instanceof ResponseError) {
             throw error;
         } else {
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
             console.error('Error Details:', message);
-            const defaultResponse = new Response(null, { status: 500, statusText: 'Internal Server Error' });
-            throw new ResponseError(`Error during postOpening: ${message}`, defaultResponse);
+            throw new ResponseError(`Error during postOpening: ${message}`, { status: 500, statusText: 'Internal Server Error' });
         }
     }
 };
@@ -88,46 +84,39 @@ export const updateData = async (params: UpdateData): Promise<any> => {
     const url = `${LINK_BACKEND}/api/operator/close-lkf`;
 
     try {
-        const response = await fetch(url, {
-            method: 'PUT',
+        const response = await CapacitorHttp.put({
+            url,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(params),
+            data: params,
         });
 
-        const responseData = await response.text();
-        const parsedResponseData = responseData ? JSON.parse(responseData) : {};
+        const responseData = response.data || {};
+        console.log('Server Response Data:', responseData);
 
-        console.log('Server Response Data:', parsedResponseData);
-
-        if (!response.ok) {
+        if (response.status !== 200) {
             console.error('Response Error:', {
                 status: response.status,
-                statusText: response.statusText,
-                data: parsedResponseData
+                data: responseData,
             });
-            throw new ResponseError('Failed to update data', response, parsedResponseData);
+            throw new ResponseError('Failed to update data', response, responseData);
         }
 
-        return parsedResponseData;
+        return responseData;
     } catch (error) {
         if (error instanceof ResponseError) {
             console.error('ResponseError Details:', {
                 message: error.message,
                 status: error.response.status,
                 statusText: error.response.statusText,
-                responseData: error.errorData
+                responseData: error.errorData,
             });
             throw error;
         } else {
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
-            console.error('General Error Details:', {
-                message: message,
-               
-            });
-            const defaultResponse = new Response(null, { status: 500, statusText: 'Internal Server Error' });
-            throw new ResponseError(`Error during updateData: ${message}`, defaultResponse);
+            console.error('General Error Details:', { message });
+            throw new ResponseError(`Error during updateData: ${message}`, { status: 500, statusText: 'Internal Server Error' });
         }
     }
 };

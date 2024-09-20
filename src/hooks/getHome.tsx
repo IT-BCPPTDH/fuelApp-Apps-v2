@@ -1,34 +1,38 @@
-const LINK_BACKEND = 'http://localhost:3033';
+import { CapacitorHttp } from '@capacitor/core';
+
+const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3033';
 
 // Custom error class for handling API response errors
 export class ResponseError extends Error {
-  response: Response;
+  response: any;
   
-  constructor(message: string, response: Response) {
+  constructor(message: string, response: any) {
     super(message);
     this.response = response;
     this.name = 'ResponseError';
   }
 }
 
-// Function to fetch home summary by LKf ID
+// Function to fetch home summary by Lkf ID
 export async function getHomeByIdLkf(lkfId: string): Promise<any> {
-  const url = `${LINK_BACKEND}/api/operator/get-home-summary/${lkfId}`;  // Correct URL with lkfId
+  const url = `${LINK_BACKEND}/api/operator/get-home-summary/${lkfId}`;
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
+    const response = await CapacitorHttp.get({
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
-    if (!response.ok) {
-      throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.statusText}`, response);
+    if (response.status !== 200) {
+      throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
     }
 
-    const data = await response.json();
+    const data = response.data;
 
     if (data && Object.keys(data).length === 0) {
       console.warn('Data is empty:', data);
-      // Handle empty data case if necessary
       return null;  // Return null or any default value you see fit
     }
 
@@ -48,23 +52,25 @@ export async function getHomeByIdLkf(lkfId: string): Promise<any> {
   }
 }
 
+// Function to fetch home table data by Lkf ID
 export async function getHomeTable(lkfId: string): Promise<any> {
-  // Correct URL with lkfId
   const url = `${LINK_BACKEND}/api/operator/get-home-table/${lkfId}`;
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
+    const response = await CapacitorHttp.get({
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
-    if (!response.ok) {
-      throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.statusText}`, response);
+    if (response.status !== 200) {
+      throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
     }
 
-    const data = await response.json();
+    const data = response.data;
 
     if (data && Array.isArray(data.data)) {
-      // Check if the data array is empty
       if (data.data.length === 0) {
         console.warn('Data is empty:', data);
         return { status: '200', message: 'No data available', data: [] };
@@ -73,7 +79,6 @@ export async function getHomeTable(lkfId: string): Promise<any> {
       return data;
     } else {
       console.warn('Data is in unexpected format:', data);
-      // Handle unexpected data format
       return { status: '200', message: 'Unexpected data format', data: [] };
     }
   } catch (error) {

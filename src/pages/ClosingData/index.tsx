@@ -18,7 +18,7 @@ import {
 } from '@ionic/react';
 import { pencilOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';
 import "./style.css";
-import Cookies from 'js-cookie';
+// import Cookies from 'js-cookie';
 import { ResponseError, updateData } from '../../hooks/serviceApi'; 
 import { DataLkf } from '../../models/db';
 import { getLatestLkfId, getLatestLkfIdHm } from '../../utils/getData';
@@ -58,8 +58,9 @@ const FormClosing: React.FC = () => {
 
     const [jde, setjde] = useState<string>('');
 
-    const [variant, setVariant] = useState<number>(0);
-    const [closeData, setClo] = useState<number>(0);
+    // const [variant, setVariant] = useState<number>(0);
+    // const [closeData, setClo] = useState<number>(0);
+
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
@@ -67,7 +68,7 @@ const FormClosing: React.FC = () => {
             setLatestLkfId(id);
             setLatestLkfIdHm(id2);
 
-            console.log('data',id2)
+            // console.log('data',id2)
             // Retrieve shift data from localStorage
             const shiftData = localStorage.getItem("shiftData");
             if (shiftData) {

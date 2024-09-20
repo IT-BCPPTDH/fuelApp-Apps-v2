@@ -1,10 +1,12 @@
-const LINK_BACKEND = 'http://localhost:3033';
+import { CapacitorHttp } from '@capacitor/core';
+
+const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL;
 
 export class ResponseError extends Error {
-    public response: Response;
+    public response: any;
     public errorData?: any;
 
-    constructor(message: string, response: Response, errorData?: any) {
+    constructor(message: string, response: any, errorData?: any) {
         super(message);
         this.response = response;
         this.errorData = errorData;
@@ -27,14 +29,14 @@ type PostBulkInsert = {
     signature?: string | null;
     type: string;
     lkf_id?: string;
-    status?: number; 
+    status?: number;
     jde_operator: string;
     flow_start: number;
     flow_end: number;
     foto?: string;
     end: string;
     sonding_start?: number;
-    created_by?:string;
+    created_by?: string;
 };
 
 // Function to post bulk data
@@ -42,29 +44,27 @@ export const postBulkData = async (bulkData: PostBulkInsert[]) => {
     const url = `${LINK_BACKEND}/api/operator/bulk-insert`;
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
+        const response = await CapacitorHttp.post({
+            url,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(bulkData),  // Wrap bulkData in an object
+            data: bulkData, // Send bulkData directly in the 'data' field
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('Response Error:', errorData);
-            throw new ResponseError('Failed to post transaction', response, errorData);
+        if (response.status !== 200) {
+            console.error('Response Error:', response.data);
+            throw new ResponseError('Failed to post transaction', response, response.data);
         }
 
-        return response.json();
+        return response.data;
     } catch (error: unknown) {
         if (error instanceof ResponseError) {
             throw error;
         } else {
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
             console.error('Error Details:', message);
-            throw new ResponseError(`Error during transaction: ${message}`, new Response());
+            throw new ResponseError(`Error during transaction: ${message}`, { status: 500, statusText: 'Internal Server Error' });
         }
     }
 };
-

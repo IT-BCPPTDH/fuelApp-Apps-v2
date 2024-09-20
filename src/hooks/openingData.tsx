@@ -1,12 +1,12 @@
+import { CapacitorHttp } from '@capacitor/core';
 
-const LINK_BACKEND = 'http://localhost:3033';
-
+const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL;
 
 export class ResponseError extends Error {
-    public response: Response;
+    public response: any;
     public errorData?: any;
 
-    constructor(message: string, response: Response, errorData?: any) {
+    constructor(message: string, response: any, errorData?: any) {
         super(message);
         this.response = response;
         this.errorData = errorData;
@@ -14,94 +14,88 @@ export class ResponseError extends Error {
     }
 }
 
-
 interface PostAuthParams {
-    
+    station: string;
+    jde_operator: string;
 }
-export const postAuth = async ({ station, jde_operator }: { station: string; jde_operator: string }) => {
-    const url = `${LINK_BACKEND}/api/login`; 
+
+// Post login request
+export const postAuth = async ({ station, jde_operator }: PostAuthParams) => {
+    const url = `${LINK_BACKEND}/api/login`;
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
+        const response = await CapacitorHttp.post({
+            url,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ station, jde_operator }),
+            data: { station, jde_operator },
         });
 
-        
-        if (!response.ok) {
-            
-            const errorData = await response.json();
-            console.error('Response Error:', errorData);
-            throw new ResponseError('Failed to sign in', response, errorData);
+        if (response.status !== 200) {
+            console.error('Response Error:', response.data);
+            throw new ResponseError('Failed to sign in', response, response.data);
         }
 
-      
-        return response.json();
+        return response.data;
     } catch (error: unknown) {
         if (error instanceof ResponseError) {
-           
             throw error;
         } else {
-            // Wrap other errors in a ResponseError
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
             console.error('Error Details:', message);
-            throw new ResponseError(`Error during login: ${message}`, new Response());
+            throw new ResponseError(`Error during login: ${message}`, { status: 500, statusText: 'Internal Server Error' });
         }
     }
 };
 
-
-export const postOpening = async ({ station, jde_operator }: { station: string; jde_operator: string }) => {
-    const url = `${LINK_BACKEND}/api/operator/post-lkf`; 
+// Post opening request
+export const postOpening = async ({ station, jde_operator }: PostAuthParams) => {
+    const url = `${LINK_BACKEND}/api/operator/post-lkf`;
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
+        const response = await CapacitorHttp.post({
+            url,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ station, jde_operator }),
+            data: { station, jde_operator },
         });
 
-        
-        if (!response.ok) {
-            
-            const errorData = await response.json();
-            console.error('Response Error:', errorData);
-            throw new ResponseError('Failed to sign in', response, errorData);
+        if (response.status !== 200) {
+            console.error('Response Error:', response.data);
+            throw new ResponseError('Failed to post opening data', response, response.data);
         }
 
-      
-        return response.json();
+        return response.data;
     } catch (error: unknown) {
         if (error instanceof ResponseError) {
-           
             throw error;
         } else {
-            // Wrap other errors in a ResponseError
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
             console.error('Error Details:', message);
-            throw new ResponseError(`Error during login: ${message}`, new Response());
+            throw new ResponseError(`Error during post opening: ${message}`, { status: 500, statusText: 'Internal Server Error' });
         }
     }
 };
 
-
-
+// Get last LKF data by station
 export async function getDataLastLkfByStation(station: string): Promise<any> {
     const url = `${LINK_BACKEND}/api/operator/last-lkf/${station}`;
 
     try {
-        const response = await fetch(url, { method: 'GET' });
+        const response = await CapacitorHttp.get({
+            url,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
 
-        if (!response.ok) {
-            throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.statusText}`, response);
+        if (response.status !== 200) {
+            throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
         }
 
-        const data = await response.json();
+        const data = response.data;
 
         // Ensure data is an object with a data field that's an array
         if (data && data.data && Array.isArray(data.data)) {
@@ -121,4 +115,3 @@ export async function getDataLastLkfByStation(station: string): Promise<any> {
         return { data: [] }; // Return a default structure
     }
 }
-

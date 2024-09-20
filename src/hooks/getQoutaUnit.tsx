@@ -1,26 +1,25 @@
+import { CapacitorHttp } from '@capacitor/core';
 
+const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL;
 
-const LINK_BACKEND = 'http://localhost:3033';
-
-
-export async function getQoutaUnit() {
+export async function getQuotaUnit() {
     const url = `${LINK_BACKEND}/quota-usage/get-data`;
     try {
-        const response = await fetch(url, {
-            method: 'GET',
+        const response = await CapacitorHttp.get({
+            url,
+            headers: {
+                'Content-Type': 'application/json',
+            },
         });
 
-        if (!response.ok) {
+        if (response.status !== 200) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json();
-        return data; // Ensure you return the data here
+        return response.data;
     } catch (error) {
         console.error('Error fetching quota unit:', error);
         throw error; // Re-throw the error for handling in the calling function
     }
 }
-
-
 

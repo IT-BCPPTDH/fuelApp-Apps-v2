@@ -1,14 +1,13 @@
-const LINK_BACKEND = 'http://localhost:3033';
+import { CapacitorHttp } from '@capacitor/core';
+const LINK_BACKEND = import.meta.env.VITE_BACKEND_URL;
 
 interface PostAuthParams {
     date: string;
     station: string;
     JDE: string; 
-    userId: string;
-    session_token: string;
-    logId: string;
-  
-  
+    // userId: string;
+    // session_token: string;
+    // logId: string;
 }
 
 interface PostLogoutParams {
@@ -19,16 +18,13 @@ interface PostLogoutParams {
     isLoggin: string;
     logId: string;
     isLogging: string;
-   
-  
-  
 }
 
 export class ResponseError extends Error {
-    public response: Response;
+    public response: any;
     public errorData?: any;
 
-    constructor(message: string, response: Response, errorData?: any) {
+    constructor(message: string, response: any, errorData?: any) {
         super(message);
         this.response = response;
         this.errorData = errorData;
@@ -36,82 +32,75 @@ export class ResponseError extends Error {
     }
 }
 
-
-
 export const postAuthLogin = async (params: PostAuthParams): Promise<any> => {
+    console.log(LINK_BACKEND)
     const url = `${LINK_BACKEND}/api/login`;
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
+        const response = await CapacitorHttp.post({
+            url,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(params),
+            data: params,
         });
 
-        // Check if the response is not OK
-        if (!response.ok) {
-            const errorData = await response.json();
+        // Check if the response status is not 200 (OK)
+        if (response.status !== 200) {
             console.error('Response Error:', {
                 status: response.status,
-                statusText: response.statusText,
-                ...errorData,
+                statusText: response.data?.statusText || 'Error',
+                ...response.data,
             });
-            throw new ResponseError('Failed to post auth login data', response, errorData);
+            throw new ResponseError('Failed to post auth login data', response, response.data);
         }
 
         // Return parsed JSON result
-        const data = await response.json();
-        console.log('API response data:', data);
-        return data;
+        console.log('API response data:', response.data);
+        return response.data;
     } catch (error) {
         if (error instanceof ResponseError) {
             throw error;
         } else {
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
             console.error('Error Details:', message);
-            throw new ResponseError(`Error during postAuthLogin: ${message}`, new Response());
+            throw new ResponseError(`Error during postAuthLogin: ${message}`, null);
         }
     }
 };
-
 
 export const logoutUser = async (params: PostLogoutParams): Promise<any> => {
     const url = `${LINK_BACKEND}/api/logout`;
 
     try {
-        const response = await fetch(url, {
-            method: 'POST',
+        const response = await CapacitorHttp.post({
+            url,
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(params),
+            data: params,
         });
 
-        // Check if the response is not OK
-        if (!response.ok) {
-            const errorData = await response.json();
+        // Check if the response status is not 200 (OK)
+        if (response.status !== 200) {
             console.error('Response Error:', {
                 status: response.status,
-                statusText: response.statusText,
-                ...errorData,
+                statusText: response.data?.statusText || 'Error',
+                ...response.data,
             });
-            throw new ResponseError('Failed to post logout data', response, errorData);
+            throw new ResponseError('Failed to post logout data', response, response.data);
         }
 
         // Return parsed JSON result
-        const data = await response.json();
-        console.log('API response data:', data);
-        return data;
+        console.log('API response data:', response.data);
+        return response.data;
     } catch (error) {
         if (error instanceof ResponseError) {
             throw error;
         } else {
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
             console.error('Error Details:', message);
-            throw new ResponseError(`Error during logoutUser: ${message}`, new Response());
+            throw new ResponseError(`Error during logoutUser: ${message}`, null);
         }
     }
 };
-

@@ -1,31 +1,37 @@
-import { ResponseError } from "../helper/responseError";
+import { CapacitorHttp } from '@capacitor/core';
+import { ResponseError } from '../helper/responseError';
 
-const BELinkMaster = 'http://localhost:9003';
+const BELinkMaster = import.meta.env.VITE_BELINK_MASTER_URL
 
 export async function getStation(station: string) {
+    
     const url = `${BELinkMaster}/master/station`;
 
     try {
-        const response = await fetch(url, {
-            method: 'GET',
+        const response = await CapacitorHttp.get({
+            url,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            params: { station }
         });
 
-        if (!response.ok) {
-            throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.statusText}`, response);
+        if (response.status !== 200) {
+            throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
         }
 
-        const data = await response.json();
+        // console.log('Successfully fetched station data:', response.data);
 
-        console.log('Successfully fetched station data:', data);
-
-        return data;
+        return response.data;
     } catch (error: unknown) {
         if (error instanceof ResponseError) {
             throw error;
         } else if (error instanceof Error) {
-           
+            console.error('An unexpected error occurred:', error.message);
+            throw new ResponseError(`Unexpected error occurred: ${error.message}`, null);
         } else {
-            
+            console.error('An unknown error occurred');
+            throw new ResponseError('An unknown error occurred while fetching station data', null);
         }
     }
 }

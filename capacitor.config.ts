@@ -5,9 +5,9 @@ const config: CapacitorConfig = {
   appName: 'FuelApp',
   webDir: 'dist',
   // bundledWebRuntime:false,
-  server:{
-    url:"http://192.168.1.21:5173"
-  },
+  // server:{
+  //   url:"http://192.168.1.21:5173"
+  // },
   plugins: {
     CapacitorHttp: {
       enabled: true,

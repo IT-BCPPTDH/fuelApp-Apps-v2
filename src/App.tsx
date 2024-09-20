@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Redirect, Route, useHistory } from 'react-router-dom'; // Import useHistory
-import { IonApp, IonRouterOutlet, setupIonicReact } from '@ionic/react';
+import { Redirect, Route } from 'react-router-dom'; // Import useHistory
+import { IonApp, setupIonicReact } from '@ionic/react';
 import { IonReactRouter } from '@ionic/react-router';
 import Cookies from 'js-cookie'; // Import js-cookie library
 

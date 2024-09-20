@@ -18,17 +18,18 @@ import {
 import Cookies from "js-cookie";
 import { postAuthLogin } from "../../hooks/useAuth";
 import { getStation as fetchStation } from "../../hooks/useStation";
-import { getAllSonding } from "../../hooks/getAllSonding";
 import { getAllUnit } from "../../hooks/getAllUnit";
-import { getDataLastLkfByStation } from "../../hooks/openingData";
 import "./style.css";
-import { getQoutaUnit } from "../../hooks/getQoutaUnit";
+
+// import { getDataLastLkfByStation } from "../../hooks/openingData";
+// import { getAllSonding } from "../../hooks/getAllSonding";
+// import { getQoutaUnit } from "../../hooks/getQoutaUnit";
 
 interface Station {
   fuel_station_name: string;
   site: string;
   fuel_station_type: string; // Fixed property name
-  fuel_capacity:string;
+  fuel_capacity: string;
 }
 
 const Login: React.FC = () => {
@@ -36,16 +37,15 @@ const Login: React.FC = () => {
   const [stationData, setStationData] = useState<{ value: string; label: string; site: string; fuel_station_type: string }[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
-  const [sondingData, setSondingData] = useState<any[]>([]); // Added state for sonding data
   const router = useIonRouter();
-  const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
   const [openigForm, setopeningForm] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
-
-  const [dataBefore, setBeforeTrx] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
+  // const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
+// const [sondingData, setSondingData] = useState<any[]>([]); // Added state for sonding data
+  // const [dataBefore, setBeforeTrx] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
 
   const fetchAllStationData = async () => {
     try {
-      const response = await fetchStation('some-argument'); // Provide the required argument
+      const response = await fetchStation('some-argument');
       if (response?.data && Array.isArray(response.data)) {
         const stations = response.data.map((station: Station) => ({
           value: station.fuel_station_name,
@@ -65,46 +65,46 @@ const Login: React.FC = () => {
   };
 
 
- 
-  
-//   async function fetchData() {
-//     try {
-//         const data = await getQoutaUnit();
-//         console.log('Data Qouta:', data);
 
-       
-//     } catch (error) {
-//         console.error('Error fetching data:', error);
-//     } 
-// }
 
-// fetchData();
+  //   async function fetchData() {
+  //     try {
+  //         const data = await getQoutaUnit();
+  //         console.log('Data Qouta:', data);
 
-  
+
+  //     } catch (error) {
+  //         console.error('Error fetching data:', error);
+  //     } 
+  // }
+
+  // fetchData();
+
+
 
   useEffect(() => {
     const fetchUnitOptions = async () => {
-        try {
-            const response = await getAllUnit();
-            if (response.status === '200' && Array.isArray(response.data)) {
-                const unitData = response.data;
-                setopeningForm(unitData);
+      try {
+        const response = await getAllUnit();
+        if (response.status === '200' && Array.isArray(response.data)) {
+          const unitData = response.data;
+          setopeningForm(unitData);
 
-                // Store data in localStorage
-                localStorage.setItem('allUnit', JSON.stringify(unitData));
-            } else {
-                console.error('Unexpected data format');
-            }
-        } catch (error) {
-            console.error('Failed to fetch unit options', error);
+          // Store data in localStorage
+          localStorage.setItem('allUnit', JSON.stringify(unitData));
+        } else {
+          console.error('Unexpected data format');
         }
+      } catch (error) {
+        console.error('Failed to fetch unit options', error);
+      }
     };
 
     fetchUnitOptions();
-}, []);
+  }, []);
 
 
- 
+
   useEffect(() => {
     const loadStationData = async () => {
       const cachedData = localStorage.getItem('stationData');
@@ -119,55 +119,55 @@ const Login: React.FC = () => {
   }, []);
 
 
-//   useEffect(() => {
-//     const fetchDataFormAwal = async () => {
-//         try {
-//             const storedStation = localStorage.getItem('stationData');
+  //   useEffect(() => {
+  //     const fetchDataFormAwal = async () => {
+  //         try {
+  //             const storedStation = localStorage.getItem('stationData');
 
-//             if (!storedStation) {
-//                 console.warn('No station data found in localStorage. Using default station.');
-//                 const defaultStation = 'FT1116'
-//                 const response = await getDataLastLkfByStation(defaultStation);
+  //             if (!storedStation) {
+  //                 console.warn('No station data found in localStorage. Using default station.');
+  //                 const defaultStation = 'FT1116'
+  //                 const response = await getDataLastLkfByStation(defaultStation);
 
-//                 console.log('API Response (default):', response);
+  //                 console.log('API Response (default):', response);
 
-//                 if (response.data && Array.isArray(response.data)) {
-//                     if (response.data.length === 0) {
-//                         console.warn('Response data is empty.');
-//                     }
-//                     const openingDataForm = response.data;
-//                     setUnitOptions(openingDataForm);
-//                     localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
-//                 } else {
-//                     console.error('Unexpected data format. Response:', response);
-//                 }
-//                 return;
-//             }
+  //                 if (response.data && Array.isArray(response.data)) {
+  //                     if (response.data.length === 0) {
+  //                         console.warn('Response data is empty.');
+  //                     }
+  //                     const openingDataForm = response.data;
+  //                     setUnitOptions(openingDataForm);
+  //                     localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
+  //                 } else {
+  //                     console.error('Unexpected data format. Response:', response);
+  //                 }
+  //                 return;
+  //             }
 
-//             const station = JSON.parse(storedStation);
-//             console.log('Fetched station from localStorage:', station);
+  //             const station = JSON.parse(storedStation);
+  //             console.log('Fetched station from localStorage:', station);
 
-//             const response = await getDataLastLkfByStation(station);
+  //             const response = await getDataLastLkfByStation(station);
 
-//             console.log('API Response:', response);
+  //             console.log('API Response:', response);
 
-//             if (response.data && Array.isArray(response.data)) {
-//                 if (response.data.length === 0) {
-//                     console.warn('Response data is empty.');
-//                 }
-//                 const openingDataForm = response.data;
-//                 setUnitOptions(openingDataForm);
-//                 localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
-//             } else {
-//                 console.error('Unexpected data format. Response:', response);
-//             }
-//         } catch (error) {
-//             console.error('Failed to fetch unit options', error);
-//         }
-//     };
+  //             if (response.data && Array.isArray(response.data)) {
+  //                 if (response.data.length === 0) {
+  //                     console.warn('Response data is empty.');
+  //                 }
+  //                 const openingDataForm = response.data;
+  //                 setUnitOptions(openingDataForm);
+  //                 localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
+  //             } else {
+  //                 console.error('Unexpected data format. Response:', response);
+  //             }
+  //         } catch (error) {
+  //             console.error('Failed to fetch unit options', error);
+  //         }
+  //     };
 
-//     fetchDataFormAwal();
-// }, []);
+  //     fetchDataFormAwal();
+  // }, []);
 
 
 
@@ -179,7 +179,7 @@ const Login: React.FC = () => {
       setShowError(true);
       return;
     }
-    
+
     const stationData = localStorage.getItem('stationData');
     const stations = stationData ? JSON.parse(stationData) : [];
     const selectedStation = stations.find((station: { value: string; }) => station.value === selectedUnit);
@@ -197,21 +197,22 @@ const Login: React.FC = () => {
         station: selectedUnit,
         date: currentDate,
         JDE: jde,
-        userId: "",
-        session_token: "",
-        logId: ""
+        // userId: "",
+        // session_token: "",
+        // logId: ""
       });
 
       if (response.status === '200' && response.message === 'Data Created') {
         const { token, ...userData } = response.data;
         Cookies.set("session_token", token, { expires: 1 });
-        Cookies.set("isLoggedIn", "true", { expires: 1});
+        Cookies.set("isLoggedIn", "true", { expires: 1 });
 
         const loginData = {
           station: selectedUnit,
           jde: jde,
           site: selectedStation.site,
         };
+
         localStorage.setItem("loginData", JSON.stringify(loginData));
 
         router.push("/opening");
