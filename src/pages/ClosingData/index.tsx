@@ -18,13 +18,15 @@ import {
 } from '@ionic/react';
 import { pencilOutline, closeCircleOutline, saveOutline } from 'ionicons/icons';
 import "./style.css";
+import Cookies from 'js-cookie';
 import { ResponseError, updateData } from '../../hooks/serviceApi'; 
 import { DataLkf } from '../../models/db';
 import { getLatestLkfId, getLatestLkfIdHm } from '../../utils/getData';
+import { updateDataInDB } from '../../utils/update';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
 import { getStation } from "../../hooks/useStation";
-import { addDataToDB } from '../../utils/insertData';
+import { addDataClosing } from '../../utils/insertData';
 
 
 const FormClosing: React.FC = () => {
@@ -43,7 +45,7 @@ const FormClosing: React.FC = () => {
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
     const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
     const [hmEnd, setHmEnd] = useState<number>(0);
-    const [shift, setShift] = useState<string>('');
+    const [shift, setShift] = useState<string>();
     const [stockOnHand, setStockOnHand] = useState<number>(0);
     const [openingDip, setOpeningDip] = useState<number>(0);
 
@@ -53,14 +55,14 @@ const FormClosing: React.FC = () => {
     const [receipt, setReceipt] = useState<number>(0); // Assuming you have this value
     const [issued, setIssued] = useState<number>(0); // Assuming you have this value
     const [transfer, setTransfer] = useState<number>(0); // Assuming you have this value
+   
     const [latestLkfIdhm, setLatestLkfIdHm] = useState<number | undefined>(undefined);
     const [prevHmAkhir, setPrevHmAkhir] = useState<number | undefined>(undefined);
 
     const [jde, setjde] = useState<string>('');
 
-    // const [variant, setVariant] = useState<number>(0);
-    // const [closeData, setClo] = useState<number>(0);
-
+    const [variant, setVariant] = useState<number>(0);
+    const [closeData, setClo] = useState<number>(0);
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
@@ -68,7 +70,7 @@ const FormClosing: React.FC = () => {
             setLatestLkfId(id);
             setLatestLkfIdHm(id2);
 
-            // console.log('data',id2)
+            console.log('data',id2)
             // Retrieve shift data from localStorage
             const shiftData = localStorage.getItem("shiftData");
             if (shiftData) {
@@ -98,23 +100,7 @@ const FormClosing: React.FC = () => {
         fetchLatestLkfId();
     }, []);
 
-    useEffect(() => {
-        const fetchStationOptions = async () => {
-            if (dataUserLog) {
-                try {
-                    const response = await getStation(dataUserLog.station);
-                    if (response.status === '200' && Array.isArray(response.data)) {
-                        setStationOptions(response.data.map((station: { name: any; }) => station.name));
-                    } else {
-                        console.error('Unexpected data format');
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch station options', error);
-                }
-            }
-        };
-        fetchStationOptions();
-    }, [dataUserLog]);
+ 
 
     useEffect(() => {
         const updateClosingDip = async () => {
@@ -219,7 +205,8 @@ const FormClosing: React.FC = () => {
                     setShowError(true);
                     return; // Exit if the ID is invalid
                 }
-                await addDataToDB(UpdateData); // Pass UpdateData to addDataClosing
+    
+                await addDataClosing(UpdateData); // Pass UpdateData to addDataClosing
                 console.log("Data successfully updated in IndexedDB.");
                 route.push('/review-data');
             } else {
