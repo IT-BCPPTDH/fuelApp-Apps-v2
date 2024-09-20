@@ -100,26 +100,29 @@ const Login: React.FC = () => {
   }, []);
 
 
-useEffect(() => {
-  const fetchQuotaOptions = async () => {
+  useEffect(() => {
+    const fetchQuotaOptions = async () => {
+      const todayDate = new Date().toISOString().split('T')[0];
+      
       try {
-          const response = await getAllQuota();
-          if (response.status === '200' && Array.isArray(response.data)) {
-              const unitData = response.data;
-              setopeningForm(unitData);
+        const response = await getAllQuota(todayDate);
+        
+        if (response.status === '200' && Array.isArray(response.data)) {
+          const unitData = response.data;
+          setopeningForm(unitData);
 
-              // Store data in localStorage
-              localStorage.setItem('unitQouta', JSON.stringify(unitData));
-          } else {
-              console.error('Unexpected data format');
-          }
+          // Store data in localStorage
+          localStorage.setItem('unitQouta', JSON.stringify(unitData));
+        } else {
+          console.error('Unexpected data format');
+        }
       } catch (error) {
-          console.error('Failed to fetch unit options', error);
+        console.error('Failed to fetch unit options', error);
       }
-  };
+    };
 
-  fetchQuotaOptions();
-}, []);
+    fetchQuotaOptions();
+  }, []); 
 
   useEffect(() => {
     const loadStationData = async () => {

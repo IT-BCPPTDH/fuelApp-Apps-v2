@@ -1,10 +1,10 @@
 import { CapacitorHttp } from '@capacitor/core';
 import { ResponseError } from "../helper/responseError";
 
-const BELinkMaster = import.meta.env.VITE_BELINK_MASTER_URL;
+const BELinkMaster = import.meta.env.VITE_BACKEND_URL;
 
-export async function getAllQuota() {
-    const url = `${BELinkMaster}/api/quota-usage/get-data`;
+export async function getAllQuota(date:String) {
+    const url = `${BELinkMaster}/api/quota-usage/get-data/${date}`;
 
     try {
         const response = await CapacitorHttp.get({

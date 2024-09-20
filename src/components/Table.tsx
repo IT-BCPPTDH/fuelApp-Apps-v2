@@ -48,6 +48,7 @@ const TableData: React.FC = () => {
     const fetchLkfId = async () => {
       try {
         const latestLkfId = await getLatestLkfId();
+        
         if (latestLkfId) {
           setNomorLKF(latestLkfId);
           await fetchData(latestLkfId); // Fetch data with the latest LKF ID
