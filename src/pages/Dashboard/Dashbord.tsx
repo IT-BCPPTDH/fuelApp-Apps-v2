@@ -14,9 +14,8 @@ import {
   IonButton,
   useIonRouter
 } from '@ionic/react';
-import Cookies from 'js-cookie';
 import TableData from '../../components/Table';
-import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive } from '../../utils/getData';
+import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate } from '../../utils/getData';
 import { getHomeByIdLkf } from '../../hooks/getHome';
 
 // Define the data structure for the card
@@ -27,7 +26,6 @@ interface CardData {
 }
 
 const DashboardFuelMan: React.FC = () => {
-  const [data, setData] = useState<any>(null);
   const [cardData, setCardData] = useState<CardData[]>([
     { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
     { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
@@ -42,23 +40,16 @@ const DashboardFuelMan: React.FC = () => {
     { title: 'Total Flow Meter', value: 'No Data', icon: 'total.svg' },
     { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
   ]);
-
-  const [stockOnHand, setStockOnHand] = useState<number>(0);
-  const [flowMeterStart, setFlowMeterStart] = useState<number>(0);
-  const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
-  const [qtyIssued, setQtyIssued] = useState<number>(0);
-  const [variance, setVariance] = useState<number>(0);
-  const [fullname, setFuelman] = useState<string>(''); // New state for Fuelman
+  const [fullname, setFullname] = useState('');
+   // New state for Fuelman
   const [currentDate, setCurrentDate] = useState<string>(''); // State for current date
+  const [latestDate, setLatestDate] = useState<string>(''); // State for latest date
   const route = useIonRouter();
   const [loading, setLoading] = useState<boolean>(true);
   const [lkfId, setLkfId] = useState<string>('');
-  const [dataHome, setDataHome] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [shiftData, setShiftData] = useState<any>(null);
-
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-
+  const [jde, setJde] = useState<string>(''); 
   useEffect(() => {
     const handleOnlineStatus = () => {
       setIsOnline(navigator.onLine);
@@ -73,16 +64,27 @@ const DashboardFuelMan: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    // Function to format date as "Tanggal : 25 Januari 2025"
+    const formatDate = (date: Date): string => {
+      const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+      return `Tanggal : ${new Intl.DateTimeFormat('id-ID', options).format(date)}`;
+    };
 
-    useEffect(() => {
-      // Function to format date as "Tanggal : 25 Januari 2025"
-      const formatDate = (date: Date): string => {
-        const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-        return `Tanggal : ${new Intl.DateTimeFormat('id-ID', options).format(date)}`;
-      };
-
-      const today = new Date();
-    setCurrentDate(formatDate(today));
+    const fetchDate = async () => {
+      try {
+        const latestDataDate = await getLatestLkfDataDate();
+        if (latestDataDate && latestDataDate.date) {
+          const date = new Date(latestDataDate.date);
+          setLatestDate(formatDate(date));
+        } else {
+          setLatestDate('No Date Available');
+        }
+      } catch (error) {
+        console.error('Error fetching latest data date:', error);
+        setLatestDate('Error fetching date');
+      }
+    };
 
     const fetchLkfIdAndData = async () => {
       try {
@@ -96,22 +98,15 @@ const DashboardFuelMan: React.FC = () => {
 
           const qtyReceive = typeof calculationReceive === 'number' ? calculationReceive : 0;
           const qtyIssued = typeof calculationIssued === 'number' ? calculationIssued : 0;
-          setQtyIssued(qtyIssued);
 
           const openingDip = shiftData.openingDip ?? 0;
           const stockOnHand = openingDip + qtyReceive - qtyIssued;
-
           const flowMeterStart = shiftData.flowMeterStart ?? 0;
           const flowMeterEnd = flowMeterStart + qtyIssued;
-
           const totalFlowMeter = qtyIssued;
-          setVariance(totalFlowMeter - qtyIssued);
+          const variance = totalFlowMeter - qtyIssued;
 
-          setStockOnHand(stockOnHand);
-          setFlowMeterStart(flowMeterStart);
-          setFlowMeterEnd(flowMeterEnd);
-
-          const cardData = [
+          setCardData([
             { title: 'Shift', value: shiftData.shift || 'No Data', icon: 'shift.svg' },
             { title: 'FS/FT No', value: shiftData.station || 'No Data', icon: 'fs.svg' },
             { title: 'Opening Dip', value: openingDip, icon: 'openingdeep.svg' },
@@ -124,9 +119,7 @@ const DashboardFuelMan: React.FC = () => {
             { title: 'Flow Meter Akhir', value: flowMeterEnd, icon: 'flwakhir.svg' },
             { title: 'Total Flow Meter', value: totalFlowMeter, icon: 'total.svg' },
             { title: 'Variance', value: variance, icon: 'variance.svg' }
-          ];
-
-          setCardData(cardData);
+          ]);
 
           localStorage.setItem('shiftData', JSON.stringify({
             shiftData,
@@ -144,20 +137,19 @@ const DashboardFuelMan: React.FC = () => {
           }));
 
           const homeData = await getHomeByIdLkf(id);
-          setShiftData(homeData);
-
-          // Retrieve and set fuelman from localStorage based on jde
           const loginData = localStorage.getItem('loginData');
           if (loginData) {
             const { jde } = JSON.parse(loginData);
             if (homeData && homeData.fullname) {
-              const matchedEmployee = homeData.fullname.find((fullname: any) => fullname.jde === jde);
+              const matchedEmployee = homeData.fullname.find((employee: any) => employee.JDE === jde);
               if (matchedEmployee) {
-                setFuelman(matchedEmployee.fullname);
+             
+                setJde(matchedEmployee.jde);
+              } else {
+               
               }
             }
           }
-
         } else {
           setError('No LKF ID found');
         }
@@ -173,6 +165,7 @@ const DashboardFuelMan: React.FC = () => {
       }
     };
 
+    fetchDate();
     fetchLkfIdAndData();
   }, []);
 
@@ -183,6 +176,41 @@ const DashboardFuelMan: React.FC = () => {
   const handleRefresh = () => {
     window.location.reload();
   };
+
+
+ 
+  useEffect(() => {
+   
+    const storedLoginData = localStorage.getItem('loginData');
+    const storedEmployeeData = localStorage.getItem('employeeData');
+
+    if (storedLoginData) {
+        const loginData = JSON.parse(storedLoginData);
+        setJde(loginData.jde || ''); 
+    }
+
+    if (storedEmployeeData) {
+        const employeeData = JSON.parse(storedEmployeeData);
+        console.log('emp', employeeData);
+
+     
+        const employee = employeeData.find((emp: { jde: string; }) => emp.jde === (jde || ''));
+        setFullname(employee ? employee.fullname : ''); 
+    }
+}, []); 
+
+
+useEffect(() => {
+    const storedEmployeeData = localStorage.getItem('employeeData');
+    if (storedEmployeeData) {
+        const employeeData = JSON.parse(storedEmployeeData);
+        console.log('emp', employeeData);
+
+       
+        const employee = employeeData.find((emp: { jde: string; }) => emp.jde === jde);
+        setFullname(employee ? employee.fullname : '');
+    }
+}, [jde]);
 
   return (
     <IonPage>
@@ -217,7 +245,7 @@ const DashboardFuelMan: React.FC = () => {
         </IonHeader>
 
         <div className='content'>
-          <div className='btn-start' style={{ padding: "15px" }}>
+          <div className='btn-start'>
             <IonButton color="primary" onClick={handleRefresh}>
               <IonImg src='refresh.svg' alt="Refresh" />
               Refresh
@@ -229,50 +257,62 @@ const DashboardFuelMan: React.FC = () => {
         </div>
 
         <div className='padding-content mr20' style={{ marginTop: "20px" }}>
+          <IonGrid>
+            <IonRow >
+              <IonCol></IonCol>
+            </IonRow>
+          </IonGrid>
           <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <h4 style={{ padding: '15px' }}>Fuelman : {fullname || 'No Data'}</h4>
-            <h4 style={{ padding: '15px', marginLeft: '370px', position:"absolute"}}>  {currentDate}</h4>
+          <h4 >Fuelman : {jde}</h4>
+          
+          <h4 >{latestDate}</h4>
           </IonRow>
         </div>
         
-        <IonGrid style={{ marginTop: "20px" }}>
-          <IonRow style={{ padding: "15px", marginTop: "-60px" }}>
+        <IonGrid >
+          <IonRow >
             {cardData.map((card, index) => (
               <IonCol size="4" key={index}>
-                <IonCard>
+                <IonCard style={{height:"90px"}} >
                   <IonCardHeader>
                     <IonCardSubtitle style={{ fontSize: "16px" }}>{card.title}</IonCardSubtitle>
                     <div style={{ display: "inline-flex", gap: "10px" }}>
                       <IonImg src={card.icon} alt={card.title} style={{ width: '30px', height: '30px', marginTop: "10px" }} />
-                      <IonCardContent style={{ fontSize: "24px", fontWeight: "500" }}>{card.value}</IonCardContent>
+                      <IonCardContent style={{ fontSize: "24px", fontWeight: "500" , marginTop:"-10px"}}>{card.value}</IonCardContent>
                     </div>
+                    
                   </IonCardHeader>
+                  
                 </IonCard>
               </IonCol>
             ))}
-            <p style={{
+          <IonRow>
+          <p style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
               flexDirection: 'column',
             }}>
-              <p style={{ color: "#E16104", textAlign: 'justify', padding:"15px", marginTop:"-20px" }}>
-                * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
-                * QTY Issued adalah Issued + Transfer
-              </p>
+            <p style={{ 
+              color: "#E16104", 
+              textAlign: 'justify', 
+              marginLeft: "15px", 
+              marginRight: "15px", 
+              marginTop:"-15px"
+            }}>
+              * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
+              * QTY Issued adalah Issued + Transfer
+            </p>
             </p>
           </IonRow>
-       
-          <div className='content'>
+          </IonRow>
             <IonButton 
-              style={{ padding: "15px", marginTop: "-110px" }} 
+              style={{ padding: "15px", marginTop:"-40px" }} 
               className='check-button' 
-              onClick={() => route.push('/transaction')}
-            >
+              onClick={() => route.push('/transaction')}>
               <IonImg src='plus.svg'/>
               <span style={{ marginLeft: "10px" }}>Tambah Data</span>
             </IonButton>
-          </div>
           <TableData />
         </IonGrid>
         

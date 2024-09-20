@@ -21,11 +21,12 @@ import "./style.css";
 import Cookies from 'js-cookie';
 import { ResponseError, updateData } from '../../hooks/serviceApi'; 
 import { DataLkf } from '../../models/db';
-import { getLatestLkfId } from '../../utils/getData';
+import { getLatestLkfId, getLatestLkfIdHm } from '../../utils/getData';
 import { updateDataInDB } from '../../utils/update';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
 import { getStation } from "../../hooks/useStation";
+
 
 const FormClosing: React.FC = () => {
     const route = useIonRouter();
@@ -43,19 +44,30 @@ const FormClosing: React.FC = () => {
     const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
     const [hmEnd, setHmEnd] = useState<number>(0);
     const [stockOnHand, setStockOnHand] = useState<number>(0);
+    const [openingDip, setOpeningDip] = useState<number>(0);
+
     
     const [note, setNote] = useState<string>('');
     const [receiptKPC, setReceiptKPC] = useState<number>(0); // Assuming you have this value
     const [receipt, setReceipt] = useState<number>(0); // Assuming you have this value
     const [issued, setIssued] = useState<number>(0); // Assuming you have this value
     const [transfer, setTransfer] = useState<number>(0); // Assuming you have this value
-    const [openingDip, setOpeningDip] = useState<number>(0); // Assuming you have this value
+   
+    const [latestLkfIdhm, setLatestLkfIdHm] = useState<number | undefined>(undefined);
+    const [prevHmAkhir, setPrevHmAkhir] = useState<number | undefined>(undefined);
 
+    const [jde, setjde] = useState<string>('');
+
+    const [variant, setVariant] = useState<number>(0);
+    const [closeData, setClo] = useState<number>(0);
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
+            const id2= await getLatestLkfIdHm()
             setLatestLkfId(id);
+            setLatestLkfIdHm(id2);
 
+            console.log('data',id2)
             // Retrieve shift data from localStorage
             const shiftData = localStorage.getItem("shiftData");
             if (shiftData) {
@@ -66,7 +78,10 @@ const FormClosing: React.FC = () => {
                 setReceipt(parsedData.receipt || 0); // Update as needed
                 setIssued(parsedData.issued || 0); // Update as needed
                 setTransfer(parsedData.transfer || 0);
-                setOpeningDip(parsedData.openingDip|| 0); // Update as needed
+                setOpeningDip(parsedData.openingDip| 0);
+                setHmEnd(parsedData.hmEnd || 0);
+               
+                 // Update as needed
             }
 
             const userData = localStorage.getItem("loginData");
@@ -74,6 +89,7 @@ const FormClosing: React.FC = () => {
                 const parsedData = JSON.parse(userData);
                 setDataUserLog(parsedData);
                 setStation(parsedData.station);
+                setjde(parsedData.jde);
             }
         };
         fetchLatestLkfId();
@@ -140,14 +156,15 @@ const FormClosing: React.FC = () => {
 
     useEffect(() => {
         // Calculate variance whenever closingDip or stockOnHand changes
-        if (closingDip !== undefined && stockOnHand !== undefined) {
-            setVariance(closingDip - stockOnHand);
+        if (closingDip !== undefined && openingDip !== undefined) {
+            setVariance(closingDip - openingDip);
         }
-    }, [closingDip, stockOnHand]);
+    }, [closingDip, openingDip]);
 
     // Calculate Close Data
     const calculateCloseData = () => {
         return (openingDip + receiptKPC + receipt - issued - transfer);
+        
     };
 
     const handleSignatureConfirm = (newSignature: string) => {
@@ -155,14 +172,17 @@ const FormClosing: React.FC = () => {
         console.log('Updated Signature:', newSignature);
     };
 
+
+
     const handleSubmit = async () => {
+        const closeData = calculateCloseData();
         const UpdateData: DataLkf = {
             date: new Date().toISOString().split('T')[0],
             shift: '', // Adjust as needed
             hm_start: 0, // Adjust as needed
             site: '', // Adjust as needed
             jde: '', // Adjust as needed
-            fuelman_id: Cookies.get('fuelman_id') || '',
+            fuelman_id:jde,
             station: '', // Adjust as needed
             flow_meter_start: 0, // Adjust as needed
             hm_end: hmEnd,
@@ -177,7 +197,10 @@ const FormClosing: React.FC = () => {
             opening_sonding: 0,
             flow_meter_end: flowMeterEnd,
             closing_sonding: closingSonding || 0,
-            closing_dip: closingDip || 0
+            closing_dip: closingDip || 0,
+            close_data: closeData,
+            variance: variance || 0, 
+           
         };
 
         try {
@@ -216,13 +239,16 @@ const FormClosing: React.FC = () => {
     };
 
     const handleHmEndChange = (e: CustomEvent) => {
-        setHmEnd(Number(e.detail.value));
+        setLatestLkfIdHm(Number(e.detail.value));
     };
 
     const handleStockOnHandChange = (e: CustomEvent) => {
         setStockOnHand(Number(e.detail.value));
     };
 
+    const handleBack = () =>{
+        route.push('/dashboard')
+    }
     // Determine text color based on variance value
     const varianceColor = variance !== undefined && variance < 0 ? 'red' : 'black';
 
@@ -276,14 +302,34 @@ const FormClosing: React.FC = () => {
                             </IonRow>
                             <IonRow>
                                 <IonCol>
-                                    <IonLabel>HM KM Akhir *</IonLabel>
+                                    <IonLabel >HM KM Akhir *</IonLabel>
                                     <IonInput
                                         className="custom-input"
                                         type="number"
-                                        value={hmEnd}
+                                        // value={latestLkfIdhm}
                                         onIonChange={handleHmEndChange}
                                         placeholder="HM KM Akhir"
+                                        onIonInput={(e) => {
+                                            const value = Number(e.detail.value);
+                                            setHmEnd(value);
+                                            if (prevHmAkhir !== undefined && value < prevHmAkhir) {
+                                              setShowError(true);
+                                            } else {
+                                              setShowError(false);
+                                            }
+                                          }}
                                     />
+                                       {showError && (
+                                    <p style={{ color: "red" }}>
+                                        {latestLkfIdhm=== undefined
+                                        ? '* Field harus diisi'
+                                        : (prevHmAkhir !== undefined && latestLkfIdhm < prevHmAkhir)
+                                        ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
+                                        : ''
+                                        }
+                                    </p>
+                                    )}
+          
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Data *</IonLabel>
@@ -337,7 +383,7 @@ const FormClosing: React.FC = () => {
                                 </IonButton>
                             </IonItem>
                             <div style={{ marginTop: "20px", float: "inline-end" }}>
-                                <IonButton color="light">
+                                <IonButton onClick={handleBack}  color="light">
                                     <IonIcon slot="start" icon={closeCircleOutline} />Tutup Form
                                 </IonButton>
                                 <IonButton onClick={handleSubmit} className="check-close">
@@ -353,9 +399,6 @@ const FormClosing: React.FC = () => {
                     onConfirm={handleSignatureConfirm}
                 />
             </IonContent>
-           
-            <h4 style={{ textAlign: "center" }}>Station: {station}</h4>
-            
         </IonPage>
     );
 };

@@ -132,15 +132,22 @@ export const getCalculationReceive = async (lkfId: string): Promise<number | und
   }
 };
 
-export const getAllDataTrx = async (): Promise<DataFormTrx[]> => {
+export const getAllDataTrx = async (lkfId: string): Promise<DataFormTrx[]> => {
   try {
     const allData = await db.dataTransaksi.toArray();
-    return allData;
+    
+    // Assuming `date_trx` is a Date object or can be compared as such
+    const sortedData = allData.sort((a, b) => {
+      return new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime();
+    });
+
+    return sortedData;
   } catch (error) {
     console.error("Failed to fetch data from IndexedDB:", error);
     return [];
   }
 };
+
 
 export const getAllDataSonding = async (): Promise<SondingData[]> => {
   try {
@@ -210,10 +217,10 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
     const latestEntry = await db.dataTransaksi.orderBy('id').last();
 
     // Check if the entry is found and return the 'hm_last' field
-    if (latestEntry && latestEntry.hm_last !== undefined) {
-      return latestEntry.hm_last;
+    if (latestEntry && latestEntry.hm_km != null) {
+      return latestEntry.hm_km;
     } else {
-      console.warn("No 'hm_last' data found in the dataTransaksi collection.");
+      console.warn("No valid 'hm_last' data found in the dataTransaksi collection.");
       return undefined;
     }
   } catch (error) {
@@ -223,5 +230,37 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
   }
 };
 
+
+
+export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {
+  try {
+    const latestEntry = await db.openingTrx.orderBy('id').reverse().limit(1).toArray();
+
+    if (latestEntry.length > 0) {
+      const entry = latestEntry[0];
+      return {
+        lkf_id: entry.lkf_id,
+        date: typeof entry.date === 'string' ? String(entry.date) : entry.date,
+      };
+    } else {
+      return undefined;
+    }
+  } catch (error) {
+    console.error("Failed to fetch the latest LKF data from IndexedDB:", error);
+    return undefined;
+  }
+};
+
+
+
+export const getLatestLkfIdHm = async (): Promise<number | undefined> => {
+  try {
+    const latestEntry = await db.openingTrx.orderBy('id').last();
+    return latestEntry ? latestEntry.hm_start : undefined;
+  } catch (error) {
+    console.error("Failed to fetch the latest LKF ID from IndexedDB:", error);
+    return undefined;
+  }
+};
 
 

@@ -44,6 +44,7 @@ import {
   getLatestLkfId,
   getLatestHmLast,
 } from "../../utils/getData";
+import DynamicAlert from "../../components/Alert";
 
 interface Typetrx {
   id: number;
@@ -119,7 +120,6 @@ const FormTRX: React.FC = () => {
   const [sondingEnd, setSondingEnd] = useState<number | undefined>(undefined);
   const [Refrence, setRefrence] = useState<number | undefined>(undefined);
   const [stationData, setStationData] = useState<any>(null);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [hmkmTRX, sethmkmTrx] = useState<number | undefined>(undefined); // HM/KM Transaksi
   const [hmLast, setHmLast] = useState<number | undefined>(undefined); // HM/KM Unit
   const [qtyLast, setQtyLast] = useState<number | undefined>(undefined); // Qty Last
@@ -129,19 +129,30 @@ const FormTRX: React.FC = () => {
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
 
+ 
+  const [status, setStatus] = useState<number>(0); // Default to 0
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+
+
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    // Clean up the event listeners on component unmount
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
+    const handleOnline = () => {
+        setIsOnline(true);
+        setStatus(1); // Set status to 1 when online
     };
-  }, []);
+
+    const handleOffline = () => {
+        setIsOnline(false);
+        setStatus(0); // Keep status as 0 when offline
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+    };
+}, []);
 
   useEffect(() => {
     const userData = localStorage.getItem("shiftData");
@@ -169,6 +180,27 @@ const FormTRX: React.FC = () => {
       console.log("No stock data found in local storage");
     }
   }, []);
+
+  useEffect(() => {
+    const handleOnline = () => {
+        setIsOnline(true);
+        setStatus(1); // Change status to 1 when online
+    };
+
+    const handleOffline = () => {
+        setIsOnline(false);
+        setStatus(0); // Keep status as 0 when offline
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Cleanup event listeners on unmount
+    return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+    };
+}, []);
 
   //   useEffect(() => {
   //     // Example effect to demonstrate state update
@@ -198,22 +230,7 @@ const FormTRX: React.FC = () => {
     fetchStationData();
   }, []);
 
-  // useEffect(() => {
-  //     const fetchUnitOptions = async () => {
-  //         try {
-  //             const response = await getAllUnit();
-  //             if (response.status === '200' && Array.isArray(response.data)) {
-  //                 setUnitOptions(response.data);
-  //             } else {
-  //                 console.error('Unexpected data format');
-  //             }
-  //         } catch (error) {
-  //             console.error('Failed to fetch unit options', error);
-  //         }
-  //     };
-
-  //     fetchUnitOptions();
-  // }, []);
+  
 
   useEffect(() => {
     const fetchJdeOptions = () => {
@@ -321,119 +338,109 @@ const FormTRX: React.FC = () => {
     route.push("/dashboard");
   };
 
+ 
+  // Function to insert new data into the dashboard or database
+
+
+  
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Initial Status:", status);
     if (isSaveButtonDisabled()) {
-      setModalMessage(
-        "HM/KM Unit Tidak Bole Kecil Dari HM/KM Terakhir Transaksi"
-      );
-      setErrorModalOpen(true);
-      return;
-    }
-    // Validate form fields
-    if (
-      !selectedType ||
-      !selectedUnit ||
-      quantity === null ||
-      fbr === null ||
-      flowMeterAwal === null ||
-      flowMeterAkhir === null ||
-      !startTime ||
-      !endTime
-    ) {
-      setModalMessage("Form is incomplete");
-      setErrorModalOpen(true);
-      return;
+        setModalMessage("HM/KM Unit Tidak Bole Kecil Dari HM/KM Terakhir Transaksi");
+        setErrorModalOpen(true);
+        return;
     }
 
-    // Log the current values for debugging
-    console.log("Selected Unit:", selectedUnit);
-    console.log("Flow Meter Awal:", flowMeterAwal);
-    console.log("Flow Meter Akhir:", flowMeterAkhir);
-    console.log("FBR:", fbr);
-    console.log("Quantity:", quantity);
+    // Validate form fields
+    if (
+        !selectedType ||
+        !selectedUnit ||
+        quantity === null ||
+        fbr === null ||
+        flowMeterAwal === null ||
+        flowMeterAkhir === null ||
+        !startTime ||
+        !endTime
+    ) {
+        setModalMessage("Form is incomplete");
+        setErrorModalOpen(true);
+        return;
+    }
 
     // Convert values to numbers where necessary
     const flow_end: number = Number(calculateFlowEnd()) || 0;
     const calculatedFBR: number = Number(calculateFBR()) || 0;
 
     // Prepare form data
-    const fromDataId = Date.now();
-    const signatureBase64 = signature
-      ? await convertToBase64(signature)
-      : undefined;
+    const fromDataId = Date.now().toString();
+    const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
     const lkf_id = await getLatestLkfId();
 
     const dataPost: DataFormTrx = {
-      from_data_id: fromDataId,
-      no_unit: selectedUnit!,
-      model_unit: model!,
-      owner: owner!,
-      date_trx: new Date().toISOString(),
-      hm_last: Number(hmLast) || 0,
-      hm_km: Number(hmkmTRX) || 0,
-      qty_last: Number(quantity) || 0,
-      qty: Number(quantity) || 0,
-      flow_start: Number(flowMeterAwal) || 0,
-      flow_end: flow_end, // Ensure number type
-      dip_start: Number(dipStart) || 0,
-      dip_end: Number(dipEnd) || 0,
-      sonding_start: Number(sondingStart) || 0,
-      sonding_end: Number(sondingEnd) || 0,
-      name_operator: fullName!,
-      start: startTime!,
-      end: endTime!,
-      fbr: calculatedFBR, // Ensure number type
-      lkf_id: lkf_id ?? "", // Assuming lkf_id can be an empty string if undefined
-      signature: signatureBase64 ?? "",
-      type: selectedType?.name ?? "",
-      foto: photoPreview ?? "",
-      fuelman_id: fuelman_id!,
-      status: false,
-      jde_operator: "",
-      reference: Number(Refrence) || 0,
-      site: "",
-      liters: 0,
-      cm: 0,
-      station: "",
-      date: "",
-      timestamp: "",
-      start_time: "",
-      end_time: "",
-      unit: "",
+        from_data_id: fromDataId,
+        no_unit: selectedUnit!,
+        model_unit: model!,
+        owner: owner!,
+        date_trx: new Date().toISOString(),
+        hm_last: Number(hmLast) || 0,
+        hm_km: Number(hmkmTRX) || 0,
+        qty_last: Number(quantity) || 0,
+        qty: Number(quantity) || 0,
+        flow_start: Number(flowMeterAwal) || 0,
+        flow_end: flow_end,
+        dip_start: Number(dipStart) || 0,
+        dip_end: Number(dipEnd) || 0,
+        sonding_start: Number(sondingStart) || 0,
+        sonding_end: Number(sondingEnd) || 0,
+        name_operator: fullName!,
+        start: startTime!,
+        end: endTime!,
+        fbr: calculatedFBR,
+        lkf_id: lkf_id ?? "",
+        signature: signatureBase64 ?? "",
+        type: selectedType?.name ?? "",
+        foto: photoPreview ?? "",
+        fuelman_id: fuelman_id!,
+        status: status ?? 0,
+        jde_operator: "",
+        reference: Number(Refrence) || 0,
+        liters: 0,
+        cm: 0,
+        date: ""
     };
 
-    console.log("Posting Data:", dataPost); // Log the data to be posted
-
     try {
-      if (isOnline) {
-        // If online, post the transaction data
-        await insertNewData(dataPost);
-        const response = await postTransaksi(dataPost);
-
-        if (
-          response.ok &&
-          (response.status === 200 || response.status === 201)
-        ) {
-          setModalMessage("Transaction posted successfully");
-          setSuccessModalOpen(true);
-          route.push("/dashboard");
-        } else {
+        // Handle saving and posting based on status
+        if (status === 0 ) {
+            console.log("Saving data as draft (offline)...");
+            await insertNewData(dataPost);
+            setModalMessage("Data saved as draft");
+        } else if (status === 1 && isOnline) {
+            console.log("Posting data to backend...");
+            const response = await postTransaksi(dataPost);
+            await insertNewData(dataPost);
+            if (response.ok && (response.status === 200 || response.status === 201)) {
+                setModalMessage("Transaction posted successfully and saved locally");
+            } else {
+                setModalMessage("Failed to post transaction. Please try again.");
+                setErrorModalOpen(true);
+            }
         }
-      } else {
-        // If offline, save data as draft
-        await insertNewData(dataPost);
-        setModalMessage("Data saved as draft");
+
+        // Navigate to the dashboard
         setSuccessModalOpen(true);
         route.push("/dashboard");
-      }
-    } catch (error) {
-      setModalMessage("Error occurred while posting data: " + error);
-      setErrorModalOpen(true);
-    }
-  };
 
-  // Function to insert new data into the dashboard or database
+    } catch (error) {
+        console.error("Error occurred while posting data:", error);
+        setModalMessage("Error occurred while posting data: " + error);
+        setErrorModalOpen(true);
+    }
+
+    
+};
+
   const insertNewData = async (data: DataFormTrx) => {
     try {
       await addDataTrxType(data);
@@ -442,6 +449,7 @@ const FormTRX: React.FC = () => {
       console.error("Failed to insert new data:", error);
     }
   };
+
 
   const handleSignatureConfirm = (newSignature: string) => {
     setSignatureBase64(newSignature);
@@ -584,7 +592,7 @@ const FormTRX: React.FC = () => {
 
   const handleHmLastChange = (e: CustomEvent) => {
     const newValue = Number(e.detail.value);
-    if (hmkmTRX !== undefined && newValue > hmkmTRX) {
+    if ( hmLast!== undefined && newValue > hmLast) {
       setShowError(true);
     } else {
       setShowError(false);
@@ -593,7 +601,7 @@ const FormTRX: React.FC = () => {
   };
 
   const isSaveButtonDisabled = () => {
-    return hmLast !== undefined && hmkmTRX !== undefined && hmkmTRX > hmLast;
+    return hmLast !== undefined && hmkmTRX !== undefined && hmkmTRX < hmLast;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
@@ -746,7 +754,7 @@ const FormTRX: React.FC = () => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    value={hmkmTRX !== null ? hmkmTRX : ""}
+                    // value={hmkmTRX !== null ? hmkmTRX : ""}
                     onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
                   />
@@ -795,7 +803,7 @@ const FormTRX: React.FC = () => {
                     value={
                       typeof calculateFBR() === "number" ? calculateFBR() : ""
                     }
-                    disabled={isFormDisabled}
+                    // disabled
                   />
                 </IonCol>
               </IonRow>
@@ -987,41 +995,8 @@ const FormTRX: React.FC = () => {
           onClose={() => setIsSignatureModalOpen(false)}
           onConfirm={handleSignatureConfirm}
         />
-
-        <IonModal
-          isOpen={successModalOpen}
-          onDidDismiss={() => setSuccessModalOpen(false)}
-        >
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle>Success</IonTitle>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent>
-            <IonLabel>{modalMessage}</IonLabel>
-            <IonButton expand="full" onClick={() => setSuccessModalOpen(false)}>
-              Close
-            </IonButton>
-          </IonContent>
-        </IonModal>
-
         {/* Error Modal */}
-        <IonModal
-          isOpen={errorModalOpen}
-          onDidDismiss={() => setErrorModalOpen(false)}
-        >
-          <IonHeader>
-            <IonToolbar>
-              <IonTitle>Error</IonTitle>
-            </IonToolbar>
-          </IonHeader>
-          <IonContent>
-            <IonLabel>{modalMessage}</IonLabel>
-            <IonButton expand="full" onClick={() => setErrorModalOpen(false)}>
-              Close
-            </IonButton>
-          </IonContent>
-        </IonModal>
+       
       </IonContent>
     </IonPage>
   );

@@ -9,24 +9,28 @@ import {
   IonText,
   IonButton,
   IonSearchbar,
-  IonIcon
+  IonIcon,
+  IonAlert // Import IonAlert
 } from "@ionic/react";
 import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
-import { getLatestLkfId } from '../utils/getData';
-import { getHomeTable } from '../hooks/getHome';
-
+import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
+import { postBulkData } from '../hooks/bulkInsert';
+import { checkmarkCircleOutline } from 'ionicons/icons';
+import { updateDataInTrx } from '../utils/update';
 // Define the type for table data items
 interface TableDataItem {
-  no_unit: string;
+  from_data_id: number;
+  unit_no: string;
   model_unit: string;
-  fbr: number;
-  type: string;
-  qty: number;
-  flow_start: number;
-  flow_end: number;
-  name_operator: string;
+  owner:string;
+  fbr_historis: string;
+  jenis_trx: string;
+  qty_issued: number;
+  fm_awal: number;
+  fm_akhir: number;
   jde_operator: string;
-  status_code: number; // Ensure this field is included
+  name_operator:string;
+  status: string;
 }
 
 const TableData: React.FC = () => {
@@ -34,18 +38,19 @@ const TableData: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [nomorLKF, setNomorLKF] = useState<string | undefined>(undefined);
-  const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
-  const [lkfId, setLkfId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [data, setData] = useState<TableDataItem[]>([]);
+  const [showAlert, setShowAlert] = useState(false); // State to control the alert visibility
+  const [alertMessage, setAlertMessage] = useState(''); // State for alert message
 
   useEffect(() => {
     const fetchLkfId = async () => {
       try {
         const latestLkfId = await getLatestLkfId();
         if (latestLkfId) {
-          setLkfId(latestLkfId);
           setNomorLKF(latestLkfId);
+          await fetchData(latestLkfId); // Fetch data with the latest LKF ID
         } else {
           console.error("No LKF ID returned");
         }
@@ -53,47 +58,105 @@ const TableData: React.FC = () => {
         console.error("Failed to fetch LKF ID:", error);
       }
     };
-  
+
     fetchLkfId();
   }, []);
 
-  useEffect(() => {
-    const fetchTableSummary = async () => {
-      if (lkfId) {
-        console.log("Fetching data for LKF ID:", lkfId);
-        try {
-          const response = await getHomeTable(lkfId);
-          console.log("Data Table:", response);
-  
-          if (response && response.data && Array.isArray(response.data)) {
-            setData(response.data);
-          } else {
-            console.error("Expected an array in response.data but got:", response);
-            setData([]);
-          }
-        } catch (error) {
-          console.error("Failed to fetch table summary data:", error);
-          setError("Failed to fetch data");
-          setData([]); // Ensure data is cleared in case of error
-        } finally {
-          setLoading(false); // Stop loading indicator
-        }
-      } else {
-        console.log("No LKF ID to fetch data for");
-        setData([]); // Clear data if no LKF ID
-        setLoading(false); // Stop loading indicator
-      }
-    };
-  
-    fetchTableSummary();
-  }, [lkfId]);
+  const fetchData = async (lkfId: string) => {
+    try {
+      const rawData = await getAllDataTrx(lkfId);
+      const mappedData: TableDataItem[] = rawData.map((item: any) => ({
+        from_data_id: item.from_data_id ?? 0,
+        unit_no: item.no_unit || '',
+        model_unit: item.model_unit || '',
+        owner: item.owner || '',
+        fbr_historis: item.fbr ??  '',
+        jenis_trx: item.type || '',
+        qty_issued: item.qty ?? 0,
+        fm_awal: item.flow_start ?? 0,
+        fm_akhir: item.flow_end ?? 0,
+        jde_operator: item.fuelman_id || '',
+        name_operator:item.fullname,
+        status: item.status === 0 ? 'Pending' : 'Sent',
+      }));
+
+      setData(mappedData);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      setError("Failed to fetch data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBulkInsert = async () => {
+    if (!data || data.length === 0) {
+      setError("No data available for insertion");
+      return;
+    }
+
+    const loginData = localStorage.getItem('loginData');
+    let createdBy = '';
+
+    if (loginData) {
+      const parsedData = JSON.parse(loginData);
+      createdBy = parsedData.jde || '';
+    }
+
+    const bulkData = data.map(item => ({
+      from_data_id: item.from_data_id,
+      no_unit: item.unit_no,
+      model_unit: item.model_unit,
+      owner: item.owner,
+      date_trx: new Date().toISOString(),
+      hm_last: 0,
+      hm_km: 0,
+      qty_last: item.qty_issued,
+      qty: item.qty_issued,
+      flow_start: item.fm_awal,
+      flow_end: item.fm_akhir,
+      name_operator: item.jde_operator,
+      fbr: parseFloat(item.fbr_historis),
+      signature: '',
+      photo: '',
+      type: item.jenis_trx,
+      lkf_id: nomorLKF || undefined,
+      jde_operator:item.jde_operator,
+      created_by: createdBy,
+      start: new Date().toISOString(),
+      end: new Date().toISOString(),
+    }));
+
+    try {
+      const responses = await postBulkData(bulkData);
+      console.log("Bulk insert responses:", responses);
+
+      // Update the status of the items to "Sent"
+      const updatedData = data.map(item => ({
+        ...item,
+        status: 'Sent'
+      }));
+      setData(updatedData);
+      setError(null);
+      setAlertMessage("Data successfully saved to the server.");
+      setShowAlert(true); // Show the alert
+    } catch (error) {
+      console.error("Error during bulk insert:", error);
+      setError("Failed to save data to server");
+      setAlertMessage("Failed to save data to server.");
+      setShowAlert(true); // Show the alert on error
+    }
+  };
+
+
+ 
   
   const filteredData = (data || []).filter(item =>
-    (item.no_unit?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (item.model_unit?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (item.fbr?.toString().toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (item.type?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (item.name_operator?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+    item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.model_unit.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.fbr_historis.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.jenis_trx.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    item.jde_operator.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -123,13 +186,11 @@ const TableData: React.FC = () => {
   }
 
   return (
-    <div style={{padding:"20px", marginTop:"-80px"}}>
-      <IonRow className='padding-content'>
-        <IonCol>
-          <div style={{display:"inline-flex",gap:"10px" }}>
-            <div style={{fontSize:"20px", fontWeight:"600px", color:"#222428"}}>LKF:</div>
-            <span style={{fontSize:"20px", color:"#222428"}}>{nomorLKF || 'Loading...'}</span>
-          </div>
+    <div>
+      <IonRow style={{ marginTop: "-20px" }} className='padding-content'>
+        <IonCol style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+          <div style={{ fontSize: "20px", fontWeight: "600px", color: "#222428" }}>LKF:</div>
+          <span style={{ fontSize: "20px", color: "#222428" }}>{nomorLKF || 'Loading...'}</span>
         </IonCol>
         <IonCol>
           <IonSearchbar 
@@ -149,49 +210,53 @@ const TableData: React.FC = () => {
             <IonCol><IonText>QTY Issued</IonText></IonCol>
             <IonCol><IonText>FM Awal</IonText></IonCol>
             <IonCol><IonText>FM Akhir</IonText></IonCol>
-            <IonCol><IonText>Nama</IonText></IonCol>
+            <IonCol><IonText>Employee ID</IonText></IonCol>
             <IonCol><IonText>Status</IonText></IonCol>
           </IonRow>
 
           {/* Table Data */}
           {paginatedData.map((item: TableDataItem) => (
-            <IonRow style={{ width: "900px" }} key={item.no_unit}>
-              <IonCol><IonText>{item.no_unit}</IonText></IonCol>
+            <IonRow style={{ width: "900px" }} key={item.from_data_id}>
+              <IonCol><IonText>{item.unit_no}</IonText></IonCol>
               <IonCol><IonText>{item.model_unit}</IonText></IonCol>
-              <IonCol><IonText>{item.fbr}</IonText></IonCol>
-              <IonCol><IonText>{item.type}</IonText></IonCol>
-              <IonCol><IonText>{item.qty}</IonText></IonCol>
-              <IonCol><IonText>{item.flow_start}</IonText></IonCol>
-              <IonCol><IonText>{item.flow_end}</IonText></IonCol>
-              <IonCol><IonText>{item.name_operator}</IonText></IonCol>
-              <IonCol>
-                <IonText>
-                  {item.status_code === 201 ? 'Pending' : 'Sent'}
-                </IonText>
-              </IonCol>
+              <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
+              <IonCol><IonText>{item.jenis_trx}</IonText></IonCol>
+              <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
+              <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
+              <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
+              <IonCol><IonText>{item.jde_operator}</IonText></IonCol>
+              <IonCol><IonText>{item.status}</IonText></IonCol>
             </IonRow>
           ))}
         </IonGrid>
       </IonCard>
       <div style={{ textAlign: 'start', margin: '20px' }}>
         <IonButton 
-          color="light" // Fixed typo from "ligth" to "light"
-          style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
           onClick={handlePrevious} 
           disabled={currentPage === 1}
         >
           <IonIcon icon={chevronBackOutline} />
         </IonButton>
         <span style={{ margin: '0 20px' }}>Page {currentPage} of {totalPages}</span>
-        <IonButton  
-          color="light" // Fixed typo from "ligth" to "light"
-          style={{ background: 'white', color: 'black', border: '1px solid #ccc' }} 
+        <IonButton
           onClick={handleNext} 
           disabled={currentPage === totalPages}
         >
           <IonIcon icon={chevronForwardOutline} />
-        </IonButton>
+        </IonButton>   
       </div>
+      <IonGrid style={{ float: "inline-end" }}>
+        <IonButton className='check-button' onClick={handleBulkInsert}>Save Data To Server</IonButton>
+      </IonGrid>
+
+      {/* IonAlert for showing messages */}
+      <IonAlert
+        isOpen={showAlert}
+        onDidDismiss={() => setShowAlert(false)}
+        header={error ? "Error" : "Success"}
+        message={alertMessage}
+        buttons={["OK"]}
+      />
     </div>
   );
 };

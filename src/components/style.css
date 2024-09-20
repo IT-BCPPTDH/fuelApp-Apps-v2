@@ -5,3 +5,6 @@
   .table{
     padding: 20px;
   }
+  .btn-server{
+    float: inline-end;
+  }

@@ -24,20 +24,19 @@ interface DataLkf {
   flow_meter_end:number;
   note:string;
   signature:string;
+  close_data:number,
+  variance:number,
+
            
   
 }
 
 interface DataFormTrx {
-  unit: string;
-  timestamp: any;
-  id?: number; // Auto-incremented ID
   date: string | number | Date;
-  site: string;
+  id?: number; // Auto-incremented ID
   liters: number;
   cm: number;
-  station: string;
-  from_data_id: number;
+  from_data_id: string;
   no_unit: string;
   model_unit: string;
   owner: string;
@@ -54,9 +53,7 @@ interface DataFormTrx {
   foto: string;
   type: string;
   lkf_id?: string;
-  start_time: string;
-  end_time: string;
-  status: boolean;
+  status: number;
   jde_operator: string;
   fuelman_id: string;
   dip_start: number;
@@ -98,7 +95,7 @@ const db = new Dexie('fuelAppDatabase') as Dexie & {
 
 
 // Define the schema
-db.version(5).stores({
+db.version(6).stores({
   openingTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
   dataTransaksi: '++id, from_data_id, no_unit, model_unit, owner, date_trx, hm_last, hm_km, qty_last, qty, name_operator, fbr, flow_start, flow_end, signature, foto, type, lkf_id, start_time, end_time, status, jde_operator, fuelman_id, dip_start, dip_end, sonding_start, sonding_end, reference, start, end',
   cards: '++id, title, subtitle, icon',

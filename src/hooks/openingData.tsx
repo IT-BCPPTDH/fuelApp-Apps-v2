@@ -14,6 +14,7 @@ export class ResponseError extends Error {
     }
 }
 
+
 interface PostAuthParams {
     
 }
@@ -90,4 +91,34 @@ export const postOpening = async ({ station, jde_operator }: { station: string; 
 
 
 
+export async function getDataLastLkfByStation(station: string): Promise<any> {
+    const url = `${LINK_BACKEND}/api/operator/last-lkf/${station}`;
+
+    try {
+        const response = await fetch(url, { method: 'GET' });
+
+        if (!response.ok) {
+            throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.statusText}`, response);
+        }
+
+        const data = await response.json();
+
+        // Ensure data is an object with a data field that's an array
+        if (data && data.data && Array.isArray(data.data)) {
+            return data; // Return the full response object
+        } else {
+            console.error('Unexpected data format from API:', data);
+            return { data: [] }; // Return a default structure
+        }
+    } catch (error: unknown) {
+        if (error instanceof ResponseError) {
+            console.error('ResponseError:', error.message);
+        } else if (error instanceof Error) {
+            console.error('Error:', error.message);
+        } else {
+            console.error('Unknown error:', error);
+        }
+        return { data: [] }; // Return a default structure
+    }
+}
 

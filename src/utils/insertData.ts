@@ -21,17 +21,6 @@ export const getDrafts = async (): Promise<DataFormTrx[]> => {
 };
 
 
-
-// Remove a draft from IndexedDB by its ID
-export const deleteDraft = async (fromDataId: number) => {
-  try {
-    await db.dataTransaksi.delete(fromDataId);
-  } catch (error) {
-    console.error("Failed to remove draft from IndexedDB:", error);
-  }
-};
-
-// Other functions
 export const addDataToDB = async (data: DataLkf) => {
   try {
     await db.openingTrx.add(data);
@@ -56,6 +45,18 @@ export const removeDataFromDB = async (id: string) => {
       throw new Error("Invalid ID format");
     }
     await db.openingTrx.delete(numericId);
+  } catch (error) {
+    console.error("Failed to remove data from IndexedDB:", error);
+  }
+};
+
+export const removeDataFromDBTrx= async (id: string) => {
+  try {
+    const numericId = Number(id);
+    if (isNaN(numericId)) {
+      throw new Error("Invalid ID format");
+    }
+    await db.dataTransaksi.delete(numericId);
   } catch (error) {
     console.error("Failed to remove data from IndexedDB:", error);
   }

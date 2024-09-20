@@ -61,7 +61,7 @@ const App: React.FC = () => {
                     {isLoggedIn ? <FormTRXKouta /> : <Redirect to="/" />}
                 </Route>
                 <Route exact path="/closing-data">
-                    {isLoggedIn ? <FormClosing /> : <Redirect to="/login" />}
+                     <FormClosing /> 
                 </Route>
                 <Route exact path="/review-data">
                     <ReviewData />

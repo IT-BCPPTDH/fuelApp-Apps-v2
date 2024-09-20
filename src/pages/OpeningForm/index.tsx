@@ -274,7 +274,9 @@ const OpeningForm: React.FC = () => {
       closing_sonding: 0,
       flow_meter_end: 0,
       note: "",
-      signature: ""
+      signature: "",
+      close_data: 0,
+      variance: 0
     };
 
     try {
@@ -453,7 +455,7 @@ const OpeningForm: React.FC = () => {
               Flow Meter Awal <span style={{color:"red"}}>*</span>
             </IonLabel>
             <IonInput
-            className={`custom-input ${showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal) || flowMeterAwal < 100) ? "input-error" : ""}`}
+            className={`custom-input`}
             type="number"
             value={flowMeterAwal}
             onIonInput={(e) => {
@@ -478,17 +480,17 @@ const OpeningForm: React.FC = () => {
         )}
           </div>
           <div className="padding-content">
-            <IonLabel className={showError && (hmAwal === undefined || (station !== "Fuel Truck" && hmAwal === 0)) ? "error" : ""}>
+            <IonLabel>
               HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
             </IonLabel>
             <IonInput
-              className={`custom-input ${showError && (hmAwal === undefined || (station !== "Fuel Truck" && hmAwal === 0)) ? "input-error" : ""}`}
+              className={`custom-input ${showError && (hmAwal === undefined || (station !== "FT" && hmAwal === 0)) ? "input-error" : ""}`}
               type="number"
-              placeholder={station === "Fuel Truck" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
+              placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
               value={hmAwal}
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
-                if (station !== "Fuel Truck" && value === 0) {
+                if (station !== "FT" && value === 0) {
                   setHmAwal(undefined);
                   setShowError(true);
                 } else {
