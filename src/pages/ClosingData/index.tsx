@@ -26,6 +26,7 @@ import { updateDataInDB } from '../../utils/update';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
 import { getStation } from "../../hooks/useStation";
+import { addDataClosing, addDataToDB } from '../../utils/insertData';
 
 
 const FormClosing: React.FC = () => {
@@ -36,6 +37,7 @@ const FormClosing: React.FC = () => {
     const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
     const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
     const [station, setStation] = useState<string | undefined>(undefined);
+    const [site, setSite] = useState<string | undefined>(undefined);
     const [closingDip, setClosingDip] = useState<number | undefined>(undefined);
     const [variance, setVariance] = useState<number | undefined>(undefined);
     const [showError, setShowError] = useState<boolean>(false);
@@ -43,6 +45,7 @@ const FormClosing: React.FC = () => {
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
     const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
     const [hmEnd, setHmEnd] = useState<number>(0);
+    const [shift, setShift] = useState<string>('');
     const [stockOnHand, setStockOnHand] = useState<number>(0);
     const [openingDip, setOpeningDip] = useState<number>(0);
 
@@ -81,6 +84,7 @@ const FormClosing: React.FC = () => {
                 setTransfer(parsedData.transfer || 0);
                 setOpeningDip(parsedData.openingDip| 0);
                 setHmEnd(parsedData.hmEnd || 0);
+                setShift(parsedData.shift|| 0);
                
                  // Update as needed
             }
@@ -91,6 +95,7 @@ const FormClosing: React.FC = () => {
                 setDataUserLog(parsedData);
                 setStation(parsedData.station);
                 setjde(parsedData.jde);
+                setSite(parsedData.site);
             }
         };
         fetchLatestLkfId();
@@ -164,8 +169,7 @@ const FormClosing: React.FC = () => {
 
     // Calculate Close Data
     const calculateCloseData = () => {
-        return (openingDip + receiptKPC + receipt - issued - transfer);
-        
+        return (stockOnHand + receiptKPC + receipt - issued - transfer);
     };
 
     const handleSignatureConfirm = (newSignature: string) => {
@@ -177,14 +181,15 @@ const FormClosing: React.FC = () => {
 
     const handleSubmit = async () => {
         const closeData = calculateCloseData();
+    
         const UpdateData: DataLkf = {
             date: new Date().toISOString().split('T')[0],
-            shift: '', // Adjust as needed
+            shift:shift || '', // Adjust as needed
             hm_start: 0, // Adjust as needed
-            site: '', // Adjust as needed
+            site: site || '', // Adjust as needed
             jde: '', // Adjust as needed
-            fuelman_id:jde,
-            station: '', // Adjust as needed
+            fuelman_id: jde,
+            station:station || '',
             flow_meter_start: 0, // Adjust as needed
             hm_end: hmEnd,
             note: note,
@@ -200,15 +205,24 @@ const FormClosing: React.FC = () => {
             closing_sonding: closingSonding || 0,
             closing_dip: closingDip || 0,
             close_data: closeData,
-            variance: variance || 0, 
-           
+            variance: variance || 0,
         };
-
+    
         try {
-            const response = await updateData(UpdateData);
+            const response = await updateData(UpdateData); // Make sure updateData accepts the right parameters
+    
             if (response.oke && (response.status === 200 || response.status === 201)) {
                 console.log('Updated successfully via API.');
-                await updateDataInDB(UpdateData);
+    
+                // Ensure latestLkfId is defined and of type number
+                const recordId = Number(latestLkfId); // Convert to number
+    
+                if (isNaN(recordId)) {
+                    console.error("Record ID is not a valid number.");
+                    setShowError(true);
+                    return; // Exit if the ID is invalid
+                }
+                await addDataToDB(UpdateData); // Pass UpdateData to addDataClosing
                 console.log("Data successfully updated in IndexedDB.");
                 route.push('/review-data');
             } else {
@@ -232,6 +246,9 @@ const FormClosing: React.FC = () => {
             setShowError(true);
         }
     };
+    
+    
+    
 
     const handleClosingSondingChange = (e: CustomEvent) => {
         const value = Number(e.detail.value);
@@ -405,3 +422,7 @@ const FormClosing: React.FC = () => {
 };
 
 export default FormClosing;
+function as(recordId: number, UpdateData: DataLkf) {
+    throw new Error('Function not implemented.');
+}
+

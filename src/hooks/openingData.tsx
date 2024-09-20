@@ -81,7 +81,7 @@ export const postOpening = async ({ station, jde_operator }: PostAuthParams) => 
 
 // Get last LKF data by station
 export async function getDataLastLkfByStation(station: string): Promise<any> {
-    const url = `${LINK_BACKEND}/api/operator/last-lkf/${station}`;
+    const url = `${LINK_BACKEND}/api/operator/last-lkf/station}`;
 
     try {
         const response = await CapacitorHttp.get({

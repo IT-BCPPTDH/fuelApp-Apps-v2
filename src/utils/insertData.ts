@@ -1,4 +1,4 @@
-import { db, DataLkf, DataDashboard, DataFormTrx, SondingData } from '../models/db';
+import { db, DataLkf, DataDashboard, DataFormTrx, SondingData, DataLkfUpdate } from '../models/db';
 
 // Add data to IndexedDB for drafts
 export const saveDraft = async (data: DataFormTrx) => {
@@ -21,14 +21,22 @@ export const getDrafts = async (): Promise<DataFormTrx[]> => {
 };
 
 
-export const addDataToDB = async (data: DataLkf) => {
+export const addDataToDB = async (data: DataLkfUpdate) => {
   try {
-    await db.openingTrx.add(data);
+    await db.closeTrx.add(data);
   } catch (error) {
     console.error("Failed to add data to IndexedDB:", error);
   }
 };
 
+
+export const addDataClosing = async (data: DataLkfUpdate) => {
+  try {
+    await db.closeTrx.add(data);
+  } catch (error) {
+    console.error("Failed to add data to IndexedDB:", error);
+  }
+};
 export const getOfflineData = async (): Promise<DataLkf[]> => {
   try {
     return await db.openingTrx.toArray();
@@ -50,17 +58,7 @@ export const removeDataFromDB = async (id: string) => {
   }
 };
 
-export const removeDataFromDBTrx= async (id: string) => {
-  try {
-    const numericId = Number(id);
-    if (isNaN(numericId)) {
-      throw new Error("Invalid ID format");
-    }
-    await db.dataTransaksi.delete(numericId);
-  } catch (error) {
-    console.error("Failed to remove data from IndexedDB:", error);
-  }
-};
+
 
 export async function addDataDashboard(data: DataDashboard) {
   try {

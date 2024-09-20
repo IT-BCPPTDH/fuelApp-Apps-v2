@@ -26,9 +26,34 @@ interface DataLkf {
   signature:string;
   close_data:number,
   variance:number,
+}
 
-           
-  
+
+interface DataLkfUpdate {
+  name: string;
+  issued: any;
+  receipt: any;
+  id?: number;
+  date: string; // Change `any` to `string` since date will be in ISO string format
+  shift: string;
+  hm_start: number;
+  opening_dip: number;
+  opening_sonding: number;
+  flow_meter_start: number;
+  site: string;
+  fuelman_id: string;
+  station: string;
+  jde: string;
+  lkf_id: any;
+  stockOnHand: number;
+  hm_end:number,
+  closing_dip:number;
+  closing_sonding: number;
+  flow_meter_end:number;
+  note:string;
+  signature:string;
+  close_data:number,
+  variance:number,
 }
 
 interface DataFormTrx {
@@ -91,16 +116,18 @@ const db = new Dexie('fuelAppDatabase') as Dexie & {
   dataTransaksi: Dexie.Table<DataFormTrx, number>;
   cards: Dexie.Table<DataDashboard, number>;
   sondingMaster:Table<SondingData,number>
+  closeTrx: Dexie.Table<DataLkfUpdate, number>;
 };
 
 
 // Define the schema
-db.version(6).stores({
+db.version(7).stores({
   openingTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
+  closeTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
   dataTransaksi: '++id, from_data_id, no_unit, model_unit, owner, date_trx, hm_last, hm_km, qty_last, qty, name_operator, fbr, flow_start, flow_end, signature, foto, type, lkf_id, start_time, end_time, status, jde_operator, fuelman_id, dip_start, dip_end, sonding_start, sonding_end, reference, start, end',
   cards: '++id, title, subtitle, icon',
   sondingMaster:'++id, station, cm , liters, site'
 });
 
-export type { DataLkf, DataFormTrx, DataDashboard , SondingData};
+export type { DataLkf, DataFormTrx, DataDashboard , SondingData, DataLkfUpdate};
 export { db };

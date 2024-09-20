@@ -20,11 +20,7 @@ import { postAuthLogin } from "../../hooks/useAuth";
 import { getStation as fetchStation } from "../../hooks/useStation";
 import { getAllUnit } from "../../hooks/getAllUnit";
 import "./style.css";
-
-// import { getDataLastLkfByStation } from "../../hooks/openingData";
-// import { getAllSonding } from "../../hooks/getAllSonding";
-// import { getQoutaUnit } from "../../hooks/getQoutaUnit";
-
+import { getAllQuota } from "../../hooks/getQoutaUnit";
 interface Station {
   fuel_station_name: string;
   site: string;
@@ -104,6 +100,26 @@ const Login: React.FC = () => {
   }, []);
 
 
+useEffect(() => {
+  const fetchQuotaOptions = async () => {
+      try {
+          const response = await getAllQuota();
+          if (response.status === '200' && Array.isArray(response.data)) {
+              const unitData = response.data;
+              setopeningForm(unitData);
+
+              // Store data in localStorage
+              localStorage.setItem('unitQouta', JSON.stringify(unitData));
+          } else {
+              console.error('Unexpected data format');
+          }
+      } catch (error) {
+          console.error('Failed to fetch unit options', error);
+      }
+  };
+
+  fetchQuotaOptions();
+}, []);
 
   useEffect(() => {
     const loadStationData = async () => {
