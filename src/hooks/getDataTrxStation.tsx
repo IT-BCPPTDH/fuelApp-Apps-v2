@@ -1,11 +1,9 @@
-
-const BELinkMaster='http://127.0.0.1:3033'
-
 import { ResponseError } from "../helper/responseError";
 
+const BELinkMaster = 'http://localhost:3303';
 
-export async function getAllQouta() {
-    const url = `${BELinkMaster }/api/quota-usage/get-data`;
+export async function getStationData(station: string) {
+    const url = `${BELinkMaster}/api/operator/last-lkf/:station`;
 
     try {
         const response = await fetch(url, {
@@ -13,12 +11,12 @@ export async function getAllQouta() {
         });
 
         if (!response.ok) {
-            throw new ResponseError(`Failed to fetch  data. Status: ${response.status} ${response.statusText}`, response);
+            throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.statusText}`, response);
         }
 
         const data = await response.json();
 
-        console.log('Successfully fetched quota data:', data);
+        console.log('Successfully fetched station data:', data);
 
         return data;
     } catch (error: unknown) {
@@ -31,5 +29,3 @@ export async function getAllQouta() {
         }
     }
 }
-
-
