@@ -1,7 +1,5 @@
 import { useFormInput } from "./utils";
 
-
-
 export const useLoginFields = () => {
     return [
         {
