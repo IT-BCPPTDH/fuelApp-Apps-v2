@@ -19,7 +19,7 @@ interface ShiftData {
 // get Data By Fuelman Id
 export const getDataByFuelmanID = async (fuelman_id: string): Promise<DataLkf[]> => {
   try {
-    const allData = await db.openingTrx.where("fuelman_id").equals(fuelman_id).toArray();
+    const allData = await db.closeTrx.where("fuelman_id").equals(fuelman_id).toArray();
     // Ensure latest record by ID
     return allData.sort((a, b) => (b.id as number) - (a.id as number)); 
   } catch (error) {
@@ -31,7 +31,7 @@ export const getDataByFuelmanID = async (fuelman_id: string): Promise<DataLkf[]>
 // Function to get data by Station
 export const getDataByStation = async (station: string): Promise<DataLkf[]> => {
   try {
-    const allData = await db.openingTrx.where("station").equals(station).toArray();
+    const allData = await db.closeTrx.where("station").equals(station).toArray();
     // sort data lastest 
     return allData.sort((a, b) => (b.id as number) - (a.id as number)); 
   } catch (error) {
@@ -43,7 +43,7 @@ export const getDataByStation = async (station: string): Promise<DataLkf[]> => {
 // Function to get data by ID
 export const getDataByID = async (id: number): Promise<DataLkf[]> => {
   try {
-    const allData = await db.openingTrx.where("id").equals(id).toArray();
+    const allData = await db.closeTrx.where("id").equals(id).toArray();
     return allData;
   } catch (error) {
     console.error("Failed to get data from IndexedDB:", error);
@@ -53,7 +53,7 @@ export const getDataByID = async (id: number): Promise<DataLkf[]> => {
 
 export const getLatestLkfId = async (): Promise<string | undefined> => {
   try {
-    const latestEntry = await db.openingTrx.orderBy('id').last();
+    const latestEntry = await db.closeTrx.orderBy('id').last();
     return latestEntry ? latestEntry.lkf_id : undefined;
   } catch (error) {
     console.error("Failed to fetch the latest LKF ID from IndexedDB:", error);
@@ -63,7 +63,7 @@ export const getLatestLkfId = async (): Promise<string | undefined> => {
 
 export const getShiftDataByLkfId = async (lkfId: string): Promise<ShiftData> => {
   try {
-    const shiftData = await db.openingTrx.where('lkf_id').equals(lkfId).first();
+    const shiftData = await db.closeTrx.where('lkf_id').equals(lkfId).first();
     return {
       shift: shiftData?.shift || 'No Data',
       station: shiftData?.station || 'No Data',
@@ -161,7 +161,7 @@ export const getAllDataSonding = async (): Promise<SondingData[]> => {
 
 export const getLatestLkfData = async (): Promise<{ lkf_id?: string; opening_sonding?: number } | undefined> => {
   try {
-    const latestEntry = await db.openingTrx.orderBy('id').last();
+    const latestEntry = await db.closeTrx.orderBy('id').last();
     if (latestEntry) {
       return {
         lkf_id: latestEntry.lkf_id,
@@ -234,7 +234,7 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
 
 export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {
   try {
-    const latestEntry = await db.openingTrx.orderBy('id').reverse().limit(1).toArray();
+    const latestEntry = await db.closeTrx.orderBy('id').reverse().limit(1).toArray();
 
     if (latestEntry.length > 0) {
       const entry = latestEntry[0];
@@ -255,7 +255,7 @@ export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: 
 
 export const getLatestLkfIdHm = async (): Promise<number | undefined> => {
   try {
-    const latestEntry = await db.openingTrx.orderBy('id').last();
+    const latestEntry = await db.closeTrx.orderBy('id').last();
     return latestEntry ? latestEntry.hm_start : undefined;
   } catch (error) {
     console.error("Failed to fetch the latest LKF ID from IndexedDB:", error);
