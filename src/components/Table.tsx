@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
+  IonPage,
+  IonContent,
   IonGrid,
   IonRow,
   IonCol,
@@ -13,7 +15,8 @@ import {
 import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
 import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
 import { postBulkData } from '../hooks/bulkInsert';
-
+import { checkmarkCircleOutline } from 'ionicons/icons';
+import { updateDataInTrx } from '../utils/update';
 // Define the type for table data items
 interface TableDataItem {
   from_data_id: number;
@@ -45,7 +48,6 @@ const TableData: React.FC = () => {
     const fetchLkfId = async () => {
       try {
         const latestLkfId = await getLatestLkfId();
-        
         if (latestLkfId) {
           setNomorLKF(latestLkfId);
           await fetchData(latestLkfId); // Fetch data with the latest LKF ID
@@ -146,6 +148,9 @@ const TableData: React.FC = () => {
     }
   };
 
+
+ 
+  
   const filteredData = (data || []).filter(item =>
     item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
     item.model_unit.toLowerCase().includes(searchQuery.toLowerCase()) ||

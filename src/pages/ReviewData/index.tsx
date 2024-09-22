@@ -84,7 +84,6 @@ const ReviewData: React.FC = () => {
     
             // Remove cookies after successful logout
             Cookies.remove('isLoggedIn');
-            Cookies.remove('authToken'); // Remove other cookies if necessary
     
             // Clear specific shift data from local storage
             const shiftData = localStorage.getItem('shiftData');
@@ -100,9 +99,11 @@ const ReviewData: React.FC = () => {
                 }
             }
     
-           
+            // Remove unitQouta from localStorage
+            localStorage.removeItem('unitQouta');
+    
             // Delete dataTransaksi from IndexedDB
-        //    await deleteData()
+            // await deleteData();
     
             // Redirect to the home page or login page
             window.location.href = '/';
@@ -111,6 +112,7 @@ const ReviewData: React.FC = () => {
             // Handle logout failure, e.g., show an error message
         }
     };
+    
     
 
 

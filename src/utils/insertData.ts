@@ -39,7 +39,7 @@ export const addDataClosing = async (data: DataLkfUpdate) => {
 };
 export const getOfflineData = async (): Promise<DataLkf[]> => {
   try {
-    return await db.openingTrx.toArray();
+    return await db.closeTrx.toArray();
   } catch (error) {
     console.error("Failed to get offline data from IndexedDB:", error);
     return [];
@@ -52,7 +52,7 @@ export const removeDataFromDB = async (id: string) => {
     if (isNaN(numericId)) {
       throw new Error("Invalid ID format");
     }
-    await db.openingTrx.delete(numericId);
+    await db.closeTrx.delete(numericId);
   } catch (error) {
     console.error("Failed to remove data from IndexedDB:", error);
   }

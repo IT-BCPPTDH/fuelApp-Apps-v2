@@ -26,7 +26,6 @@ import { getUser } from "../../hooks/getAllUser";
 import { getAllUnit } from "../../hooks/getAllUnit";
 import { getStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
-import { getDataLastLkfByStation } from "../../hooks/openingData";
 
 interface Shift {
   id: number;
@@ -67,7 +66,7 @@ const OpeningForm: React.FC = () => {
   const router = useIonRouter();
   const [presentToast] = useIonToast();
 
-  const [stationLast, setStationLast] = useState<string[]>([]);
+
 
   useEffect(() => {
     const determineShift = () => {
@@ -150,62 +149,24 @@ const OpeningForm: React.FC = () => {
     fetchUnitOptions();
   }, []);
 
+  // useEffect(() => {
+  //   const fetchStationOptions = async () => {
+  //     if (dataUserLog) {
+  //       try {
+  //         const response = await getStation(dataUserLog.station);
+  //         if (response.status === '200' && Array.isArray(response.data)) {
+  //           setStationOptions(response.data.map((station: { name: any; }) => station.name));
+  //         } else {
+  //           console.error('Unexpected data format');
+  //         }
+  //       } catch (error) {
+  //         console.error('Failed to fetch station options', error);
+  //       }
+  //     }
+  //   };
 
-  useEffect(() => {
-    const fetchlkfByStation = async () => {
-        // Ambil station dari localStorage atau sumber lain
-        const storedData = localStorage.getItem('Lkf-Station');
-        const station = storedData ? JSON.parse(storedData)[0]?.station : null; // Ganti dengan cara yang sesuai untuk mendapatkan station
-
-        console.log('Fetched station from localStorage:', station);
-
-        if (!station) {
-            console.error('Station is required but not provided.');
-            return; // Keluar jika station tidak ada
-        }
-
-        try {
-            console.log('Fetching data for station:', station);
-            const response = await getDataLastLkfByStation(station); // Pastikan station dikirim sebagai argumen
-
-            console.log('Response received from API:', response);
-
-            if (response.status === '200' && Array.isArray(response.data)) {
-                localStorage.setItem('Lkf-Station', JSON.stringify(response.data));
-                setStationLast(response.data);
-                console.log('Station data successfully set:', response.data);
-            } else {
-                console.error('Unexpected data format:', response);
-            }
-        } catch (error) {
-            console.error('Failed to fetch unit options', error);
-        }
-    };
-
-    fetchlkfByStation();
-}, []);
-
-
-
-
-  useEffect(() => {
-    const fetchStationOptions = async () => {
-      if (dataUserLog) {
-        try {
-          const response = await getStation(dataUserLog.station);
-          if (response.status === '200' && Array.isArray(response.data)) {
-            setStationOptions(response.data.map((station: { name: any; }) => station.name));
-          } else {
-            console.error('Unexpected data format');
-          }
-        } catch (error) {
-          console.error('Failed to fetch station options', error);
-        }
-      }
-    };
-
-    fetchStationOptions();
-  }, [dataUserLog]);
+  //   fetchStationOptions();
+  // }, [dataUserLog]);
 
   useEffect(() => {
     const fetchLatestLkfData = async () => {
@@ -554,8 +515,4 @@ const OpeningForm: React.FC = () => {
 };
 
 export default OpeningForm;
-
-function useOpeningData(station: any) {
-  throw new Error("Function not implemented.");
-}
 
