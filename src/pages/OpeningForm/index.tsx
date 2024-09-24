@@ -621,7 +621,3 @@ useEffect(() => {
 };
 
 export default OpeningForm;
-<<<<<<< HEAD
-=======
-
->>>>>>> 2fd80f6607cdc952dcddc2e378786020a0c732b0
