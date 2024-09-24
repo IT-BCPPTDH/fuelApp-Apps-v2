@@ -17,16 +17,9 @@ import {
 } from "@ionic/react";
 import Cookies from "js-cookie";
 import { postAuthLogin } from "../../hooks/useAuth";
-import { getStation as fetchStation } from "../../hooks/useStation";
-import { getAllUnit } from "../../hooks/getAllUnit";
 import "./style.css";
-import { getAllQuota } from "../../hooks/getQoutaUnit";
-interface Station {
-  fuel_station_name: string;
-  site: string;
-  fuel_station_type: string; // Fixed property name
-  fuel_capacity: string;
-}
+import { fetchStationData, fetchUnitData, fetchQuotaData, saveDataToStorage, getDataFromStorage } from "../../services/dataService";
+import { Station } from "../../models/interfaces";
 
 const Login: React.FC = () => {
   const [jde, setJdeOperator] = useState<string>("");
@@ -34,103 +27,23 @@ const Login: React.FC = () => {
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
   const router = useIonRouter();
-  const [openigForm, setopeningForm] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
-  // const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
-// const [sondingData, setSondingData] = useState<any[]>([]); // Added state for sonding data
-  // const [dataBefore, setBeforeTrx] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
+  const [openingForm, setOpeningForm] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
 
-  const fetchAllStationData = async () => {
-    try {
-      const response = await fetchStation();
-      if (response?.data && Array.isArray(response.data)) {
-        const stations = response.data.map((station: Station) => ({
+
+  useEffect(() => {
+    const loadStationData = async () => {
+      const cachedData = await getDataFromStorage('stationData');
+      if (cachedData) {
+        setStationData(cachedData);
+      } else {
+        const stations: Station[] = await fetchStationData();
+        const formattedStations = stations.map((station) => ({
           value: station.fuel_station_name,
           label: station.fuel_station_name,
           site: station.site,
           fuel_station_type: station.fuel_station_type,
-          fuel_capacity: station.fuel_capacity
         }));
-        localStorage.setItem('stationData', JSON.stringify(stations));
-        setStationData(stations);
-      } else {
-        console.error("No station data found");
-      }
-    } catch (error) {
-      console.error("Failed to fetch station data:", error);
-    }
-  };
-
-
-
-
-  //   async function fetchData() {
-  //     try {
-  //         const data = await getQoutaUnit();
-  //         console.log('Data Qouta:', data);
-
-
-  //     } catch (error) {
-  //         console.error('Error fetching data:', error);
-  //     } 
-  // }
-
-  // fetchData();
-
-
-
-  useEffect(() => {
-    const fetchUnitOptions = async () => {
-      try {
-        const response = await getAllUnit();
-        if (response.status === '200' && Array.isArray(response.data)) {
-          const unitData = response.data;
-          setopeningForm(unitData);
-
-          // Store data in localStorage
-          localStorage.setItem('allUnit', JSON.stringify(unitData));
-        } else {
-          console.error('Unexpected data format');
-        }
-      } catch (error) {
-        console.error('Failed to fetch unit options', error);
-      }
-    };
-
-    fetchUnitOptions();
-  }, []);
-
-
-  useEffect(() => {
-    const fetchQuotaOptions = async () => {
-      const todayDate = new Date().toISOString().split('T')[0];
-      
-      try {
-        const response = await getAllQuota(todayDate);
-        
-        if (response.status === '200' && Array.isArray(response.data)) {
-          const unitData = response.data;
-          setopeningForm(unitData);
-
-          // Store data in localStorage
-          localStorage.setItem('unitQouta', JSON.stringify(unitData));
-        } else {
-          console.error('Unexpected data format');
-        }
-      } catch (error) {
-        console.error('Failed to fetch unit options', error);
-      }
-    };
-
-    fetchQuotaOptions();
-  }, []); 
-
-  useEffect(() => {
-    const loadStationData = async () => {
-      const cachedData = localStorage.getItem('stationData');
-      if (cachedData) {
-        setStationData(JSON.parse(cachedData));
-      } else {
-        await fetchAllStationData();
+        setStationData(formattedStations);
       }
     };
 
@@ -138,58 +51,36 @@ const Login: React.FC = () => {
   }, []);
 
 
-  //   useEffect(() => {
-  //     const fetchDataFormAwal = async () => {
-  //         try {
-  //             const storedStation = localStorage.getItem('stationData');
+  useEffect(() => {
+    const loadUnitData = async () => {
+      const cachedUnitData = await getDataFromStorage('allUnit');
+      if (cachedUnitData) {
+        setOpeningForm(cachedUnitData);
+      } else {
+        const units = await fetchUnitData();
+        setOpeningForm(units);
+      }
+    };
 
-  //             if (!storedStation) {
-  //                 console.warn('No station data found in localStorage. Using default station.');
-  //                 const defaultStation = 'FT1116'
-  //                 const response = await getDataLastLkfByStation(defaultStation);
-
-  //                 console.log('API Response (default):', response);
-
-  //                 if (response.data && Array.isArray(response.data)) {
-  //                     if (response.data.length === 0) {
-  //                         console.warn('Response data is empty.');
-  //                     }
-  //                     const openingDataForm = response.data;
-  //                     setUnitOptions(openingDataForm);
-  //                     localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
-  //                 } else {
-  //                     console.error('Unexpected data format. Response:', response);
-  //                 }
-  //                 return;
-  //             }
-
-  //             const station = JSON.parse(storedStation);
-  //             console.log('Fetched station from localStorage:', station);
-
-  //             const response = await getDataLastLkfByStation(station);
-
-  //             console.log('API Response:', response);
-
-  //             if (response.data && Array.isArray(response.data)) {
-  //                 if (response.data.length === 0) {
-  //                     console.warn('Response data is empty.');
-  //                 }
-  //                 const openingDataForm = response.data;
-  //                 setUnitOptions(openingDataForm);
-  //                 localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
-  //             } else {
-  //                 console.error('Unexpected data format. Response:', response);
-  //             }
-  //         } catch (error) {
-  //             console.error('Failed to fetch unit options', error);
-  //         }
-  //     };
-
-  //     fetchDataFormAwal();
-  // }, []);
+    loadUnitData();
+  }, []);
 
 
 
+  useEffect(() => {
+    const loadQuotaData = async () => {
+      const cachedQuotaData = await getDataFromStorage('unitQuota');
+      if (cachedQuotaData) {
+        setOpeningForm(cachedQuotaData);
+      } else {
+        const todayDate = new Date().toISOString().split('T')[0];
+        const quotas = await fetchQuotaData(todayDate);
+        setOpeningForm(quotas);
+      }
+    };
+
+    loadQuotaData();
+  }, []);
 
 
   const handleLogin = async () => {
@@ -199,10 +90,7 @@ const Login: React.FC = () => {
       return;
     }
 
-    const stationData = localStorage.getItem('stationData');
-    const stations = stationData ? JSON.parse(stationData) : [];
-    const selectedStation = stations.find((station: { value: string; }) => station.value === selectedUnit);
-
+    const selectedStation = stationData.find((station) => station.value === selectedUnit);
     if (!selectedStation) {
       console.error("Selected station not found");
       setShowError(true);
@@ -216,13 +104,10 @@ const Login: React.FC = () => {
         station: selectedUnit,
         date: currentDate,
         JDE: jde,
-        // userId: "",
-        // session_token: "",
-        // logId: ""
       });
 
       if (response.status === '200' && response.message === 'Data Created') {
-        const { token, ...userData } = response.data;
+        const { token } = response.data;
         Cookies.set("session_token", token, { expires: 1 });
         Cookies.set("isLoggedIn", "true", { expires: 1 });
 
@@ -232,18 +117,18 @@ const Login: React.FC = () => {
           site: selectedStation.site,
         };
 
-        localStorage.setItem("loginData", JSON.stringify(loginData));
-
+        saveDataToStorage("loginData", loginData);
         router.push("/opening");
       } else {
-        console.error("Respons tidak terduga:", response);
+        console.error("Unexpected response:", response);
         setShowError(true);
       }
     } catch (error) {
-      console.error("Kesalahan saat login:", error);
+      console.error("Error during login:", error);
       setShowError(true);
     }
   };
+
 
   return (
     <IonPage>

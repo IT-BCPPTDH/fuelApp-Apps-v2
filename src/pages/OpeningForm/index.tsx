@@ -22,11 +22,13 @@ import "./style.css";
 import { postOpening } from "../../hooks/serviceApi";
 import { addDataToDB, getOfflineData, removeDataFromDB } from "../../utils/insertData";
 import { DataLkf } from "../../models/db";
-import { getUser } from "../../hooks/getAllUser";
-import { getAllUnit } from "../../hooks/getAllUnit";
-import { getStation } from "../../hooks/useStation";
+// import { getUser } from "../../hooks/getAllUser";
+// import { getAllUnit } from "../../hooks/getAllUnit";
+// import { getStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
-import { getDataLastLkfByStation } from "../../hooks/openingData";
+// import { getDataLastLkfByStation } from "../../hooks/openingData";
+import { saveDataToStorage, getDataFromStorage } from "../../services/dataService";
+// import { save } from "ionicons/icons";
 
 interface Shift {
   id: number;
@@ -47,27 +49,27 @@ const OpeningForm: React.FC = () => {
   const [hmAwal, setHmAwal] = useState<number | undefined>(undefined);
   const [site, setSite] = useState<string | undefined>(undefined);
   const [station, setStation] = useState<string | undefined>(undefined);
-  const [capacity, setCapacity] = useState<string | undefined>(undefined);
   const [fuelmanId, setFuelmanID] = useState<string | undefined>(undefined);
   const [shiftSelected, setShiftSelected] = useState<Shift | undefined>(undefined);
   const [showError, setShowError] = useState<boolean>(false);
-  // const [date, setDate] = useState<string | undefined>(undefined);
-  const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
-  const [id, setLkfId] = useState<string| undefined>(undefined);
+  const [id, setLkfId] = useState<string | undefined>(undefined);
   const [showDateModal, setShowDateModal] = useState<boolean>(false);
-  const [allUsers, setAllUser] = useState<any[]>([]);
-  const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
-  const [stationOptions, setStationOptions] = useState<string[]>([]);
-  const [sondingMasterData, setSondingMasterData] = useState<any[]>([]); 
-  const [latestLkfData, setLatestLkfData] = useState<any | undefined>(undefined); 
+  const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
-  const [date, setDate] = useState<string>(new Date().toISOString()); // Initialize with current date
+  const [date, setDate] = useState<string>(new Date().toISOString());
+
+  const [stationOptions, setStationOptions] = useState<string[]>([]);
+  //const [capacity, setCapacity] = useState<string | undefined>(undefined);
+  //const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
+  // const [allUsers, setAllUser] = useState<any[]>([]);
+  // const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
+  const [latestLkfData, setLatestLkfData] = useState<any | undefined>(undefined);
+  // const [stationLast, setStationLast] = useState<string[]>([]);
 
   const router = useIonRouter();
   const [presentToast] = useIonToast();
 
-  const [stationLast, setStationLast] = useState<string[]>([]);
 
   useEffect(() => {
     const determineShift = () => {
@@ -103,109 +105,89 @@ const OpeningForm: React.FC = () => {
 
     setLkfId(generateLkfId());
 
-    const userData = localStorage.getItem("loginData");
+    const userData: any = getDataFromStorage('loginData')
+    // localStorage.getItem("loginData");
     if (userData) {
       const parsedData = JSON.parse(userData);
-      setDataUserLog(parsedData);
+      // setDataUserLog(parsedData);
       setFuelmanID(parsedData.jde);
       setStation(parsedData.station);
-      setCapacity(parsedData.capacity);
+      // setCapacity(parsedData.capacity);
       setSite(parsedData.site);
     }
   }, []);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await getUser();
-        if (response.status === '200' && Array.isArray(response.data)) {
-          localStorage.setItem('employeeData', JSON.stringify(response.data));
-          setAllUser(response.data);
-        } else {
-          console.error('Unexpected data format');
-        }
-      } catch (error) {
-        console.error('Failed to fetch user data', error);
-      }
-    };
-
-    fetchUser();
+    // const fetchUser = async () => {
+    //   try {
+    //     const response = await getUser();
+    //     if (response.status === '200' && Array.isArray(response.data)) {
+    //       saveDataToStorage('employeeData',JSON.stringify(response.data) )
+    //     //  localStorage.setItem('employeeData', JSON.stringify(response.data));
+    //       setAllUser(response.data);
+    //     } else {
+    //       console.error('Unexpected data format');
+    //     }
+    //   } catch (error) {
+    //     console.error('Failed to fetch user data', error);
+    //   }
+    // };
+    // fetchUser();
   }, []);
 
   useEffect(() => {
-    const fetchUnitOptions = async () => {
-      try {
-        const response = await getAllUnit();
-        if (response.status === '200' && Array.isArray(response.data)) {
-          localStorage.setItem('masterUnit', JSON.stringify(response.data));
-          setUnitOptions(response.data);
-        } else {
-          console.error('Unexpected data format');
-        }
-      } catch (error) {
-        console.error('Failed to fetch unit options', error);
-      }
-    };
+    // const fetchUnitOptions = async () => {
+    //   try {
+    //     const response = await getAllUnit();
+    //     if (response.status === '200' && Array.isArray(response.data)) {
+    //       localStorage.setItem('masterUnit', JSON.stringify(response.data));
+    //       setUnitOptions(response.data);
+    //     } else {
+    //       console.error('Unexpected data format');
+    //     }
+    //   } catch (error) {
+    //     console.error('Failed to fetch unit options', error);
+    //   }
+    // };
 
-    fetchUnitOptions();
+    // fetchUnitOptions();
   }, []);
 
 
   useEffect(() => {
-    const fetchlkfByStation = async () => {
-        // Ambil station dari localStorage atau sumber lain
-        const storedData = localStorage.getItem('Lkf-Station');
-        const station = storedData ? JSON.parse(storedData)[0]?.station : null; // Ganti dengan cara yang sesuai untuk mendapatkan station
+    // const fetchlkfByStation = async () => {
 
-        console.log('Fetched station from localStorage:', station);
+    //     const storedData = localStorage.getItem('Lkf-Station');
+    //     const station = storedData ? JSON.parse(storedData)[0]?.station : null; 
 
-        if (!station) {
-            console.error('Station is required but not provided.');
-            return; // Keluar jika station tidak ada
-        }
+    //     console.log('Fetched station from localStorage:', station);
 
-        try {
-            console.log('Fetching data for station:', station);
-            const response = await getDataLastLkfByStation(station); // Pastikan station dikirim sebagai argumen
+    //     if (!station) {
+    //         console.error('Station is required but not provided.');
+    //         return; 
+    //     }
 
-            console.log('Response received from API:', response);
+    //     try {
+    //         console.log('Fetching data for station:', station);
+    //         const response = await getDataLastLkfByStation(station);
 
-            if (response.status === '200' && Array.isArray(response.data)) {
-                localStorage.setItem('Lkf-Station', JSON.stringify(response.data));
-                setStationLast(response.data);
-                console.log('Station data successfully set:', response.data);
-            } else {
-                console.error('Unexpected data format:', response);
-            }
-        } catch (error) {
-            console.error('Failed to fetch unit options', error);
-        }
-    };
+    //         console.log('Response received from API:', response);
 
-    fetchlkfByStation();
-}, []);
+    //         if (response.status === '200' && Array.isArray(response.data)) {
+    //             localStorage.setItem('Lkf-Station', JSON.stringify(response.data));
+    //             setStationLast(response.data);
+    //             console.log('Station data successfully set:', response.data);
+    //         } else {
+    //             console.error('Unexpected data format:', response);
+    //         }
+    //     } catch (error) {
+    //         console.error('Failed to fetch unit options', error);
+    //     }
+    // };
 
+    // fetchlkfByStation();
+  }, []);
 
-
-
-  useEffect(() => {
-    const fetchStationOptions = async () => {
-      if (dataUserLog) {
-        try {
-          const response = await getStation(dataUserLog.station);
-          if (response.status === '200' && Array.isArray(response.data)) {
-            setStationOptions(response.data.map((station: { name: any; }) => station.name));
-          } else {
-            console.error('Unexpected data format');
-          }
-        } catch (error) {
-          console.error('Failed to fetch station options', error);
-        }
-      }
-    };
-
-    fetchStationOptions();
-  }, [dataUserLog]);
 
   useEffect(() => {
     const fetchLatestLkfData = async () => {
@@ -214,7 +196,7 @@ const OpeningForm: React.FC = () => {
         const parsedData = JSON.parse(storedData);
         setLatestLkfData(parsedData);
         if (parsedData) {
-          setFlowMeterAwal(parsedData.flow_meter_end); 
+          setFlowMeterAwal(parsedData.flow_meter_end);
           setPrevFlowMeterAwal(parsedData.flow_meter_end); // Initialize previous value
           setOpeningSonding(parsedData.closing_sonding);
         }
@@ -254,7 +236,7 @@ const OpeningForm: React.FC = () => {
             if (matchingData) {
               setOpeningDip(matchingData.liters);
             } else {
-              setOpeningDip(undefined); 
+              setOpeningDip(undefined);
             }
           }
         } catch (error) {
@@ -273,7 +255,7 @@ const OpeningForm: React.FC = () => {
       setShowDateModal(false);
     }
   };
-  
+
 
   const handlePost = async () => {
     if (
@@ -397,8 +379,6 @@ const OpeningForm: React.FC = () => {
   }, []);
 
 
-  
-
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -415,9 +395,9 @@ const OpeningForm: React.FC = () => {
             <h4>Station : {station}</h4>
           </div>
           <IonRow className="padding-content">
-            <IonCol style={{display:"grid"}}>
+            <IonCol style={{ display: "grid" }}>
               <IonLabel>
-                Shift  <span style={{color:"red", marginLeft:"20px"}}>*</span>
+                Shift  <span style={{ color: "red", marginLeft: "20px" }}>*</span>
               </IonLabel>
               <IonRadioGroup
                 className="radio-display"
@@ -425,33 +405,33 @@ const OpeningForm: React.FC = () => {
                 value={shiftSelected}
                 onIonChange={(ev) => handleShiftChange(ev.detail.value)}
               >
-               {shifts.map((shift) => (
-        <IonItem key={shift.id} className="item-no-border">
-          <IonRadio slot="start" value={shift} />
-          <IonLabel>{shift.name}</IonLabel>
-        </IonItem>
-      ))}
-      </IonRadioGroup>
+                {shifts.map((shift) => (
+                  <IonItem key={shift.id} className="item-no-border">
+                    <IonRadio slot="start" value={shift} />
+                    <IonLabel>{shift.name}</IonLabel>
+                  </IonItem>
+                ))}
+              </IonRadioGroup>
             </IonCol>
             <IonCol>
-            <IonLabel style={{marginLeft:"20px"}}>
-                Date <span style={{color:"red", marginLeft:"20px"}}>*</span>
+              <IonLabel style={{ marginLeft: "20px" }}>
+                Date <span style={{ color: "red", marginLeft: "20px" }}>*</span>
               </IonLabel>
               <IonItem>
-              <IonInput
-                  value={new Date(date).toLocaleDateString()} // Ensure date is not undefined
+                <IonInput
+                  value={new Date(date).toLocaleDateString()}
                   placeholder="Select Date"
                   readonly
                   onClick={() => setShowDateModal(true)}
                 />
-             
+
               </IonItem>
               <IonModal isOpen={showDateModal}>
                 <IonDatetime
-                  value={date || new Date().toISOString()} // Default to current date if `date` is undefined
+                  value={date || new Date().toISOString()} 
                   onIonChange={handleDateChange}
-                  max={new Date().toISOString()}  // Set minimum date to current date
-                 
+                  max={new Date().toISOString()}  
+
                 />
                 <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>
               </IonModal>
@@ -460,7 +440,7 @@ const OpeningForm: React.FC = () => {
           </IonRow>
           <div className="padding-content">
             <IonLabel className={showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "error" : ""}>
-              Opening Sonding (Cm) <span style={{color:"red"}}>*</span>
+              Opening Sonding (Cm) <span style={{ color: "red" }}>*</span>
             </IonLabel>
             <IonInput
               className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
@@ -474,49 +454,48 @@ const OpeningForm: React.FC = () => {
           </div>
           <div className="padding-content">
             <IonLabel className={showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "error" : ""}>
-              Opening Dip (Liter) <span style={{color:"red"}}>*</span>
+              Opening Dip (Liter) <span style={{ color: "red" }}>*</span>
             </IonLabel>
-            <IonInput style={{background:"#cfcfcf"}}
+            <IonInput style={{ background: "#cfcfcf" }}
               className={`custom-input ${showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "input-error" : ""}`}
               type="number"
               placeholder="Input opening dip dalam liter"
               value={openingDip}
               disabled
-              readonly={stationOptions.includes(station || '')} 
+              readonly={stationOptions.includes(station || '')}
             />
             {showError && openingDip === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
           <div className="padding-content">
-            
             <IonLabel className={showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal)) ? "error" : ""}>
-              Flow Meter Awal <span style={{color:"red"}}>*</span>
+              Flow Meter Awal <span style={{ color: "red" }}>*</span>
             </IonLabel>
             <IonInput
-            className={`custom-input`}
-            type="number"
-            value={flowMeterAwal}
-            onIonInput={(e) => {
-              const value = Number(e.detail.value);
-              setFlowMeterAwal(value);
-              if (prevFlowMeterAwal !== undefined && value < prevFlowMeterAwal) {
-                setShowError(true);
-              } else {
-                setShowError(false);
-              }
-            }}
-          />
-           {showError && (
-          <p style={{ color: "red" }}>
-            {flowMeterAwal === undefined
-              ? '* Field harus diisi'
-              : (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal)
-              ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
-              : ''
-            }
-          </p>
-        )}
+              className={`custom-input`}
+              type="number"
+              value={flowMeterAwal}
+              onIonInput={(e) => {
+                const value = Number(e.detail.value);
+                setFlowMeterAwal(value);
+                if (prevFlowMeterAwal !== undefined && value < prevFlowMeterAwal) {
+                  setShowError(true);
+                } else {
+                  setShowError(false);
+                }
+              }}
+            />
+            {showError && (
+              <p style={{ color: "red" }}>
+                {flowMeterAwal === undefined
+                  ? '* Field harus diisi'
+                  : (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal)
+                    ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
+                    : ''
+                }
+              </p>
+            )}
           </div>
           <div className="padding-content">
             <IonLabel>
@@ -554,8 +533,3 @@ const OpeningForm: React.FC = () => {
 };
 
 export default OpeningForm;
-
-function useOpeningData(station: any) {
-  throw new Error("Function not implemented.");
-}
-

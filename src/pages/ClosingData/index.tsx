@@ -23,7 +23,7 @@ import { DataLkf } from '../../models/db';
 import { getLatestLkfId, getLatestLkfIdHm } from '../../utils/getData';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
-import { getStation } from "../../hooks/useStation";
+// import { getStation } from "../../hooks/useStation";
 import { addDataToDB } from '../../utils/insertData';
 
 
@@ -98,23 +98,23 @@ const FormClosing: React.FC = () => {
         fetchLatestLkfId();
     }, []);
 
-    useEffect(() => {
-        const fetchStationOptions = async () => {
-            if (dataUserLog) {
-                try {
-                    const response = await getStation(dataUserLog.station);
-                    if (response.status === '200' && Array.isArray(response.data)) {
-                        setStationOptions(response.data.map((station: { name: any; }) => station.name));
-                    } else {
-                        console.error('Unexpected data format');
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch station options', error);
-                }
-            }
-        };
-        fetchStationOptions();
-    }, [dataUserLog]);
+    // useEffect(() => {
+    //     const fetchStationOptions = async () => {
+    //         if (dataUserLog) {
+    //             try {
+    //                 const response = await getStation(dataUserLog.station);
+    //                 if (response.status === '200' && Array.isArray(response.data)) {
+    //                     setStationOptions(response.data.map((station: { name: any; }) => station.name));
+    //                 } else {
+    //                     console.error('Unexpected data format');
+    //                 }
+    //             } catch (error) {
+    //                 console.error('Failed to fetch station options', error);
+    //             }
+    //         }
+    //     };
+    //     fetchStationOptions();
+    // }, [dataUserLog]);
 
     useEffect(() => {
         const updateClosingDip = async () => {
