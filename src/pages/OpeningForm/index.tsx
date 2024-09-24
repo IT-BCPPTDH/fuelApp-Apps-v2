@@ -26,9 +26,9 @@ import { DataLkf } from "../../models/db";
 // import { getAllUnit } from "../../hooks/getAllUnit";
 // import { getStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
-// import { getDataLastLkfByStation } from "../../hooks/openingData";
+import { getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
+import { getStationData } from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage } from "../../services/dataService";
-// import { save } from "ionicons/icons";
 
 interface Shift {
   id: number;
@@ -153,6 +153,21 @@ const OpeningForm: React.FC = () => {
     // fetchUnitOptions();
   }, []);
 
+  // useEffect(() => {
+  //   const fetchStationOptions = async () => {
+  //     if (dataUserLog) {
+  //       try {
+  //         const response = await getStation(dataUserLog.station);
+  //         if (response.status === '200' && Array.isArray(response.data)) {
+  //           setStationOptions(response.data.map((station: { name: any; }) => station.name));
+  //         } else {
+  //           console.error('Unexpected data format');
+  //         }
+  //       } catch (error) {
+  //         console.error('Failed to fetch station options', error);
+  //       }
+  //     }
+  //   };
 
   useEffect(() => {
     // const fetchlkfByStation = async () => {
@@ -201,6 +216,8 @@ const OpeningForm: React.FC = () => {
           setOpeningSonding(parsedData.closing_sonding);
         }
       }
+
+
     };
 
     fetchLatestLkfData();
@@ -255,8 +272,26 @@ const OpeningForm: React.FC = () => {
       setShowDateModal(false);
     }
   };
+  
+  const fetchShiftDataByStation = async (station: string) => {
+    try {
+        const shiftDataList = await getShiftDataByStation(station);
+        console.log(`Shift Last Station ${station}:`, shiftDataList);
+    } catch (error) {
+        console.error('Error fetching shift data:', error);
+    }
+};
 
-
+useEffect(() => {
+    // Retrieve station from local storage
+    const loginData = localStorage.getItem('loginData');
+    if (loginData) {
+        const parsedData = JSON.parse(loginData);
+        const stationFromLogin = parsedData.station; // Adjust according to the actual structure
+        setStation(stationFromLogin);
+        fetchShiftDataByStation(stationFromLogin); // Fetch shift data after setting the station
+    }
+}, []);
   const handlePost = async () => {
     if (
       !date ||
@@ -378,6 +413,59 @@ const OpeningForm: React.FC = () => {
     return () => window.removeEventListener('online', checkAndSendOfflineData);
   }, []);
 
+
+  const fetchLatestLkfData = async () => {
+    const latestData = await getLatestLkfDataDate();
+    
+    if (latestData) {
+      console.log("Latest LKF Data:", latestData);
+    } else {
+      console.log("No LKF data found.");
+    }
+  };
+  
+  // Panggil fungsi untuk mengambil data
+  fetchLatestLkfData();
+  
+
+
+  const fetchLastLkfData = async (station: string) => {
+    try {
+        const data = await getStationData(station);
+        
+        // Check if data contains expected properties
+        if (data && data.status === "200") {
+            console.log(`Data Log ${station}:`, data.data); // Access the data part
+            const { closing_dip, closing_sonding, flow_meter_end, hm_end } = data.data;
+
+            // Display the values
+            console.log(`Closing Dip: ${closing_dip}`);
+            console.log(`Closing Sonding: ${closing_sonding}`);
+            console.log(`Flow Meter End: ${flow_meter_end}`);
+            console.log(`HM End: ${hm_end}`);
+        } else {
+            console.error('Unexpected data format:', data);
+        }
+    } catch (error) {
+        console.error('Error fetching last LKF data:', error);
+    }
+};
+
+useEffect(() => {
+    // Retrieve station from local storage
+    const loginData = localStorage.getItem('loginData');
+    if (loginData) {
+        const parsedData = JSON.parse(loginData);
+        const stationFromLogin = parsedData.station; // Adjust according to the actual structure
+        setStation(stationFromLogin);
+    }
+}, []); // Runs only once on component mount
+
+useEffect(() => {
+    if (station) {
+        fetchLastLkfData(station);
+    }
+}, [station]);
 
   return (
     <IonPage>
@@ -533,3 +621,7 @@ const OpeningForm: React.FC = () => {
 };
 
 export default OpeningForm;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2fd80f6607cdc952dcddc2e378786020a0c732b0

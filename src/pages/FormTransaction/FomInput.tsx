@@ -22,6 +22,8 @@ import {
   useIonRouter,
   IonSelectOption,
   IonModal,
+  InputCustomEvent,
+  InputChangeEventDetail,
 } from "@ionic/react";
 import {
   cameraOutline,
@@ -73,7 +75,7 @@ const FormTRX: React.FC = () => {
     undefined
   );
   const [selectedUnit, setSelectedUnit] = useState<string | undefined>(
-    undefined
+
   );
 
   const [signature, setSignature] = useState<File | null>(null);
@@ -84,9 +86,9 @@ const FormTRX: React.FC = () => {
   const [owner, setOwner] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
   const [unitOptions, setUnitOptions] = useState<
-    { id: string; unit_no: string; brand: string; owner: string }[]
+    { id: string; unit_no: string; brand: string; owner: string , unitNo:string }[]
   >([]);
-  const [quantity, setQuantity] = useState<number | undefined>(undefined);
+
   const [fbr, setFbr] = useState<number | undefined>(undefined);
   const [flowStart, setFlowStart] = useState<number | undefined>(undefined);
   const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(
@@ -133,6 +135,14 @@ const FormTRX: React.FC = () => {
   const [status, setStatus] = useState<number>(0); // Default to 0
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
+  const [quotaMessage, setQuotaMessage] = useState("");
+
+  const [unitQuota, setUnitQuota] = useState(0);
+  const [usedQuota, setUsedQuota] = useState(0);
+  const [remainingQuota, setRemainingQuota] = useState(0);
+const [quantity, setQuantity] = useState(0);
+const [quantityError, setQuantityError] = useState("");
+const [unitQouta, setUnitQouta] = useState(0);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -161,6 +171,10 @@ const FormTRX: React.FC = () => {
       setFlowMeterAwal(parsedData.flowMeterEnd);
     }
   }, []);
+
+
+
+
 
   useEffect(() => {
     const storedData = localStorage.getItem("cardDataDashborad");
@@ -261,31 +275,7 @@ const FormTRX: React.FC = () => {
 
   const isFormDisabled = !selectedUnit;
 
-  const handleUnitChange = (event: CustomEvent) => {
-    const unitValue = event.detail.value;
-    setSelectedUnit(unitValue);
 
-    const selectedUnitOption = unitOptions.find(
-      (unit) => unit.unit_no === unitValue
-    );
-    if (selectedUnitOption) {
-      setModel(selectedUnitOption.brand);
-      setOwner(selectedUnitOption.owner);
-    }
-
-    let newKoutaLimit = 0;
-    if (unitValue.startsWith("LV") || unitValue.startsWith("HLV")) {
-      newKoutaLimit = 20;
-    } else {
-      newKoutaLimit = 0;
-    }
-
-    setKoutaLimit(newKoutaLimit);
-    setShowError(
-      unitValue.startsWith("LV") ||
-        (unitValue.startsWith("HLV") && newKoutaLimit < 20)
-    );
-  };
   const handleChangeEmployeeId = (event: CustomEvent) => {
     const selectedValue = event.detail.value as string;
     console.log("Selected Employee ID:", selectedValue);
@@ -343,103 +333,240 @@ const FormTRX: React.FC = () => {
 
 
   
-  const handlePost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Initial Status:", status);
-    if (isSaveButtonDisabled()) {
-        setModalMessage("HM/KM Unit Tidak Bole Kecil Dari HM/KM Terakhir Transaksi");
-        setErrorModalOpen(true);
-        return;
-    }
+//   const handlePost = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     console.log("Initial Status:", status);
+//     if (isSaveButtonDisabled()) {
+//         setModalMessage("HM/KM Unit Tidak Bole Kecil Dari HM/KM Terakhir Transaksi");
+//         setErrorModalOpen(true);
+//         return;
+//     }
 
-    // Validate form fields
-    if (
-        !selectedType ||
-        !selectedUnit ||
-        quantity === null ||
-        fbr === null ||
-        flowMeterAwal === null ||
-        flowMeterAkhir === null ||
-        !startTime ||
-        !endTime
-    ) {
-        setModalMessage("Form is incomplete");
-        setErrorModalOpen(true);
-        return;
-    }
+//     // Validate form fields
+//     if (
+//         !selectedType ||
+//         !selectedUnit ||
+//         quantity === null ||
+//         fbr === null ||
+//         flowMeterAwal === null ||
+//         flowMeterAkhir === null ||
+//         !startTime ||
+//         !endTime
+//     ) {
+//         setModalMessage("Form is incomplete");
+//         setErrorModalOpen(true);
+//         return;
+//     }
 
-    // Convert values to numbers where necessary
-    const flow_end: number = Number(calculateFlowEnd()) || 0;
-    const calculatedFBR: number = Number(calculateFBR()) || 0;
+//     // Convert values to numbers where necessary
+//     const flow_end: number = Number(calculateFlowEnd()) || 0;
+//     const calculatedFBR: number = Number(calculateFBR()) || 0;
 
-    // Prepare form data
-    const fromDataId = Date.now().toString();
-    const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
-    const lkf_id = await getLatestLkfId();
+//     // Prepare form data
+//     const fromDataId = Date.now().toString();
+//     const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
+//     const lkf_id = await getLatestLkfId();
 
-    const dataPost: DataFormTrx = {
-        from_data_id: fromDataId,
-        no_unit: selectedUnit!,
-        model_unit: model!,
-        owner: owner!,
-        date_trx: new Date().toISOString(),
-        hm_last: Number(hmLast) || 0,
-        hm_km: Number(hmkmTRX) || 0,
-        qty_last: Number(quantity) || 0,
-        qty: Number(quantity) || 0,
-        flow_start: Number(flowMeterAwal) || 0,
-        flow_end: flow_end,
-        dip_start: Number(dipStart) || 0,
-        dip_end: Number(dipEnd) || 0,
-        sonding_start: Number(sondingStart) || 0,
-        sonding_end: Number(sondingEnd) || 0,
-        name_operator: fullName!,
-        start: startTime!,
-        end: endTime!,
-        fbr: calculatedFBR,
-        lkf_id: lkf_id ?? "",
-        signature: signatureBase64 ?? "",
-        type: selectedType?.name ?? "",
-        foto: photoPreview ?? "",
-        fuelman_id: fuelman_id!,
-        status: status ?? 0,
-        jde_operator: "",
-        reference: Number(Refrence) || 0,
-        liters: 0,
-        cm: 0,
-        date: ""
-    };
+//     const dataPost: DataFormTrx = {
+//         from_data_id: fromDataId,
+//         no_unit: selectedUnit!,
+//         model_unit: model!,
+//         owner: owner!,
+//         date_trx: new Date().toISOString(),
+//         hm_last: Number(hmLast) || 0,
+//         hm_km: Number(hmkmTRX) || 0,
+//         qty_last: Number(quantity) || 0,
+//         qty: Number(quantity) || 0,
+//         flow_start: Number(flowMeterAwal) || 0,
+//         flow_end: flow_end,
+//         dip_start: Number(dipStart) || 0,
+//         dip_end: Number(dipEnd) || 0,
+//         sonding_start: Number(sondingStart) || 0,
+//         sonding_end: Number(sondingEnd) || 0,
+//         name_operator: fullName!,
+//         start: startTime!,
+//         end: endTime!,
+//         fbr: calculatedFBR,
+//         lkf_id: lkf_id ?? "",
+//         signature: signatureBase64 ?? "",
+//         type: selectedType?.name ?? "",
+//         foto: photoPreview ?? "",
+//         fuelman_id: fuelman_id!,
+//         status: status ?? 0,
+//         jde_operator: "",
+//         reference: Number(Refrence) || 0,
+//         liters: 0,
+//         cm: 0,
+//         date: ""
+//     };
 
-    try {
-        // Handle saving and posting based on status
-        if (status === 0 ) {
-            console.log("Saving data as draft (offline)...");
-            await insertNewData(dataPost);
-            setModalMessage("Data saved as draft");
-        } else if (status === 1 && isOnline) {
-            console.log("Posting data to backend...");
-            const response = await postTransaksi(dataPost);
-            await insertNewData(dataPost);
-            if (response.ok && (response.status === 200 || response.status === 201)) {
-                setModalMessage("Transaction posted successfully and saved locally");
-            } else {
-                setModalMessage("Failed to post transaction. Please try again.");
-                setErrorModalOpen(true);
-            }
-        }
+//     try {
+//         // Handle saving and posting based on status
+//         if (status === 0 ) {
+//             console.log("Saving data as draft (offline)...");
+//             await insertNewData(dataPost);
+//             setModalMessage("Data saved as draft");
+//         } else if (status === 1 && isOnline) {
+//             console.log("Posting data to backend...");
+//             const response = await postTransaksi(dataPost);
+//             await insertNewData(dataPost);
+//             if (response.ok && (response.status === 200 || response.status === 201)) {
+//                 setModalMessage("Transaction posted successfully and saved locally");
+//             } else {
+//                 setModalMessage("Failed to post transaction. Please try again.");
+//                 setErrorModalOpen(true);
+//             }
+//         }
 
-        // Navigate to the dashboard
-        setSuccessModalOpen(true);
-        route.push("/dashboard");
+//         // Navigate to the dashboard
+//         setSuccessModalOpen(true);
+//         route.push("/dashboard");
 
-    } catch (error) {
-        console.error("Error occurred while posting data:", error);
-        setModalMessage("Error occurred while posting data: " + error);
-        setErrorModalOpen(true);
-    }
+//     } catch (error) {
+//         console.error("Error occurred while posting data:", error);
+//         setModalMessage("Error occurred while posting data: " + error);
+//         setErrorModalOpen(true);
+//     }
 
     
+// };
+
+
+// Ensure quantity is initialized and handle potential undefined
+const handlePost = async (e: React.FormEvent) => {
+  e.preventDefault();
+  console.log("Initial Status:", status);
+
+  // Validate form fields
+  if (
+    !selectedType ||
+    !selectedUnit ||
+    quantity === null ||  // Ensure quantity is not null
+    fbr === null ||
+    flowMeterAwal === null ||
+    flowMeterAkhir === null ||
+    !startTime ||
+    !endTime
+  ) {
+    setModalMessage("Form is incomplete");
+    setErrorModalOpen(true);
+    return;
+  }
+
+  // Convert values to numbers where necessary
+  const flow_end: number = Number(calculateFlowEnd()) || 0;
+  const calculatedFBR: number = Number(calculateFBR()) || 0;
+
+  // Prepare form data
+  const fromDataId = Date.now().toString();
+  const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
+  const lkf_id = await getLatestLkfId();
+
+  const dataPost: DataFormTrx = {
+    from_data_id: fromDataId,
+    no_unit: selectedUnit!,
+    model_unit: model!,
+    owner: owner!,
+    date_trx: new Date().toISOString(),
+    hm_last: Number(hmLast) || 0,
+    hm_km: Number(hmkmTRX) || 0,
+    qty_last: Number(quantity) || 0,  // Ensure quantity is a number
+    qty: Number(quantity) || 0,       // Ensure quantity is a number
+    flow_start: Number(flowMeterAwal) || 0,
+    flow_end: flow_end,
+    dip_start: Number(dipStart) || 0,
+    dip_end: Number(dipEnd) || 0,
+    sonding_start: Number(sondingStart) || 0,
+    sonding_end: Number(sondingEnd) || 0,
+    name_operator: fullName!,
+    start: startTime!,
+    end: endTime!,
+    fbr: calculatedFBR,
+    lkf_id: lkf_id ?? "",
+    signature: signatureBase64 ?? "",
+    type: selectedType?.name ?? "",
+    foto: photoPreview ?? "",
+    fuelman_id: fuelman_id!,
+    status: status ?? 0,
+    jde_operator: "",
+    reference: Number(Refrence) || 0,
+    liters: 0,
+    cm: 0,
+    date: ""
+  };
+
+  try {
+    // Handle saving and posting based on status
+    if (status === 0) {
+      console.log("Saving data as draft (offline)...");
+      await insertNewData(dataPost);
+      setModalMessage("Data saved as draft");
+    } else if (status === 1 && isOnline) {
+      console.log("Posting data to backend...");
+      const response = await postTransaksi(dataPost);
+      await insertNewData(dataPost);
+      if (response.ok && (response.status === 200 || response.status === 201)) {
+        // Update local storage quota
+        if (quantity) { 
+          updateLocalStorageQuota(selectedUnit, quantity);
+        }
+        setModalMessage("Transaction posted successfully and saved locally");
+      } else {
+        setModalMessage("Failed to post transaction. Please try again.");
+        setErrorModalOpen(true);
+      }
+    }
+
+    // Navigate to the dashboard
+    setSuccessModalOpen(true);
+    route.push("/dashboard");
+
+  } catch (error) {
+    console.error("Error occurred while posting data:", error);
+    setModalMessage("Error occurred while posting data: " + error);
+    setErrorModalOpen(true);
+  }
 };
+
+
+
+const updateLocalStorageQuota = (unitNo: string, issuedQuantity: number) => {
+  const unitQuota = localStorage.getItem("unitQouta");
+  if (unitQuota) {
+    const parsedData = JSON.parse(unitQuota);
+    const updatedData = parsedData.map((unit: { unitNo: string; quota: number; used: number; }) => {
+      if (unit.unitNo === unitNo) {
+        return {
+          ...unit,
+          used: unit.used + issuedQuantity, // Update the used quantity
+          remaining: unit.quota - (unit.used + issuedQuantity) // Update remaining quota
+        };
+      }
+      return unit;
+    });
+    localStorage.setItem("unitQouta", JSON.stringify(updatedData)); 
+  }
+};
+
+
+useEffect(() => {
+  const unitQuota = localStorage.getItem("unitQouta");
+  if (unitQuota) {
+    const parsedData = JSON.parse(unitQuota);
+    const currentUnitQuota = parsedData.find((unit: { unitNo: string | undefined; }) => unit.unitNo === selectedUnit);
+
+    if (currentUnitQuota) {
+      setUnitQuota(currentUnitQuota.quota);
+      setUsedQuota(currentUnitQuota.used);
+      setRemainingQuota(currentUnitQuota.quota - currentUnitQuota.used); // Calculate remaining quota
+    } else {
+      setUnitQuota(0);
+      setUsedQuota(0);
+      setRemainingQuota(0);
+    }
+  }
+}, [selectedUnit]);
+
 
   const insertNewData = async (data: DataFormTrx) => {
     try {
@@ -457,18 +584,7 @@ const FormTRX: React.FC = () => {
     console.log("Updated Signature:", newSignature);
   };
 
-  const quotaMessage =
-    selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")
-      ? `SISA KOUTA ${koutaLimit} LITER`
-      : "";
-  const quotaStyle =
-    selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")
-      ? { color: "#73a33f" }
-      : {};
-
-  function setBase64(value: SetStateAction<string | undefined>): void {
-    throw new Error("Function not implemented.");
-  }
+  
 
   const calculateFBR = (): string | number => {
     if (
@@ -530,20 +646,20 @@ const FormTRX: React.FC = () => {
   useEffect(() => {
     // Track if the component is still mounted
     let isMounted = true;
-
+  
     const fetchFbrData = async () => {
       if (selectedUnit) {
         try {
           // Fetch FBR and HM data concurrently
           const [fbrData, lastHm] = await Promise.all([
             getFbrByUnit(selectedUnit),
-            getLatestHmLast(selectedUnit),
+            getLatestHmLast(selectedUnit), // Ensure this function filters by selectedUnit
           ]);
-
+  
           if (isMounted) {
             console.log("FBR Data:", fbrData);
-            console.log("HM Data:", hmkmTRX);
-
+            console.log("HM Data:", lastHm); // Change this to lastHm
+  
             if (fbrData.length > 0) {
               // Assuming fbrData is sorted and the first entry is the latest
               const latestEntry = fbrData[0];
@@ -556,7 +672,7 @@ const FormTRX: React.FC = () => {
               sethmkmTrx(undefined);
               setQtyLast(undefined);
             }
-
+  
             // Update hmLast with the latest value from getLatestHmLast
             if (lastHm) {
               setHmLast(lastHm);
@@ -572,14 +688,14 @@ const FormTRX: React.FC = () => {
         }
       }
     };
-
+  
     fetchFbrData();
-
+  
     return () => {
       isMounted = false;
     };
   }, [selectedUnit]);
-
+  
   const handleHmkmUnitChange = (e: CustomEvent) => {
     const value = Number(e.detail.value);
     if (hmLast !== undefined && value < hmLast) {
@@ -615,6 +731,116 @@ const FormTRX: React.FC = () => {
     }
   };
 
+  const handleUnitChange = (event: CustomEvent) => {
+    const unitValue = event.detail.value;
+    setSelectedUnit(unitValue);
+  
+    const selectedUnitOption = unitOptions.find(
+      (unit) => unit.unit_no === unitValue
+    );
+  
+    if (selectedUnitOption) {
+      setModel(selectedUnitOption.brand);
+      setOwner(selectedUnitOption.owner);
+    }
+  
+    let newKoutaLimit: number;
+    newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+    setKoutaLimit(newKoutaLimit);
+    setShowError(
+      unitValue.startsWith("LV") ||
+      (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+    );
+    fetchFbrData(); 
+  };
+  
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchFbrData = async () => {
+      if (selectedUnit) {
+        try {
+          const [fbrData, lastHm] = await Promise.all([
+            getFbrByUnit(selectedUnit),
+            getLatestHmLast(selectedUnit),
+          ]);
+  
+          if (isMounted) {
+            if (fbrData.length > 0) {
+              const latestEntry = fbrData[0];
+              setFbr(latestEntry.fbr);
+              sethmkmTrx(latestEntry.hm_km);
+              setQtyLast(latestEntry.qty_last);
+            } else {
+              setFbr(undefined);
+              sethmkmTrx(undefined);
+              setQtyLast(undefined);
+            }
+  
+            if (lastHm !== undefined) {
+              setHmLast(lastHm);
+            }
+          }
+        } catch (error) {
+          console.error("Error fetching FBR data:", error);
+          if (isMounted) {
+            setFbr(undefined);
+            setHmLast(undefined);
+            setQtyLast(undefined);
+          }
+        }
+      }
+    };
+  
+    fetchFbrData();
+  
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedUnit]);
+  
+
+  useEffect(() => {
+    const unitQuotaData = localStorage.getItem("unitQuota");
+    if (unitQuotaData) {
+        const parsedData = JSON.parse(unitQuotaData);
+        const currentUnitQuota = parsedData.find((unit: { unitNo: string | undefined; }) => unit.unitNo === selectedUnit);
+        
+        if (currentUnitQuota) {
+            const totalQuota = currentUnitQuota.quota;
+            const usedQuota = currentUnitQuota.used || 0; // Default to 0 if used is undefined
+            
+            setUnitQouta(totalQuota);
+            const remaining = totalQuota - usedQuota; // Calculate remaining quota
+            setRemainingQuota(remaining);
+            console.log(`Remaining Quota for ${selectedUnit}: ${remaining} Liter`); // Log the remaining quota
+            setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${totalQuota} Liter`);
+        } else {
+            setUnitQouta(0);
+            setRemainingQuota(0); // Reset if not found
+            setQuotaMessage("");
+        }
+    }
+}, [selectedUnit]);
+
+  
+  function setBase64(value: SetStateAction<string | undefined>): void {
+    throw new Error("Function not implemented.");
+  }
+
+
+  const handleQuantityChange = (e: InputCustomEvent<InputChangeEventDetail>) => {
+    const inputQuantity = Number(e.detail.value);
+
+    if (inputQuantity > remainingQuota) {
+        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta.");
+    } else {
+        setQuantityError("");
+    }
+
+    setQuantity(inputQuantity);
+};
+
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -627,25 +853,30 @@ const FormTRX: React.FC = () => {
 
       <IonContent>
         <div style={{ marginTop: "20px", padding: "15px" }}>
-          {(selectedUnit?.startsWith("LV") ||
-            selectedUnit?.startsWith("HLV")) && (
+        {(selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
             <IonRow>
-              <IonCol>
-                <IonItemDivider
-                  style={{ border: "solid", color: "#8AAD43", width: "400px" }}
-                >
-                  <IonLabel style={{ display: "flex" }}>
-                    <IonImg
-                      style={{ width: "40px" }}
-                      src="Glyph.png"
-                      alt="Logo DH"
-                    />
-                    <IonTitle style={quotaStyle}>{quotaMessage}</IonTitle>
-                  </IonLabel>
-                </IonItemDivider>
-              </IonCol>
+                {/* <IonCol>
+                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                        <IonLabel style={{ display: "flex" }}>
+                            <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
+                            <IonTitle>{quotaMessage}</IonTitle>
+                        </IonLabel>
+                    </IonItemDivider>
+                </IonCol> */}
             </IonRow>
-          )}
+        )}
+        {remainingQuota !== undefined && (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
+        <IonRow>
+            <IonCol>
+                <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                    <IonLabel style={{ display: "flex" }}>
+                        <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
+                        <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
+                    </IonLabel>
+                </IonItemDivider>
+            </IonCol>
+        </IonRow>
+    )}
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>
@@ -654,29 +885,21 @@ const FormTRX: React.FC = () => {
                     Select Unit <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonSelect
-                    className="select-custom"
-                    style={{ marginTop: "10px", background: "white" }}
-                    fill="solid"
-                    interface="popover"
-                    labelPlacement="floating"
-                    onIonChange={handleUnitChange}
-                    value={selectedUnit}
-                  >
-                    {unitOptions.length > 0 ? (
-                      unitOptions.map((unit) => (
-                        <IonSelectOption
-                          key={unit.unit_no}
-                          value={unit.unit_no}
-                        >
-                          {unit.unit_no}
-                        </IonSelectOption>
-                      ))
-                    ) : (
-                      <IonSelectOption value="">
-                        No Units Available
-                      </IonSelectOption>
-                    )}
-                  </IonSelect>
+                  className="select-custom"
+                  style={{ marginTop: "10px", background: "white" }}
+                  fill="solid"
+                  interface="popover"
+                  labelPlacement="floating"
+                  onIonChange={handleUnitChange}
+                  value={selectedUnit}
+                >
+                  {unitOptions.map((unit) => (
+                    <IonSelectOption key={unit.unit_no} value={unit.unit_no}>
+                      {unit.unit_no}
+                    </IonSelectOption>
+                  ))}
+                </IonSelect>
+               
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -741,7 +964,7 @@ const FormTRX: React.FC = () => {
                     type="number"
                     placeholder="Input HM/KM Unit"
                     onIonChange={handleHmLastChange}
-                    value={hmLast !== null ? hmLast : ""}
+                    value={hmkmTRX !== null ? hmkmTRX : ""}
                     onKeyDown={handleKeyDown}
                   />
                 </IonCol>
@@ -783,14 +1006,15 @@ const FormTRX: React.FC = () => {
                     <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonInput
-                    className="custom-input"
-                    ref={input2Ref}
-                    type="number"
-                    placeholder="Qty Issued / Receive / Transfer"
-                    onIonChange={(e) => setQuantity(Number(e.detail.value))}
-                    disabled={isFormDisabled}
+                      className="custom-input"
+                      ref={input2Ref}
+                      type="number"
+                      placeholder="Qty Issued / Receive / Transfer"
+                      onIonChange={handleQuantityChange} // Correctly typed event handler
+                      value={quantity} // Ensure the value is controlled
+                      disabled={isFormDisabled}
                   />
-                </IonCol>
+                              </IonCol>
                 <IonCol>
                   <IonLabel>
                     FBR Historis <span style={{ color: "red" }}>*</span>
@@ -1003,3 +1227,7 @@ const FormTRX: React.FC = () => {
 };
 
 export default FormTRX;
+function fetchFbrData() {
+  throw new Error("Function not implemented.");
+}
+

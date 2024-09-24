@@ -3,7 +3,7 @@ import { DataFormTrx, DataLkf, db } from "../models/db";
 // export const updateDataInDB = async (data: DataLkf) => {
 //     try {
       
-//       await db.openingTrx.put(data); 
+//       await db.closeTrx.put(data); 
 //       console.log("Data successfully updated in IndexedDB.");
 //     } catch (error) {
 //       console.error("Failed to update data in IndexedDB:", error);
@@ -12,7 +12,7 @@ import { DataFormTrx, DataLkf, db } from "../models/db";
 
 export const updateDataInDB = async (id: number, newData: Partial<DataLkf>) => {
   try {
-    const record = await db.openingTrx.get(id);
+    const record = await db.closeTrx.get(id);
     
     if (!record) {
       console.error("Record not found:", id);
@@ -20,7 +20,7 @@ export const updateDataInDB = async (id: number, newData: Partial<DataLkf>) => {
     }
 
     const updatedData = { ...record, ...newData };
-    await db.openingTrx.put(updatedData);
+    await db.closeTrx.put(updatedData);
     console.log("Data updated successfully:", updatedData);
   } catch (error) {
     console.error("Failed to update data in IndexedDB:", error);

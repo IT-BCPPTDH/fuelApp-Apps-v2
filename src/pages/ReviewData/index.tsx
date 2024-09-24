@@ -7,7 +7,8 @@ import { getLatestLkfId, getLatestLkfData } from '../../utils/getData';
 import { logoutUser } from '../../hooks/useAuth';
 
 import './style.css';
-import { removeDataFromDB } from '../../utils/insertData';
+import { deleteAllDataTransaksi } from '../../utils/delete';
+
 
 const ReviewData: React.FC = () => {
     const route = useIonRouter();
@@ -84,7 +85,6 @@ const ReviewData: React.FC = () => {
     
             // Remove cookies after successful logout
             Cookies.remove('isLoggedIn');
-            Cookies.remove('authToken'); // Remove other cookies if necessary
     
             // Clear specific shift data from local storage
             const shiftData = localStorage.getItem('shiftData');
@@ -100,10 +100,12 @@ const ReviewData: React.FC = () => {
                 }
             }
     
-           
-            // Delete dataTransaksi from IndexedDB
-        //    await deleteData()
+            // Remove unitQouta from localStorage
+            localStorage.removeItem('unitQouta');
     
+            // Delete dataTransaksi from IndexedDB
+            // await deleteData();
+            await deleteAllDataTransaksi();
             // Redirect to the home page or login page
             window.location.href = '/';
         } catch (error) {
@@ -111,9 +113,6 @@ const ReviewData: React.FC = () => {
             // Handle logout failure, e.g., show an error message
         }
     };
-    
-
-
     
     return (
         <IonPage>

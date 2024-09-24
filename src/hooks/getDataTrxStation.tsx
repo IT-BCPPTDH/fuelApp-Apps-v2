@@ -1,10 +1,11 @@
 import { CapacitorHttp } from '@capacitor/core';
 import { ResponseError } from "../helper/responseError";
 
-const BELinkMaster = import.meta.env.VITE_BELINK_MASTER_URL;
+const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export async function getStationData(station: string) {
-    const url = `${BELinkMaster}/api/operator/last-lkf/${station}`; // Corrected URL with station parameter
+    // Use template literal to include the station variable in the URL
+    const url = `${VITE_BACKEND_URL}/api/operator/last-lkf/${station}`;
 
     try {
         const response = await CapacitorHttp.get({

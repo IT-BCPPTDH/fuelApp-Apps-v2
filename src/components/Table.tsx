@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
+  IonPage,
+  IonContent,
   IonGrid,
   IonRow,
   IonCol,
@@ -13,7 +15,8 @@ import {
 import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
 import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
 import { postBulkData } from '../hooks/bulkInsert';
-
+import { checkmarkCircleOutline } from 'ionicons/icons';
+import { updateDataInTrx } from '../utils/update';
 // Define the type for table data items
 interface TableDataItem {
   from_data_id: number;
@@ -45,7 +48,6 @@ const TableData: React.FC = () => {
     const fetchLkfId = async () => {
       try {
         const latestLkfId = await getLatestLkfId();
-        
         if (latestLkfId) {
           setNomorLKF(latestLkfId);
           await fetchData(latestLkfId); // Fetch data with the latest LKF ID
@@ -63,21 +65,25 @@ const TableData: React.FC = () => {
   const fetchData = async (lkfId: string) => {
     try {
       const rawData = await getAllDataTrx(lkfId);
-      const mappedData: TableDataItem[] = rawData.map((item: any) => ({
-        from_data_id: item.from_data_id ?? 0,
-        unit_no: item.no_unit || '',
-        model_unit: item.model_unit || '',
-        owner: item.owner || '',
-        fbr_historis: item.fbr ??  '',
-        jenis_trx: item.type || '',
-        qty_issued: item.qty ?? 0,
-        fm_awal: item.flow_start ?? 0,
-        fm_akhir: item.flow_end ?? 0,
-        jde_operator: item.fuelman_id || '',
-        name_operator:item.fullname,
-        status: item.status === 0 ? 'Pending' : 'Sent',
-      }));
-
+      const mappedData: TableDataItem[] = rawData.map((item: any) => {
+        const isSent = item.status === 1; // Update condition to check if status is 1
+  
+        return {
+          from_data_id: item.from_data_id ?? 0,
+          unit_no: item.no_unit || '',
+          model_unit: item.model_unit || '',
+          owner: item.owner || '',
+          fbr_historis: item.fbr ?? '',
+          jenis_trx: item.type || '',
+          qty_issued: item.qty ?? 0,
+          fm_awal: item.flow_start ?? 0,
+          fm_akhir: item.flow_end ?? 0,
+          jde_operator: item.fuelman_id || '',
+          name_operator: item.fullname,
+          status: isSent ? 'Sent' : 'Pending', 
+        };
+      });
+  
       setData(mappedData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -86,21 +92,21 @@ const TableData: React.FC = () => {
       setLoading(false);
     }
   };
-
+  
   const handleBulkInsert = async () => {
     if (!data || data.length === 0) {
       setError("No data available for insertion");
       return;
     }
-
+  
     const loginData = localStorage.getItem('loginData');
     let createdBy = '';
-
+  
     if (loginData) {
       const parsedData = JSON.parse(loginData);
       createdBy = parsedData.jde || '';
     }
-
+  
     const bulkData = data.map(item => ({
       from_data_id: item.from_data_id,
       no_unit: item.unit_no,
@@ -119,25 +125,32 @@ const TableData: React.FC = () => {
       photo: '',
       type: item.jenis_trx,
       lkf_id: nomorLKF || undefined,
-      jde_operator:item.jde_operator,
+      jde_operator: item.jde_operator,
       created_by: createdBy,
       start: new Date().toISOString(),
       end: new Date().toISOString(),
     }));
-
+  
     try {
       const responses = await postBulkData(bulkData);
       console.log("Bulk insert responses:", responses);
-
+  
       // Update the status of the items to "Sent"
       const updatedData = data.map(item => ({
         ...item,
-        status: 'Sent'
+        status: 'Sent' // Immediately update status to "Sent"
       }));
-      setData(updatedData);
-      setError(null);
-      setAlertMessage("Data successfully saved to the server.");
+      setData(updatedData); // Update the state with new data
+  
+      // Count of successfully inserted items
+      const totalInserted = bulkData.length;
+  
+      // Create a success message
+      const successMessage = `Successfully saved ${totalInserted} items to the server.`;
+  
+      setAlertMessage(successMessage); // Show success message
       setShowAlert(true); // Show the alert
+      setError(null);
     } catch (error) {
       console.error("Error during bulk insert:", error);
       setError("Failed to save data to server");
@@ -145,6 +158,8 @@ const TableData: React.FC = () => {
       setShowAlert(true); // Show the alert on error
     }
   };
+  
+  
 
   const filteredData = (data || []).filter(item =>
     item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -206,7 +221,7 @@ const TableData: React.FC = () => {
             <IonCol><IonText>FM Awal</IonText></IonCol>
             <IonCol><IonText>FM Akhir</IonText></IonCol>
             <IonCol><IonText>Employee ID</IonText></IonCol>
-            <IonCol><IonText>Status</IonText></IonCol>
+            {/* <IonCol><IonText>Status</IonText></IonCol> */}
           </IonRow>
 
           {/* Table Data */}
@@ -220,7 +235,7 @@ const TableData: React.FC = () => {
               <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
               <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
               <IonCol><IonText>{item.jde_operator}</IonText></IonCol>
-              <IonCol><IonText>{item.status}</IonText></IonCol>
+              {/* <IonCol><IonText>{item.status}</IonText></IonCol> */}
             </IonRow>
           ))}
         </IonGrid>
