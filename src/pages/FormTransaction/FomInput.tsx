@@ -22,6 +22,8 @@ import {
   useIonRouter,
   IonSelectOption,
   IonModal,
+  InputCustomEvent,
+  InputChangeEventDetail,
 } from "@ionic/react";
 import {
   cameraOutline,
@@ -86,7 +88,7 @@ const FormTRX: React.FC = () => {
   const [unitOptions, setUnitOptions] = useState<
     { id: string; unit_no: string; brand: string; owner: string , unitNo:string }[]
   >([]);
-  const [quantity, setQuantity] = useState<number | undefined>(undefined);
+
   const [fbr, setFbr] = useState<number | undefined>(undefined);
   const [flowStart, setFlowStart] = useState<number | undefined>(undefined);
   const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(
@@ -138,7 +140,8 @@ const FormTRX: React.FC = () => {
   const [unitQuota, setUnitQuota] = useState(0);
   const [usedQuota, setUsedQuota] = useState(0);
   const [remainingQuota, setRemainingQuota] = useState(0);
-  
+const [quantity, setQuantity] = useState(0);
+const [quantityError, setQuantityError] = useState("");
 const [unitQouta, setUnitQouta] = useState(0);
 
   useEffect(() => {
@@ -798,26 +801,45 @@ useEffect(() => {
   
 
   useEffect(() => {
-    const unitQouta = localStorage.getItem("unitQouta");
-    if (unitQouta) {
-      const parsedData = JSON.parse(unitQouta);
-      const currentUnitQuota = parsedData.find((unit: { unitNo: string | undefined; }) => unit.unitNo === selectedUnit);
-      
-      if (currentUnitQuota) {
-        setUnitQouta(currentUnitQuota.quota);
-        setRemainingQuota(currentUnitQuota.quota - currentUnitQuota.used); // Calculate remaining quota
-        setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${currentUnitQuota.quota} Liter`);
-      } else {
-        setUnitQouta(0);
-        setRemainingQuota(0); // Reset if not found
-        setQuotaMessage("");
-      }
+    const unitQuotaData = localStorage.getItem("unitQuota");
+    if (unitQuotaData) {
+        const parsedData = JSON.parse(unitQuotaData);
+        const currentUnitQuota = parsedData.find((unit: { unitNo: string | undefined; }) => unit.unitNo === selectedUnit);
+        
+        if (currentUnitQuota) {
+            const totalQuota = currentUnitQuota.quota;
+            const usedQuota = currentUnitQuota.used || 0; // Default to 0 if used is undefined
+            
+            setUnitQouta(totalQuota);
+            const remaining = totalQuota - usedQuota; // Calculate remaining quota
+            setRemainingQuota(remaining);
+            console.log(`Remaining Quota for ${selectedUnit}: ${remaining} Liter`); // Log the remaining quota
+            setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${totalQuota} Liter`);
+        } else {
+            setUnitQouta(0);
+            setRemainingQuota(0); // Reset if not found
+            setQuotaMessage("");
+        }
     }
-  }, [selectedUnit]);
+}, [selectedUnit]);
+
   
   function setBase64(value: SetStateAction<string | undefined>): void {
     throw new Error("Function not implemented.");
   }
+
+
+  const handleQuantityChange = (e: InputCustomEvent<InputChangeEventDetail>) => {
+    const inputQuantity = Number(e.detail.value);
+
+    if (inputQuantity > remainingQuota) {
+        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta.");
+    } else {
+        setQuantityError("");
+    }
+
+    setQuantity(inputQuantity);
+};
 
   return (
     <IonPage>
@@ -832,16 +854,28 @@ useEffect(() => {
       <IonContent>
         <div style={{ marginTop: "20px", padding: "15px" }}>
         {(selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
-      <IonRow>
-        <IonCol>
-          <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
-            <IonLabel style={{ display: "flex" }}>
-              <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-              <IonTitle >{quotaMessage}</IonTitle>
-            </IonLabel>
-          </IonItemDivider>
-        </IonCol>
-      </IonRow>
+            <IonRow>
+                {/* <IonCol>
+                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                        <IonLabel style={{ display: "flex" }}>
+                            <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
+                            <IonTitle>{quotaMessage}</IonTitle>
+                        </IonLabel>
+                    </IonItemDivider>
+                </IonCol> */}
+            </IonRow>
+        )}
+        {remainingQuota !== undefined && (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
+        <IonRow>
+            <IonCol>
+                <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                    <IonLabel style={{ display: "flex" }}>
+                        <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
+                        <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
+                    </IonLabel>
+                </IonItemDivider>
+            </IonCol>
+        </IonRow>
     )}
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
@@ -972,14 +1006,15 @@ useEffect(() => {
                     <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonInput
-                    className="custom-input"
-                    ref={input2Ref}
-                    type="number"
-                    placeholder="Qty Issued / Receive / Transfer"
-                    onIonChange={(e) => setQuantity(Number(e.detail.value))}
-                    disabled={isFormDisabled}
+                      className="custom-input"
+                      ref={input2Ref}
+                      type="number"
+                      placeholder="Qty Issued / Receive / Transfer"
+                      onIonChange={handleQuantityChange} // Correctly typed event handler
+                      value={quantity} // Ensure the value is controlled
+                      disabled={isFormDisabled}
                   />
-                </IonCol>
+                              </IonCol>
                 <IonCol>
                   <IonLabel>
                     FBR Historis <span style={{ color: "red" }}>*</span>
