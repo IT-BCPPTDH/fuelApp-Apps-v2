@@ -26,6 +26,8 @@ import { getUser } from "../../hooks/getAllUser";
 import { getAllUnit } from "../../hooks/getAllUnit";
 import { getStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
+import { getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
+import { getStationData } from "../../hooks/getDataTrxStation";
 
 interface Shift {
   id: number;
@@ -180,6 +182,8 @@ const OpeningForm: React.FC = () => {
           setOpeningSonding(parsedData.closing_sonding);
         }
       }
+
+
     };
 
     fetchLatestLkfData();
@@ -235,7 +239,25 @@ const OpeningForm: React.FC = () => {
     }
   };
   
+  const fetchShiftDataByStation = async (station: string) => {
+    try {
+        const shiftDataList = await getShiftDataByStation(station);
+        console.log(`Shift Last Station ${station}:`, shiftDataList);
+    } catch (error) {
+        console.error('Error fetching shift data:', error);
+    }
+};
 
+useEffect(() => {
+    // Retrieve station from local storage
+    const loginData = localStorage.getItem('loginData');
+    if (loginData) {
+        const parsedData = JSON.parse(loginData);
+        const stationFromLogin = parsedData.station; // Adjust according to the actual structure
+        setStation(stationFromLogin);
+        fetchShiftDataByStation(stationFromLogin); // Fetch shift data after setting the station
+    }
+}, []);
   const handlePost = async () => {
     if (
       !date ||
@@ -358,7 +380,58 @@ const OpeningForm: React.FC = () => {
   }, []);
 
 
+  const fetchLatestLkfData = async () => {
+    const latestData = await getLatestLkfDataDate();
+    
+    if (latestData) {
+      console.log("Latest LKF Data:", latestData);
+    } else {
+      console.log("No LKF data found.");
+    }
+  };
   
+  // Panggil fungsi untuk mengambil data
+  fetchLatestLkfData();
+  
+
+
+  const fetchLastLkfData = async (station: string) => {
+    try {
+        const data = await getStationData(station);
+        
+        // Check if data contains expected properties
+        if (data && data.status === "200") {
+            console.log(`Data Log ${station}:`, data.data); // Access the data part
+            const { closing_dip, closing_sonding, flow_meter_end, hm_end } = data.data;
+
+            // Display the values
+            console.log(`Closing Dip: ${closing_dip}`);
+            console.log(`Closing Sonding: ${closing_sonding}`);
+            console.log(`Flow Meter End: ${flow_meter_end}`);
+            console.log(`HM End: ${hm_end}`);
+        } else {
+            console.error('Unexpected data format:', data);
+        }
+    } catch (error) {
+        console.error('Error fetching last LKF data:', error);
+    }
+};
+
+useEffect(() => {
+    // Retrieve station from local storage
+    const loginData = localStorage.getItem('loginData');
+    if (loginData) {
+        const parsedData = JSON.parse(loginData);
+        const stationFromLogin = parsedData.station; // Adjust according to the actual structure
+        setStation(stationFromLogin);
+    }
+}, []); // Runs only once on component mount
+
+useEffect(() => {
+    if (station) {
+        fetchLastLkfData(station);
+    }
+}, [station]);
 
   return (
     <IonPage>
