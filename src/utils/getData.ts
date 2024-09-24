@@ -215,8 +215,8 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
   try {
     const latestEntry = await db.dataTransaksi.where('unit_no').equals(selectedUnit).last();
 
-    if (latestEntry && latestEntry.hm_km != null) {
-      return latestEntry.hm_km;
+    if (latestEntry && latestEntry.hm_last != null) {
+      return latestEntry.hm_last;
     } else {
       console.warn("No valid 'hm_last' data found for the selected unit.");
       return undefined;
