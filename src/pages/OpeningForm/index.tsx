@@ -670,3 +670,7 @@ useEffect(() => {
 };
 
 export default OpeningForm;
+function setClosingDip(dataFromClosing: any) {
+  throw new Error("Function not implemented.");
+}
+
