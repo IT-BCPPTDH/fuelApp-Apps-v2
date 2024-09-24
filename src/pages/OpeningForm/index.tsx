@@ -70,7 +70,6 @@ const OpeningForm: React.FC = () => {
   const router = useIonRouter();
   const [presentToast] = useIonToast();
 
-
   useEffect(() => {
     const determineShift = () => {
       const now = new Date();
@@ -223,6 +222,9 @@ const OpeningForm: React.FC = () => {
     fetchLatestLkfData();
   }, []);
 
+
+
+
   useEffect(() => {
     const fetchSondingMasterData = async () => {
       try {
@@ -275,12 +277,17 @@ const OpeningForm: React.FC = () => {
   
   const fetchShiftDataByStation = async (station: string) => {
     try {
-        const shiftDataList = await getShiftDataByStation(station);
-        console.log(`Shift Last Station ${station}:`, shiftDataList);
+      const shiftDataList = await getShiftDataByStation(station);
+      console.log(`Shift Last Station ${station}:`, shiftDataList);
+      
+   
+      localStorage.setItem("shiftData1", JSON.stringify(shiftDataList));
+      
     } catch (error) {
-        console.error('Error fetching shift data:', error);
+      console.error('Error fetching shift data:', error);
     }
-};
+  };
+  
 
 useEffect(() => {
     // Retrieve station from local storage
@@ -292,6 +299,7 @@ useEffect(() => {
         fetchShiftDataByStation(stationFromLogin); // Fetch shift data after setting the station
     }
 }, []);
+
   const handlePost = async () => {
     if (
       !date ||
@@ -428,29 +436,46 @@ useEffect(() => {
   fetchLatestLkfData();
   
 
+  // const fetchLastLkfData = async (station: string) => {
+  //   try {
+  //     const data = await getStationData(station);
+  //     console.log("Data Closing Shift Sebelumnya",data)
+  //     localStorage.setItem('lastLkfDataUnit', JSON.stringify(data));
+  //   } catch (error) {
+  //     console.error('Error fetching last LKF data:', error);
+  //   }
+  // };
 
   const fetchLastLkfData = async (station: string) => {
     try {
-        const data = await getStationData(station);
-        
-        // Check if data contains expected properties
-        if (data && data.status === "200") {
-            console.log(`Data Log ${station}:`, data.data); // Access the data part
-            const { closing_dip, closing_sonding, flow_meter_end, hm_end } = data.data;
-
-            // Display the values
-            console.log(`Closing Dip: ${closing_dip}`);
-            console.log(`Closing Sonding: ${closing_sonding}`);
-            console.log(`Flow Meter End: ${flow_meter_end}`);
-            console.log(`HM End: ${hm_end}`);
-        } else {
-            console.error('Unexpected data format:', data);
-        }
+      const data = await getStationData(station);
+      console.log("Data Closing Shift Sebelumnya", data);
+  
+      // Store the fetched data in local storage
+      localStorage.setItem('lastLkfDataStation', JSON.stringify(data));
+  
+      // Display closing_sonding from the fetched data
+      if (data && data.closing_sonding) {
+        console.log("Closing Sonding:", data.closing_sonding);
+      } else {
+        console.log("Closing Sonding data is not available");
+      }
     } catch (error) {
-        console.error('Error fetching last LKF data:', error);
+      console.error('Error fetching last LKF data:', error);
     }
-};
-
+  };
+  
+  
+  useEffect(() => {
+    // Retrieve station from local storage
+    const shiftData = localStorage.getItem('lastLkfDataStation');
+    if (shiftData) {
+        const parsedData = JSON.parse(shiftData);
+        const dataFromClosing = parsedData.closing_sonding; // Adjust according to the actual structure
+        setClosingDip(dataFromClosing);
+    }
+}, []);
+  
 useEffect(() => {
     // Retrieve station from local storage
     const loginData = localStorage.getItem('loginData');
@@ -467,6 +492,28 @@ useEffect(() => {
     }
 }, [station]);
 
+// useEffect(() => {
+//   const fetchLatestLkfData = async () => {
+//     const storedData = localStorage.getItem("latestLkfDataUnit");
+//     if (storedData) {
+//       const parsedData = JSON.parse(storedData);
+      
+//       // Check if parsedData has a data property and it's an array
+//       if (Array.isArray(parsedData.data) && parsedData.data.length > 0) {
+//         setLatestLkfData(parsedData.data);
+
+//         // Assuming you want to take the first item of the array
+//         const firstItem = parsedData.data[0];
+//         setFlowAkhir(firstItem.flow_meter_end);
+//         setPrevFlowMeterAwal(firstItem.flow_meter_end); // Initialize previous value
+//         setClosingSonding(firstItem.closing_sonding);
+//       }
+//     }
+//   };
+
+//   fetchLatestLkfData();
+// }, []);
+
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -475,12 +522,14 @@ useEffect(() => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
+   
         <div className="wrapper-content">
           <div className="padding-content">
             <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>
             <h4>Employee ID : {fuelmanId}</h4>
             <h4>Site : {site}</h4>
             <h4>Station : {station}</h4>
+           
           </div>
           <IonRow className="padding-content">
             <IonCol style={{ display: "grid" }}>

@@ -139,7 +139,7 @@ const FormTRX: React.FC = () => {
 
   const [unitQuota, setUnitQuota] = useState(0);
   const [usedQuota, setUsedQuota] = useState(0);
-  const [remainingQuota, setRemainingQuota] = useState(0);
+const [remainingQuota, setRemainingQuota] = useState(0);
 const [quantity, setQuantity] = useState(0);
 const [quantityError, setQuantityError] = useState("");
 const [unitQouta, setUnitQouta] = useState(0);
@@ -592,7 +592,7 @@ useEffect(() => {
       hmLast !== undefined &&
       qtyLast !== undefined
     ) {
-      const difference = hmkmTRX - hmLast;
+      const difference =    hmLast - hmkmTRX;
       if (difference !== 0) {
         return qtyLast / difference;
       } else {
@@ -601,7 +601,6 @@ useEffect(() => {
     }
     return "";
   };
-
   const calculateFlowEnd = (): string | number => {
     if (flowMeterAwal !== undefined && quantity !== undefined) {
       const totaFlowEnd = flowMeterAwal + quantity;
@@ -663,8 +662,10 @@ useEffect(() => {
             if (fbrData.length > 0) {
               // Assuming fbrData is sorted and the first entry is the latest
               const latestEntry = fbrData[0];
+              console.log( "data last",latestEntry)
               setFbr(latestEntry.fbr);
-              sethmkmTrx(latestEntry.hm_km);
+
+              sethmkmTrx(latestEntry.hm_last);
               setQtyLast(latestEntry.qty_last);
             } else {
               // If no data is found, clear the state
@@ -698,7 +699,7 @@ useEffect(() => {
   
   const handleHmkmUnitChange = (e: CustomEvent) => {
     const value = Number(e.detail.value);
-    if (hmLast !== undefined && value < hmLast) {
+    if (hmLast !== undefined && value < hmLast ) {
       setShowError(true);
     } else {
       setShowError(false);
@@ -717,7 +718,7 @@ useEffect(() => {
   };
 
   const isSaveButtonDisabled = () => {
-    return hmLast !== undefined && hmkmTRX !== undefined && hmkmTRX < hmLast;
+    return hmkmTRX !== undefined && hmLast !== undefined && hmLast < hmkmTRX;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
@@ -769,7 +770,7 @@ useEffect(() => {
             if (fbrData.length > 0) {
               const latestEntry = fbrData[0];
               setFbr(latestEntry.fbr);
-              sethmkmTrx(latestEntry.hm_km);
+              sethmkmTrx(latestEntry.hm_last);
               setQtyLast(latestEntry.qty_last);
             } else {
               setFbr(undefined);
@@ -799,7 +800,6 @@ useEffect(() => {
     };
   }, [selectedUnit]);
   
-
   useEffect(() => {
     const unitQuotaData = localStorage.getItem("unitQuota");
     if (unitQuotaData) {
@@ -808,20 +808,27 @@ useEffect(() => {
         
         if (currentUnitQuota) {
             const totalQuota = currentUnitQuota.quota;
-            const usedQuota = currentUnitQuota.used || 0; // Default to 0 if used is undefined
+            const usedQuota = currentUnitQuota.used || 0; 
             
             setUnitQouta(totalQuota);
-            const remaining = totalQuota - usedQuota; // Calculate remaining quota
+            const remaining = totalQuota - usedQuota; 
             setRemainingQuota(remaining);
-            console.log(`Remaining Quota for ${selectedUnit}: ${remaining} Liter`); // Log the remaining quota
+            console.log(`Remaining Quota for ${selectedUnit}: ${remaining} Liter`); 
             setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${totalQuota} Liter`);
+
+            // Check if issued amount exceeds remaining quota
+            const issuedAmount = currentUnitQuota.issued || 0; // Replace with actual issued amount
+            if (issuedAmount > remaining) {
+                setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
+            }
         } else {
             setUnitQouta(0);
-            setRemainingQuota(0); // Reset if not found
+            setRemainingQuota(0);
             setQuotaMessage("");
         }
     }
 }, [selectedUnit]);
+
 
   
   function setBase64(value: SetStateAction<string | undefined>): void {
@@ -893,8 +900,8 @@ useEffect(() => {
                   onIonChange={handleUnitChange}
                   value={selectedUnit}
                 >
-                  {unitOptions.map((unit) => (
-                    <IonSelectOption key={unit.unit_no} value={unit.unit_no}>
+                  {unitOptions.map((unit, idx) => (
+                    <IonSelectOption key={idx +1} value={unit.unit_no}>
                       {unit.unit_no}
                     </IonSelectOption>
                   ))}
@@ -917,9 +924,10 @@ useEffect(() => {
                   />
                 </IonCol>
               </IonRow>
-              <IonRow>
-                <IonCol>
-                  <IonLabel>
+              <IonGrid>
+      <IonRow>
+        <IonCol size="12">
+          <div><IonLabel>
                     Owner <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonInput
@@ -931,11 +939,10 @@ useEffect(() => {
                     placeholder="Input Owner"
                     readonly
                     disabled={isFormDisabled}
-                  />
-                </IonCol>
-              </IonRow>
-              <IonRow style={{ marginTop: "15px" }}>
-                <IonLabel>
+                  /></div>
+        </IonCol>
+        <IonCol size="8">
+          <div><IonLabel>
                   {" "}
                   Type Transaksi Issued <span style={{ color: "red" }}>*</span>
                 </IonLabel>
@@ -950,8 +957,11 @@ useEffect(() => {
                       <IonRadio value={type}>{type.name}</IonRadio>
                     </IonItem>
                   ))}
-                </IonRadioGroup>
-              </IonRow>
+                </IonRadioGroup></div>
+        </IonCol>
+      </IonRow>
+    </IonGrid>
+              
               <IonRow>
                 <IonCol>
                   <IonLabel>
@@ -963,8 +973,9 @@ useEffect(() => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    onIonChange={handleHmLastChange}
-                    value={hmkmTRX !== null ? hmkmTRX : ""}
+                    value={hmkmTRX !== null ? hmkmTRX: ''}
+                    
+                    // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
                 </IonCol>
@@ -977,8 +988,10 @@ useEffect(() => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    // value={hmkmTRX !== null ? hmkmTRX : ""}
-                    onIonChange={handleHmkmUnitChange}
+                    
+                    // value={hmLast !== null ? hmLast: ''}
+                    // onIonChange={(e) => setHmLast(Number(e.detail.value))}
+                    onIonChange={handleHmLastChange}
                     onKeyDown={handleKeyDown}
                   />
 
@@ -997,7 +1010,7 @@ useEffect(() => {
                                         <div>* Unit tersebut sudah melakukan pengisian sebanyak 20 L dari batas maksimal 20 L. Silahkan hubungi admin jika ingin melakukan pengisian </div>
                                     </div>
                                 )}
-                            </div> */}
+            </div> */}
 
               <IonRow>
                 <IonCol>
@@ -1010,11 +1023,16 @@ useEffect(() => {
                       ref={input2Ref}
                       type="number"
                       placeholder="Qty Issued / Receive / Transfer"
-                      onIonChange={handleQuantityChange} // Correctly typed event handler
-                      value={quantity} // Ensure the value is controlled
+                      onIonChange={handleQuantityChange} 
+                      value={quantity} 
                       disabled={isFormDisabled}
                   />
-                              </IonCol>
+                  {/* {quantityError && (
+                    <div style={{ color: "red", marginTop: "5px" }}>
+                      {quantityError}
+                    </div>
+                    )} */}
+                </IonCol>
                 <IonCol>
                   <IonLabel>
                     FBR Historis <span style={{ color: "red" }}>*</span>
@@ -1227,6 +1245,8 @@ useEffect(() => {
 };
 
 export default FormTRX;
+
+
 function fetchFbrData() {
   throw new Error("Function not implemented.");
 }

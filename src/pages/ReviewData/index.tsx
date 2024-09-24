@@ -102,6 +102,7 @@ const ReviewData: React.FC = () => {
     
             // Remove unitQouta from localStorage
             localStorage.removeItem('unitQouta');
+            localStorage.removeItem('shiftData1');
     
             // Delete dataTransaksi from IndexedDB
             // await deleteData();
