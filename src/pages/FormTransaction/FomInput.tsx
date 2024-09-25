@@ -665,7 +665,7 @@ useEffect(() => {
               console.log( "data last",latestEntry)
               setFbr(latestEntry.fbr);
 
-              sethmkmTrx(latestEntry.hm_last);
+              setHmLast(latestEntry.hm_last);
               setQtyLast(latestEntry.qty_last);
             } else {
               // If no data is found, clear the state
@@ -709,7 +709,7 @@ useEffect(() => {
 
   const handleHmLastChange = (e: CustomEvent) => {
     const newValue = Number(e.detail.value);
-    if ( hmLast!== undefined && newValue > hmLast) {
+    if ( hmLast!== undefined && newValue < hmLast) {
       setShowError(true);
     } else {
       setShowError(false);
