@@ -16,7 +16,8 @@ import {
   IonModal,
   useIonToast,
   useIonRouter,
-  IonPage
+  IonPage,
+  IonCard
 } from "@ionic/react";
 import "./style.css";
 import { postOpening } from "../../hooks/serviceApi";
@@ -358,7 +359,7 @@ useEffect(() => {
       });
       await addDataToDB(dataPost); // Add new data to local DB
       router.push("/dashboard");
-      window.location.reload();
+      
     }
   };
 
@@ -397,49 +398,88 @@ useEffect(() => {
   }, []);
 
 
-  const fetchLatestLkfData = async () => {
-    const latestData = await getLatestLkfDataDate();
+  // const fetchLatestLkfData = async () => {
+  //   const latestData = await getLatestLkfDataDate();
     
-    if (latestData) {
-      console.log("Latest LKF Data:", latestData);
-    } else {
-      console.log("No LKF data found.");
-    }
-  };
-  
-  // Panggil fungsi untuk mengambil data
-  fetchLatestLkfData();
-  
-
-  // const fetchLastLkfData = async (station: string) => {
-  //   try {
-  //     const data = await getStationData(station);
-  //     console.log("Data Closing Shift Sebelumnya",data)
-  //     localStorage.setItem('lastLkfDataUnit', JSON.stringify(data));
-  //   } catch (error) {
-  //     console.error('Error fetching last LKF data:', error);
+  //   if (latestData) {
+  //     console.log("Latest LKF Data:", latestData);
+  //   } else {
+  //     console.log("No LKF data found.");
   //   }
   // };
+  
+  // // Panggil fungsi untuk mengambil data
+  // fetchLatestLkfData();
+  
+
+
 
   const fetchLastLkfData = async (station: string) => {
     try {
-      const data = await getStationData(station);
-      console.log("Data Closing Shift Sebelumnya", data);
-  
-      // Store the fetched data in local storage
-      localStorage.setItem('lastLkfDataStation', JSON.stringify(data));
-  
-      // Display closing_sonding from the fetched data
-      if (data && data.closing_sonding) {
-        console.log("Closing Sonding:", data.closing_sonding);
-      } else {
-        console.log("Closing Sonding data is not available");
-      }
+        const response = await getStationData(station);
+        console.log("Response Data:", response);
+
+        // Check if the response has data
+        if (response.status === "200" && response.data.length > 0) {
+            const data = response.data[0]; // Get the first item from the data array
+            
+            // Store only the closing_sonding in local storage
+            const closingSonding = data.closing_sonding; 
+            const flowMeterAkhir = data.flow_meter_end; 
+            localStorage.setItem('lastClosingSonding', JSON.stringify(closingSonding));
+            localStorage.setItem('lastFlowMeter', JSON.stringify(flowMeterAkhir));
+            console.log("Closing Sonding stored in local storage:", closingSonding);
+        } else {
+            console.log("No data available or status not 200");
+        }
     } catch (error) {
-      console.error('Error fetching last LKF data:', error);
+        console.error('Error fetching last LKF data:', error);
     }
-  };
+};
+
+  useEffect(() => {
+    // Fetch the closing_sonding value from local storage
+    const storedClosingSonding = localStorage.getItem('lastClosingSonding');
+    if (storedClosingSonding) {
+      const parsedClosingSonding = JSON.parse(storedClosingSonding);
+     
+      setClosingSonding(parsedClosingSonding);
+    
+    } else {
+      console.log("No closing_sonding data found in local storage");
+    }
+  }, []);
   
+
+  const getLastLkfData = () => {
+    const lastLkfData = localStorage.getItem('lastLkfDataStation');
+  
+    if (lastLkfData) {
+      try {
+        const parsedData = JSON.parse(lastLkfData);
+        console.log("Retrieved Last LKF Data:", parsedData);
+  
+        // Access specific properties such as closing_sonding
+        if (parsedData.closing_sonding) {
+          console.log("Closing Sonding:", parsedData.closing_sonding);
+        } else {
+          console.log("Closing Sonding data is not available");
+        }
+  
+        return parsedData;
+      } catch (error) {
+        console.error("Error parsing last LKF data:", error);
+      }
+    } else {
+      console.log("No last LKF data found in local storage");
+    }
+  
+    return null;
+  };
+  useEffect(() => {
+    getLastLkfData();
+  }, []);
+    
   
   useEffect(() => {
     // Retrieve station from local storage
@@ -449,6 +489,20 @@ useEffect(() => {
         const dataFromClosing = parsedData.closing_sonding; // Adjust according to the actual structure
         setClosingDip(dataFromClosing);
     }
+}, []);
+
+useEffect(() => {
+  const storedClosingSonding = localStorage.getItem('lastClosingSonding');
+  if (storedClosingSonding) {
+      try {
+          const parsedClosingSonding = JSON.parse(storedClosingSonding);
+          setClosingSonding(parsedClosingSonding);
+      } catch (error) {
+          console.error("Error parsing closing_sonding from local storage:", error);
+      }
+  } else {
+      console.log("No closing_sonding data found in local storage");
+  }
 }, []);
   
 useEffect(() => {
@@ -504,6 +558,13 @@ useEffect(() => {
             <h4>Employee ID : {fuelmanId}</h4>
             <h4>Site : {site}</h4>
             <h4>Station : {station}</h4>
+
+            <IonCard>
+                    <IonItem>
+                        <IonLabel>Closing Sonding:</IonLabel>
+                        <IonTitle>{closingSonding !== null ? closingSonding : "Data not available"}</IonTitle>
+                    </IonItem>
+                </IonCard>
            
           </div>
           <IonRow className="padding-content">
@@ -557,7 +618,7 @@ useEffect(() => {
             <IonInput
               className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
               type="number"
-              value={openingSonding}
+              value={closingSonding}
               onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
             />
             {showError && openingSonding === undefined && (

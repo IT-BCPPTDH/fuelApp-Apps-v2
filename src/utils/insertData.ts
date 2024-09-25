@@ -30,9 +30,37 @@ export const addDataToDB = async (data: DataLkfUpdate) => {
 };
 
 
+
+export const updateDataToDB = async (data: Partial<DataLkfUpdate> & { id?: number; station?: string }) => {
+  try {
+    if (data.id) {
+      // Update based on id
+      await db.closeTrx.put(data as DataLkfUpdate); // Cast to DataLkfUpdate to satisfy TypeScript
+      console.log("Data updated successfully based on ID in IndexedDB");
+    } else if (data.station) {
+      // Update based on station
+      const existingRecord = await db.closeTrx.where('station').equals(data.station).first();
+      if (existingRecord) {
+        // Merge existing record with the new data, ensuring all required fields are included
+        const updatedData: DataLkfUpdate = { ...existingRecord, ...data } as DataLkfUpdate;
+        await db.closeTrx.put(updatedData);
+        console.log("Data updated successfully based on station in IndexedDB");
+      } else {
+        console.log(`No record found with station: ${data.station}`);
+      }
+    } else {
+      console.error("Neither ID nor Station provided for updating data.");
+    }
+  } catch (error) {
+    console.error("Failed to update data in IndexedDB:", error);
+  }
+};
+
+
+
 export const addDataClosing = async (data: DataLkfUpdate) => {
   try {
-    await db.closeTrx.add(data);
+    await db.closeTrx.put(data);
   } catch (error) {
     console.error("Failed to add data to IndexedDB:", error);
   }
