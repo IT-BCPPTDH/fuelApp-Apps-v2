@@ -10,7 +10,7 @@ import { DataFormTrx, DataLkf, db } from "../models/db";
 //     }
 //   };
 
-export const updateDataInDB = async (id: number, newData: Partial<DataLkf>) => {
+export const updateDataInDB = async (id: number, data: Partial<DataLkf>) => {
   try {
     const record = await db.closeTrx.get(id);
     
@@ -19,7 +19,7 @@ export const updateDataInDB = async (id: number, newData: Partial<DataLkf>) => {
       return;
     }
 
-    const updatedData = { ...record, ...newData };
+    const updatedData = { ...record, ...data };
     await db.closeTrx.put(updatedData);
     console.log("Data updated successfully:", updatedData);
   } catch (error) {

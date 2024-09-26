@@ -18,7 +18,7 @@ export async function getAllUnit() {
             throw new ResponseError(`Failed to fetch unit data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
         }
 
-        console.log('Successfully fetched unit data:', response.data);
+        // console.log('Successfully fetched unit data:', response.data);
 
         return response.data;
     } catch (error: unknown) {

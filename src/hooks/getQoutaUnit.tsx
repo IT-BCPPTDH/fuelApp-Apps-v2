@@ -20,7 +20,7 @@ export async function getAllQuota(date:String) {
 
         const data = response.data;
 
-        console.log('Successfully fetched quota data:', data);
+        // console.log('Successfully fetched quota data:', data);
 
         return data;
     } catch (error: unknown) {

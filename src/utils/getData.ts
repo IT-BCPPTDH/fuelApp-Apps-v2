@@ -213,8 +213,13 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 
 export const getLatestHmLast = async (selectedUnit: string): Promise<number | undefined> => {
   try {
-    const latestEntry = await db.dataTransaksi.where('unit_no').equals(selectedUnit).last();
+    // Ambil entri terakhir berdasarkan 'id' yang dipilih
+    const latestEntry = await db.dataTransaksi
+      .where('id')
+      .equals(selectedUnit)
+      .last(); // Ambil entri terakhir yang sesuai dengan ID
 
+    // Periksa apakah ada 'hm_last' yang valid
     if (latestEntry && latestEntry.hm_last != null) {
       return latestEntry.hm_last;
     } else {
@@ -226,8 +231,6 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
     return undefined;
   }
 };
-
-
 
 
 

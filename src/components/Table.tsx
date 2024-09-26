@@ -221,7 +221,7 @@ const TableData: React.FC = () => {
             <IonCol><IonText>FM Awal</IonText></IonCol>
             <IonCol><IonText>FM Akhir</IonText></IonCol>
             <IonCol><IonText>Employee ID</IonText></IonCol>
-            {/* <IonCol><IonText>Status</IonText></IonCol> */}
+            <IonCol><IonText>Status</IonText></IonCol>
           </IonRow>
 
           {/* Table Data */}
@@ -235,7 +235,7 @@ const TableData: React.FC = () => {
               <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
               <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
               <IonCol><IonText>{item.jde_operator}</IonText></IonCol>
-              {/* <IonCol><IonText>{item.status}</IonText></IonCol> */}
+              <IonCol><IonText>{item.status}</IonText></IonCol>
             </IonRow>
           ))}
         </IonGrid>
