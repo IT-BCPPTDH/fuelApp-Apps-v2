@@ -72,12 +72,10 @@ const OpeningForm: React.FC = () => {
 
   const [closingSonding, setClosingSonding] = useState<string | null>(null);
 
- 
   const [closingDip, setClosingDip] = useState<number | undefined>(undefined);
 
   const [flowAkhir, setFlowAkhir] = useState(null);
 
-  const [myArrayData, setMyArrayData] = useState<string[]>([]); // For array data
 
   useEffect(() => {
     const determineShift = () => {
@@ -426,8 +424,10 @@ useEffect(() => {
             // Store only the closing_sonding in local storage
             const closingSonding = data.closing_sonding; 
             const flowMeterAkhir = data.flow_meter_end; 
+            const closingDipLiter = data.closing_dip; 
             localStorage.setItem('lastClosingSonding', JSON.stringify(closingSonding));
             localStorage.setItem('lastFlowMeter', JSON.stringify(flowMeterAkhir));
+            localStorage.setItem('lastDipLiter', JSON.stringify(closingDipLiter));
             console.log("Closing Sonding stored in local storage:", closingSonding);
         } else {
             console.log("No data available or status not 200");
@@ -449,6 +449,7 @@ useEffect(() => {
       console.log("No closing_sonding data found in local storage");
     }
   }, []);
+  
   
 
   const getLastLkfData = () => {
@@ -480,16 +481,6 @@ useEffect(() => {
     getLastLkfData();
   }, []);
     
-  
-  useEffect(() => {
-    // Retrieve station from local storage
-    const shiftData = localStorage.getItem('lastLkfDataStation');
-    if (shiftData) {
-        const parsedData = JSON.parse(shiftData);
-        const dataFromClosing = parsedData.closing_sonding; // Adjust according to the actual structure
-        setClosingDip(dataFromClosing);
-    }
-}, []);
 
 useEffect(() => {
   const storedClosingSonding = localStorage.getItem('lastClosingSonding');
@@ -504,6 +495,8 @@ useEffect(() => {
       console.log("No closing_sonding data found in local storage");
   }
 }, []);
+
+
   
 useEffect(() => {
     // Retrieve station from local storage
@@ -558,14 +551,6 @@ useEffect(() => {
             <h4>Employee ID : {fuelmanId}</h4>
             <h4>Site : {site}</h4>
             <h4>Station : {station}</h4>
-
-            <IonCard>
-                    <IonItem>
-                        <IonLabel>Closing Sonding:</IonLabel>
-                        <IonTitle>{closingSonding !== null ? closingSonding : "Data not available"}</IonTitle>
-                    </IonItem>
-                </IonCard>
-           
           </div>
           <IonRow className="padding-content">
             <IonCol style={{display:"grid"}}>

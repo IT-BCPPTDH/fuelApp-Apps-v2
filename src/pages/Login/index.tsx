@@ -137,6 +137,61 @@ const Login: React.FC = () => {
     loadStationData();
   }, []);
 
+
+  //   useEffect(() => {
+  //     const fetchDataFormAwal = async () => {
+  //         try {
+  //             const storedStation = localStorage.getItem('stationData');
+
+  //             if (!storedStation) {
+  //                 console.warn('No station data found in localStorage. Using default station.');
+  //                 const defaultStation = 'FT1116'
+  //                 const response = await getDataLastLkfByStation(defaultStation);
+
+  //                 console.log('API Response (default):', response);
+
+  //                 if (response.data && Array.isArray(response.data)) {
+  //                     if (response.data.length === 0) {
+  //                         console.warn('Response data is empty.');
+  //                     }
+  //                     const openingDataForm = response.data;
+  //                     setUnitOptions(openingDataForm);
+  //                     localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
+  //                 } else {
+  //                     console.error('Unexpected data format. Response:', response);
+  //                 }
+  //                 return;
+  //             }
+
+  //             const station = JSON.parse(storedStation);
+  //             console.log('Fetched station from localStorage:', station);
+
+  //             const response = await getDataLastLkfByStation(station);
+
+  //             console.log('API Response:', response);
+
+  //             if (response.data && Array.isArray(response.data)) {
+  //                 if (response.data.length === 0) {
+  //                     console.warn('Response data is empty.');
+  //                 }
+  //                 const openingDataForm = response.data;
+  //                 setUnitOptions(openingDataForm);
+  //                 localStorage.setItem('openingForm', JSON.stringify(openingDataForm));
+  //             } else {
+  //                 console.error('Unexpected data format. Response:', response);
+  //             }
+  //         } catch (error) {
+  //             console.error('Failed to fetch unit options', error);
+  //         }
+  //     };
+
+  //     fetchDataFormAwal();
+  // }, []);
+
+
+
+
+
   const handleLogin = async () => {
     if (!jde || !selectedUnit) {
       console.error("Employee ID dan Station harus diisi.");

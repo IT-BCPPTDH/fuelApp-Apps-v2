@@ -97,12 +97,19 @@ const ReviewData: React.FC = () => {
                 } else {
                     // Completely remove shiftData if no specific field to retain
                     localStorage.removeItem('shiftData');
+
                 }
+
+                
             }
     
             // Remove unitQouta from localStorage
             localStorage.removeItem('unitQouta');
             localStorage.removeItem('shiftData1');
+            localStorage.removeItem('lastLkfDataStation');
+            localStorage.removeItem('lastClosingSonding');
+            localStorage.removeItem('lastDipLiter');
+            localStorage.removeItem('lastFlowMeter');
     
             // Delete dataTransaksi from IndexedDB
             // await deleteData();
