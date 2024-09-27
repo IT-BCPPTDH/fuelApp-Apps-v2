@@ -5,6 +5,9 @@ import { getStation } from '../hooks/useStation';
 import { getAllUnit } from '../hooks/getAllUnit';
 import { getAllQuota } from '../hooks/getQoutaUnit';
 import { Station } from '../models/interfaces';
+import { getAllSonding } from '../hooks/getAllSonding';
+import { getOperator } from '../hooks/getAllOperator';
+
 
 
 // Utility function to save data to Capacitor Preferences
@@ -18,6 +21,9 @@ export const saveDataToStorage = async (key: string, data: any): Promise<void> =
     console.error(`Failed to save ${key} to storage`, error);
   }
 };
+
+
+
 
 
 // Utility function to retrieve data from Capacitor Preferences
@@ -101,3 +107,42 @@ export const fetchQuotaData = async (date: string): Promise<any[]> => {
     return [];
   }
 };
+
+
+
+export const fetchSondingData = async (): Promise<any[]> => {
+  try {
+    const response = await getAllSonding(); 
+    if (response.status === '200' && Array.isArray(response.data)) {
+      await saveDataToStorage('allSonding', response.data);
+      return response.data;
+    } else {
+      console.error('Unexpected data format');
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch Sonding data', error);
+    return [];
+  }
+};
+
+
+export const fetchOperatorData = async (): Promise<any[]> => {
+  try {
+    const response = await getOperator(); 
+    if (response.status === '200' && Array.isArray(response.data)) {
+      await saveDataToStorage('allOperator', response.data);
+      return response.data;
+    } else {
+      console.error('Unexpected data format');
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch Operator data', error);
+    return [];
+  }
+};
+
+
+
+

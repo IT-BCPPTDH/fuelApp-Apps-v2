@@ -18,7 +18,7 @@ import {
 import Cookies from "js-cookie";
 import { postAuthLogin } from "../../hooks/useAuth";
 import "./style.css";
-import { fetchStationData, fetchUnitData, fetchQuotaData, saveDataToStorage, getDataFromStorage } from "../../services/dataService";
+import { fetchStationData, fetchUnitData, fetchQuotaData, saveDataToStorage, getDataFromStorage, fetchSondingData, fetchOperatorData } from "../../services/dataService";
 import { Station } from "../../models/interfaces";
 
 const Login: React.FC = () => {
@@ -28,7 +28,8 @@ const Login: React.FC = () => {
   const [showError, setShowError] = useState<boolean>(false);
   const router = useIonRouter();
   const [openingForm, setOpeningForm] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
-
+  const [sondingData, setSondingData]  =  useState<{ id: string; station: string; cm: string; listers: string }[]>([]);
+  const [employee, setDataEmployee]  =  useState<{ id: string; jde: string; fullname:string}[]>([]);
 
   useEffect(() => {
     const loadStationData = async () => {
@@ -65,6 +66,35 @@ const Login: React.FC = () => {
     loadUnitData();
   }, []);
 
+
+  useEffect(() => {
+    const loadSondingData = async () => {
+      const cachedSondingData = await getDataFromStorage('allSonding');
+      if (cachedSondingData ) {
+        setSondingData(cachedSondingData );
+      } else {
+        const Sonding = await fetchSondingData();
+        setSondingData(Sonding);
+      }
+    };
+
+    loadSondingData();
+  }, []);
+
+
+  useEffect(() => {
+    const loadEmployeeData = async () => {
+      const cachedEmployeData = await getDataFromStorage('allEmployee');
+      if (cachedEmployeData ) {
+        setDataEmployee(cachedEmployeData);
+      } else {
+        const Employee= await fetchOperatorData();
+        setDataEmployee(Employee);
+      }
+    };
+
+    loadEmployeeData();
+  }, []);
 
 
   useEffect(() => {

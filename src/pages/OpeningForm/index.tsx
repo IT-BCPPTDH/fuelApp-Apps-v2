@@ -395,7 +395,22 @@ useEffect(() => {
     }
   }, []);
   
+  useEffect(() => {
+    const userData = async () => {
+      const data = await getDataFromStorage('loginData');
+      if (data) {
+        const parsedData = data; // Assuming data is already an object.
+        console.log('Parsed User Data:', parsedData); // Verify data structure
+        setFuelmanID(parsedData.jde);
+        setStation(parsedData.station);
+        setSite(parsedData.site);
+      } else {
+        console.error('No user data found in storage');
+      }
+    };
   
+    userData(); // Call the async function
+  }, []);
 
   const getLastLkfData = () => {
     const lastLkfData = localStorage.getItem('lastLkfDataStation');
@@ -528,7 +543,7 @@ useEffect(() => {
             <IonInput
               className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
               type="number"
-              value={closingSonding}
+              value={openingSonding}
               onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
             />
             {showError && openingSonding === undefined && (

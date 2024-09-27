@@ -300,7 +300,7 @@ const FormClosing: React.FC = () => {
                                         className="custom-input"
                                         type="number"
                                         name="closingSonding"
-                                        value={closingSonding}
+                                        value={closingDip}
                                         onIonChange={handleClosingSondingChange}
                                         placeholder="Input Close Sonding (Cm)"
                                     />
@@ -312,7 +312,7 @@ const FormClosing: React.FC = () => {
                                         className="custom-input"
                                         type="number"
                                         name="closingDip"
-                                        value={closingDip || 0} // Default to 0 if undefined
+                                        value={openingDip|| 0} // Default to 0 if undefined
                                         disabled
                                         placeholder="Input Close Dip (Liters)"
                                     />
