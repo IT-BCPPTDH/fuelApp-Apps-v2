@@ -21,13 +21,11 @@ import "./style.css";
 import Cookies from 'js-cookie';
 import { ResponseError, updateData } from '../../hooks/serviceApi'; 
 import { DataLkf } from '../../models/db';
-import { getLatestLkfId, getLatestLkfIdHm } from '../../utils/getData';
+import { getLatestLkfId } from '../../utils/getData'; // Ensure this path is correct
 import { updateDataInDB } from '../../utils/update';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
-// import { getStation } from "../../hooks/useStation";
-// import { addDataToDB } from '../../utils/insertData';
-import { addDataClosing } from '../../utils/insertData';
+import { getStation } from "../../hooks/useStation";
 
 const FormClosing: React.FC = () => {
     const route = useIonRouter();
@@ -37,7 +35,6 @@ const FormClosing: React.FC = () => {
     const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
     const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
     const [station, setStation] = useState<string | undefined>(undefined);
-    const [site, setSite] = useState<string | undefined>(undefined);
     const [closingDip, setClosingDip] = useState<number | undefined>(undefined);
     const [variance, setVariance] = useState<number | undefined>(undefined);
     const [showError, setShowError] = useState<boolean>(false);
@@ -45,47 +42,22 @@ const FormClosing: React.FC = () => {
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
     const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
     const [hmEnd, setHmEnd] = useState<number>(0);
-    const [shift, setShift] = useState<string>();
     const [stockOnHand, setStockOnHand] = useState<number>(0);
-    const [openingDip, setOpeningDip] = useState<number>(0);
-
-    
     const [note, setNote] = useState<string>('');
-    const [receiptKPC, setReceiptKPC] = useState<number>(0); // Assuming you have this value
-    const [receipt, setReceipt] = useState<number>(0); // Assuming you have this value
-    const [issued, setIssued] = useState<number>(0); // Assuming you have this value
-    const [transfer, setTransfer] = useState<number>(0); // Assuming you have this value
-   
-    const [latestLkfIdhm, setLatestLkfIdHm] = useState<number | undefined>(undefined);
-    const [prevHmAkhir, setPrevHmAkhir] = useState<number | undefined>(undefined);
+    const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
+    const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
 
-    const [jde, setjde] = useState<string>('');
-
-    const [variant, setVariant] = useState<number>(0);
-    const [closeData, setClo] = useState<number>(0);
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
-            const id2= await getLatestLkfIdHm()
             setLatestLkfId(id);
-            setLatestLkfIdHm(id2);
 
-            console.log('data',id2)
             // Retrieve shift data from localStorage
             const shiftData = localStorage.getItem("shiftData");
             if (shiftData) {
                 const parsedData = JSON.parse(shiftData);
                 setFlowMeterEnd(parsedData.flowMeterEnd || 0);
                 setStockOnHand(parsedData.stockOnHand || 0);
-                setReceiptKPC(parsedData.receiptKPC || 0); // Update as needed
-                setReceipt(parsedData.receipt || 0); // Update as needed
-                setIssued(parsedData.issued || 0); // Update as needed
-                setTransfer(parsedData.transfer || 0);
-                setOpeningDip(parsedData.openingDip| 0);
-                setHmEnd(parsedData.hmEnd || 0);
-                setShift(parsedData.shift|| 0);
-               
-                 // Update as needed
             }
 
             const userData = localStorage.getItem("loginData");
@@ -93,54 +65,30 @@ const FormClosing: React.FC = () => {
                 const parsedData = JSON.parse(userData);
                 setDataUserLog(parsedData);
                 setStation(parsedData.station);
-                setjde(parsedData.jde);
-                setSite(parsedData.site);
             }
         };
         fetchLatestLkfId();
     }, []);
 
-    // useEffect(() => {
-    //     const fetchStationOptions = async () => {
-    //         if (dataUserLog) {
-    //             try {
-    //                 const response = await getStation(dataUserLog.station);
-    //                 if (response.status === '200' && Array.isArray(response.data)) {
-    //                     setStationOptions(response.data.map((station: { name: any; }) => station.name));
-    //                 } else {
-    //                     console.error('Unexpected data format');
-    //                 }
-    //             } catch (error) {
-    //                 console.error('Failed to fetch station options', error);
-    //             }
-    //         }
-    //     };
-    //     fetchStationOptions();
-    // }, [dataUserLog]);
-
     useEffect(() => {
-        const updateClosingDip = async () => {
-            if (closingSonding !== undefined && station !== undefined) {
+        const fetchStationOptions = async () => {
+            if (dataUserLog) {
                 try {
-                    const matchingData = sondingMasterData.find(
-                        (item) => item.station === station && item.cm === closingSonding
-                    );
-
-                    if (matchingData) {
-                        console.log('Matching data found:', matchingData);
-                        setClosingDip(matchingData.liters);
+                    const response = await getStation(dataUserLog.station);
+                    if (response.status === '200' && Array.isArray(response.data)) {
+                        setStationOptions(response.data.map((station: { name: any; }) => station.name));
                     } else {
-                        setClosingDip(undefined); // Reset if no match is found
+                        console.error('Unexpected data format');
                     }
                 } catch (error) {
-                    console.error('Failed to update closing dip', error);
+                    console.error('Failed to fetch station options', error);
                 }
             }
         };
+        fetchStationOptions();
+    }, [dataUserLog]);
 
-        updateClosingDip();
-    }, [closingSonding, station, sondingMasterData]);
-
+  
     useEffect(() => {
         const fetchSondingMasterData = async () => {
             try {
@@ -155,47 +103,64 @@ const FormClosing: React.FC = () => {
                 console.error('Failed to fetch sonding master data', error);
             }
         };
-
+    
         fetchSondingMasterData();
     }, []);
 
     useEffect(() => {
         // Calculate variance whenever closingDip or stockOnHand changes
-        if (closingDip !== undefined && openingDip !== undefined) {
-            setVariance(closingDip - openingDip);
+        if (closingDip !== undefined && stockOnHand !== undefined) {
+            setVariance(closingDip - stockOnHand);
         }
-    }, [closingDip, openingDip]);
-
-    // Calculate Close Data
-    const calculateCloseData = () => {
-        return (stockOnHand + receiptKPC + receipt - issued - transfer);
-    };
+    }, [closingDip, stockOnHand]);
 
     const handleSignatureConfirm = (newSignature: string) => {
         setSignatureBase64(newSignature);
         console.log('Updated Signature:', newSignature);
     };
 
-
+    useEffect(() => {
+        const updateOpeningDip = async () => {
+          if (openingSonding !== undefined && station !== undefined) {
+            try {
+              if (openingSonding === 0 && station === 'loginData') {
+                setOpeningDip(0);
+              } else {
+                const matchingData = sondingMasterData.find(
+                  (item) => item.station === station && item.cm === openingSonding
+                );
+                if (matchingData) {
+                  setOpeningDip(matchingData.liters);
+                } else {
+                  setOpeningDip(undefined);
+                }
+              }
+            } catch (error) {
+              console.error('Failed to update opening dip', error);
+            }
+          }
+        };
+    
+        updateOpeningDip();
+      }, [openingSonding, station, sondingMasterData]);
+    
 
     const handleSubmit = async () => {
-        const closeData = calculateCloseData();
-    
         const UpdateData: DataLkf = {
             date: new Date().toISOString().split('T')[0],
-            shift:shift || '', // Adjust as needed
+            shift: '', // Adjust as needed
             hm_start: 0, // Adjust as needed
-            site: site || '', // Adjust as needed
+            site: '', // Adjust as needed
             jde: '', // Adjust as needed
-            fuelman_id: jde,
-            station:station || '',
+            fuelman_id: Cookies.get('fuelman_id') || '',
+            station: '', // Adjust as needed
             flow_meter_start: 0, // Adjust as needed
             hm_end: hmEnd,
             note: note,
             signature: signatureBase64 || '', // Use base64 string
             name: '', // Adjust as needed
-            issued: issued,
-            receipt: receipt,
+            issued: undefined, // Adjust as needed
+            receipt: undefined, // Adjust as needed
             stockOnHand: stockOnHand,
             lkf_id: latestLkfId || '',
             opening_dip: 0,
@@ -203,26 +168,15 @@ const FormClosing: React.FC = () => {
             flow_meter_end: flowMeterEnd,
             closing_sonding: closingSonding || 0,
             closing_dip: closingDip || 0,
-            close_data: closeData,
-            variance: variance || 0,
+            close_data: 0,
+            variance: 0
         };
     
         try {
-            const response = await updateData(UpdateData); // Make sure updateData accepts the right parameters
-    
+            const response = await updateData(UpdateData);
             if (response.oke && (response.status === 200 || response.status === 201)) {
                 console.log('Updated successfully via API.');
-    
-                // Ensure latestLkfId is defined and of type number
-                const recordId = Number(latestLkfId); // Convert to number
-    
-                if (isNaN(recordId)) {
-                    console.error("Record ID is not a valid number.");
-                    setShowError(true);
-                    return; // Exit if the ID is invalid
-                }
-    
-                await addDataClosing(UpdateData); // Pass UpdateData to addDataClosing
+                await updateData(UpdateData);
                 console.log("Data successfully updated in IndexedDB.");
                 route.push('/review-data');
             } else {
@@ -246,9 +200,6 @@ const FormClosing: React.FC = () => {
             setShowError(true);
         }
     };
-    
-    
-    
 
     const handleClosingSondingChange = (e: CustomEvent) => {
         const value = Number(e.detail.value);
@@ -257,16 +208,13 @@ const FormClosing: React.FC = () => {
     };
 
     const handleHmEndChange = (e: CustomEvent) => {
-        setLatestLkfIdHm(Number(e.detail.value));
+        setHmEnd(Number(e.detail.value));
     };
 
     const handleStockOnHandChange = (e: CustomEvent) => {
         setStockOnHand(Number(e.detail.value));
     };
 
-    const handleBack = () =>{
-        route.push('/dashboard')
-    }
     // Determine text color based on variance value
     const varianceColor = variance !== undefined && variance < 0 ? 'red' : 'black';
 
@@ -300,7 +248,7 @@ const FormClosing: React.FC = () => {
                                         className="custom-input"
                                         type="number"
                                         name="closingSonding"
-                                        value={closingDip}
+                                        value={closingSonding}
                                         onIonChange={handleClosingSondingChange}
                                         placeholder="Input Close Sonding (Cm)"
                                     />
@@ -312,7 +260,7 @@ const FormClosing: React.FC = () => {
                                         className="custom-input"
                                         type="number"
                                         name="closingDip"
-                                        value={openingDip|| 0} // Default to 0 if undefined
+                                        value={openingDip || 0} // Default to 0 if undefined
                                         disabled
                                         placeholder="Input Close Dip (Liters)"
                                     />
@@ -320,34 +268,14 @@ const FormClosing: React.FC = () => {
                             </IonRow>
                             <IonRow>
                                 <IonCol>
-                                    <IonLabel >HM KM Akhir *</IonLabel>
+                                    <IonLabel>HM KM Akhir *</IonLabel>
                                     <IonInput
                                         className="custom-input"
                                         type="number"
-                                        // value={latestLkfIdhm}
+                                        value={hmEnd}
                                         onIonChange={handleHmEndChange}
                                         placeholder="HM KM Akhir"
-                                        onIonInput={(e) => {
-                                            const value = Number(e.detail.value);
-                                            setHmEnd(value);
-                                            if (prevHmAkhir !== undefined && value < prevHmAkhir) {
-                                              setShowError(true);
-                                            } else {
-                                              setShowError(false);
-                                            }
-                                          }}
                                     />
-                                       {showError && (
-                                    <p style={{ color: "red" }}>
-                                        {latestLkfIdhm=== undefined
-                                        ? '* Field harus diisi'
-                                        : (prevHmAkhir !== undefined && latestLkfIdhm < prevHmAkhir)
-                                        ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
-                                        : ''
-                                        }
-                                    </p>
-                                    )}
-          
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Data *</IonLabel>
@@ -355,7 +283,7 @@ const FormClosing: React.FC = () => {
                                         style={{background:"#cfcfcf"}}
                                         className="custom-input"
                                         type="number"
-                                        value={calculateCloseData()} // Automatically calculate Close Data
+                                        value={stockOnHand}
                                         disabled
                                         placeholder="Input Close Data"
                                     />
@@ -401,7 +329,7 @@ const FormClosing: React.FC = () => {
                                 </IonButton>
                             </IonItem>
                             <div style={{ marginTop: "20px", float: "inline-end" }}>
-                                <IonButton onClick={handleBack}  color="light">
+                                <IonButton color="light">
                                     <IonIcon slot="start" icon={closeCircleOutline} />Tutup Form
                                 </IonButton>
                                 <IonButton onClick={handleSubmit} className="check-close">
@@ -417,12 +345,10 @@ const FormClosing: React.FC = () => {
                     onConfirm={handleSignatureConfirm}
                 />
             </IonContent>
+           
+            
         </IonPage>
     );
 };
 
 export default FormClosing;
-function as(recordId: number, UpdateData: DataLkf) {
-    throw new Error('Function not implemented.');
-}
-
