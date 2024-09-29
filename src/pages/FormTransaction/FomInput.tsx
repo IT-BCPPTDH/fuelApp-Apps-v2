@@ -250,23 +250,23 @@ const [operatorOptions, setOperatorOptions] = useState<{ id: number; JDE: string
   const isFormDisabled = !selectedUnit;
 
 
-  // const handleChangeEmployeeId = (event: CustomEvent) => {
-  //   const selectedValue = event.detail.value as string;
-  //   console.log("Selected Employee ID:", selectedValue);
+  const handleChangeEmployeeId = (event: CustomEvent) => {
+    const selectedValue = event.detail.value as string;
+    console.log("Selected Employee ID:", selectedValue);
 
-  //   const selectedJdeOption = jdeOptions.find(
-  //     (jde) => jde.JDE === selectedValue
-  //   );
-  //   if (selectedJdeOption) {
-  //     console.log("Selected JDE Option:", selectedJdeOption);
-  //     setFullName(selectedJdeOption.fullname);
-  //     setFuelmanId(selectedValue);
-  //   } else {
-  //     console.log("No matching JDE option found.");
-  //     setFullName("");
-  //     setFuelmanId("");
-  //   }
-  // };
+    const selectedJdeOption = jdeOptions.find(
+      (jde) => jde.JDE === selectedValue
+    );
+    if (selectedJdeOption) {
+      console.log("Selected JDE Option:", selectedJdeOption);
+      setFullName(selectedJdeOption.JDE);
+      setFuelmanId(selectedValue);
+    } else {
+      console.log("No matching JDE option found.");
+      setFullName("");
+      setFuelmanId("");
+    }
+  };
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files ? event.target.files[0] : null;
@@ -480,30 +480,30 @@ useEffect(() => {
     return ""; // Handle cases where any value is undefined
   };
   
-//   const fetchUnitOptions = async () => {
-//     const storedUnitOptions = await getDataFromStorage("allUnit");
+  const fetchUnitOptions = async () => {
+    const storedUnitOptions = await getDataFromStorage("allUnit");
 
-//     console.log("Stored unit options:", storedUnitOptions);
+    console.log("Stored unit options:", storedUnitOptions);
 
-//     if (storedUnitOptions) {
-//         // Check if stored data is already an object
-//         if (typeof storedUnitOptions === "string") {
-//             try {
-//                 const parsedUnitOptions = JSON.parse(storedUnitOptions);
-//                 console.log("Parsed unit options:", parsedUnitOptions);
-//                 setUnitOptions(parsedUnitOptions);
-//             } catch (error) {
-//                 console.error("Failed to parse unit options from localStorage:", error);
-//             }
-//         } else {
-//             // If it's already an object, just set it directly
-//             console.log("Unit options are already an object:", storedUnitOptions);
-//             setUnitOptions(storedUnitOptions);
-//         }
-//     } else {
-//         console.log("No unit options found in localStorage.");
-//     }
-// };
+    if (storedUnitOptions) {
+        // Check if stored data is already an object
+        if (typeof storedUnitOptions === "string") {
+            try {
+                const parsedUnitOptions = JSON.parse(storedUnitOptions);
+                console.log("Parsed unit options:", parsedUnitOptions);
+                setUnitOptions(parsedUnitOptions);
+            } catch (error) {
+                console.error("Failed to parse unit options from localStorage:", error);
+            }
+        } else {
+            // If it's already an object, just set it directly
+            console.log("Unit options are already an object:", storedUnitOptions);
+            setUnitOptions(storedUnitOptions);
+        }
+    } else {
+        console.log("No unit options found in localStorage.");
+    }
+};
 
 
   useEffect(() => {
@@ -758,30 +758,30 @@ useEffect(() => {
 
 
 
-// useEffect(() => {
-//   const fetchJdeOptions = async () => {
-//     const storedJdeOptions = await getDataFromStorage("allOperator");
-//     console.log("Data ADA?", storedJdeOptions); // Check the raw data
+useEffect(() => {
+  const fetchJdeOptions = async () => {
+    const storedJdeOptions = await getDataFromStorage("allOperator");
+    console.log("Data ADA?", storedJdeOptions); // Check the raw data
 
-//     if (storedJdeOptions) {
-//       try {
-//         if (typeof storedJdeOptions === 'string') {
-//           const parsedJdeOptions = JSON.parse(storedJdeOptions);
-//           console.log("Parsed JDE Options:", parsedJdeOptions);
-//           setJdeOptions(parsedJdeOptions);
-//         } else {
-//           console.error("Stored data is not a valid JSON string:", storedJdeOptions);
-//         }
-//       } catch (error) {
-//         console.error("Failed to parse JDE options from local storage", error);
-//       }
-//     } else {
-//       console.log("No JDE options found in local storage");
-//     }
-//   };
+    if (storedJdeOptions) {
+      try {
+        if (typeof storedJdeOptions === 'string') {
+          const parsedJdeOptions = JSON.parse(storedJdeOptions);
+          console.log("Parsed JDE Options:", parsedJdeOptions);
+          setJdeOptions(parsedJdeOptions);
+        } else {
+          console.error("Stored data is not a valid JSON string:", storedJdeOptions);
+        }
+      } catch (error) {
+        console.error("Failed to parse JDE options from local storage", error);
+      }
+    } else {
+      console.log("No JDE options found in local storage");
+    }
+  };
 
-//   fetchJdeOptions();
-// }, []);
+  fetchJdeOptions();
+}, []);
 
 
 const fetchOperatorOptions = async () => {
@@ -808,22 +808,7 @@ useEffect(() => {
 
 
 
-const handleChangeEmployeeId = (event: CustomEvent) => {
-  const selectedValue = event.detail.value as string;
-  console.log("Selected Employee ID:", selectedValue);
-  
-  const selectedJdeOption = jdeOptions.find((jde) => jde.JDE === selectedId);
-  
-  if (selectedJdeOption) {
-    console.log("Selected JDE Option:", selectedJdeOption);
-    setFullName(selectedJdeOption.fullname); // Ensure correct property name
-    setFuelmanId(selectedValue);
-  } else {
-    console.log("No matching JDE option found.");
-    setFullName("");
-    setFuelmanId("");
-  }
-};
+
 
 
   return (
@@ -1085,7 +1070,7 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
                     style={{ background: "#E8E8E8" }}
                     className="custom-input"
                     type="text"
-                    name="fullname"
+               
                     value={fullName}
                     placeholder="Input Driver Name"
                     readonly

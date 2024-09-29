@@ -113,7 +113,7 @@ const ReviewData: React.FC = () => {
     
             // Delete dataTransaksi from IndexedDB
             // await deleteData();
-            // await deleteAllDataTransaksi();
+            await deleteAllDataTransaksi();
             // Redirect to the home page or login page
             window.location.href = '/';
         } catch (error) {
