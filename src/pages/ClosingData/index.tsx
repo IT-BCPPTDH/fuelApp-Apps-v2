@@ -21,43 +21,54 @@ import "./style.css";
 import Cookies from 'js-cookie';
 import { ResponseError, updateData } from '../../hooks/serviceApi'; 
 import { DataLkf } from '../../models/db';
-import { getLatestLkfId } from '../../utils/getData'; // Ensure this path is correct
+import { getLatestLkfId } from '../../utils/getData';
 import { updateDataInDB } from '../../utils/update';
 import SignatureModal from '../../components/SignatureModal';
 import { getAllSonding } from '../../hooks/getAllSonding';
 import { getStation } from "../../hooks/useStation";
+import { updateDataToDB } from '../../utils/insertData';
+import { fetchSondingData, getDataFromStorage } from '../../services/dataService';
 
 const FormClosing: React.FC = () => {
     const route = useIonRouter();
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
     const [signatureBase64, setSignatureBase64] = useState<string | undefined>(undefined);
     const [latestLkfId, setLatestLkfId] = useState<string | undefined>(undefined);
-    const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
+
     const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
     const [station, setStation] = useState<string | undefined>(undefined);
     const [closingDip, setClosingDip] = useState<number | undefined>(undefined);
-    const [variance, setVariance] = useState<number | undefined>(undefined);
+    const [variant, setVariance] = useState<number | undefined>(undefined);
     const [showError, setShowError] = useState<boolean>(false);
-    const [stationOptions, setStationOptions] = useState<string[]>([]);
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
     const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
     const [hmEnd, setHmEnd] = useState<number>(0);
     const [stockOnHand, setStockOnHand] = useState<number>(0);
+    
     const [note, setNote] = useState<string>('');
+    const [receiptKPC, setReceiptKPC] = useState<number>(0);
+    const [receipt, setReceipt] = useState<number>(0);
+    const [issued, setIssued] = useState<number>(0);
+    const [transfer, setTransfer] = useState<number>(0);
+    const [sondingData, setSondingData]  =  useState<{ id: string; station: string; cm: number; listers: number }[]>([]);
     const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
     const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
-
+    const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
             setLatestLkfId(id);
 
-            // Retrieve shift data from localStorage
             const shiftData = localStorage.getItem("shiftData");
             if (shiftData) {
                 const parsedData = JSON.parse(shiftData);
                 setFlowMeterEnd(parsedData.flowMeterEnd || 0);
                 setStockOnHand(parsedData.stockOnHand || 0);
+                setReceiptKPC(parsedData.receiptKPC || 0);
+                setReceipt(parsedData.receipt || 0);
+                setIssued(parsedData.issued || 0);
+                setTransfer(parsedData.transfer || 0);
+                setOpeningDip(parsedData.openingDip || 0);
             }
 
             const userData = localStorage.getItem("loginData");
@@ -71,30 +82,10 @@ const FormClosing: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        const fetchStationOptions = async () => {
-            if (dataUserLog) {
-                try {
-                    const response = await getStation(dataUserLog.station);
-                    if (response.status === '200' && Array.isArray(response.data)) {
-                        setStationOptions(response.data.map((station: { name: any; }) => station.name));
-                    } else {
-                        console.error('Unexpected data format');
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch station options', error);
-                }
-            }
-        };
-        fetchStationOptions();
-    }, [dataUserLog]);
-
-  
-    useEffect(() => {
         const fetchSondingMasterData = async () => {
             try {
                 const response = await getAllSonding();
                 if (response.status === '200' && Array.isArray(response.data)) {
-                    console.log('Sonding Master Data:', response.data);
                     setSondingMasterData(response.data);
                 } else {
                     console.error('Unexpected data format');
@@ -103,81 +94,73 @@ const FormClosing: React.FC = () => {
                 console.error('Failed to fetch sonding master data', error);
             }
         };
-    
+
         fetchSondingMasterData();
     }, []);
 
     useEffect(() => {
-        // Calculate variance whenever closingDip or stockOnHand changes
+        const updateClosingDip = () => {
+            if (closingSonding !== undefined && station !== undefined && sondingMasterData.length > 0) {
+                const matchingData = sondingMasterData.find(
+                    (item) => item.station === station && item.cm === closingSonding
+                );
+
+                if (matchingData) {
+                    setClosingDip(matchingData.liters);
+                } else {
+                    setClosingDip(undefined);
+                }
+            }
+        };
+
+        updateClosingDip();
+    }, [closingSonding, station, sondingMasterData]);
+
+    useEffect(() => {
         if (closingDip !== undefined && stockOnHand !== undefined) {
             setVariance(closingDip - stockOnHand);
         }
     }, [closingDip, stockOnHand]);
 
-    const handleSignatureConfirm = (newSignature: string) => {
-        setSignatureBase64(newSignature);
-        console.log('Updated Signature:', newSignature);
+    const calculateCloseData = () => {
+        return (stockOnHand + receiptKPC + receipt - issued - transfer);
     };
 
-    useEffect(() => {
-        const updateOpeningDip = async () => {
-          if (openingSonding !== undefined && station !== undefined) {
-            try {
-              if (openingSonding === 0 && station === 'loginData') {
-                setOpeningDip(0);
-              } else {
-                const matchingData = sondingMasterData.find(
-                  (item) => item.station === station && item.cm === openingSonding
-                );
-                if (matchingData) {
-                  setOpeningDip(matchingData.liters);
-                } else {
-                  setOpeningDip(undefined);
-                }
-              }
-            } catch (error) {
-              console.error('Failed to update opening dip', error);
-            }
-          }
-        };
-    
-        updateOpeningDip();
-      }, [openingSonding, station, sondingMasterData]);
-    
+    const handleSignatureConfirm = (newSignature: string) => {
+        setSignatureBase64(newSignature);
+    };
 
     const handleSubmit = async () => {
         const UpdateData: DataLkf = {
             date: new Date().toISOString().split('T')[0],
-            shift: '', // Adjust as needed
-            hm_start: 0, // Adjust as needed
-            site: '', // Adjust as needed
-            jde: '', // Adjust as needed
+            shift: '',
+            hm_start: 0,
+            site: '',
+            jde: '',
             fuelman_id: Cookies.get('fuelman_id') || '',
-            station: '', // Adjust as needed
-            flow_meter_start: 0, // Adjust as needed
+            station: station || '',
+            flow_meter_start: 0,
             hm_end: hmEnd,
             note: note,
-            signature: signatureBase64 || '', // Use base64 string
-            name: '', // Adjust as needed
-            issued: undefined, // Adjust as needed
-            receipt: undefined, // Adjust as needed
+            signature: signatureBase64 || '',
+            name: '',
+            issued: issued,
+            receipt: receipt,
             stockOnHand: stockOnHand,
             lkf_id: latestLkfId || '',
-            opening_dip: 0,
+            opening_dip: openingDip || 0,
             opening_sonding: 0,
             flow_meter_end: flowMeterEnd,
             closing_sonding: closingSonding || 0,
             closing_dip: closingDip || 0,
-            close_data: 0,
-            variance: 0
+            close_data: calculateCloseData(),
+            variant: variant|| 0,
         };
-    
+
         try {
             const response = await updateData(UpdateData);
             if (response.oke && (response.status === 200 || response.status === 201)) {
-                console.log('Updated successfully via API.');
-                await updateData(UpdateData);
-                console.log("Data successfully updated in IndexedDB.");
+                await updateDataToDB(UpdateData);
                 route.push('/review-data');
             } else {
                 localStorage.setItem('latestLkfData', JSON.stringify(UpdateData));
@@ -193,9 +176,7 @@ const FormClosing: React.FC = () => {
                     responseData: error.errorData
                 });
             } else {
-                console.error('An unexpected error occurred:', {
-                    error
-                });
+                console.error('An unexpected error occurred:', { error });
             }
             setShowError(true);
         }
@@ -215,8 +196,43 @@ const FormClosing: React.FC = () => {
         setStockOnHand(Number(e.detail.value));
     };
 
-    // Determine text color based on variance value
-    const varianceColor = variance !== undefined && variance < 0 ? 'red' : 'black';
+    const varianceColor = variant !== undefined && variant < 0 ? 'red' : 'black';
+
+     // Load Sonding Data
+     useEffect(() => {
+        const loadSondingData = async () => {
+            const cachedSondingData = await getDataFromStorage('allSonding');
+            console.log("Cached Sonding Data:", cachedSondingData);
+        
+            if (cachedSondingData) {
+                setSondingData(cachedSondingData);
+                setSondingMasterData(cachedSondingData); // Ensure this is set here
+            } else {
+                const Sonding = await fetchSondingData();
+                console.log("Fetched Sonding Data:", Sonding);
+                setSondingData(Sonding);
+                setSondingMasterData(Sonding); // Also set here
+            }
+        };
+    
+        loadSondingData();
+    }, []);
+
+    useEffect(() => {
+        if (closingSonding !== undefined && sondingMasterData.length > 0) {
+            console.log('Closing Sonding:', closingSonding);
+            const matchingData = sondingMasterData.find(item => item.cm === closingSonding);
+            if (matchingData) {
+                console.log('Matching Data Found:', matchingData);
+                setClosingDip(matchingData.liters);
+            } else {
+                console.log('No Matching Data Found');
+                setClosingDip(undefined);
+            }
+        }
+    }, [closingSonding, sondingMasterData]);
+
+
 
     return (
         <IonPage>
@@ -244,14 +260,7 @@ const FormClosing: React.FC = () => {
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Sonding (Cm) *</IonLabel>
-                                    <IonInput
-                                        className="custom-input"
-                                        type="number"
-                                        name="closingSonding"
-                                        value={closingSonding}
-                                        onIonChange={handleClosingSondingChange}
-                                        placeholder="Input Close Sonding (Cm)"
-                                    />
+                                    <IonInput type="number" onIonChange={handleClosingSondingChange} value={closingSonding}></IonInput>
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Dip (Liters) *</IonLabel>
@@ -259,11 +268,14 @@ const FormClosing: React.FC = () => {
                                         style={{background:"#cfcfcf"}}
                                         className="custom-input"
                                         type="number"
+                                      
+                                        
                                         name="closingDip"
-                                        value={openingDip || 0} // Default to 0 if undefined
+                                        value={closingDip || 0}// Default to 0 if undefined
                                         disabled
                                         placeholder="Input Close Dip (Liters)"
                                     />
+
                                 </IonCol>
                             </IonRow>
                             <IonRow>
@@ -283,7 +295,7 @@ const FormClosing: React.FC = () => {
                                         style={{background:"#cfcfcf"}}
                                         className="custom-input"
                                         type="number"
-                                        value={stockOnHand}
+                                        value={calculateCloseData()}
                                         disabled
                                         placeholder="Input Close Data"
                                     />
@@ -293,12 +305,12 @@ const FormClosing: React.FC = () => {
                                         style={{
                                             '--border-color': 'transparent',
                                             '--highlight-color': 'transparent',
-                                            color: varianceColor // Apply conditional color
+                                            color: varianceColor
                                         }}
                                         fill="outline"
                                         label="Variance (Closing Dip - Closing Balance)"
                                         labelPlacement="stacked"
-                                        value={variance !== undefined ? variance : ''} // Display variance
+                                        value={variant !== undefined ? variant : ''}
                                         placeholder=""
                                         disabled={true}
                                     />
@@ -345,8 +357,6 @@ const FormClosing: React.FC = () => {
                     onConfirm={handleSignatureConfirm}
                 />
             </IonContent>
-           
-            
         </IonPage>
     );
 };

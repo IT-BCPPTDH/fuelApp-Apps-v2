@@ -7,6 +7,7 @@ import { getAllQuota } from '../hooks/getQoutaUnit';
 import { Station } from '../models/interfaces';
 import { getAllSonding } from '../hooks/getAllSonding';
 import { getOperator } from '../hooks/getAllOperator';
+import { getStationData } from '../hooks/getDataTrxStation';
 
 
 
@@ -143,6 +144,21 @@ export const fetchOperatorData = async (): Promise<any[]> => {
   }
 };
 
+export const fetchShiftData = async (station:string): Promise<any[]> => {
+  try {
+    const response = await getStationData(station); 
+    if (response.status === '200' && Array.isArray(response.data)) {
+      await saveDataToStorage('shiftCloseData', response.data);
+      return response.data;
+    } else {
+      console.error('Unexpected data format');
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch Operator data', error);
+    return [];
+  }
+};
 
 
 

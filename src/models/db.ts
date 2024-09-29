@@ -26,7 +26,7 @@ interface DataLkf {
   note:string;
   signature:string;
   close_data:number,
-  variance:number,
+  variant:number,
 }
 
 
@@ -54,7 +54,7 @@ interface DataLkfUpdate {
   note:string;
   signature:string;
   close_data:number,
-  variance:number,
+  variant:number,
 }
 
 interface DataFormTrx {

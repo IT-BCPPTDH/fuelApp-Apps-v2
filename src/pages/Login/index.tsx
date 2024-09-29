@@ -18,7 +18,7 @@ import {
 import Cookies from "js-cookie";
 import { postAuthLogin } from "../../hooks/useAuth";
 import "./style.css";
-import { fetchStationData, fetchUnitData, fetchQuotaData, saveDataToStorage, getDataFromStorage, fetchSondingData, fetchOperatorData } from "../../services/dataService";
+import { fetchStationData, fetchUnitData, fetchQuotaData, saveDataToStorage, getDataFromStorage, fetchSondingData, fetchOperatorData, fetchShiftData } from "../../services/dataService";
 import { Station } from "../../models/interfaces";
 
 const Login: React.FC = () => {
@@ -30,7 +30,7 @@ const Login: React.FC = () => {
   const [openingForm, setOpeningForm] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
   const [sondingData, setSondingData]  =  useState<{ id: string; station: string; cm: string; listers: string }[]>([]);
   const [employee, setDataEmployee]  =  useState<{ id: string; jde: string; fullname:string}[]>([]);
-
+  const [station, setStation] =useState<any[]>([]);
   useEffect(() => {
     const loadStationData = async () => {
       const cachedData = await getDataFromStorage('stationData');
@@ -111,6 +111,13 @@ const Login: React.FC = () => {
 
     loadQuotaData();
   }, []);
+
+
+  // useEffect (()=>{
+  //   const loadShiftClose = async () =>{
+  //     const cachedShiftLoad = await get
+  //   }
+  // })
 
 
   const handleLogin = async () => {

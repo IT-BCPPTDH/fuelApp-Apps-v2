@@ -259,7 +259,7 @@ useEffect(() => {
       note: "",
       signature: "",
       close_data: 0,
-      variance: 0
+      variant: 0
     };
 
     try {
@@ -559,7 +559,7 @@ useEffect(() => {
               type="number"
               placeholder="Input opening dip dalam liter"
               value={openingDip}
-              disabled
+              // disabled
               readonly={stationOptions.includes(station || '')}
             />
             {showError && openingDip === undefined && (

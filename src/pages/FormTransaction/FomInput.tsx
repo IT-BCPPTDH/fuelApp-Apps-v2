@@ -1085,7 +1085,7 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
                     style={{ background: "#E8E8E8" }}
                     className="custom-input"
                     type="text"
-                    name="jde"
+                    name="fullname"
                     value={fullName}
                     placeholder="Input Driver Name"
                     readonly
