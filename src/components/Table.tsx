@@ -80,7 +80,7 @@ const TableData: React.FC = () => {
           fm_akhir: item.flow_end ?? 0,
           jde_operator: item.fuelman_id || '',
           name_operator: item.fullname,
-          status: isSent ? 'Sent' : 'Pending', 
+          status: 0  ? 'Sent' : 'Pending', 
         };
       });
   

@@ -592,7 +592,7 @@ useEffect(() => {
       hmLast !== undefined &&
       qtyLast !== undefined
     ) {
-      const difference = hmkmTRX - hmLast;
+      const difference =    hmLast - hmkmTRX;
       if (difference !== 0) {
         return qtyLast / difference;
       } else {
@@ -601,7 +601,6 @@ useEffect(() => {
     }
     return "";
   };
-
   const calculateFlowEnd = (): string | number => {
     if (flowMeterAwal !== undefined && quantity !== undefined) {
       const totaFlowEnd = flowMeterAwal + quantity;
@@ -717,7 +716,7 @@ useEffect(() => {
   };
 
   const isSaveButtonDisabled = () => {
-    return hmLast !== undefined && hmkmTRX !== undefined && hmkmTRX < hmLast;
+    return hmkmTRX !== undefined && hmLast !== undefined && hmLast < hmkmTRX;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
@@ -899,8 +898,8 @@ useEffect(() => {
                   onIonChange={handleUnitChange}
                   value={selectedUnit}
                 >
-                  {unitOptions.map((unit) => (
-                    <IonSelectOption key={unit.unit_no} value={unit.unit_no}>
+                  {unitOptions.map((unit,idx) => (
+                    <IonSelectOption key={idx +1} value={unit.unit_no}>
                       {unit.unit_no}
                     </IonSelectOption>
                   ))}
@@ -923,9 +922,10 @@ useEffect(() => {
                   />
                 </IonCol>
               </IonRow>
-              <IonRow>
-                <IonCol>
-                  <IonLabel>
+              <IonGrid>
+      <IonRow>
+        <IonCol size="12">
+          <div><IonLabel>
                     Owner <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonInput
@@ -937,11 +937,10 @@ useEffect(() => {
                     placeholder="Input Owner"
                     readonly
                     disabled={isFormDisabled}
-                  />
-                </IonCol>
-              </IonRow>
-              <IonRow style={{ marginTop: "15px" }}>
-                <IonLabel>
+                  /></div>
+        </IonCol>
+        <IonCol size="8">
+          <div><IonLabel>
                   {" "}
                   Type Transaksi Issued <span style={{ color: "red" }}>*</span>
                 </IonLabel>
@@ -956,8 +955,11 @@ useEffect(() => {
                       <IonRadio value={type}>{type.name}</IonRadio>
                     </IonItem>
                   ))}
-                </IonRadioGroup>
-              </IonRow>
+                </IonRadioGroup></div>
+        </IonCol>
+      </IonRow>
+    </IonGrid>
+              
               <IonRow>
                 <IonCol>
                   <IonLabel>
@@ -969,8 +971,8 @@ useEffect(() => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    onIonChange={handleHmLastChange}
-                    value={hmkmTRX !== null ? hmkmTRX : ""}
+                    value={hmLast !== null ? hmLast: ''}
+                    onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
                 </IonCol>
@@ -983,8 +985,10 @@ useEffect(() => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    // value={hmLast !== null ? hmLast : ""}
-                    onIonChange={handleHmkmUnitChange}
+                    // value={hmLast !== null ? hmLast : ''}
+
+                    onIonChange={(e) => setHmLast(Number(e.detail.value))}
+                    // onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
                   />
 

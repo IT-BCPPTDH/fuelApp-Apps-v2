@@ -220,8 +220,8 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
       .last(); // Ambil entri terakhir yang sesuai dengan ID
 
     // Periksa apakah ada 'hm_last' yang valid
-    if (latestEntry && latestEntry.hm_last != null) {
-      return latestEntry.hm_last;
+    if (latestEntry && latestEntry.hm_km!= null) {
+      return latestEntry.hm_km;
     } else {
       console.warn("No valid 'hm_last' data found for the selected unit.");
       return undefined;

@@ -146,7 +146,11 @@ const [unitQouta, setUnitQouta] = useState(0);
 
 const [searchTerm, setSearchTerm] = useState('');
 const [selectedId, setSelectID] = useState<string | undefined>();
-const [operatorOptions, setOperatorOptions] = useState<{ id: number; JDE: string; fullname: string; }[]>([]);
+// const [operatorOptions, setOperatorOptions] = useState<{ id: number; JDE: string; fullname: string; }[]>([]);
+
+const [operatorOptions, setOperatorOptions] = useState<
+{ JDE: string; fullname: string }[]
+>([]);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -250,23 +254,7 @@ const [operatorOptions, setOperatorOptions] = useState<{ id: number; JDE: string
   const isFormDisabled = !selectedUnit;
 
 
-  const handleChangeEmployeeId = (event: CustomEvent) => {
-    const selectedValue = event.detail.value as string;
-    console.log("Selected Employee ID:", selectedValue);
-
-    const selectedJdeOption = jdeOptions.find(
-      (jde) => jde.JDE === selectedValue
-    );
-    if (selectedJdeOption) {
-      console.log("Selected JDE Option:", selectedJdeOption);
-      setFullName(selectedJdeOption.JDE);
-      setFuelmanId(selectedValue);
-    } else {
-      console.log("No matching JDE option found.");
-      setFullName("");
-      setFuelmanId("");
-    }
-  };
+ 
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files ? event.target.files[0] : null;
@@ -564,7 +552,7 @@ useEffect(() => {
           ]);
   
           if (isMounted) {
-            console.log("FBR Data:", fbrData);
+         
             console.log("HM Data:", lastHm); // Change this to lastHm
   
             if (fbrData.length > 0) {
@@ -573,12 +561,12 @@ useEffect(() => {
               console.log( "data last",latestEntry)
               setFbr(latestEntry.fbr);
 
-              sethmkmTrx(latestEntry.hm_last);
+              setHmLast(latestEntry.hm_last);
               setQtyLast(latestEntry.qty_last);
             } else {
               // If no data is found, clear the state
               setFbr(undefined);
-              sethmkmTrx(undefined);
+              setHmLast(undefined);
               setQtyLast(undefined);
             }
   
@@ -757,7 +745,23 @@ useEffect(() => {
 };
 
 
+// const handleChangeEmployeeId = (event: CustomEvent) => {
+//   const selectedValue = event.detail.value as string;
+//   console.log("Selected Employee ID:", selectedValue);
 
+//   const selectedJdeOption = jdeOptions.find(
+//     (jde) => jde.JDE === selectedValue
+//   );
+//   if (selectedJdeOption) {
+//     console.log("Selected JDE Option:", selectedJdeOption);
+//     setFullName(selectedJdeOption.fullname);
+//     setFuelmanId(selectedValue);
+//   } else {
+//     console.log("No matching JDE option found.");
+//     setFullName("");
+//     setFuelmanId("");
+//   }
+// };
 useEffect(() => {
   const fetchJdeOptions = async () => {
     const storedJdeOptions = await getDataFromStorage("allOperator");
@@ -784,32 +788,49 @@ useEffect(() => {
 }, []);
 
 
-const fetchOperatorOptions = async () => {
-  const storedOperatorOptions = await getDataFromStorage("allOperator");
-  console.log("Stored operator options:", storedOperatorOptions); // Check what you retrieve
+// hilangkkan parsenya jika ngambil dari localsorage
+useEffect(() => {
+  const fetchJdeOptions = async () => {
+    const storedJdeOptions = await getDataFromStorage("allOperator");
+    console.log("Stored JDE Options:", storedJdeOptions);
 
-  if (storedOperatorOptions) {
-    try {
-      const parsedOperatorOptions = JSON.parse(storedOperatorOptions);
-      console.log("Parsed operator options:", parsedOperatorOptions); // Log the parsed version
-      setOperatorOptions(parsedOperatorOptions); // Ensure this state is updated
-    } catch (error) {
-      console.error("Failed to parse operator options from localStorage:", error);
+    if (storedJdeOptions) {
+      // If you are certain the data is in the correct format
+      if (Array.isArray(storedJdeOptions)) {
+        setJdeOptions(storedJdeOptions);
+      } else {
+        console.log("Stored JDE Options is not a valid array.");
+      }
+    } else {
+      console.log("No JDE options found in storage.");
     }
+  };
+
+  fetchJdeOptions();
+}, []);
+
+
+const handleChangeEmployeeId = (event: CustomEvent) => {
+  const selectedValue = event.detail.value.trim();
+
+  if (jdeOptions.length === 0) {
+    console.warn("JDE Options are empty. Cannot find matching option.");
+    return; // Exit early if no options are available
+  }
+
+  const selectedJdeOption = jdeOptions.find((jde) => 
+    String(jde.JDE).trim() === String(selectedValue).trim()
+  );
+
+  if (selectedJdeOption) {
+    setFullName(selectedJdeOption.fullname);
+    setFuelmanId(selectedValue);
   } else {
-    console.log("No operator options found in localStorage.");
+    console.log("No matching JDE option found.");
+    setFullName("");
+    setFuelmanId("");
   }
 };
-
-useEffect(() => {
-  fetchOperatorOptions
-  console.log("Operator options updated:", operatorOptions);
-}, [operatorOptions]);
-
-
-
-
-
 
   return (
     <IonPage>
@@ -930,7 +951,7 @@ useEffect(() => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    value={hmkmTRX !== null ? hmkmTRX: ''}
+                    value={hmkmTRX!== null ? hmkmTRX: ''}
                     
                     // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
@@ -946,7 +967,7 @@ useEffect(() => {
                     type="number"
                     placeholder="Input HM Terakhir"
                     
-                    // value={hmLast !== null ? hmLast: ''}
+                    value={hmLast !== null ? hmLast: ''}
                     // onIonChange={(e) => setHmLast(Number(e.detail.value))}
                     onIonChange={handleHmLastChange}
                     onKeyDown={handleKeyDown}
@@ -1053,13 +1074,14 @@ useEffect(() => {
                       labelPlacement="floating"
                       onIonChange={handleChangeEmployeeId}
                       disabled={isFormDisabled}
-                      value={selectedId}
+                      value={fuelman_id}
                     >
-                      {operatorOptions.map((operator, idx) => (
-                        <IonSelectOption key={idx + 1} value={operator.JDE}>
-                          {operator.JDE}
-                        </IonSelectOption>
-                      ))}
+                       
+                       {operatorOptions.map((jde) => (
+                      <IonSelectOption key={jde.JDE} value={jde.JDE}>
+                        {jde.JDE}
+                      </IonSelectOption>
+                    ))}
                     </IonSelect>
                 </IonCol>
                 <IonCol>
