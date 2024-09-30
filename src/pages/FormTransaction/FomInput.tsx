@@ -122,9 +122,7 @@ const FormTRX: React.FC = () => {
   const [sondingEnd, setSondingEnd] = useState<number | undefined>(undefined);
   const [Refrence, setRefrence] = useState<number | undefined>(undefined);
   const [stationData, setStationData] = useState<any>(null);
-  const [hmkmTRX, sethmkmTrx] = useState<number | undefined>(undefined); // HM/KM Transaksi
-  const [hmLast, setHmLast] = useState<number | undefined>(undefined); // HM/KM Unit
-  const [qtyLast, setQtyLast] = useState<number | undefined>(undefined); // Qty Last
+
   // Ensure flowEnd is a number
 
   const [successModalOpen, setSuccessModalOpen] = useState(false);
@@ -147,7 +145,10 @@ const [unitQouta, setUnitQouta] = useState(0);
 const [searchTerm, setSearchTerm] = useState('');
 const [selectedId, setSelectID] = useState<string | undefined>();
 // const [operatorOptions, setOperatorOptions] = useState<{ id: number; JDE: string; fullname: string; }[]>([]);
-
+const [hmkmTRX, sethmkmTrx] = useState<number | undefined>(undefined); // HM/KM Transaksi
+const [hmLast, setHmLast] = useState<number | undefined>(undefined); // HM/KM Unit
+const [qtyLast, setQtyLast] = useState<number | undefined>(undefined); // Qty Last
+// Ensure flowEnd is a number
 const [operatorOptions, setOperatorOptions] = useState<
 { JDE: string; fullname: string }[]
 >([]);
@@ -290,7 +291,7 @@ const [operatorOptions, setOperatorOptions] = useState<
     route.push("/dashboard");
   };
 
-
+ 
 // Ensure quantity is initialized and handle potential undefined
 const handlePost = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -360,10 +361,11 @@ const handlePost = async (e: React.FormEvent) => {
       console.log("Saving data as draft (offline)...");
       await insertNewData(dataPost);
       setModalMessage("Data saved as draft");
+
     } else if (status === 1 && isOnline) {
       console.log("Posting data to backend...");
       const response = await postTransaksi(dataPost);
-      await insertNewData(dataPost);
+      // await insertNewData(dataPost);
       if (response.ok && (response.status === 200 || response.status === 201)) {
         // Update local storage quota
         if (quantity) { 
@@ -605,7 +607,7 @@ useEffect(() => {
 
   const handleHmLastChange = (e: CustomEvent) => {
     const newValue = Number(e.detail.value);
-    if ( hmLast!== undefined && newValue > hmLast) {
+    if ( hmLast!== undefined && newValue < hmLast) {
       setShowError(true);
     } else {
       setShowError(false);
@@ -653,28 +655,41 @@ useEffect(() => {
   
 
   useEffect(() => {
+    console.log("unitOptions updated:", unitOptions);
+  }, [unitOptions]);
+
+  useEffect(() => {
+    // Track if the component is still mounted
     let isMounted = true;
+
     const fetchFbrData = async () => {
       if (selectedUnit) {
         try {
+          // Fetch FBR and HM data concurrently
           const [fbrData, lastHm] = await Promise.all([
             getFbrByUnit(selectedUnit),
             getLatestHmLast(selectedUnit),
           ]);
-  
+
           if (isMounted) {
+            console.log("FBR Data:", fbrData);
+            console.log("HM Data:", hmkmTRX);
+
             if (fbrData.length > 0) {
+              // Assuming fbrData is sorted and the first entry is the latest
               const latestEntry = fbrData[0];
               setFbr(latestEntry.fbr);
               sethmkmTrx(latestEntry.hm_last);
               setQtyLast(latestEntry.qty_last);
             } else {
+              // If no data is found, clear the state
               setFbr(undefined);
               sethmkmTrx(undefined);
               setQtyLast(undefined);
             }
-  
-            if (lastHm !== undefined) {
+
+            // Update hmLast with the latest value from getLatestHmLast
+            if (lastHm) {
               setHmLast(lastHm);
             }
           }
@@ -688,13 +703,14 @@ useEffect(() => {
         }
       }
     };
-  
+
     fetchFbrData();
-  
+
     return () => {
       isMounted = false;
     };
   }, [selectedUnit]);
+
   
   useEffect(() => {
     const unitQuotaData = localStorage.getItem("unitQuota");
@@ -951,7 +967,7 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    value={hmkmTRX!== null ? hmkmTRX: ''}
+                    value={hmLast !== null ? hmLast: ''}
                     
                     // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
@@ -966,10 +982,10 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    
-                    value={hmLast !== null ? hmLast: ''}
+                   
+                
                     // onIonChange={(e) => setHmLast(Number(e.detail.value))}
-                    onIonChange={handleHmLastChange}
+                    onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
                   />
 

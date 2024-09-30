@@ -213,15 +213,19 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 
 export const getLatestHmLast = async (selectedUnit: string): Promise<number | undefined> => {
   try {
+    const selectedUnitId = Number(selectedUnit); // Convert to number
+
     // Ambil entri terakhir berdasarkan 'id' yang dipilih
-    const latestEntry = await db.dataTransaksi
-      .where('id')
-      .equals(selectedUnit)
-      .last(); // Ambil entri terakhir yang sesuai dengan ID
+    const entries = await db.dataTransaksi
+      .filter(entry => entry.id === selectedUnitId) // Compare as numbers
+      .toArray(); // Convert to an array
+
+    // Ambil entri terakhir
+    const latestEntry = entries.length > 0 ? entries[entries.length - 1] : null;
 
     // Periksa apakah ada 'hm_last' yang valid
-    if (latestEntry && latestEntry.hm_km!= null) {
-      return latestEntry.hm_km;
+    if (latestEntry && latestEntry.hm_last != null) {
+      return latestEntry.hm_last; // Return the correct property
     } else {
       console.warn("No valid 'hm_last' data found for the selected unit.");
       return undefined;
@@ -231,6 +235,32 @@ export const getLatestHmLast = async (selectedUnit: string): Promise<number | un
     return undefined;
   }
 };
+
+
+
+
+// export const getLatestHmLast = async (selectedUnit: string): Promise<number | undefined> => {
+//   try {
+//     // Fetch the latest entry from the database
+//     const latestEntry = await db.dataTransaksi
+//           .orderBy('id')
+//           // .equals(selectedUnit)
+//           .last();
+
+//     // Check if the entry is found and return the 'hm_last' field
+//     if (latestEntry && latestEntry.hm_last != null) {
+//       return latestEntry.hm_last;
+//     } else {
+//       console.warn("No valid 'hm_last' data found in the dataTransaksi collection.");
+//       return undefined;
+//     }
+//   } catch (error) {
+//     // Log any errors that occur during data retrieval
+//     console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
+//     return undefined;
+//   }
+// };
+
 
 
 

@@ -2,7 +2,6 @@ import Dexie, { Table } from 'dexie';
 
 // Define the TypeScript interfaces for your data
 interface DataLkf {
-
   name: string;
   issued: any;
   receipt: any;

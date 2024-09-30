@@ -28,12 +28,14 @@ export const updateDataInDB = async (id: number, data: Partial<DataLkf>) => {
 };
 
   
-  export const updateDataInTrx = async (id: number, p0: string, data: DataFormTrx) => {
+  export const updateDataInTrx = async (id: number, updates: Partial<DataFormTrx>): Promise<void> => {
     try {
-      
-      await db.dataTransaksi.put(data); 
-      console.log("Data successfully updated in IndexedDB.");
+      await db.dataTransaksi
+        .where('from_data_id')
+        .equals(id)
+        .modify(updates); // Update the entry with the given ID
     } catch (error) {
       console.error("Failed to update data in IndexedDB:", error);
+      throw new Error("Update failed"); // Optionally throw an error for further handling
     }
   };

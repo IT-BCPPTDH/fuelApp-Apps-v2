@@ -22,15 +22,15 @@ interface TableDataItem {
   from_data_id: number;
   unit_no: string;
   model_unit: string;
-  owner:string;
+  owner: string;
   fbr_historis: string;
   jenis_trx: string;
   qty_issued: number;
   fm_awal: number;
   fm_akhir: number;
   jde_operator: string;
-  name_operator:string;
-  status: string;
+  name_operator: string;
+  status: number; // Ensure this is a number
 }
 
 const TableData: React.FC = () => {
@@ -66,7 +66,8 @@ const TableData: React.FC = () => {
     try {
       const rawData = await getAllDataTrx(lkfId);
       const mappedData: TableDataItem[] = rawData.map((item: any) => {
-        const isSent = item.status === 1; // Update condition to check if status is 1
+        // Assuming item.status is either 1 (Sent) or 0 (Pending)
+        const statusValue = item.status === 1 ? 1 : 0; 
   
         return {
           from_data_id: item.from_data_id ?? 0,
@@ -80,7 +81,7 @@ const TableData: React.FC = () => {
           fm_akhir: item.flow_end ?? 0,
           jde_operator: item.fuelman_id || '',
           name_operator: item.fullname,
-          status: 0  ? 'Sent' : 'Pending', 
+          status: statusValue, // Assign the numeric status
         };
       });
   
@@ -92,6 +93,7 @@ const TableData: React.FC = () => {
       setLoading(false);
     }
   };
+  
   
   const handleBulkInsert = async () => {
     if (!data || data.length === 0) {
@@ -132,15 +134,22 @@ const TableData: React.FC = () => {
     }));
   
     try {
+      // Perform bulk insert
       const responses = await postBulkData(bulkData);
       console.log("Bulk insert responses:", responses);
   
-      // Update the status of the items to "Sent"
-      const updatedData = data.map(item => ({
+      // Create an array of updated data based on responses
+      const updatedData = data.map((item, index) => ({
         ...item,
-        status: 'Sent' // Immediately update status to "Sent"
+        status: 1, // Set the status to 1 (Sent) for all successfully inserted items
       }));
-      setData(updatedData); // Update the state with new data
+  
+      // Update IndexedDB entries
+      await Promise.all(updatedData.map(async (item) => {
+        await updateDataInTrx(item.from_data_id, { status: item.status }); // Update status in IndexedDB
+      }));
+  
+      setData(updatedData);
   
       // Count of successfully inserted items
       const totalInserted = bulkData.length;
@@ -158,6 +167,8 @@ const TableData: React.FC = () => {
       setShowAlert(true); // Show the alert on error
     }
   };
+  
+  
   
   
 
@@ -195,6 +206,13 @@ const TableData: React.FC = () => {
     return <div>Error: {error}</div>;
   }
 
+
+  const displayStatus = (status: number): string => {
+    return status === 1 ? 'Sent' : 'Pending';
+  };
+
+
+  
   return (
     <div>
       <IonRow style={{ marginTop: "-20px" }} className='padding-content'>
@@ -220,7 +238,7 @@ const TableData: React.FC = () => {
             <IonCol><IonText>QTY Issued</IonText></IonCol>
             <IonCol><IonText>FM Awal</IonText></IonCol>
             <IonCol><IonText>FM Akhir</IonText></IonCol>
-            <IonCol><IonText>Employee ID</IonText></IonCol>
+            <IonCol><IonText>Fullname</IonText></IonCol>
             <IonCol><IonText>Status</IonText></IonCol>
           </IonRow>
 
@@ -234,8 +252,8 @@ const TableData: React.FC = () => {
               <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
               <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
               <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
-              <IonCol><IonText>{item.jde_operator}</IonText></IonCol>
-              <IonCol><IonText>{item.status}</IonText></IonCol>
+              <IonCol><IonText>{item.name_operator}</IonText></IonCol>
+              <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol> {/* Use display function */}
             </IonRow>
           ))}
         </IonGrid>
