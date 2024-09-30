@@ -141,6 +141,7 @@ const [remainingQuota, setRemainingQuota] = useState(0);
 const [quantity, setQuantity] = useState(0);
 const [quantityError, setQuantityError] = useState("");
 const [unitQouta, setUnitQouta] = useState(0);
+const [isError, setIsError] = useState(false);
 
 const [searchTerm, setSearchTerm] = useState('');
 const [selectedId, setSelectID] = useState<string | undefined>();
@@ -449,15 +450,17 @@ useEffect(() => {
       hmLast !== undefined &&
       qtyLast !== undefined
     ) {
-      const difference =    hmLast - hmkmTRX;
+      const difference = hmkmTRX - hmLast;
       if (difference !== 0) {
-        return qtyLast / difference;
+        const result = qtyLast / difference;
+        return parseFloat(result.toFixed(1)); // Return the result with one decimal place
       } else {
         return "N/A";
       }
     }
     return "";
   };
+  
   const calculateFlowEnd = (): string | number => {
     if (flowMeterAwal !== undefined && quantity !== undefined) {
       const totaFlowEnd = flowMeterAwal + quantity;
@@ -563,12 +566,12 @@ useEffect(() => {
               console.log( "data last",latestEntry)
               setFbr(latestEntry.fbr);
 
-              setHmLast(latestEntry.hm_last);
+              sethmkmTrx(latestEntry.hm_km);
               setQtyLast(latestEntry.qty_last);
             } else {
               // If no data is found, clear the state
               setFbr(undefined);
-              setHmLast(undefined);
+              sethmkmTrx(undefined);
               setQtyLast(undefined);
             }
   
@@ -616,7 +619,7 @@ useEffect(() => {
   };
 
   const isSaveButtonDisabled = () => {
-    return hmkmTRX !== undefined && hmLast !== undefined && hmLast < hmkmTRX;
+    return hmkmTRX !== undefined && hmLast !== undefined && hmLast > hmkmTRX;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
@@ -750,34 +753,23 @@ useEffect(() => {
 
   const handleQuantityChange = (e: InputCustomEvent<InputChangeEventDetail>) => {
     const inputQuantity = Number(e.detail.value);
-
-    if (inputQuantity > remainingQuota) {
-        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta.");
-    } else {
-        setQuantityError("");
+  
+    // Check if the selected unit is LV or HLV
+    if (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) {
+      if (inputQuantity > remainingQuota) {
+        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+        setIsError(true); // Set the error state
+      } else {
+        setQuantityError(""); // Clear the error if the condition is met
+        setIsError(false); // Reset error state
+      }
     }
-
+  
     setQuantity(inputQuantity);
-};
+  };
+  
+  
 
-
-// const handleChangeEmployeeId = (event: CustomEvent) => {
-//   const selectedValue = event.detail.value as string;
-//   console.log("Selected Employee ID:", selectedValue);
-
-//   const selectedJdeOption = jdeOptions.find(
-//     (jde) => jde.JDE === selectedValue
-//   );
-//   if (selectedJdeOption) {
-//     console.log("Selected JDE Option:", selectedJdeOption);
-//     setFullName(selectedJdeOption.fullname);
-//     setFuelmanId(selectedValue);
-//   } else {
-//     console.log("No matching JDE option found.");
-//     setFullName("");
-//     setFuelmanId("");
-//   }
-// };
 useEffect(() => {
   const fetchJdeOptions = async () => {
     const storedJdeOptions = await getDataFromStorage("allOperator");
@@ -865,18 +857,19 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
              
             </IonRow>
         )}
-        {remainingQuota !== undefined && (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
-        <IonRow>
+       {remainingQuota !== undefined && (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
+          <IonRow>
             <IonCol>
-                <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
-                    <IonLabel style={{ display: "flex" }}>
-                        <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                        <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
-                    </IonLabel>
-                </IonItemDivider>
+              <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                <IonLabel style={{ display: "flex", color: remainingQuota === 0 ? "red" : "inherit" }}>
+                  <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
+                  <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
+                </IonLabel>
+              </IonItemDivider>
             </IonCol>
-        </IonRow>
-    )}
+          </IonRow>
+        )}
+
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>
@@ -967,7 +960,7 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    value={hmLast !== null ? hmLast: ''}
+                    value={hmLast}
                     
                     // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
@@ -1007,26 +1000,26 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
             </div> */}
 
               <IonRow>
-                <IonCol>
-                  <IonLabel>
-                    Qty Issued / Receive / Transfer{" "}
-                    <span style={{ color: "red" }}>*</span>
-                  </IonLabel>
-                  <IonInput
-                      className="custom-input"
-                      ref={input2Ref}
-                      type="number"
-                      placeholder="Qty Issued / Receive / Transfer"
-                      onIonChange={handleQuantityChange} 
-                      value={quantity} 
-                      disabled={isFormDisabled}
-                  />
-                  {/* {quantityError && (
-                    <div style={{ color: "red", marginTop: "5px" }}>
-                      {quantityError}
-                    </div>
-                    )} */}
-                </IonCol>
+              <IonCol>
+                <IonLabel>
+                  Qty Issued / Receive / Transfer{" "}
+                  <span style={{ color: "red" }}>*</span>
+                </IonLabel>
+                <IonInput
+                  className="custom-input"
+                  ref={input2Ref}
+                  type="number"
+                  placeholder="Qty Issued / Receive / Transfer"
+                  onIonChange={handleQuantityChange} 
+                  value={quantity} 
+                  disabled={isFormDisabled}
+                />
+                {quantityError && (
+                  <div style={{ color: "red", marginTop: "5px" }}>
+                    {quantityError}
+                  </div>
+                )}
+              </IonCol>
                 <IonCol>
                   <IonLabel>
                     FBR Historis <span style={{ color: "red" }}>*</span>
@@ -1214,14 +1207,13 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
                 </IonButton>
                 <IonButton
                   onClick={(e) => handlePost(e)}
-                  className={`check-button ${
-                    isOnline ? "button-save-data" : "button-save-draft"
-                  }`}
-                  disabled={isSaveButtonDisabled()}
+                  className={`check-button ${isOnline ? "button-save-data" : "button-save-draft"}`}
+                  disabled={isSaveButtonDisabled() || isError} // Disable if there's an error
                 >
                   <IonIcon slot="start" icon={saveOutline} />
                   {isOnline ? "Simpan Data" : "Simpan Data Ke Draft"}
                 </IonButton>
+
               </div>
             </IonGrid>
           </div>
