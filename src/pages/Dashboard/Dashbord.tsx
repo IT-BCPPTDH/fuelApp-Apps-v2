@@ -17,6 +17,7 @@ import {
 import TableData from '../../components/Table';
 import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate } from '../../utils/getData';
 import { getHomeByIdLkf } from '../../hooks/getHome';
+import NetworkStatus from '../../components/network';
 
 // Define the data structure for the card
 interface CardData {
@@ -225,7 +226,8 @@ useEffect(() => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 marginRight: '15px',
-                marginTop:"10px"
+                color:"green"
+               
               }}>
                 <div
                   style={{
@@ -233,10 +235,11 @@ useEffect(() => {
                     height: '12px',
                     borderRadius: '50%',
                     backgroundColor: isOnline ? '#73A33F' : 'red',
-                    marginRight: '5px'
+                    marginRight: '5px',
+                    
                   }}
                 />
-                <span>{isOnline ? 'Online' : 'Offline'}</span>
+                <NetworkStatus/>
               </div>
             </IonCol>
           </IonRow>

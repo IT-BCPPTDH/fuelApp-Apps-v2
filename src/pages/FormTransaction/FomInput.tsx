@@ -24,6 +24,7 @@ import {
   IonModal,
   InputCustomEvent,
   InputChangeEventDetail,
+  IonPopover,
 } from "@ionic/react";
 import {
   cameraOutline,
@@ -47,6 +48,7 @@ import {
   getLatestHmLast,
 } from "../../utils/getData";
 import DynamicAlert from "../../components/Alert";
+import { fetchOperatorData, fetchQuotaData, fetchUnitData, getDataFromStorage } from "../../services/dataService";
 
 interface Typetrx {
   id: number;
@@ -74,9 +76,7 @@ const FormTRX: React.FC = () => {
   const [selectedType, setSelectedType] = useState<Typetrx | undefined>(
     undefined
   );
-  const [selectedUnit, setSelectedUnit] = useState<string | undefined>(
-
-  );
+  const [selectedUnit, setSelectedUnit] = useState<string | undefined>();
 
   const [signature, setSignature] = useState<File | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -122,9 +122,7 @@ const FormTRX: React.FC = () => {
   const [sondingEnd, setSondingEnd] = useState<number | undefined>(undefined);
   const [Refrence, setRefrence] = useState<number | undefined>(undefined);
   const [stationData, setStationData] = useState<any>(null);
-  const [hmkmTRX, sethmkmTrx] = useState<number | undefined>(undefined); // HM/KM Transaksi
-  const [hmLast, setHmLast] = useState<number | undefined>(undefined); // HM/KM Unit
-  const [qtyLast, setQtyLast] = useState<number | undefined>(undefined); // Qty Last
+
   // Ensure flowEnd is a number
 
   const [successModalOpen, setSuccessModalOpen] = useState(false);
@@ -143,6 +141,18 @@ const [remainingQuota, setRemainingQuota] = useState(0);
 const [quantity, setQuantity] = useState(0);
 const [quantityError, setQuantityError] = useState("");
 const [unitQouta, setUnitQouta] = useState(0);
+const [isError, setIsError] = useState(false);
+
+const [searchTerm, setSearchTerm] = useState('');
+const [selectedId, setSelectID] = useState<string | undefined>();
+// const [operatorOptions, setOperatorOptions] = useState<{ id: number; JDE: string; fullname: string; }[]>([]);
+const [hmkmTRX, sethmkmTrx] = useState<number | undefined>(undefined); // HM/KM Transaksi
+const [hmLast, setHmLast] = useState<number | undefined>(undefined); // HM/KM Unit
+const [qtyLast, setQtyLast] = useState<number | undefined>(undefined); // Qty Last
+// Ensure flowEnd is a number
+const [operatorOptions, setOperatorOptions] = useState<
+{ JDE: string; fullname: string }[]
+>([]);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -171,10 +181,6 @@ const [unitQouta, setUnitQouta] = useState(0);
       setFlowMeterAwal(parsedData.flowMeterEnd);
     }
   }, []);
-
-
-
-
 
   useEffect(() => {
     const storedData = localStorage.getItem("cardDataDashborad");
@@ -216,13 +222,6 @@ const [unitQouta, setUnitQouta] = useState(0);
     };
 }, []);
 
-  //   useEffect(() => {
-  //     // Example effect to demonstrate state update
-  //     if (employeeId) {
-  //         // Update related fields
-  //         // e.g., setFuelmanId(employeeId);
-  //     }
-  // }, [employeeId]);
 
   useEffect(() => {
     const fetchStationData = () => {
@@ -244,28 +243,9 @@ const [unitQouta, setUnitQouta] = useState(0);
     fetchStationData();
   }, []);
 
-  
 
-  useEffect(() => {
-    const fetchJdeOptions = () => {
-      const storedJdeOptions = localStorage.getItem("employeeData");
-      if (storedJdeOptions) {
-        try {
-          const parsedJdeOptions = JSON.parse(storedJdeOptions);
-          setJdeOptions(parsedJdeOptions);
-        } catch (error) {
-          console.error(
-            "Failed to parse JDE options from local storage",
-            error
-          );
-        }
-      } else {
-        console.log("No JDE options found in local storage");
-      }
-    };
 
-    fetchJdeOptions();
-  }, []);
+ 
 
   const handleRadioChange = (event: CustomEvent) => {
     const selectedValue = event.detail.value as Typetrx;
@@ -276,23 +256,7 @@ const [unitQouta, setUnitQouta] = useState(0);
   const isFormDisabled = !selectedUnit;
 
 
-  const handleChangeEmployeeId = (event: CustomEvent) => {
-    const selectedValue = event.detail.value as string;
-    console.log("Selected Employee ID:", selectedValue);
-
-    const selectedJdeOption = jdeOptions.find(
-      (jde) => jde.JDE === selectedValue
-    );
-    if (selectedJdeOption) {
-      console.log("Selected JDE Option:", selectedJdeOption);
-      setFullName(selectedJdeOption.fullname);
-      setFuelmanId(selectedValue);
-    } else {
-      console.log("No matching JDE option found.");
-      setFullName("");
-      setFuelmanId("");
-    }
-  };
+ 
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files ? event.target.files[0] : null;
@@ -329,109 +293,6 @@ const [unitQouta, setUnitQouta] = useState(0);
   };
 
  
-  // Function to insert new data into the dashboard or database
-
-
-  
-//   const handlePost = async (e: React.FormEvent) => {
-//     e.preventDefault();
-//     console.log("Initial Status:", status);
-//     if (isSaveButtonDisabled()) {
-//         setModalMessage("HM/KM Unit Tidak Bole Kecil Dari HM/KM Terakhir Transaksi");
-//         setErrorModalOpen(true);
-//         return;
-//     }
-
-//     // Validate form fields
-//     if (
-//         !selectedType ||
-//         !selectedUnit ||
-//         quantity === null ||
-//         fbr === null ||
-//         flowMeterAwal === null ||
-//         flowMeterAkhir === null ||
-//         !startTime ||
-//         !endTime
-//     ) {
-//         setModalMessage("Form is incomplete");
-//         setErrorModalOpen(true);
-//         return;
-//     }
-
-//     // Convert values to numbers where necessary
-//     const flow_end: number = Number(calculateFlowEnd()) || 0;
-//     const calculatedFBR: number = Number(calculateFBR()) || 0;
-
-//     // Prepare form data
-//     const fromDataId = Date.now().toString();
-//     const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
-//     const lkf_id = await getLatestLkfId();
-
-//     const dataPost: DataFormTrx = {
-//         from_data_id: fromDataId,
-//         no_unit: selectedUnit!,
-//         model_unit: model!,
-//         owner: owner!,
-//         date_trx: new Date().toISOString(),
-//         hm_last: Number(hmLast) || 0,
-//         hm_km: Number(hmkmTRX) || 0,
-//         qty_last: Number(quantity) || 0,
-//         qty: Number(quantity) || 0,
-//         flow_start: Number(flowMeterAwal) || 0,
-//         flow_end: flow_end,
-//         dip_start: Number(dipStart) || 0,
-//         dip_end: Number(dipEnd) || 0,
-//         sonding_start: Number(sondingStart) || 0,
-//         sonding_end: Number(sondingEnd) || 0,
-//         name_operator: fullName!,
-//         start: startTime!,
-//         end: endTime!,
-//         fbr: calculatedFBR,
-//         lkf_id: lkf_id ?? "",
-//         signature: signatureBase64 ?? "",
-//         type: selectedType?.name ?? "",
-//         foto: photoPreview ?? "",
-//         fuelman_id: fuelman_id!,
-//         status: status ?? 0,
-//         jde_operator: "",
-//         reference: Number(Refrence) || 0,
-//         liters: 0,
-//         cm: 0,
-//         date: ""
-//     };
-
-//     try {
-//         // Handle saving and posting based on status
-//         if (status === 0 ) {
-//             console.log("Saving data as draft (offline)...");
-//             await insertNewData(dataPost);
-//             setModalMessage("Data saved as draft");
-//         } else if (status === 1 && isOnline) {
-//             console.log("Posting data to backend...");
-//             const response = await postTransaksi(dataPost);
-//             await insertNewData(dataPost);
-//             if (response.ok && (response.status === 200 || response.status === 201)) {
-//                 setModalMessage("Transaction posted successfully and saved locally");
-//             } else {
-//                 setModalMessage("Failed to post transaction. Please try again.");
-//                 setErrorModalOpen(true);
-//             }
-//         }
-
-//         // Navigate to the dashboard
-//         setSuccessModalOpen(true);
-//         route.push("/dashboard");
-
-//     } catch (error) {
-//         console.error("Error occurred while posting data:", error);
-//         setModalMessage("Error occurred while posting data: " + error);
-//         setErrorModalOpen(true);
-//     }
-
-    
-// };
-
-
 // Ensure quantity is initialized and handle potential undefined
 const handlePost = async (e: React.FormEvent) => {
   e.preventDefault();
@@ -501,10 +362,11 @@ const handlePost = async (e: React.FormEvent) => {
       console.log("Saving data as draft (offline)...");
       await insertNewData(dataPost);
       setModalMessage("Data saved as draft");
+
     } else if (status === 1 && isOnline) {
       console.log("Posting data to backend...");
       const response = await postTransaksi(dataPost);
-      await insertNewData(dataPost);
+      // await insertNewData(dataPost);
       if (response.ok && (response.status === 200 || response.status === 201)) {
         // Update local storage quota
         if (quantity) { 
@@ -547,7 +409,6 @@ const updateLocalStorageQuota = (unitNo: string, issuedQuantity: number) => {
     localStorage.setItem("unitQouta", JSON.stringify(updatedData)); 
   }
 };
-
 
 useEffect(() => {
   const unitQuota = localStorage.getItem("unitQouta");
@@ -592,15 +453,17 @@ useEffect(() => {
       hmLast !== undefined &&
       qtyLast !== undefined
     ) {
-      const difference =    hmLast - hmkmTRX;
+      const difference = hmkmTRX - hmLast;
       if (difference !== 0) {
-        return qtyLast / difference;
+        const result = qtyLast / difference;
+        return parseFloat(result.toFixed(1)); // Return the result with one decimal place
       } else {
         return "N/A";
       }
     }
     return "";
   };
+  
   const calculateFlowEnd = (): string | number => {
     if (flowMeterAwal !== undefined && quantity !== undefined) {
       const totaFlowEnd = flowMeterAwal + quantity;
@@ -612,35 +475,77 @@ useEffect(() => {
     }
     return ""; // Handle cases where any value is undefined
   };
-  useEffect(() => {
-    const fetchUnitOptions = () => {
-      console.log("Fetching unit options from localStorage...");
+  
+  const fetchUnitOptions = async () => {
+    const storedUnitOptions = await getDataFromStorage("allUnit");
 
-      const storedUnitOptions = localStorage.getItem("allUnit");
-      console.log("Stored unit options:", storedUnitOptions);
+    console.log("Stored unit options:", storedUnitOptions);
 
-      if (storedUnitOptions) {
-        try {
-          const parsedUnitOptions = JSON.parse(storedUnitOptions);
-          console.log("Parsed unit options:", parsedUnitOptions);
-          setUnitOptions(parsedUnitOptions);
-        } catch (error) {
-          console.error(
-            "Failed to parse unit options from localStorage:",
-            error
-          );
+    if (storedUnitOptions) {
+        // Check if stored data is already an object
+        if (typeof storedUnitOptions === "string") {
+            try {
+                const parsedUnitOptions = JSON.parse(storedUnitOptions);
+                console.log("Parsed unit options:", parsedUnitOptions);
+                setUnitOptions(parsedUnitOptions);
+            } catch (error) {
+                console.error("Failed to parse unit options from localStorage:", error);
+            }
+        } else {
+            // If it's already an object, just set it directly
+            console.log("Unit options are already an object:", storedUnitOptions);
+            setUnitOptions(storedUnitOptions);
         }
-      } else {
+    } else {
         console.log("No unit options found in localStorage.");
-      }
-    };
+    }
+};
 
-    fetchUnitOptions();
-  }, []);
 
   useEffect(() => {
     console.log("unitOptions updated:", unitOptions);
   }, [unitOptions]);
+
+
+  useEffect(() => {
+    const loadUnitData = async () => {
+      const cachedUnitData = await getDataFromStorage('allUnit');
+      if (cachedUnitData) {
+        setUnitOptions(cachedUnitData);
+      } else {
+        const units = await fetchUnitData();
+        setUnitOptions(units);
+        
+      }
+    };
+
+    loadUnitData();
+  }, []);
+
+
+  useEffect(() => {
+    const loadOperatorData = async () => {
+        const cachedData = await getDataFromStorage('allOperator');
+        if (cachedData) {
+            setOperatorOptions(cachedData);
+        } else {
+            const resultData= await fetchOperatorData();
+            setOperatorOptions(resultData); 
+        }
+    };
+
+    loadOperatorData();
+}, []);
+
+useEffect(() => {
+  console.log("operatorOptions updated:", operatorOptions);
+}, [operatorOptions]);
+
+
+
+
+
+
 
   useEffect(() => {
     // Track if the component is still mounted
@@ -656,7 +561,7 @@ useEffect(() => {
           ]);
   
           if (isMounted) {
-            console.log("FBR Data:", fbrData);
+         
             console.log("HM Data:", lastHm); // Change this to lastHm
   
             if (fbrData.length > 0) {
@@ -665,7 +570,7 @@ useEffect(() => {
               console.log( "data last",latestEntry)
               setFbr(latestEntry.fbr);
 
-              sethmkmTrx(latestEntry.hm_last);
+              sethmkmTrx(latestEntry.hm_km);
               setQtyLast(latestEntry.qty_last);
             } else {
               // If no data is found, clear the state
@@ -709,7 +614,7 @@ useEffect(() => {
 
   const handleHmLastChange = (e: CustomEvent) => {
     const newValue = Number(e.detail.value);
-    if ( hmLast!== undefined && newValue > hmLast) {
+    if ( hmLast!== undefined && newValue < hmLast) {
       setShowError(true);
     } else {
       setShowError(false);
@@ -718,7 +623,7 @@ useEffect(() => {
   };
 
   const isSaveButtonDisabled = () => {
-    return hmkmTRX !== undefined && hmLast !== undefined && hmLast < hmkmTRX;
+    return hmkmTRX !== undefined && hmLast !== undefined && hmLast > hmkmTRX;
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
@@ -752,33 +657,46 @@ useEffect(() => {
       unitValue.startsWith("LV") ||
       (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
     );
-    fetchFbrData(); 
+   
   };
   
 
   useEffect(() => {
+    console.log("unitOptions updated:", unitOptions);
+  }, [unitOptions]);
+
+  useEffect(() => {
+    // Track if the component is still mounted
     let isMounted = true;
+
     const fetchFbrData = async () => {
       if (selectedUnit) {
         try {
+          // Fetch FBR and HM data concurrently
           const [fbrData, lastHm] = await Promise.all([
             getFbrByUnit(selectedUnit),
             getLatestHmLast(selectedUnit),
           ]);
-  
+
           if (isMounted) {
+            console.log("FBR Data:", fbrData);
+            console.log("HM Data:", hmkmTRX);
+
             if (fbrData.length > 0) {
+              // Assuming fbrData is sorted and the first entry is the latest
               const latestEntry = fbrData[0];
               setFbr(latestEntry.fbr);
               sethmkmTrx(latestEntry.hm_last);
               setQtyLast(latestEntry.qty_last);
             } else {
+              // If no data is found, clear the state
               setFbr(undefined);
               sethmkmTrx(undefined);
               setQtyLast(undefined);
             }
-  
-            if (lastHm !== undefined) {
+
+            // Update hmLast with the latest value from getLatestHmLast
+            if (lastHm) {
               setHmLast(lastHm);
             }
           }
@@ -792,60 +710,165 @@ useEffect(() => {
         }
       }
     };
-  
+
     fetchFbrData();
-  
+
     return () => {
       isMounted = false;
     };
   }, [selectedUnit]);
-  
-  useEffect(() => {
-    const unitQuotaData = localStorage.getItem("unitQuota");
-    if (unitQuotaData) {
-        const parsedData = JSON.parse(unitQuotaData);
-        const currentUnitQuota = parsedData.find((unit: { unitNo: string | undefined; }) => unit.unitNo === selectedUnit);
-        
-        if (currentUnitQuota) {
-            const totalQuota = currentUnitQuota.quota;
-            const usedQuota = currentUnitQuota.used || 0; 
-            
-            setUnitQouta(totalQuota);
-            const remaining = totalQuota - usedQuota; 
-            setRemainingQuota(remaining);
-            console.log(`Remaining Quota for ${selectedUnit}: ${remaining} Liter`); 
-            setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${totalQuota} Liter`);
 
+
+
+
+  useEffect(() => {
+    const loadUnitDataQuota = async () => {
+      const today = new Date();
+      const formattedDate = today.toISOString().split('T')[0]; // Mengambil tanggal hari ini dalam format YYYY-MM-DD
+  
+      try {
+        // Fetch data dari database untuk tanggal hari ini
+        const quotaData = await fetchQuotaData(formattedDate); 
+        console.log('Fetched quota data:', quotaData);
+  
+        if (quotaData && Array.isArray(quotaData)) {
+          // Mencari kuota untuk unit yang dipilih
+          let currentUnitQuota = quotaData.find(unit => unit.unitNo === selectedUnit);
+  
+          // Jika tidak ada kuota untuk unit yang dipilih, coba ambil kuota dari tanggal sebelumnya
+          if (!currentUnitQuota) {
+            const yesterday = new Date(today);
+            yesterday.setDate(today.getDate() - 1); // Set tanggal ke hari sebelumnya
+            const formattedYesterday = yesterday.toISOString().split('T')[0];
+            
+            const previousQuotaData = await fetchQuotaData(formattedYesterday);
+            console.log('Fetched previous quota data:', previousQuotaData);
+            
+            currentUnitQuota = previousQuotaData.find(unit => unit.unitNo === selectedUnit);
+          }
+  
+          if (currentUnitQuota) {
+            const totalQuota = currentUnitQuota.quota;
+            const usedQuota = currentUnitQuota.used || 0;
+  
+            setUnitQuota(totalQuota);
+            const remaining = totalQuota - usedQuota;
+            setRemainingQuota(remaining);
+            console.log(`Remaining Quota for ${selectedUnit}: ${remaining} Liter`);
+            setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${totalQuota} Liter`);
+  
             // Check if issued amount exceeds remaining quota
-            const issuedAmount = currentUnitQuota.issued || 0; // Replace with actual issued amount
+            const issuedAmount = currentUnitQuota.issued || 0; 
             if (issuedAmount > remaining) {
-                setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
+              setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
             }
-        } else {
-            setUnitQouta(0);
+          } else {
+            setUnitQuota(0);
             setRemainingQuota(0);
             setQuotaMessage("");
+            console.log(`No quota found for unit: ${selectedUnit}`);
+          }
+        } else {
+          console.error('No quota data found for the specified date');
         }
-    }
-}, [selectedUnit]);
-
-
+      } catch (error) {
+        console.error('Error fetching quota data:', error);
+      }
+    };
+  
+    loadUnitDataQuota();
+  }, [selectedUnit]);
+  
   
   function setBase64(value: SetStateAction<string | undefined>): void {
     throw new Error("Function not implemented.");
   }
 
 
-  const handleQuantityChange = (e: InputCustomEvent<InputChangeEventDetail>) => {
+  const handleQuantityChange = (e: any) => {
     const inputQuantity = Number(e.detail.value);
 
-    if (inputQuantity > remainingQuota) {
-        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta.");
-    } else {
+    if (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) {
+      if (inputQuantity > remainingQuota) {
+        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+        setIsError(true);
+      } else {
         setQuantityError("");
+        setIsError(false);
+      }
     }
 
     setQuantity(inputQuantity);
+  };
+
+useEffect(() => {
+  const fetchJdeOptions = async () => {
+    const storedJdeOptions = await getDataFromStorage("allOperator");
+    console.log("Data ADA?", storedJdeOptions); // Check the raw data
+
+    if (storedJdeOptions) {
+      try {
+        if (typeof storedJdeOptions === 'string') {
+          const parsedJdeOptions = JSON.parse(storedJdeOptions);
+          console.log("Parsed JDE Options:", parsedJdeOptions);
+          setJdeOptions(parsedJdeOptions);
+        } else {
+          console.error("Stored data is not a valid JSON string:", storedJdeOptions);
+        }
+      } catch (error) {
+        console.error("Failed to parse JDE options from local storage", error);
+      }
+    } else {
+      console.log("No JDE options found in local storage");
+    }
+  };
+
+  fetchJdeOptions();
+}, []);
+
+
+// hilangkkan parsenya jika ngambil dari localsorage
+useEffect(() => {
+  const fetchJdeOptions = async () => {
+    const storedJdeOptions = await getDataFromStorage("allOperator");
+    console.log("Stored JDE Options:", storedJdeOptions);
+
+    if (storedJdeOptions) {
+      // If you are certain the data is in the correct format
+      if (Array.isArray(storedJdeOptions)) {
+        setJdeOptions(storedJdeOptions);
+      } else {
+        console.log("Stored JDE Options is not a valid array.");
+      }
+    } else {
+      console.log("No JDE options found in storage.");
+    }
+  };
+
+  fetchJdeOptions();
+}, []);
+
+
+const handleChangeEmployeeId = (event: CustomEvent) => {
+  const selectedValue = event.detail.value.trim();
+
+  if (jdeOptions.length === 0) {
+    console.warn("JDE Options are empty. Cannot find matching option.");
+    return; // Exit early if no options are available
+  }
+
+  const selectedJdeOption = jdeOptions.find((jde) => 
+    String(jde.JDE).trim() === String(selectedValue).trim()
+  );
+
+  if (selectedJdeOption) {
+    setFullName(selectedJdeOption.fullname);
+    setFuelmanId(selectedValue);
+  } else {
+    console.log("No matching JDE option found.");
+    setFullName("");
+    setFuelmanId("");
+  }
 };
 
   return (
@@ -862,28 +885,22 @@ useEffect(() => {
         <div style={{ marginTop: "20px", padding: "15px" }}>
         {(selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
             <IonRow>
-                {/* <IonCol>
-                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
-                        <IonLabel style={{ display: "flex" }}>
-                            <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                            <IonTitle>{quotaMessage}</IonTitle>
-                        </IonLabel>
-                    </IonItemDivider>
-                </IonCol> */}
+             
             </IonRow>
         )}
-        {remainingQuota !== undefined && (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
-        <IonRow>
+          {remainingQuota !== undefined && (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
+          <IonRow>
             <IonCol>
-                <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
-                    <IonLabel style={{ display: "flex" }}>
-                        <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                        <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
-                    </IonLabel>
-                </IonItemDivider>
+              <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                <IonLabel style={{ display: "flex", color: remainingQuota === 0 ? "red" : "inherit" }}>
+                  <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
+                  <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
+                </IonLabel>
+              </IonItemDivider>
             </IonCol>
-        </IonRow>
-    )}
+          </IonRow>
+        )}
+
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>
@@ -905,6 +922,7 @@ useEffect(() => {
                       {unit.unit_no}
                     </IonSelectOption>
                   ))}
+          
                 </IonSelect>
                
                 </IonCol>
@@ -960,7 +978,7 @@ useEffect(() => {
                 </IonRadioGroup></div>
         </IonCol>
       </IonRow>
-    </IonGrid>
+      </IonGrid>
               
               <IonRow>
                 <IonCol>
@@ -973,7 +991,7 @@ useEffect(() => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    value={hmkmTRX !== null ? hmkmTRX: ''}
+                    value={hmLast}
                     
                     // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
@@ -988,10 +1006,10 @@ useEffect(() => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    
-                    // value={hmLast !== null ? hmLast: ''}
+                   
+                
                     // onIonChange={(e) => setHmLast(Number(e.detail.value))}
-                    onIonChange={handleHmLastChange}
+                    onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
                   />
 
@@ -1013,26 +1031,26 @@ useEffect(() => {
             </div> */}
 
               <IonRow>
-                <IonCol>
-                  <IonLabel>
-                    Qty Issued / Receive / Transfer{" "}
-                    <span style={{ color: "red" }}>*</span>
-                  </IonLabel>
-                  <IonInput
-                      className="custom-input"
-                      ref={input2Ref}
-                      type="number"
-                      placeholder="Qty Issued / Receive / Transfer"
-                      onIonChange={handleQuantityChange} 
-                      value={quantity} 
-                      disabled={isFormDisabled}
-                  />
-                  {/* {quantityError && (
-                    <div style={{ color: "red", marginTop: "5px" }}>
-                      {quantityError}
-                    </div>
-                    )} */}
-                </IonCol>
+              <IonCol>
+                <IonLabel>
+                  Qty Issued / Receive / Transfer{" "}
+                  <span style={{ color: "red" }}>*</span>
+                </IonLabel>
+                <IonInput
+                  className="custom-input"
+                  ref={input2Ref}
+                  type="number"
+                  placeholder="Qty Issued / Receive / Transfer"
+                  onIonChange={handleQuantityChange} 
+                  value={quantity} 
+                  disabled={isFormDisabled}
+                />
+                {quantityError && (
+                  <div style={{ color: "red", marginTop: "5px" }}>
+                    {quantityError}
+                  </div>
+                )}
+              </IonCol>
                 <IonCol>
                   <IonLabel>
                     FBR Historis <span style={{ color: "red" }}>*</span>
@@ -1090,20 +1108,21 @@ useEffect(() => {
                     Employee ID <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonSelect
-                    className="select-custom"
-                    style={{ marginTop: "10px", background: "white" }}
-                    fill="solid"
-                    labelPlacement="floating"
-                    onIonChange={handleChangeEmployeeId}
-                    disabled={isFormDisabled}
-                    value={fuelman_id}
-                  >
-                    {jdeOptions.map((jde) => (
+                      className="select-custom"
+                      style={{ marginTop: "10px", background: "white" }}
+                      fill="solid"
+                      labelPlacement="floating"
+                      onIonChange={handleChangeEmployeeId}
+                      disabled={isFormDisabled}
+                      value={fuelman_id}
+                    >
+                       
+                       {operatorOptions.map((jde) => (
                       <IonSelectOption key={jde.JDE} value={jde.JDE}>
                         {jde.JDE}
                       </IonSelectOption>
                     ))}
-                  </IonSelect>
+                    </IonSelect>
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1113,7 +1132,7 @@ useEffect(() => {
                     style={{ background: "#E8E8E8" }}
                     className="custom-input"
                     type="text"
-                    name="jde"
+               
                     value={fullName}
                     placeholder="Input Driver Name"
                     readonly
@@ -1218,15 +1237,14 @@ useEffect(() => {
                   Tutup Form
                 </IonButton>
                 <IonButton
-                  onClick={(e) => handlePost(e)}
-                  className={`check-button ${
-                    isOnline ? "button-save-data" : "button-save-draft"
-                  }`}
-                  disabled={isSaveButtonDisabled()}
-                >
-                  <IonIcon slot="start" icon={saveOutline} />
-                  {isOnline ? "Simpan Data" : "Simpan Data Ke Draft"}
-                </IonButton>
+                onClick={(e) => handlePost(e)}
+                className={`check-button ${isOnline ? "button-save-data" : "button-save-draft"}`}
+                disabled={isSaveButtonDisabled() || isError} // Disable if there's an error
+              >
+                <IonIcon slot="start" icon={saveOutline} />
+                {isOnline ? "Simpan Data" : "Simpan Data Ke Draft"}
+              </IonButton>
+
               </div>
             </IonGrid>
           </div>
@@ -1247,7 +1265,4 @@ useEffect(() => {
 export default FormTRX;
 
 
-function fetchFbrData() {
-  throw new Error("Function not implemented.");
-}
 

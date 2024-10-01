@@ -110,10 +110,13 @@ const ReviewData: React.FC = () => {
             localStorage.removeItem('lastClosingSonding');
             localStorage.removeItem('lastDipLiter');
             localStorage.removeItem('lastFlowMeter');
+            localStorage.removeItem('shiftCloseData');
+
+           
     
             // Delete dataTransaksi from IndexedDB
             // await deleteData();
-            // await deleteAllDataTransaksi();
+            await deleteAllDataTransaksi();
             // Redirect to the home page or login page
             window.location.href = '/';
         } catch (error) {

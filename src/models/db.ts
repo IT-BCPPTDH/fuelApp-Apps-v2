@@ -2,7 +2,6 @@ import Dexie, { Table } from 'dexie';
 
 // Define the TypeScript interfaces for your data
 interface DataLkf {
-
   name: string;
   issued: any;
   receipt: any;
@@ -26,7 +25,7 @@ interface DataLkf {
   note:string;
   signature:string;
   close_data:number,
-  variance:number,
+  variant:number,
 }
 
 
@@ -54,7 +53,7 @@ interface DataLkfUpdate {
   note:string;
   signature:string;
   close_data:number,
-  variance:number,
+  variant:number,
 }
 
 interface DataFormTrx {
