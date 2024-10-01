@@ -10,14 +10,14 @@ import {
   IonButton,
   IonSearchbar,
   IonIcon,
-  IonAlert // Import IonAlert
+  IonToast // Replace IonAlert with IonToast
 } from "@ionic/react";
 import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
 import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
 import { postBulkData } from '../hooks/bulkInsert';
 import { checkmarkCircleOutline } from 'ionicons/icons';
 import { updateDataInTrx } from '../utils/update';
-// Define the type for table data items
+
 interface TableDataItem {
   from_data_id: number;
   unit_no: string;
@@ -30,7 +30,7 @@ interface TableDataItem {
   fm_akhir: number;
   jde_operator: string;
   name_operator: string;
-  status: number; // Ensure this is a number
+  status: number;
 }
 
 const TableData: React.FC = () => {
@@ -41,8 +41,8 @@ const TableData: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<TableDataItem[]>([]);
-  const [showAlert, setShowAlert] = useState(false); // State to control the alert visibility
-  const [alertMessage, setAlertMessage] = useState(''); // State for alert message
+  const [showToast, setShowToast] = useState(false); // State to control the toast visibility
+  const [toastMessage, setToastMessage] = useState(''); // State for toast message
 
   useEffect(() => {
     const fetchLkfId = async () => {
@@ -50,7 +50,7 @@ const TableData: React.FC = () => {
         const latestLkfId = await getLatestLkfId();
         if (latestLkfId) {
           setNomorLKF(latestLkfId);
-          await fetchData(latestLkfId); // Fetch data with the latest LKF ID
+          await fetchData(latestLkfId);
         } else {
           console.error("No LKF ID returned");
         }
@@ -66,9 +66,7 @@ const TableData: React.FC = () => {
     try {
       const rawData = await getAllDataTrx(lkfId);
       const mappedData: TableDataItem[] = rawData.map((item: any) => {
-        // Assuming item.status is either 1 (Sent) or 0 (Pending)
         const statusValue = item.status === 1 ? 1 : 0; 
-  
         return {
           from_data_id: item.from_data_id ?? 0,
           unit_no: item.no_unit || '',
@@ -81,10 +79,9 @@ const TableData: React.FC = () => {
           fm_akhir: item.flow_end ?? 0,
           jde_operator: item.fuelman_id || '',
           name_operator: item.fullname,
-          status: statusValue, // Assign the numeric status
+          status: statusValue,
         };
       });
-  
       setData(mappedData);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -93,22 +90,26 @@ const TableData: React.FC = () => {
       setLoading(false);
     }
   };
-  
-  
+
   const handleBulkInsert = async () => {
+    if (!navigator.onLine) {
+      console.log("Currently offline. Data will be sent when network is available.");
+      return;
+    }
+
     if (!data || data.length === 0) {
       setError("No data available for insertion");
       return;
     }
-  
+
     const loginData = localStorage.getItem('loginData');
     let createdBy = '';
-  
+
     if (loginData) {
       const parsedData = JSON.parse(loginData);
       createdBy = parsedData.jde || '';
     }
-  
+
     const bulkData = data.map(item => ({
       from_data_id: item.from_data_id,
       no_unit: item.unit_no,
@@ -132,45 +133,47 @@ const TableData: React.FC = () => {
       start: new Date().toISOString(),
       end: new Date().toISOString(),
     }));
-  
+
     try {
-      // Perform bulk insert
       const responses = await postBulkData(bulkData);
       console.log("Bulk insert responses:", responses);
-  
-      // Create an array of updated data based on responses
-      const updatedData = data.map((item, index) => ({
+
+      const updatedData = data.map((item) => ({
         ...item,
-        status: 1, // Set the status to 1 (Sent) for all successfully inserted items
+        status: 1,
       }));
-  
-      // Update IndexedDB entries
+
       await Promise.all(updatedData.map(async (item) => {
-        await updateDataInTrx(item.from_data_id, { status: item.status }); // Update status in IndexedDB
+        await updateDataInTrx(item.from_data_id, { status: item.status });
       }));
-  
+
       setData(updatedData);
-  
-      // Count of successfully inserted items
+
       const totalInserted = bulkData.length;
-  
-      // Create a success message
       const successMessage = `Successfully saved ${totalInserted} items to the server.`;
-  
-      setAlertMessage(successMessage); // Show success message
-      setShowAlert(true); // Show the alert
+      setToastMessage(successMessage);
+      setShowToast(true);
       setError(null);
     } catch (error) {
       console.error("Error during bulk insert:", error);
       setError("Failed to save data to server");
-      setAlertMessage("Failed to save data to server.");
-      setShowAlert(true); // Show the alert on error
+      setToastMessage("Failed to save data to server.");
+      setShowToast(true);
     }
   };
-  
-  
-  
-  
+
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log("Network is back online, syncing data...");
+      handleBulkInsert();
+    };
+
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+    };
+  }, [data, nomorLKF]);
 
   const filteredData = (data || []).filter(item =>
     item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -195,7 +198,7 @@ const TableData: React.FC = () => {
 
   const handleSearchChange = (e: CustomEvent) => {
     setSearchQuery(e.detail.value);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
   if (loading) {
@@ -205,7 +208,6 @@ const TableData: React.FC = () => {
   if (error) {
     return <div>Error: {error}</div>;
   }
-
 
   const displayStatus = (status: number): string => {
     return status === 1 ? 'Sent' : 'Pending';
@@ -278,13 +280,14 @@ const TableData: React.FC = () => {
       </IonGrid>
 
       {/* IonAlert for showing messages */}
-      <IonAlert
-        isOpen={showAlert}
-        onDidDismiss={() => setShowAlert(false)}
-        header={error ? "Error" : "Success"}
-        message={alertMessage}
-        buttons={["OK"]}
+      <IonToast
+        isOpen={showToast}
+        onDidDismiss={() => setShowToast(false)}
+        message={toastMessage}
+        duration={2000}
+        position="top"
       />
+   
     </div>
   );
 };
