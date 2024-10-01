@@ -28,8 +28,8 @@ import { DataLkf } from "../../models/db";
 // import { getStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
 import { getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
-import { getStationData } from "../../hooks/getDataTrxStation";
-import { saveDataToStorage, getDataFromStorage } from "../../services/dataService";
+import { getStationData} from "../../hooks/getDataTrxStation";
+import { saveDataToStorage, getDataFromStorage, fetchShiftData } from "../../services/dataService";
 
 interface Shift {
   id: number;
@@ -60,17 +60,16 @@ const OpeningForm: React.FC = () => {
   const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
   const [date, setDate] = useState<string>(new Date().toISOString());
 
-  const [stationOptions, setStationOptions] = useState<string[]>([]);
-  //const [capacity, setCapacity] = useState<string | undefined>(undefined);
-  //const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
-  // const [allUsers, setAllUser] = useState<any[]>([]);
-  // const [unitOptions, setUnitOptions] = useState<{ id: string; unit_no: string; brand: string; owner: string }[]>([]);
-  const [latestLkfData, setLatestLkfData] = useState<any | undefined>(undefined);
-  const [closingSonding, setCloseSonding] = useState<number | undefined>(undefined);
 
+  const [stationOptions, setStationOptions] = useState<string[]>([]);
+
+  const [closeShift, setCloseShift] = useState<any[]>([]); // Initialize as an array
+  const [loading, setLoading] = useState<boolean>(true); // State to manage loading status
+  const [error, setError] = useState<string | null>(null); 
   const router = useIonRouter();
   const [presentToast] = useIonToast();
 
+ const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     const determineShift = () => {
@@ -122,24 +121,6 @@ const OpeningForm: React.FC = () => {
   }, []);
 
 
-  useEffect(() => {
-    const fetchLatestLkfData = async () => {
-      const storedData = localStorage.getItem("latestLkfData");
-      if (storedData) {
-        const parsedData = JSON.parse(storedData);
-        setLatestLkfData(parsedData);
-        if (parsedData) {
-          setFlowMeterAwal(parsedData.flow_meter_end);
-          setPrevFlowMeterAwal(parsedData.flow_meter_end); // Initialize previous value
-          setOpeningSonding(parsedData.closing_sonding);
-        }
-      }
-
-
-    };
-
-    fetchLatestLkfData();
-  }, []);
 
 
 
@@ -353,47 +334,7 @@ useEffect(() => {
   
   // // Panggil fungsi untuk mengambil data
   // fetchLatestLkfData();
-  
 
-
-
-  const fetchLastLkfData = async (station: string) => {
-    try {
-        const response = await getStationData(station);
-        console.log("Response Data:", response);
-
-        // Check if the response has data
-        if (response.status === "200" && response.data.length > 0) {
-            const data = response.data[0]; // Get the first item from the data array
-            
-            // Store only the closing_sonding in local storage
-            const closingSonding = data.closing_sonding; 
-            const flowMeterAkhir = data.flow_meter_end; 
-            const closingDipLiter = data.closing_dip; 
-            localStorage.setItem('lastClosingSonding', JSON.stringify(closingSonding));
-            localStorage.setItem('lastFlowMeter', JSON.stringify(flowMeterAkhir));
-            localStorage.setItem('lastDipLiter', JSON.stringify(closingDipLiter));
-            console.log("Closing Sonding stored in local storage:", closingSonding);
-        } else {
-            console.log("No data available or status not 200");
-        }
-    } catch (error) {
-        console.error('Error fetching last LKF data:', error);
-    }
-};
-
-  useEffect(() => {
-    // Fetch the closing_sonding value from local storage
-    const storedClosingSonding = localStorage.getItem('lastClosingSonding');
-    if (storedClosingSonding) {
-      const parsedClosingSonding = JSON.parse(storedClosingSonding);
-     
-      setCloseSonding(parsedClosingSonding);
-    
-    } else {
-      console.log("No closing_sonding data found in local storage");
-    }
-  }, []);
   
   useEffect(() => {
     const userData = async () => {
@@ -442,19 +383,19 @@ useEffect(() => {
   }, []);
     
 
-useEffect(() => {
-  const storedClosingSonding = localStorage.getItem('lastClosingSonding');
-  if (storedClosingSonding) {
-      try {
-          const parsedClosingSonding = JSON.parse(storedClosingSonding);
-          parsedClosingSonding(parsedClosingSonding);
-      } catch (error) {
-          console.error("Error parsing closing_sonding from local storage:", error);
+  useEffect(() => {
+    const loadShiftClose = async () => {
+      const cachedShiftData = await getDataFromStorage('shiftCloseData');
+      console.log("Chace",cachedShiftData)
+      if (cachedShiftData) {
+        setCloseShift(cachedShiftData); 
+      } else {
+       
       }
-  } else {
-      console.log("No closing_sonding data found in local storage");
-  }
-}, []);
+    };
+  
+    loadShiftClose();
+  }, []);
 
 
   
@@ -468,11 +409,72 @@ useEffect(() => {
     }
 }, []); // Runs only once on component mount
 
+
+
 useEffect(() => {
-    if (station) {
-        fetchLastLkfData(station);
+  const loadShiftClose = async () => {
+    const cachedShiftData = await getDataFromStorage('shiftCloseData');
+    console.log("Cached Shift Data:", cachedShiftData);
+    
+    if (cachedShiftData && cachedShiftData.length > 0) {
+      setCloseShift(cachedShiftData);
+
+   
+      const latestShiftData = cachedShiftData[cachedShiftData.length - 1]; 
+      if (latestShiftData.closing_sonding !== undefined) {
+        setOpeningSonding(latestShiftData.closing_sonding); 
+        setFlowMeterAwal(latestShiftData.flow_meter_end); 
+      }
+      
+    } else {
+      console.error("No cached shift data found");
     }
-}, [station]);
+  };
+
+  loadShiftClose(); // Call the function here
+}, []);
+
+
+
+useEffect(() => {
+  const loadShiftClose = async () => {
+    const cachedShiftData = await getDataFromStorage('shiftCloseData');
+    
+    if (cachedShiftData) {
+      setCloseShift(cachedShiftData);
+    } else {
+      // Get login data from Capacitor Storage
+      const userData = await getDataFromStorage('loginData');
+      if (userData) {
+        const stationData = userData.station; 
+
+        if (stationData) {
+          const shiftClose = await fetchShiftData(stationData);
+          console.log("Fetched Shift Close Data:", shiftClose);
+
+          // Filter to only include specific fields
+          const filteredShiftClose = shiftClose.map(data => ({
+            closing_sonding: data.closing_sonding,
+            closing_dip: data.closing_dip,
+            flow_meter_en: data.flow_meter_end
+          })).filter(data => data.closing_sonding !== undefined && data.closing_dip !== undefined && data.flow_meter_en !== undefined);
+
+          // Log the filtered data for debugging
+          console.log("Filtered Shift Close Data:", filteredShiftClose);
+
+          setCloseShift(filteredShiftClose);
+        } else {
+          console.error("Station data not found in loginData");
+        }
+      } else {
+        console.error("No loginData found in storage");
+      }
+    }
+  };
+
+  loadShiftClose(); // Call the function here
+}, []); // Empty dependency array to run once on component mount
+
 
 
 
@@ -484,7 +486,6 @@ useEffect(() => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-   
         <div className="wrapper-content">
           <div className="padding-content">
             <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>
@@ -631,7 +632,5 @@ useEffect(() => {
 };
 
 export default OpeningForm;
-function setClosingDip(dataFromClosing: any) {
-  throw new Error("Function not implemented.");
-}
+
 

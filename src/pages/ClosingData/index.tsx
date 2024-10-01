@@ -54,6 +54,7 @@ const FormClosing: React.FC = () => {
     const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
     const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
     const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
+    
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
@@ -106,9 +107,9 @@ const FormClosing: React.FC = () => {
                 );
 
                 if (matchingData) {
-                    setClosingDip(matchingData.liters);
+                    setOpeningDip(matchingData.liters);
                 } else {
-                    setClosingDip(undefined);
+                    setOpeningSonding(undefined);
                 }
             }
         };
@@ -217,22 +218,35 @@ const FormClosing: React.FC = () => {
     
         loadSondingData();
     }, []);
+    
 
     useEffect(() => {
-        if (closingSonding !== undefined && sondingMasterData.length > 0) {
-            console.log('Closing Sonding:', closingSonding);
-            const matchingData = sondingMasterData.find(item => item.cm === closingSonding);
-            if (matchingData) {
-                console.log('Matching Data Found:', matchingData);
-                setClosingDip(matchingData.liters);
-            } else {
-                console.log('No Matching Data Found');
-                setClosingDip(undefined);
+        const fetchLoginData = async () => {
+            const storedLoginData = await getDataFromStorage('loginData'); 
+            const station = storedLoginData?.station; 
+    
+            if (closingSonding !== undefined && sondingMasterData.length > 0) {
+                console.log('Closing Sonding:', closingSonding);
+                
+                // Filter the sondingMasterData based on the station
+                const filteredData = sondingMasterData.filter(item => item.station === station);
+                
+                // Find the matching data in the filtered dataset
+                const matchingData = filteredData.find(item => item.cm === closingSonding);
+                
+                if (matchingData) {
+                    console.log('Matching Data Found:', matchingData);
+                    setClosingDip(matchingData.liters);
+                } else {
+                    console.log('No Matching Data Found');
+                    setClosingDip(undefined);
+                }
             }
-        }
+        };
+    
+        fetchLoginData(); // Call the function to fetch login data
     }, [closingSonding, sondingMasterData]);
-
-
+    
 
     return (
         <IonPage>

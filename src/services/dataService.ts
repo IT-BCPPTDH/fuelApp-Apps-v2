@@ -144,21 +144,30 @@ export const fetchOperatorData = async (): Promise<any[]> => {
   }
 };
 
-export const fetchShiftData = async (station:string): Promise<any[]> => {
+export const fetchShiftData = async (station: string): Promise<any[]> => {
   try {
     const response = await getStationData(station); 
-    if (response.status === '200' && Array.isArray(response.data)) {
+    // Log the raw response for debugging
+    console.log("Raw Response:", response);
+
+    if (response && response.status === '200' && Array.isArray(response.data)) {
       await saveDataToStorage('shiftCloseData', response.data);
+      
+      // Log success with clear context
+      console.log("Shift data fetched successfully:", response.data);
+      
       return response.data;
     } else {
-      console.error('Unexpected data format');
+      console.error('Unexpected data format or status. Response:', response);
       return [];
     }
   } catch (error) {
-    console.error('Failed to fetch Operator data', error);
+    // Log the error with details
+    console.error('Failed to fetch Shift Data. Error:', error);
     return [];
   }
 };
+
 
 
 

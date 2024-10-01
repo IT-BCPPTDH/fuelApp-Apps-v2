@@ -122,3 +122,10 @@
   transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1), -webkit-transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
   background: #73a33f;
 }
+
+
+.custom-popover {
+  width: auto; /* This will allow it to fit the content */
+  max-width: 300px; /* Adjust max-width as needed */
+  min-width: 100%; /* Ensure it at least takes the full width */
+}
