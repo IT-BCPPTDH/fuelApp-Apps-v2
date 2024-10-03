@@ -239,10 +239,6 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 //   }
 // };
 
-
-
-
-
 export const getLatestHmLast = async (selectedUnit: string): Promise<number | undefined> => {
   try {
     // Fetch the latest entry from the database
