@@ -264,7 +264,7 @@ useEffect(() => {
             </IonRow>
           </IonGrid>
           <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <h4 >Fuelman : {jde}</h4>
+          <h4 >Fuelman : {fullname}</h4>
           
           <h4 >{latestDate}</h4>
           </IonRow>

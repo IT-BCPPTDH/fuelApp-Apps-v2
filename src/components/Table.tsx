@@ -176,11 +176,7 @@ const TableData: React.FC = () => {
   }, [data, nomorLKF]);
 
   const filteredData = (data || []).filter(item =>
-    item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.model_unit.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.fbr_historis.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.jenis_trx.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.jde_operator.toLowerCase().includes(searchQuery.toLowerCase())
+    item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) 
   );
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
@@ -224,7 +220,7 @@ const TableData: React.FC = () => {
         </IonCol>
         <IonCol>
           <IonSearchbar 
-            placeholder="Search..." 
+            placeholder="Search Unit" 
             value={searchQuery} 
             onIonInput={handleSearchChange} 
           />

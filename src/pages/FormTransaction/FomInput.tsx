@@ -660,7 +660,6 @@ useEffect(() => {
    
   };
   
-
   useEffect(() => {
     console.log("unitOptions updated:", unitOptions);
   }, [unitOptions]);
@@ -679,8 +678,7 @@ useEffect(() => {
           ]);
 
           if (isMounted) {
-            console.log("FBR Data:", fbrData);
-            console.log("HM Data:", hmkmTRX);
+          
 
             if (fbrData.length > 0) {
               // Assuming fbrData is sorted and the first entry is the latest
@@ -717,10 +715,7 @@ useEffect(() => {
       isMounted = false;
     };
   }, [selectedUnit]);
-
-
-
-
+  
   useEffect(() => {
     const loadUnitDataQuota = async () => {
       const today = new Date();
@@ -876,7 +871,7 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
       <IonHeader translucent={true} className="ion-no-border">
         <IonToolbar className="custom-header">
           <IonTitle>
-            Form Tambah Issued / Transfer / Receipt & Receipt KPC
+            Form Tambah Transaksi
           </IonTitle>
         </IonToolbar>
       </IonHeader>
@@ -922,9 +917,7 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
                       {unit.unit_no}
                     </IonSelectOption>
                   ))}
-          
                 </IonSelect>
-               
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -959,24 +952,24 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
                     disabled={isFormDisabled}
                   /></div>
         </IonCol>
-        <IonCol size="8">
-          <div><IonLabel>
-                  {" "}
-                  Type Transaksi Issued <span style={{ color: "red" }}>*</span>
-                </IonLabel>
-                <IonRadioGroup
-                  className="radio-display"
-                  value={selectedType}
-                  onIonChange={handleRadioChange}
-                  compareWith={compareWith}
-                >
-                  {typeTrx.map((type) => (
-                    <IonItem key={type.id} className="item-no-border">
-                      <IonRadio value={type}>{type.name}</IonRadio>
-                    </IonItem>
-                  ))}
-                </IonRadioGroup></div>
-        </IonCol>
+            <IonCol size="8">
+              <div><IonLabel>
+                      {" "}
+                      Type Transaksi Issued <span style={{ color: "red" }}>*</span>
+                    </IonLabel>
+                    <IonRadioGroup
+                      className="radio-display"
+                      value={selectedType}
+                      onIonChange={handleRadioChange}
+                      compareWith={compareWith}
+                    >
+                      {typeTrx.map((type) => (
+                        <IonItem key={type.id} className="item-no-border">
+                          <IonRadio value={type}>{type.name}</IonRadio>
+                        </IonItem>
+                      ))}
+                    </IonRadioGroup></div>
+            </IonCol>
       </IonRow>
       </IonGrid>
               
@@ -1015,7 +1008,7 @@ const handleChangeEmployeeId = (event: CustomEvent) => {
 
                   {showError && (
                     <div style={{ color: "red" }}>
-                      HM/KM Unit Tidak Bole Kecil Dari HM/KM Terakhir Transaksi
+                      HM/KM Unit Tidak Boleh Kecil Dari HM/KM Terakhir Transaksi
                     </div>
                   )}
                 </IonCol>
