@@ -8,6 +8,8 @@ import { Station } from '../models/interfaces';
 import { getAllSonding } from '../hooks/getAllSonding';
 import { getOperator } from '../hooks/getAllOperator';
 import { getStationData } from '../hooks/getDataTrxStation';
+import { getPrevUnitTrx } from '../hooks/getDataPrev';
+import { postAuthLogin } from '../hooks/useAuth';
 
 
 
@@ -169,5 +171,45 @@ export const fetchShiftData = async (station: string): Promise<any[]> => {
 };
 
 
+export const fetchUnitLastTrx = async (unitNo: string): Promise<any[]> => {
+  try {
+    const response = await getPrevUnitTrx(unitNo); 
+    // Log the raw response for debugging
+    console.log("Raw Response:", response);
 
+    if (response && response.status === '200' && Array.isArray(response.data)) {
+      await saveDataToStorage('unitTrxData', response.data);
+      
+      // Log success with clear context
+      console.log("Shift data fetched successfully:", response.data);
+      
+      return response.data;
+    } else {
+      console.error('Unexpected data format or status. Response:', response);
+      return [];
+    }
+  } catch (error) {
+    // Log the error with details
+    console.error('Failed to fetch Shift Data. Error:', error);
+    return [];
+  }
+};
+
+
+
+// export const fetchOperatorLogin = async (): Promise<any[]> => {
+//   try {
+//     const response = await postAuthLogin(); 
+//     if (response.status === '200' && Array.isArray(response.data)) {
+//       await saveDataToStorage('allOperator', response.data);
+//       return response.data;
+//     } else {
+//       console.error('Unexpected data format');
+//       return [];
+//     }
+//   } catch (error) {
+//     console.error('Failed to fetch Operator data', error);
+//     return [];
+//   }
+// }
 

@@ -239,19 +239,15 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 //   }
 // };
 
-
-
-
-
 export const getLatestHmLast = async (selectedUnit: string): Promise<number | undefined> => {
   try {
     // Fetch the latest entry from the database
     const latestEntry = await db.dataTransaksi
-          .orderBy('id')
-          // .equals(selectedUnit)
+          .where('no_unit')
+          .equals(selectedUnit)
           .last();
 
-    // Check if the entry is found and return the 'hm_last' field
+    // Check if the entry is found and return the 'hm_last' field  
     if (latestEntry && latestEntry.hm_km != null) {
       return latestEntry.hm_km;
     } else {

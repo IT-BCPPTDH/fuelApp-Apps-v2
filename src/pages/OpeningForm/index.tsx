@@ -560,8 +560,8 @@ useEffect(() => {
               type="number"
               placeholder="Input opening dip dalam liter"
               value={openingDip}
-              // disabled
-              readonly={stationOptions.includes(station || '')}
+              readonly={stationOptions.includes(station ||'')}
+              onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
             />
             {showError && openingDip === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>

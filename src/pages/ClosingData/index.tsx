@@ -198,7 +198,6 @@ const FormClosing: React.FC = () => {
     };
 
     const varianceColor = variant !== undefined && variant < 0 ? 'red' : 'black';
-
      // Load Sonding Data
      useEffect(() => {
         const loadSondingData = async () => {
@@ -282,14 +281,12 @@ const FormClosing: React.FC = () => {
                                         style={{background:"#cfcfcf"}}
                                         className="custom-input"
                                         type="number"
-                                      
-                                        
+                                       placeholder="Input Close Dip (Liters)"
                                         name="closingDip"
                                         value={closingDip || 0}// Default to 0 if undefined
-                                        disabled
-                                        placeholder="Input Close Dip (Liters)"
+                                        // disabled
+                                        onIonChange={(e) => setClosingDip(e.detail.value as unknown as number)}
                                     />
-
                                 </IonCol>
                             </IonRow>
                             <IonRow>

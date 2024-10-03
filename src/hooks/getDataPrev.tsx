@@ -3,11 +3,9 @@ import { ResponseError } from "../helper/responseError";
 
 const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-export async function getStationData(station: string) {
+export async function getPrevUnitTrx(station: string) {
     // Use template literal to include the station variable in the URL
-    const url = `${VITE_BACKEND_URL}/api/operator/last-lkf/${station}`;
-    
-
+    const url = `${VITE_BACKEND_URL}/api/operator/get-data/${station}`;
     try {
         const response = await CapacitorHttp.get({
             url,
@@ -15,17 +13,14 @@ export async function getStationData(station: string) {
                 'Content-Type': 'application/json',
             },
         });
-
         if (response.status !== 200) {
             throw new ResponseError(
-                `Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`,
+                `Failed to fetch Unit data. Status: ${response.status} ${response.data?.statusText || 'Error'}`,
                 response,
                 response.data
             );
         }
-
         const data = response.data;
-
         console.log('Successfully fetched station data:', data);
 
         return data;

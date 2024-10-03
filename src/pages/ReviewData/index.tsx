@@ -105,12 +105,12 @@ const ReviewData: React.FC = () => {
     
             // Remove unitQouta from localStorage
             localStorage.removeItem('unitQouta');
-            localStorage.removeItem('shiftData1');
+       
             localStorage.removeItem('lastLkfDataStation');
             localStorage.removeItem('lastClosingSonding');
             localStorage.removeItem('lastDipLiter');
             localStorage.removeItem('lastFlowMeter');
-            localStorage.removeItem('shiftCloseData');
+            localStorage.removeItem('CapacitorStorage.shiftCloseData');
 
            
     
