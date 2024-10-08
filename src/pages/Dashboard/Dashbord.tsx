@@ -12,12 +12,16 @@ import {
   IonCardContent,
   IonCardSubtitle,
   IonButton,
-  useIonRouter
+  useIonRouter,
+  IonItem,
+  IonText,
+  IonLabel
 } from '@ionic/react';
 import TableData from '../../components/Table';
 import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate } from '../../utils/getData';
 import { getHomeByIdLkf } from '../../hooks/getHome';
 import NetworkStatus from '../../components/network';
+import { getDataFromStorage } from '../../services/dataService';
 
 // Define the data structure for the card
 interface CardData {
@@ -51,6 +55,10 @@ const DashboardFuelMan: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [jde, setJde] = useState<string>(''); 
+
+  const [jdeOptions, setJdeOptions] = useState<
+    { JDE: string; fullname: string }[]
+  >([]);
   useEffect(() => {
     const handleOnlineStatus = () => {
       setIsOnline(navigator.onLine);
@@ -178,38 +186,60 @@ const DashboardFuelMan: React.FC = () => {
     window.location.reload();
   };
 
-
- 
   useEffect(() => {
-   
-    const storedLoginData = localStorage.getItem('loginData');
-    const storedEmployeeData = localStorage.getItem('employeeData');
+    const fetchJdeOptions = async () => {
+      const storedJdeOptions = await getDataFromStorage("allOperator");
+      console.log("Stored Nama Options:", storedJdeOptions);
 
-    if (storedLoginData) {
+      if (storedJdeOptions) {
+        // If you are certain the data is in the correct format
+        if (Array.isArray(storedJdeOptions)) {
+          setJdeOptions(storedJdeOptions);
+        } else {
+          console.log("Data FuelMan");
+        }
+      } else {
+        console.log("No JDE options found in storage.");
+      }
+    };
+
+    fetchJdeOptions();
+  }, []);
+
+  useEffect(() => {
+    const fetchJdeOptions = async () => {
+      // Fetch loginData and allOperator from Capacitor Storage
+      const storedLoginData = await getDataFromStorage("loginData");
+      const storedJdeOptions = await getDataFromStorage("allOperator");
+  
+      if (storedLoginData && storedJdeOptions) {
+        // Parse the stored loginData and allOperator
         const loginData = JSON.parse(storedLoginData);
-        setJde(loginData.jde || ''); 
-    }
+        const allOperators = Array.isArray(storedJdeOptions) ? storedJdeOptions : JSON.parse(storedJdeOptions);
+  
+        // Get the JDE from loginData
+        const loggedInJde = loginData.jde;
+  
+        // Find the operator that matches the JDE from loginData
+        const operator = allOperators.find((emp: { jde: string }) => emp.jde === loggedInJde);
+  
+        // If the operator is found, set it; otherwise, set an empty array
+        setJdeOptions(operator ? [operator] : []);
+        setFullname(operator ? operator.fullname : ""); // Set fullname for the Fuelman display
+      } else {
+        console.log("No JDE options or loginData found in storage.");
+      }
+    };
+  
+    fetchJdeOptions();
+  }, []);
+  
+  
+  
 
-    if (storedEmployeeData) {
-        const employeeData = JSON.parse(storedEmployeeData);
-        console.log('emp', employeeData);
-
-        const employee = employeeData.find((emp: { jde: string; }) => emp.jde === (jde || ''));
-        setFullname(employee ? employee.fullname : ''); 
-    }
-}, []); 
 
 
-useEffect(() => {
-    const storedEmployeeData = localStorage.getItem('employeeData');
-    if (storedEmployeeData) {
-        const employeeData = JSON.parse(storedEmployeeData);
-        console.log('emp', employeeData);
 
-        const employee = employeeData.find((emp: { jde: string; }) => emp.jde === jde);
-        setFullname(employee ? employee.fullname : '');
-    }
-}, [jde]);
 
   return (
     <IonPage>
@@ -269,7 +299,6 @@ useEffect(() => {
           <h4 >{latestDate}</h4>
           </IonRow>
         </div>
-        
         <IonGrid >
           <IonRow >
             {cardData.map((card, index) => (

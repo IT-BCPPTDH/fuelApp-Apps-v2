@@ -8,8 +8,6 @@ import {
   IonPage,
   IonRow,
   IonCard,
-  IonSelect,
-  IonSelectOption,
   IonInput,
   useIonRouter,
   IonLabel,
@@ -18,9 +16,14 @@ import {
 import Cookies from "js-cookie";
 import { postAuthLogin } from "../../hooks/useAuth";
 import "./style.css";
-import { fetchStationData, fetchUnitData, fetchQuotaData, saveDataToStorage, getDataFromStorage, fetchShiftData, } from "../../services/dataService";
+import {
+  fetchStationData,
+  saveDataToStorage,
+  getDataFromStorage,
+  fetchShiftData,
+} from "../../services/dataService";
 import { Station } from "../../models/interfaces";
-import { getPrevUnitTrx } from "../../hooks/getDataPrev";
+import Select from "react-select";
 
 const Login: React.FC = () => {
   const [jde, setJdeOperator] = useState<string>("");
@@ -28,10 +31,7 @@ const Login: React.FC = () => {
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
   const router = useIonRouter();
-  const [openingForm, setOpeningForm] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
-  const [closeShift, setCloseShift] = useState<{ id: string; closing_sonding: string; flow_meter_end: string; hm_end: string }[]>([]);
-  const [unitData, setUnitData] = useState(null);
-  
+
   useEffect(() => {
     const loadStationData = async () => {
       const cachedData = await getDataFromStorage('stationData');
@@ -51,50 +51,6 @@ const Login: React.FC = () => {
 
     loadStationData();
   }, []);
-
-
-  useEffect(() => {
-    const loadUnitData = async () => {
-      const cachedUnitData = await getDataFromStorage('allUnit');
-      if (cachedUnitData) {
-        setOpeningForm(cachedUnitData);
-      } else {
-        const units = await fetchUnitData();
-        setOpeningForm(units);
-      }
-    };
-
-    loadUnitData();
-  }, []);
-
-  useEffect(() => {
-    const loadQuotaData = async () => {
-      const cachedQuotaData = await getDataFromStorage('unitQuota');
-      if (cachedQuotaData) {
-        setOpeningForm(cachedQuotaData);
-      } else {
-        const todayDate = new Date().toISOString().split('T')[0];
-        const quotas = await fetchQuotaData(todayDate);
-        setOpeningForm(quotas);
-      }
-    };
-
-    loadQuotaData();
-  }, []);
-
-
-  useEffect(() => {
-       async function fetchUnitData() {
-        try {
-            const data = await getDataFromStorage('trxUnit');
-            setUnitData(data);
-        } catch (err) {
-            console.error('Error fetching unit data:', err);
-        }
-    }
-    fetchUnitData();
-}, []);
-
 
   const handleLogin = async () => {
     if (!jde || !selectedUnit) {
@@ -141,31 +97,6 @@ const Login: React.FC = () => {
       setShowError(true);
     }
   };
-
-useEffect(() => {
-  const loadShiftClose = async () => {
-    const cachedShiftData = await getDataFromStorage('shiftCloseData');
-    
-    if (cachedShiftData) {
-      setCloseShift(cachedShiftData);
-    } else {
-      const userData = localStorage.getItem('loginData');
-      if (userData) {
-        const parsedData = JSON.parse(userData);
-        const stationData = parsedData.station;
-
-        if (stationData) {
-          const shiftClose = await fetchShiftData(stationData);
-          console.log(shiftClose);
-          setCloseShift(shiftClose);
-        }
-      }
-    }
-  };
-
-  loadShiftClose();
-}, []);
-
   return (
     <IonPage>
       <IonContent fullscreen className="ion-content">
@@ -182,27 +113,43 @@ useEffect(() => {
                 <span className="title-checkin">Please Sign In to Continue</span>
                 <IonCol size="12">
                   <IonLabel>Select Station</IonLabel>
-                  <IonSelect className="select-custom"
-                    style={{ marginTop: "10px" }}
-                    fill="solid"
-                    labelPlacement="floating"
-                    value={selectedUnit}
-                    placeholder="Select a station"
-                    onIonChange={(e) => {
-                      const selectedValue = e.detail.value as string;
-                      setSelectedUnit(selectedValue);
-                    }}
-                  >
-                    {stationData.length > 0 ? (
-                      stationData.map((station) => (
-                        <IonSelectOption key={station.value} value={station.value}>
-                          {station.label}
-                        </IonSelectOption>
-                      ))
-                    ) : (
-                      <IonSelectOption value="" disabled>No stations available</IonSelectOption>
-                    )}
-                  </IonSelect>
+                  <div style={{ marginTop: "10px" }}>
+                    <Select
+                      className="select-custom"
+                      styles={{
+                        container: (provided) => ({
+                          ...provided,
+                          marginTop: "10px",
+                          backgroundColor: "white",
+                          zIndex: 10,
+                          height: "56px",
+                        }),
+                        control: (provided) => ({
+                          ...provided,
+                          height: "56px",
+                          minHeight: "56px",
+                        }),
+                        valueContainer: (provided) => ({
+                          ...provided,
+                          padding: "0 6px",
+                        }),
+                        singleValue: (provided) => ({
+                          ...provided,
+                          lineHeight: "56px",
+                        }),
+                      }}
+                      value={stationData.find(station => station.value === selectedUnit)}
+                      onChange={(selectedOption) => {
+                        const selectedValue = selectedOption?.value || "";
+                        setSelectedUnit(selectedValue);
+                      }}
+                      options={stationData}
+                      placeholder="Select a station"
+                      isClearable={true}
+                      isDisabled={stationData.length === 0}
+                      noOptionsMessage={() => "No stations available"}
+                    />
+                  </div>
                 </IonCol>
                 <IonCol size="12" className="mt10">
                   <IonLabel>Employee ID</IonLabel>

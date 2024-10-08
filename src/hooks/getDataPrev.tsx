@@ -3,9 +3,9 @@ import { ResponseError } from "../helper/responseError";
 
 const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-export async function getPrevUnitTrx(station: string) {
+export async function getPrevUnitTrx(unit: string) {
     // Use template literal to include the station variable in the URL
-    const url = `${VITE_BACKEND_URL}/api/operator/get-data/${station}`;
+    const url = `${VITE_BACKEND_URL}/api/operator/get-data/${unit}`;
     try {
         const response = await CapacitorHttp.get({
             url,

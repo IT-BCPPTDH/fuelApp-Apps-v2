@@ -30,7 +30,7 @@ type PostBulkInsert = {
     type: string;
     lkf_id?: string;
     status?: number;
-    jde_operator: string;
+    // jde_operator: string;
     flow_start: number;
     flow_end: number;
     foto?: string;
