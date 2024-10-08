@@ -25,6 +25,7 @@ import {
   InputCustomEvent,
   InputChangeEventDetail,
   IonPopover,
+  useIonToast,
 } from "@ionic/react";
 import {
   cameraOutline,
@@ -48,8 +49,10 @@ import {
   getLatestHmLast,
 } from "../../utils/getData";
 import DynamicAlert from "../../components/Alert";
-import { fetchOperatorData, fetchQuotaData, fetchUnitData, getDataFromStorage } from "../../services/dataService";
+import { fetchOperatorData, fetchQuotaData, fetchUnitData, fetchUnitLastTrx, getDataFromStorage } from "../../services/dataService";
 import Select, { ActionMeta, SingleValue } from "react-select";
+import { getLatestTrx } from "../../utils/getData";
+
 interface Typetrx {
   id: number;
   name: string;
@@ -81,7 +84,6 @@ const FormTRX: React.FC = () => {
   const [signature, setSignature] = useState<File | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
 
-  const [showError, setShowError] = useState<boolean>(false);
   const [model, setModel] = useState<string>("");
   const [owner, setOwner] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
@@ -119,10 +121,12 @@ const FormTRX: React.FC = () => {
   const [sondingStart, setSondingStart] = useState<number | undefined>(
     undefined
   );
+  const [presentToast] = useIonToast(); // Destructure the toast function
+
   const [sondingEnd, setSondingEnd] = useState<number | undefined>(undefined);
   const [Refrence, setRefrence] = useState<number | undefined>(undefined);
   const [stationData, setStationData] = useState<any>(null);
-
+  const [showError, setShowError] = useState<boolean>(false);
   // Ensure flowEnd is a number
 
   const [successModalOpen, setSuccessModalOpen] = useState(false);
@@ -138,8 +142,9 @@ const FormTRX: React.FC = () => {
   const [unitQuota, setUnitQuota] = useState(0);
   const [usedQuota, setUsedQuota] = useState(0);
   const [remainingQuota, setRemainingQuota] = useState(0);
-  const [quantity, setQuantity] = useState(0);
+  const [quantity, setQuantity] =useState<number | undefined>(undefined); 
   const [quantityError, setQuantityError] = useState("");
+  const [employeeError, setemployeeError] = useState("");
   const [unitQouta, setUnitQouta] = useState(0);
   const [isError, setIsError] = useState(false);
 
@@ -187,6 +192,7 @@ const FormTRX: React.FC = () => {
       setFlowMeterAwal(parsedData.flowMeterEnd);
     }
   }, []);
+
 
   useEffect(() => {
     const storedData = localStorage.getItem("cardDataDashborad");
@@ -298,7 +304,6 @@ const FormTRX: React.FC = () => {
     route.push("/dashboard");
   };
 
-
   // Ensure quantity is initialized and handle potential undefined
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -395,9 +400,6 @@ const FormTRX: React.FC = () => {
       setErrorModalOpen(true);
     }
   };
-
-
-
   const updateLocalStorageQuota = (unitNo: string, issuedQuantity: number) => {
     const unitQuota = localStorage.getItem("unitQouta");
     if (unitQuota) {
@@ -459,7 +461,7 @@ const FormTRX: React.FC = () => {
       hmLast !== undefined &&
       qtyLast !== undefined
     ) {
-      const difference = hmkmTRX - hmLast;
+      const difference =   hmkmTRX - hmLast;
       if (difference !== 0) {
         const result = qtyLast / difference;
         return parseFloat(result.toFixed(1)); // Return the result with one decimal place
@@ -768,7 +770,16 @@ const FormTRX: React.FC = () => {
 
   const handleQuantityChange = (e: any) => {
     const inputQuantity = Number(e.detail.value);
-
+  
+    // Ensure the input is a valid number
+    if (isNaN(inputQuantity) || inputQuantity <= 0) {
+      setQuantityError("Qty Issued harus lebih besar dari 0");
+      setIsError(true);
+      setQuantity(undefined); // Reset the quantity if invalid
+      return;
+    }
+  
+    // Validation for units starting with LV or HLV
     if (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) {
       if (inputQuantity > remainingQuota) {
         setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
@@ -777,10 +788,16 @@ const FormTRX: React.FC = () => {
         setQuantityError("");
         setIsError(false);
       }
+    } else {
+      // Clear errors for other units
+      setQuantityError("");
+      setIsError(false);
     }
-
+  
+    // Update the quantity state after validation
     setQuantity(inputQuantity);
   };
+  
 
   useEffect(() => {
     const fetchJdeOptions = async () => {
@@ -837,27 +854,29 @@ const FormTRX: React.FC = () => {
     newValue: SingleValue<{ value: string; label: string }>,
     actionMeta: ActionMeta<{ value: string; label: string }>
   ) => {
-    const selectedValue = newValue?.value?.trim() || ''; // Extract value from the newValue object
-
-    if (operatorOptions.length === 0) {
+    const selectedValue = newValue?.value?.trim() || ''; 
+    if (!operatorOptions || operatorOptions.length === 0) {
       console.warn("Operator options are empty. Cannot find matching option.");
-      return; // Exit early if no options are available
+      return; 
     }
-
+  
+  
     const selectedJdeOption = operatorOptions.find((operator) =>
       String(operator.JDE).trim() === String(selectedValue).trim()
     );
-
+  
     if (selectedJdeOption) {
+
       setFullName(selectedJdeOption.fullname);
       setFuelmanId(selectedValue);
     } else {
+
       console.log("No matching operator option found.");
       setFullName("");
       setFuelmanId("");
     }
   };
-
+  
   const handleSearchChange = (e: CustomEvent) => {
     const query = e.detail.value.toLowerCase();
     setSearchQuery(query);
@@ -887,6 +906,16 @@ const FormTRX: React.FC = () => {
         unitValue.startsWith("LV") ||
         (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
       );
+    }
+  };
+
+
+  const fetchLatestTrx = async (selectedUnit: string) => {
+    const latestId = await getLatestTrx(selectedUnit); // Jangan lupa kirim selectedUnit
+    if (latestId !== undefined) {
+      console.log("Latest Transaction ID:", latestId);
+    } else {
+      console.log("No transaction found.");
     }
   };
 
@@ -1083,21 +1112,33 @@ const FormTRX: React.FC = () => {
                     value={quantity}
                     disabled={isFormDisabled}
                   />
+
+                  {/* Display error if the field is empty */}
                   {quantityError && (
                     <div style={{ color: "red", marginTop: "5px" }}>
                       {quantityError}
                     </div>
                   )}
+
+                  {/* Add validation for empty or undefined quantity */}
+                  {showError && (!quantity || quantity === undefined) && (
+                    <p style={{ color: "red" }}>* Field harus diisi</p>
+                  )}
+
                 </IonCol>
                 <IonCol>
                   <IonLabel>
                     FBR Historis <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonInput
+                   style={{ background: "#E8E8E8" }}
                     className="custom-input"
                     type="number"
                     placeholder="Input FBR"
-                    onIonChange={(e) => setFbr(Number(e.detail.value))}
+                    disabled={isFormDisabled}
+                    readonly
+                    
+                    // onIonChange={(e) => setFbr(Number(e.detail.value))}
                     value={
                       typeof calculateFBR() === "number" ? calculateFBR() : ""
                     }
@@ -1183,6 +1224,11 @@ const FormTRX: React.FC = () => {
                     isSearchable={true}
                     isDisabled={isFormDisabled}
                   />
+                   {employeeError && (
+                    <div style={{ color: "red", marginTop: "5px" }}>
+                      {employeeError}
+                    </div>
+                  )}
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1323,4 +1369,8 @@ const FormTRX: React.FC = () => {
 export default FormTRX;
 
 
+
+function presentToast(arg0: string, arg1: number) {
+  throw new Error("Function not implemented.");
+}
 

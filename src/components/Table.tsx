@@ -65,6 +65,7 @@ const TableData: React.FC = () => {
   const fetchData = async (lkfId: string) => {
     try {
       const rawData = await getAllDataTrx(lkfId);
+      console.log("Raw data fetched:", rawData);
       const mappedData: TableDataItem[] = rawData.map((item: any) => {
         const statusValue = item.status === 1 ? 1 : 0; 
         return {
@@ -78,7 +79,7 @@ const TableData: React.FC = () => {
           fm_awal: item.flow_start ?? 0,
           fm_akhir: item.flow_end ?? 0,
           jde_operator: item.fuelman_id || '',
-          name_operator: item.fullname,
+          name_operator: item.name_operator || item.name__operator || '',
           status: statusValue,
         };
       });
@@ -122,7 +123,7 @@ const TableData: React.FC = () => {
       qty: item.qty_issued,
       flow_start: item.fm_awal,
       flow_end: item.fm_akhir,
-      name_operator: item.jde_operator,
+      name_operator: item.name_operator,
       fbr: parseFloat(item.fbr_historis),
       signature: '',
       photo: '',

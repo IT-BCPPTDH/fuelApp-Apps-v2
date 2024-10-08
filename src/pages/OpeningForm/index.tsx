@@ -397,8 +397,6 @@ useEffect(() => {
     loadShiftClose();
   }, []);
 
-
-  
 useEffect(() => {
     // Retrieve station from local storage
     const loginData = localStorage.getItem('loginData');
