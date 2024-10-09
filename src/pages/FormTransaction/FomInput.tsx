@@ -513,7 +513,7 @@ const FormTRX: React.FC = () => {
           console.error("Failed to parse unit options from localStorage:", error);
         }
       } else {
-        // If it's already an object, just set it directly
+      
         console.log("Unit options are already an object:", storedUnitOptions);
         setUnitOptions(storedUnitOptions);
       }
