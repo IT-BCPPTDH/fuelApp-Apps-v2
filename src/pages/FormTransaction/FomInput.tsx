@@ -491,10 +491,10 @@ const FormTRX: React.FC = () => {
       if (totaFlowEnd !== 0) {
         return totaFlowEnd;
       } else {
-        return "N/A"; // Handle division by zero
+        return "N/A"; 
       }
     }
-    return ""; // Handle cases where any value is undefined
+    return ""; 
   };
 
   const fetchUnitOptions = async () => {
@@ -503,7 +503,7 @@ const FormTRX: React.FC = () => {
     console.log("Stored unit options:", storedUnitOptions);
 
     if (storedUnitOptions) {
-      // Check if stored data is already an object
+
       if (typeof storedUnitOptions === "string") {
         try {
           const parsedUnitOptions = JSON.parse(storedUnitOptions);
