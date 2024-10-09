@@ -52,6 +52,7 @@ import DynamicAlert from "../../components/Alert";
 import { fetchOperatorData, fetchQuotaData, fetchUnitData, fetchUnitLastTrx, getDataFromStorage } from "../../services/dataService";
 import Select, { ActionMeta, SingleValue } from "react-select";
 import { getLatestTrx } from "../../utils/getData";
+import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 
 interface Typetrx {
   id: number;
@@ -61,6 +62,12 @@ interface Typetrx {
 interface JdeOption {
   JDE: string; // Ensure this matches the actual key used
   fullname: string;
+}
+interface UnitData {
+  unit_no: string;
+  model: string;
+  owner: string;
+  hm_km: number; // Adjust the type as necessary
 }
 
 const typeTrx: Typetrx[] = [
@@ -88,7 +95,9 @@ const FormTRX: React.FC = () => {
   const [owner, setOwner] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
   const [unitOptions, setUnitOptions] = useState<
-    { id: string; unit_no: string; brand: string; owner: string }[]
+    {
+      hm_km: SetStateAction<number | null>; id: string; unit_no: string; brand: string; owner: string 
+}[]
   >([]);
 
   const [fbr, setFbr] = useState<number | undefined>(undefined);
@@ -163,7 +172,15 @@ const FormTRX: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredUnits, setFilteredUnits] = useState(unitOptions);
 
-  const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
+  const [selectedUnit, setSelectedUnit] = useState<string>("");
+
+  const [hmkmValue, setHmkmValue] = useState<number | null>(null);
+ 
+  const [hmKm, setHmKm] = useState<string>("");
+ // State untuk menyimpan data unit
+  // const [noUnit, setNoUnit] = useState<string>(''); // Nilai no_unit yang ingin dipanggil
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -254,10 +271,6 @@ const FormTRX: React.FC = () => {
 
     fetchStationData();
   }, []);
-
-
-
-
 
   const handleRadioChange = (event: CustomEvent) => {
     const selectedValue = event.detail.value as Typetrx;
@@ -653,56 +666,57 @@ const FormTRX: React.FC = () => {
   }, [unitOptions]);
 
   useEffect(() => {
-    // Track if the component is still mounted
+    // Menandai apakah komponen masih terpasang
     let isMounted = true;
-
+  
     const fetchFbrData = async () => {
       if (selectedUnit) {
         try {
-          // Fetch FBR and HM data concurrently
+          // Ambil data FBR dan HM secara bersamaan
           const [fbrData, lastHm] = await Promise.all([
-            getFbrByUnit(selectedUnit),
-            getLatestHmLast(selectedUnit),
+            getFbrByUnit(selectedUnit), // Mengambil data FBR berdasarkan unit yang dipilih
+            getLatestHmLast(selectedUnit), // Mengambil data HM terbaru berdasarkan unit yang dipilih
           ]);
-
-          if (isMounted) {
-
-
+  
+          if (isMounted) { // Periksa apakah komponen masih terpasang
+  
             if (fbrData.length > 0) {
-              // Assuming fbrData is sorted and the first entry is the latest
-              const latestEntry = fbrData[0];
-              setFbr(latestEntry.fbr);
-              sethmkmTrx(latestEntry.hm_last);
-              setQtyLast(latestEntry.qty_last);
+              // Asumsikan fbrData sudah terurut dan entri pertama adalah yang terbaru
+              const latestEntry = fbrData[0]; // Ambil entri terbaru
+              setFbr(latestEntry.fbr); // Set nilai FBR terbaru
+              sethmkmTrx(latestEntry.hm_last); // Set nilai HM terakhir
+              setQtyLast(latestEntry.qty_last); // Set jumlah terakhir
             } else {
-              // If no data is found, clear the state
-              setFbr(undefined);
-              sethmkmTrx(undefined);
-              setQtyLast(undefined);
+              // Jika tidak ada data yang ditemukan, kosongkan state
+              setFbr(undefined); // Kosongkan nilai FBR
+              sethmkmTrx(undefined); // Kosongkan nilai HM
+              setQtyLast(undefined); // Kosongkan jumlah terakhir
             }
-
-            // Update hmLast with the latest value from getLatestHmLast
+  
+            // Perbarui hmLast dengan nilai terbaru dari getLatestHmLast
             if (lastHm) {
-              setHmLast(lastHm);
+              setHmLast(lastHm); // Set nilai HM terakhir
             }
           }
         } catch (error) {
-          console.error("Error fetching FBR data:", error);
-          if (isMounted) {
-            setFbr(undefined);
-            setHmLast(undefined);
-            setQtyLast(undefined);
+          console.error("Error fetching FBR data:", error); // Tampilkan pesan error jika terjadi kesalahan
+          if (isMounted) { // Periksa apakah komponen masih terpasang
+            setFbr(undefined); // Kosongkan nilai FBR jika terjadi kesalahan
+            setHmLast(undefined); // Kosongkan nilai HM terakhir
+            setQtyLast(undefined); // Kosongkan jumlah terakhir
           }
         }
       }
     };
-
-    fetchFbrData();
-
+  
+    fetchFbrData(); // Panggil fungsi untuk mengambil data FBR
+  
     return () => {
-      isMounted = false;
+      isMounted = false; // Tandai bahwa komponen tidak lagi terpasang saat komponen dibongkar
     };
-  }, [selectedUnit]);
+  }, [selectedUnit]); // Efek ini dijalankan setiap kali selectedUnit berubah
+  
+
 
   useEffect(() => {
     const loadUnitDataQuota = async () => {
@@ -768,35 +782,6 @@ const FormTRX: React.FC = () => {
   }
 
 
-  const handleQuantityChange = (e: any) => {
-    const inputQuantity = Number(e.detail.value);
-  
-    // Ensure the input is a valid number
-    if (isNaN(inputQuantity) || inputQuantity <= 0) {
-      setQuantityError("Qty Issued harus lebih besar dari 0");
-      setIsError(true);
-      setQuantity(undefined); // Reset the quantity if invalid
-      return;
-    }
-  
-    // Validation for units starting with LV or HLV
-    if (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) {
-      if (inputQuantity > remainingQuota) {
-        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
-        setIsError(true);
-      } else {
-        setQuantityError("");
-        setIsError(false);
-      }
-    } else {
-      // Clear errors for other units
-      setQuantityError("");
-      setIsError(false);
-    }
-  
-    // Update the quantity state after validation
-    setQuantity(inputQuantity);
-  };
   
 
   useEffect(() => {
@@ -850,6 +835,8 @@ const FormTRX: React.FC = () => {
   }, []);
 
 
+  
+
   const handleChangeEmployeeId = (
     newValue: SingleValue<{ value: string; label: string }>,
     actionMeta: ActionMeta<{ value: string; label: string }>
@@ -885,40 +872,110 @@ const FormTRX: React.FC = () => {
     );
     setFilteredUnits(filtered);
   };
-  const handleUnitChange = (newValue: SingleValue<{ value: string; label: string }>, actionMeta: ActionMeta<{ value: string; label: string }>) => {
-    if (newValue) {
-      const unitValue = newValue.value; // Get the selected unit value
-      setSelectedUnit(unitValue);
 
+  const handleUnitChange = (
+    newValue: SingleValue<{ value: string; label: string }>, 
+    actionMeta: ActionMeta<{ value: string; label: string }>
+  ) => {
+    if (newValue) {
+      const unitValue = newValue.value; 
+      setSelectedUnit(unitValue); // Set unit yang dipilih
+  
+      // Mencari opsi unit yang dipilih dari unitOptions
       const selectedUnitOption = unitOptions.find(
         (unit) => unit.unit_no === unitValue
       );
-
+  
+      // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
       if (selectedUnitOption) {
-        setModel(selectedUnitOption.brand);
-        setOwner(selectedUnitOption.owner);
+        setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
+        setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
+        
+        // Set nilai hm_km berdasarkan data unit yang dipilih
+        setHmkmValue(selectedUnitOption.hm_km); // Perbarui nilai hm_km
+  
+        // Tentukan batas kouta baru berdasarkan nilai unit
+        const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+        setKoutaLimit(newKoutaLimit); // Set batas kouta
+  
+        // Set showError berdasarkan jenis unit dan batas kouta
+        setShowError(
+          unitValue.startsWith("LV") || 
+          (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+        );
+      } else {
+        // Secara opsional, tangani kasus ketika unit yang dipilih tidak ada
+        console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
       }
-
-      let newKoutaLimit: number;
-      newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-      setKoutaLimit(newKoutaLimit);
-      setShowError(
-        unitValue.startsWith("LV") ||
-        (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-      );
     }
   };
-
-
-  const fetchLatestTrx = async (selectedUnit: string) => {
-    const latestId = await getLatestTrx(selectedUnit); // Jangan lupa kirim selectedUnit
-    if (latestId !== undefined) {
-      console.log("Latest Transaction ID:", latestId);
+  
+  
+  const handleQuantityChange = (e: any) => {
+    const inputQuantity = Number(e.detail.value); // Ambil nilai input dan ubah menjadi angka
+  
+    // Pastikan input adalah angka yang valid
+    if (isNaN(inputQuantity) || inputQuantity <= 0) {
+      setQuantityError("Qty Issued harus lebih besar dari 0"); // Set pesan error jika qty tidak valid
+      setIsError(true); // Tandai bahwa ada error
+      setQuantity(undefined); // Reset jumlah jika tidak valid
+      return;
+    }
+  
+    // Validasi untuk unit yang dimulai dengan LV atau HLV
+    if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
+      if (inputQuantity > remainingQuota) {
+        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!"); // Set pesan error jika qty melebihi sisa kouta
+        setIsError(true); // Tandai bahwa ada error
+      } else {
+        setQuantityError(""); // Kosongkan pesan error jika qty valid
+        setIsError(false); // Tidak ada error
+      }
     } else {
-      console.log("No transaction found.");
+      // Kosongkan error untuk unit lainnya
+      setQuantityError(""); // Kosongkan pesan error
+      setIsError(false); // Tidak ada error
     }
+  
+    // Perbarui state jumlah setelah validasi
+    setQuantity(inputQuantity); // Set jumlah yang valid
   };
+  
+ 
+  useEffect(() => {
+    const fetchUnitData = async () => {
+      if (!selectedUnit) {
+        return; 
+      }
+  
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await getPrevUnitTrx(selectedUnit);
+        
+        // Check if the response has a status of '200' and contains data
+        if (response.status === '200' && response.data.length > 0) {
+          const unitData = response.data[0]; // Get the first element of the data array
+          console.log('Unit Data:', unitData); 
+  
 
+          setHmkmValue(unitData.hm_km); // Set the hm_km value
+          setModel(unitData.model_unit); // Set the model unit
+          setOwner(unitData.owner); // Set the owner
+        } else {
+          setError('No data found'); // Error message if no data is available
+        }
+      } catch (err) {
+        setError('Failed to fetch unit data');
+        console.error(err); // Log the error for further investigation
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchUnitData();
+  }, [selectedUnit]);
+  
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -928,7 +985,6 @@ const FormTRX: React.FC = () => {
           </IonTitle>
         </IonToolbar>
       </IonHeader>
-
       <IonContent>
         <div style={{ marginTop: "20px", padding: "15px" }}>
           {(selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
@@ -952,48 +1008,48 @@ const FormTRX: React.FC = () => {
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>
-                <IonCol>
-                  <IonLabel className="label-input">
-                    Select Unit <span style={{ color: "red" }}>*</span>
-                  </IonLabel>
-                  <Select
-                    className="select-custom"
-                    styles={{
-                      container: (provided) => ({
-                        ...provided,
-                        marginTop: "10px",
-                        backgroundColor: "white",
-                        zIndex: 10,
-                        height: "56px",
-                      }),
-                      control: (provided) => ({
-                        ...provided,
-                        height: "56px",
-                        minHeight: "56px",
-                      }),
-                      valueContainer: (provided) => ({
-                        ...provided,
-                        padding: "0 6px",
-                      }),
-                      singleValue: (provided) => ({
-                        ...provided,
-                        lineHeight: "56px",
-                      }),
-                    }}
-                    value={
-                      selectedUnit
-                        ? { value: selectedUnit, label: selectedUnit }
-                        : null
-                    }
-                    onChange={handleUnitChange}
-                    options={unitOptions.map((unit) => ({
-                      value: unit.unit_no || '',
-                      label: unit.unit_no || '',
-                    }))}
-                    placeholder="Select Unit"
-                    isSearchable={true}
-                  />
-                </IonCol>
+              <IonCol>
+                <IonLabel className="label-input">
+                  Select Unit <span style={{ color: "red" }}>*</span>
+                </IonLabel>
+                <Select
+                  className="select-custom"
+                  styles={{
+                    container: (provided) => ({
+                      ...provided,
+                      marginTop: "10px",
+                      backgroundColor: "white",
+                      zIndex: 10,
+                      height: "56px",
+                    }),
+                    control: (provided) => ({
+                      ...provided,
+                      height: "56px",
+                      minHeight: "56px",
+                    }),
+                    valueContainer: (provided) => ({
+                      ...provided,
+                      padding: "0 6px",
+                    }),
+                    singleValue: (provided) => ({
+                      ...provided,
+                      lineHeight: "56px",
+                    }),
+                  }}
+                  value={
+                    selectedUnit
+                      ? { value: selectedUnit, label: selectedUnit }
+                      : null
+                  }
+                  onChange={handleUnitChange}
+                  options={unitOptions.map((unit) => ({
+                    value: unit.unit_no || '',
+                    label: unit.unit_no || '',
+                  }))}
+                  // placeholder="Select Unit"
+                  isSearchable={true}
+                />
+              </IonCol>
                 <IonCol>
                   <IonLabel>
                     Model <span style={{ color: "red" }}>*</span>
@@ -1058,7 +1114,7 @@ const FormTRX: React.FC = () => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    value={hmLast}
+                    value={hmkmValue || ""}
 
                     // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
