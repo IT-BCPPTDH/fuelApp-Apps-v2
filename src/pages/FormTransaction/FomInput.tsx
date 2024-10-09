@@ -472,11 +472,11 @@ const FormTRX: React.FC = () => {
     if (
       hmkmTRX !== undefined &&
       hmLast !== undefined &&
-      qtyLast !== undefined
+      quantity !== undefined
     ) {
       const difference =   hmkmTRX - hmLast;
       if (difference !== 0) {
-        const result = qtyLast / difference;
+        const result = quantity / difference;
         return parseFloat(result.toFixed(1)); // Return the result with one decimal place
       } else {
         return "N/A";
