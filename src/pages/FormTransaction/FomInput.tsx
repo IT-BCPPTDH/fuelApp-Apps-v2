@@ -472,11 +472,11 @@ const FormTRX: React.FC = () => {
     if (
       hmkmTRX !== undefined &&
       hmLast !== undefined &&
-      qtyLast !== undefined
+      quantity !== undefined
     ) {
       const difference =   hmkmTRX - hmLast;
       if (difference !== 0) {
-        const result = qtyLast / difference;
+        const result = quantity / difference;
         return parseFloat(result.toFixed(1)); // Return the result with one decimal place
       } else {
         return "N/A";
@@ -491,10 +491,10 @@ const FormTRX: React.FC = () => {
       if (totaFlowEnd !== 0) {
         return totaFlowEnd;
       } else {
-        return "N/A"; // Handle division by zero
+        return "N/A"; 
       }
     }
-    return ""; // Handle cases where any value is undefined
+    return ""; 
   };
 
   const fetchUnitOptions = async () => {
@@ -503,7 +503,7 @@ const FormTRX: React.FC = () => {
     console.log("Stored unit options:", storedUnitOptions);
 
     if (storedUnitOptions) {
-      // Check if stored data is already an object
+
       if (typeof storedUnitOptions === "string") {
         try {
           const parsedUnitOptions = JSON.parse(storedUnitOptions);
@@ -513,7 +513,7 @@ const FormTRX: React.FC = () => {
           console.error("Failed to parse unit options from localStorage:", error);
         }
       } else {
-        // If it's already an object, just set it directly
+      
         console.log("Unit options are already an object:", storedUnitOptions);
         setUnitOptions(storedUnitOptions);
       }
