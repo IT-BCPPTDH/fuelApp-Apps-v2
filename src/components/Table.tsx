@@ -19,6 +19,7 @@ import { checkmarkCircleOutline } from 'ionicons/icons';
 import { updateDataInTrx } from '../utils/update';
 
 interface TableDataItem {
+  hm_km: any;
   from_data_id: number;
   unit_no: string;
   model_unit: string;
@@ -28,8 +29,10 @@ interface TableDataItem {
   qty_issued: number;
   fm_awal: number;
   fm_akhir: number;
+  hm_last:number;
   jde_operator: string;
   name_operator: string;
+
   status: number;
 }
 
@@ -78,6 +81,8 @@ const TableData: React.FC = () => {
           qty_issued: item.qty ?? 0,
           fm_awal: item.flow_start ?? 0,
           fm_akhir: item.flow_end ?? 0,
+          hm_last:item.hm_last,
+          hm_km:item.hm_km,
           jde_operator: item.fuelman_id || '',
           name_operator: item.name_operator || item.name__operator || '',
           status: statusValue,
@@ -117,8 +122,8 @@ const TableData: React.FC = () => {
       model_unit: item.model_unit,
       owner: item.owner,
       date_trx: new Date().toISOString(),
-      hm_last: 0,
-      hm_km: 0,
+      hm_last: item.hm_last,
+      hm_km: item.hm_km,
       qty_last: item.qty_issued,
       qty: item.qty_issued,
       flow_start: item.fm_awal,

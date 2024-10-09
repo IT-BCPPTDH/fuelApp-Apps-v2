@@ -24,13 +24,18 @@ import {
 } from "../../services/dataService";
 import { Station } from "../../models/interfaces";
 import Select from "react-select";
-
+import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 const Login: React.FC = () => {
   const [jde, setJdeOperator] = useState<string>("");
   const [stationData, setStationData] = useState<{ value: string; label: string; site: string; fuel_station_type: string }[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
   const router = useIonRouter();
+
+  const [unitData, setUnitData] = useState<any>(null);  // State untuk menyimpan data unit
+  const [noUnit, setNoUnit] = useState<string>(""); // Nilai no_unit yang ingin dipanggil
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStationData = async () => {
@@ -97,6 +102,27 @@ const Login: React.FC = () => {
       setShowError(true);
     }
   };
+
+  useEffect(() => {
+    // Fungsi untuk memanggil getPrevUnitTrx
+    const fetchUnitData = async () => {
+      setLoading(true); // Set loading state
+      setError(null); // Reset error state
+      try {
+        const data = await getPrevUnitTrx(noUnit);
+        console.log('unitSelect', data)
+        setUnitData(data); // Set data yang didapat ke state
+      } catch (err) {
+        setError('Failed to fetch unit data'); // Set error jika ada masalah
+      } finally {
+        setLoading(false); // Set loading selesai
+      }
+    };
+
+    // Panggil fungsi saat komponen mount
+    fetchUnitData();
+  }, [noUnit]);
+
   return (
     <IonPage>
       <IonContent fullscreen className="ion-content">
