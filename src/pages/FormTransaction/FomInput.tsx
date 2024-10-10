@@ -96,7 +96,7 @@ const FormTRX: React.FC = () => {
   const [fullName, setFullName] = useState<string>("");
   const [unitOptions, setUnitOptions] = useState<
     {
-      hm_km: SetStateAction<number | null>; id: string; unit_no: string; brand: string; owner: string 
+      hm_km: SetStateAction<number | null>;  qty: SetStateAction<number | null>; id: string; unit_no: string; brand: string; owner: string 
 }[]
   >([]);
 
@@ -176,11 +176,15 @@ const FormTRX: React.FC = () => {
 
   const [hmkmValue, setHmkmValue] = useState<number | null>(null);
  
+  const [qtyValue, setQtyValue] = useState<number | null>(null);
+ 
   const [hmKm, setHmKm] = useState<string>("");
  // State untuk menyimpan data unit
   // const [noUnit, setNoUnit] = useState<string>(''); // Nilai no_unit yang ingin dipanggil
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [fbrResult, setFbrResult] = useState<number>(0);
+
 
   useEffect(() => {
     const handleOnline = () => {
@@ -340,7 +344,6 @@ const FormTRX: React.FC = () => {
 
     // Convert values to numbers where necessary
     const flow_end: number = Number(calculateFlowEnd()) || 0;
-    const calculatedFBR: number = Number(calculateFBR()) || 0;
 
     // Prepare form data
     const fromDataId = Date.now().toString();
@@ -366,7 +369,7 @@ const FormTRX: React.FC = () => {
       name_operator: fullName!,
       start: startTime!,
       end: endTime!,
-      fbr: calculatedFBR,
+      fbr: fbrResult,
       lkf_id: lkf_id ?? "",
       signature: signatureBase64 ?? "",
       type: selectedType?.name ?? "",
@@ -468,22 +471,8 @@ const FormTRX: React.FC = () => {
 
 
 
-  const calculateFBR = (): string | number => {
-    if (
-      hmkmTRX !== undefined &&
-      hmLast !== undefined &&
-      quantity !== undefined
-    ) {
-      const difference =   hmkmTRX - hmLast;
-      if (difference !== 0) {
-        const result = quantity / difference;
-        return parseFloat(result.toFixed(1)); // Return the result with one decimal place
-      } else {
-        return "N/A";
-      }
-    }
-    return "";
-  };
+ 
+  
 
   const calculateFlowEnd = (): string | number => {
     if (flowMeterAwal !== undefined && quantity !== undefined) {
@@ -568,60 +557,60 @@ const FormTRX: React.FC = () => {
 
 
 
-  useEffect(() => {
-    // Track if the component is still mounted
-    let isMounted = true;
+  // useEffect(() => {
+  //   // Track if the component is still mounted
+  //   let isMounted = true;
 
-    const fetchFbrData = async () => {
-      if (selectedUnit) {
-        try {
-          // Fetch FBR and HM data concurrently
-          const [fbrData, lastHm] = await Promise.all([
-            getFbrByUnit(selectedUnit),
-            getLatestHmLast(selectedUnit), // Ensure this function filters by selectedUnit
-          ]);
+  //   const fetchFbrData = async () => {
+  //     if (selectedUnit) {
+  //       try {
+  //         // Fetch FBR and HM data concurrently
+  //         const [fbrData, lastHm] = await Promise.all([
+  //           getFbrByUnit(selectedUnit),
+  //           getLatestHmLast(selectedUnit), // Ensure this function filters by selectedUnit
+  //         ]);
 
-          if (isMounted) {
+  //         if (isMounted) {
 
-            console.log("HM Data:", lastHm); // Change this to lastHm
+  //           console.log("HM Data:", lastHm); // Change this to lastHm
 
-            if (fbrData.length > 0) {
-              // Assuming fbrData is sorted and the first entry is the latest
-              const latestEntry = fbrData[0];
-              console.log("data last", latestEntry)
-              setFbr(latestEntry.fbr);
+  //           if (fbrData.length > 0) {
+  //             // Assuming fbrData is sorted and the first entry is the latest
+  //             const latestEntry = fbrData[0];
+  //             console.log("data last", latestEntry)
+  //             setFbr(latestEntry.fbr);
 
-              sethmkmTrx(latestEntry.hm_km);
-              setQtyLast(latestEntry.qty_last);
-            } else {
-              // If no data is found, clear the state
-              setFbr(undefined);
-              sethmkmTrx(undefined);
-              setQtyLast(undefined);
-            }
+  //             sethmkmTrx(latestEntry.hm_km);
+  //             setQtyLast(latestEntry.qty);
+  //           } else {
+  //             // If no data is found, clear the state
+  //             setFbr(undefined);
+  //             sethmkmTrx(undefined);
+  //             setQtyLast(undefined);
+  //           }
 
-            // Update hmLast with the latest value from getLatestHmLast
-            if (lastHm) {
-              setHmLast(lastHm);
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching FBR data:", error);
-          if (isMounted) {
-            setFbr(undefined);
-            setHmLast(undefined);
-            setQtyLast(undefined);
-          }
-        }
-      }
-    };
+  //           // Update hmLast with the latest value from getLatestHmLast
+  //           if (lastHm) {
+  //             setHmLast(lastHm);
+  //           }
+  //         }
+  //       } catch (error) {
+  //         console.error("Error fetching FBR data:", error);
+  //         if (isMounted) {
+  //           setFbr(undefined);
+  //           setHmLast(undefined);
+  //           setQtyLast(undefined);
+  //         }
+  //       }
+  //     }
+  //   };
 
-    fetchFbrData();
+  //   fetchFbrData();
 
-    return () => {
-      isMounted = false;
-    };
-  }, [selectedUnit]);
+  //   return () => {
+  //     isMounted = false;
+  //   };
+  // }, [selectedUnit]);
 
   const handleHmkmUnitChange = (e: CustomEvent) => {
     const value = Number(e.detail.value);
@@ -630,7 +619,7 @@ const FormTRX: React.FC = () => {
     } else {
       setShowError(false);
     }
-    sethmkmTrx(value);
+    setHmkmValue(value);
   };
 
   const handleHmLastChange = (e: CustomEvent) => {
@@ -665,56 +654,56 @@ const FormTRX: React.FC = () => {
     console.log("unitOptions updated:", unitOptions);
   }, [unitOptions]);
 
-  useEffect(() => {
-    // Menandai apakah komponen masih terpasang
-    let isMounted = true;
+  // useEffect(() => {
+  //   // Menandai apakah komponen masih terpasang
+  //   let isMounted = true;
   
-    const fetchFbrData = async () => {
-      if (selectedUnit) {
-        try {
-          // Ambil data FBR dan HM secara bersamaan
-          const [fbrData, lastHm] = await Promise.all([
-            getFbrByUnit(selectedUnit), // Mengambil data FBR berdasarkan unit yang dipilih
-            getLatestHmLast(selectedUnit), // Mengambil data HM terbaru berdasarkan unit yang dipilih
-          ]);
+  //   const fetchFbrData = async () => {
+  //     if (selectedUnit) {
+  //       try {
+  //         // Ambil data FBR dan HM secara bersamaan
+  //         const [fbrData, lastHm] = await Promise.all([
+  //           getFbrByUnit(selectedUnit), // Mengambil data FBR berdasarkan unit yang dipilih
+  //           getLatestHmLast(selectedUnit), // Mengambil data HM terbaru berdasarkan unit yang dipilih
+  //         ]);
   
-          if (isMounted) { // Periksa apakah komponen masih terpasang
+  //         if (isMounted) { // Periksa apakah komponen masih terpasang
   
-            if (fbrData.length > 0) {
-              // Asumsikan fbrData sudah terurut dan entri pertama adalah yang terbaru
-              const latestEntry = fbrData[0]; // Ambil entri terbaru
-              setFbr(latestEntry.fbr); // Set nilai FBR terbaru
-              sethmkmTrx(latestEntry.hm_last); // Set nilai HM terakhir
-              setQtyLast(latestEntry.qty_last); // Set jumlah terakhir
-            } else {
-              // Jika tidak ada data yang ditemukan, kosongkan state
-              setFbr(undefined); // Kosongkan nilai FBR
-              sethmkmTrx(undefined); // Kosongkan nilai HM
-              setQtyLast(undefined); // Kosongkan jumlah terakhir
-            }
+  //           if (fbrData.length > 0) {
+  //             // Asumsikan fbrData sudah terurut dan entri pertama adalah yang terbaru
+  //             const latestEntry = fbrData[0]; // Ambil entri terbaru
+  //             setFbr(latestEntry.fbr); // Set nilai FBR terbaru
+  //             sethmkmTrx(latestEntry.hm_last); // Set nilai HM terakhir
+  //             setQtyLast(latestEntry.qty_last); // Set jumlah terakhir
+  //           } else {
+  //             // Jika tidak ada data yang ditemukan, kosongkan state
+  //             setFbr(undefined); // Kosongkan nilai FBR
+  //             sethmkmTrx(undefined); // Kosongkan nilai HM
+  //             setQtyLast(undefined); // Kosongkan jumlah terakhir
+  //           }
   
-            // Perbarui hmLast dengan nilai terbaru dari getLatestHmLast
-            if (lastHm) {
-              setHmLast(lastHm); // Set nilai HM terakhir
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching FBR data:", error); // Tampilkan pesan error jika terjadi kesalahan
-          if (isMounted) { // Periksa apakah komponen masih terpasang
-            setFbr(undefined); // Kosongkan nilai FBR jika terjadi kesalahan
-            setHmLast(undefined); // Kosongkan nilai HM terakhir
-            setQtyLast(undefined); // Kosongkan jumlah terakhir
-          }
-        }
-      }
-    };
+  //           // Perbarui hmLast dengan nilai terbaru dari getLatestHmLast
+  //           if (lastHm) {
+  //             setHmLast(lastHm); // Set nilai HM terakhir
+  //           }
+  //         }
+  //       } catch (error) {
+  //         console.error("Error fetching FBR data:", error); // Tampilkan pesan error jika terjadi kesalahan
+  //         if (isMounted) { // Periksa apakah komponen masih terpasang
+  //           setFbr(undefined); // Kosongkan nilai FBR jika terjadi kesalahan
+  //           setHmLast(undefined); // Kosongkan nilai HM terakhir
+  //           setQtyLast(undefined); // Kosongkan jumlah terakhir
+  //         }
+  //       }
+  //     }
+  //   };
   
-    fetchFbrData(); // Panggil fungsi untuk mengambil data FBR
+  //   fetchFbrData(); // Panggil fungsi untuk mengambil data FBR
   
-    return () => {
-      isMounted = false; // Tandai bahwa komponen tidak lagi terpasang saat komponen dibongkar
-    };
-  }, [selectedUnit]); // Efek ini dijalankan setiap kali selectedUnit berubah
+  //   return () => {
+  //     isMounted = false; // Tandai bahwa komponen tidak lagi terpasang saat komponen dibongkar
+  //   };
+  // }, [selectedUnit]); // Efek ini dijalankan setiap kali selectedUnit berubah
   
 
 
@@ -893,6 +882,8 @@ const FormTRX: React.FC = () => {
         
         // Set nilai hm_km berdasarkan data unit yang dipilih
         setHmkmValue(selectedUnitOption.hm_km); // Perbarui nilai hm_km
+        setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
+  
   
         // Tentukan batas kouta baru berdasarkan nilai unit
         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
@@ -942,6 +933,14 @@ const FormTRX: React.FC = () => {
   };
   
  
+
+
+  
+  
+  // Display the FBR value in the input field
+ 
+  
+
   useEffect(() => {
     const fetchUnitData = async () => {
       if (!selectedUnit) {
@@ -961,7 +960,8 @@ const FormTRX: React.FC = () => {
 
           setHmkmValue(unitData.hm_km); // Set the hm_km value
           setModel(unitData.model_unit); // Set the model unit
-          setOwner(unitData.owner); // Set the owner
+          setOwner(unitData.owner);
+          setQtyValue(unitData.qty); // Set the owner
         } else {
           setError('No data found'); // Error message if no data is available
         }
@@ -975,6 +975,48 @@ const FormTRX: React.FC = () => {
   
     fetchUnitData();
   }, [selectedUnit]);
+  
+  useEffect(() => {
+    console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue }); // Log initial values
+  
+    const calculateFBR = (): number => {
+      if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyValue === 'number') {
+        const difference =  hmLast - hmkmValue ;
+        console.log('Difference (hmkm - hmLast):', difference); // Log the difference
+  
+        if (difference > 0) {
+          const result = difference / qtyValue;
+          console.log('Calculated FBR:', result); // Log the calculated FBR
+          return parseFloat(result.toFixed(2)); // Return as a number
+        } else {
+          console.log('Difference is not positive');
+        }
+      } else {
+        console.log('Invalid input types:', { hmkmValue, hmLast, qtyValue }); // Log if types are invalid
+      }
+      return NaN; // Return NaN for invalid cases
+    };
+  
+    setFbrResult(calculateFBR()); // Make sure fbrResult expects a number
+  }, [hmkmValue, hmLast, qtyValue]);
+  
+
+  // const calculateFBR = (): string => {
+  //   if (
+  //     typeof hmkmTRX === 'number' &&
+  //     typeof hmLast === 'number' &&
+  //     typeof qtyValue === 'number'
+  //   ) {
+  //     const difference = hmkmTRX - hmLast; // Selisih HM/KM Unit
+  //     if (difference > 0) {
+  //       const result = difference / qtyValue; // Rumus FBR: selisih HM/KM / issued sebelumnya
+  //       return result.toFixed(1); // Format hasil dengan 1 desimal
+  //     } else {
+  //       return "N/A"; // Tangani kasus jika selisih tidak valid
+  //     }
+  //   }
+  //   return "N/A"; // Tangani kasus jika input tidak valid
+  // };
   
   return (
     <IonPage>
@@ -1008,6 +1050,7 @@ const FormTRX: React.FC = () => {
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>
+      
               <IonCol>
                 <IonLabel className="label-input">
                   Select Unit <span style={{ color: "red" }}>*</span>
@@ -1131,8 +1174,8 @@ const FormTRX: React.FC = () => {
                     placeholder="Input HM Terakhir"
 
 
-                    // onIonChange={(e) => setHmLast(Number(e.detail.value))}
-                    onIonChange={handleHmkmUnitChange}
+                    onIonChange={(e) => setHmLast(Number(e.detail.value))}
+                    // onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
                   />
 
@@ -1166,6 +1209,7 @@ const FormTRX: React.FC = () => {
                     placeholder="Qty Issued / Receive / Transfer"
                     onIonChange={handleQuantityChange}
                     value={quantity}
+
                     disabled={isFormDisabled}
                   />
 
@@ -1186,7 +1230,17 @@ const FormTRX: React.FC = () => {
                   <IonLabel>
                     FBR Historis <span style={{ color: "red" }}>*</span>
                   </IonLabel>
+
                   <IonInput
+                    style={{ background: "#E8E8E8" }}
+                    className="custom-input"
+                    type="text"
+                    value={fbrResult} // Display FBR result
+                    readonly
+                    disabled={isFormDisabled}
+                  />
+
+                  {/* <IonInput
                    style={{ background: "#E8E8E8" }}
                     className="custom-input"
                     type="number"
@@ -1199,7 +1253,7 @@ const FormTRX: React.FC = () => {
                       typeof calculateFBR() === "number" ? calculateFBR() : ""
                     }
                   // disabled
-                  />
+                  /> */}
                 </IonCol>
               </IonRow>
               <IonRow>
