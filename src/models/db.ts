@@ -88,6 +88,7 @@ interface DataFormTrx {
   reference: number;
  start:string;
   end: string;
+  created_at:string | number | Date;
   
 }
 

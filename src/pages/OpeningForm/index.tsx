@@ -120,11 +120,6 @@ const OpeningForm: React.FC = () => {
   
   }, []);
 
-
-
-
-
-
   useEffect(() => {
     const fetchSondingMasterData = async () => {
       try {
