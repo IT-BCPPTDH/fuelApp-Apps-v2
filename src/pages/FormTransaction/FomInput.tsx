@@ -53,6 +53,7 @@ import { fetchOperatorData, fetchQuotaData, fetchUnitData, fetchUnitLastTrx, get
 import Select, { ActionMeta, SingleValue } from "react-select";
 import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
+import { getUnitQuotaActive } from "../../hooks/getQoutaUnit";
 
 interface Typetrx {
   id: number;
@@ -68,6 +69,14 @@ interface UnitData {
   model: string;
   owner: string;
   hm_km: number; // Adjust the type as necessary
+}
+
+interface UnitQuota {
+  unitNo: string;
+  quota: number;
+  used?: number;
+  issued?: number;
+  isActive?: boolean;
 }
 
 const typeTrx: Typetrx[] = [
@@ -96,7 +105,13 @@ const FormTRX: React.FC = () => {
   const [fullName, setFullName] = useState<string>("");
   const [unitOptions, setUnitOptions] = useState<
     {
-      hm_km: SetStateAction<number | null>;  qty: SetStateAction<number | null>; id: string; unit_no: string; brand: string; owner: string 
+      hm_km: SetStateAction<number | null>;
+      qty: SetStateAction<number | null>;
+      hm_last: SetStateAction<number | null>;
+       id: string;
+       unit_no: string;
+        brand: string;
+         owner: string 
 }[]
   >([]);
 
@@ -175,6 +190,8 @@ const FormTRX: React.FC = () => {
   const [selectedUnit, setSelectedUnit] = useState<string>("");
 
   const [hmkmValue, setHmkmValue] = useState<number | null>(null);
+  const [hmkmLast, setHmKmLast] = useState<number | null>(null);
+ 
  
   const [qtyValue, setQtyValue] = useState<number | null>(null);
  
@@ -184,7 +201,9 @@ const FormTRX: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [fbrResult, setFbrResult] = useState<number>(0);
-
+  const [isActive, setIsActive] = useState(false);
+  const [quotaData, setQuotaData] = useState(null);
+  const [currentUnitQuota, setCurrentUnitQuota] = useState<UnitQuota | null>(null);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -358,8 +377,8 @@ const FormTRX: React.FC = () => {
       date_trx: new Date().toISOString(),
       hm_last: Number(hmLast) || 0,
       hm_km: Number(hmkmTRX) || 0,
-      qty_last: Number(quantity) || 0,  // Ensure quantity is a number
-      qty: Number(quantity) || 0,       // Ensure quantity is a number
+      qty_last: Number(quantity) || 0, // Ensure quantity is a number
+      qty: Number(quantity) || 0, // Ensure quantity is a number
       flow_start: Number(flowMeterAwal) || 0,
       flow_end: flow_end,
       dip_start: Number(dipStart) || 0,
@@ -380,6 +399,7 @@ const FormTRX: React.FC = () => {
       reference: Number(Refrence) || 0,
       liters: 0,
       cm: 0,
+      created_at: new Date().toISOString(),
       date: ""
     };
 
@@ -416,8 +436,10 @@ const FormTRX: React.FC = () => {
       setErrorModalOpen(true);
     }
   };
-  const updateLocalStorageQuota = (unitNo: string, issuedQuantity: number) => {
-    const unitQuota = localStorage.getItem("unitQouta");
+
+
+  const updateLocalStorageQuota = async (unitNo: string, issuedQuantity: number) => {
+    const unitQuota = await getDataFromStorage("unitQouta");
     if (unitQuota) {
       const parsedData = JSON.parse(unitQuota);
       const updatedData = parsedData.map((unit: { unitNo: string; quota: number; used: number; }) => {
@@ -433,23 +455,27 @@ const FormTRX: React.FC = () => {
       localStorage.setItem("unitQouta", JSON.stringify(updatedData));
     }
   };
-
+  
   useEffect(() => {
-    const unitQuota = localStorage.getItem("unitQouta");
-    if (unitQuota) {
-      const parsedData = JSON.parse(unitQuota);
-      const currentUnitQuota = parsedData.find((unit: { unitNo: string | undefined; }) => unit.unitNo === selectedUnit);
-
-      if (currentUnitQuota) {
-        setUnitQuota(currentUnitQuota.quota);
-        setUsedQuota(currentUnitQuota.used);
-        setRemainingQuota(currentUnitQuota.quota - currentUnitQuota.used); // Calculate remaining quota
-      } else {
-        setUnitQuota(0);
-        setUsedQuota(0);
-        setRemainingQuota(0);
+    const fetchData = async () => {
+      const unitQuota = await getDataFromStorage("unitQouta");
+      if (unitQuota) {
+        const parsedData = JSON.parse(unitQuota);
+        const currentUnitQuota = parsedData.find((unit: { unitNo: string | undefined; }) => unit.unitNo === selectedUnit);
+  
+        if (currentUnitQuota) {
+          setUnitQuota(currentUnitQuota.quota);
+          setUsedQuota(currentUnitQuota.used);
+          setRemainingQuota(currentUnitQuota.quota - currentUnitQuota.used); // Calculate remaining quota
+        } else {
+          setUnitQuota(0);
+          setUsedQuota(0);
+          setRemainingQuota(0);
+        }
       }
-    }
+    };
+  
+    fetchData();
   }, [selectedUnit]);
 
 
@@ -468,11 +494,6 @@ const FormTRX: React.FC = () => {
     // Directly set the signature state
     console.log("Updated Signature:", newSignature);
   };
-
-
-
- 
-  
 
   const calculateFlowEnd = (): string | number => {
     if (flowMeterAwal !== undefined && quantity !== undefined) {
@@ -510,7 +531,6 @@ const FormTRX: React.FC = () => {
       console.log("No unit options found in localStorage.");
     }
   };
-
 
   useEffect(() => {
     console.log("unitOptions updated:", unitOptions);
@@ -551,67 +571,6 @@ const FormTRX: React.FC = () => {
     console.log("operatorOptions updated:", operatorOptions);
   }, [operatorOptions]);
 
-
-
-
-
-
-
-  // useEffect(() => {
-  //   // Track if the component is still mounted
-  //   let isMounted = true;
-
-  //   const fetchFbrData = async () => {
-  //     if (selectedUnit) {
-  //       try {
-  //         // Fetch FBR and HM data concurrently
-  //         const [fbrData, lastHm] = await Promise.all([
-  //           getFbrByUnit(selectedUnit),
-  //           getLatestHmLast(selectedUnit), // Ensure this function filters by selectedUnit
-  //         ]);
-
-  //         if (isMounted) {
-
-  //           console.log("HM Data:", lastHm); // Change this to lastHm
-
-  //           if (fbrData.length > 0) {
-  //             // Assuming fbrData is sorted and the first entry is the latest
-  //             const latestEntry = fbrData[0];
-  //             console.log("data last", latestEntry)
-  //             setFbr(latestEntry.fbr);
-
-  //             sethmkmTrx(latestEntry.hm_km);
-  //             setQtyLast(latestEntry.qty);
-  //           } else {
-  //             // If no data is found, clear the state
-  //             setFbr(undefined);
-  //             sethmkmTrx(undefined);
-  //             setQtyLast(undefined);
-  //           }
-
-  //           // Update hmLast with the latest value from getLatestHmLast
-  //           if (lastHm) {
-  //             setHmLast(lastHm);
-  //           }
-  //         }
-  //       } catch (error) {
-  //         console.error("Error fetching FBR data:", error);
-  //         if (isMounted) {
-  //           setFbr(undefined);
-  //           setHmLast(undefined);
-  //           setQtyLast(undefined);
-  //         }
-  //       }
-  //     }
-  //   };
-
-  //   fetchFbrData();
-
-  //   return () => {
-  //     isMounted = false;
-  //   };
-  // }, [selectedUnit]);
-
   const handleHmkmUnitChange = (e: CustomEvent) => {
     const value = Number(e.detail.value);
     if (hmLast !== undefined && value < hmLast) {
@@ -647,131 +606,14 @@ const FormTRX: React.FC = () => {
     }
   };
 
-
-
-
   useEffect(() => {
     console.log("unitOptions updated:", unitOptions);
   }, [unitOptions]);
-
-  // useEffect(() => {
-  //   // Menandai apakah komponen masih terpasang
-  //   let isMounted = true;
-  
-  //   const fetchFbrData = async () => {
-  //     if (selectedUnit) {
-  //       try {
-  //         // Ambil data FBR dan HM secara bersamaan
-  //         const [fbrData, lastHm] = await Promise.all([
-  //           getFbrByUnit(selectedUnit), // Mengambil data FBR berdasarkan unit yang dipilih
-  //           getLatestHmLast(selectedUnit), // Mengambil data HM terbaru berdasarkan unit yang dipilih
-  //         ]);
-  
-  //         if (isMounted) { // Periksa apakah komponen masih terpasang
-  
-  //           if (fbrData.length > 0) {
-  //             // Asumsikan fbrData sudah terurut dan entri pertama adalah yang terbaru
-  //             const latestEntry = fbrData[0]; // Ambil entri terbaru
-  //             setFbr(latestEntry.fbr); // Set nilai FBR terbaru
-  //             sethmkmTrx(latestEntry.hm_last); // Set nilai HM terakhir
-  //             setQtyLast(latestEntry.qty_last); // Set jumlah terakhir
-  //           } else {
-  //             // Jika tidak ada data yang ditemukan, kosongkan state
-  //             setFbr(undefined); // Kosongkan nilai FBR
-  //             sethmkmTrx(undefined); // Kosongkan nilai HM
-  //             setQtyLast(undefined); // Kosongkan jumlah terakhir
-  //           }
-  
-  //           // Perbarui hmLast dengan nilai terbaru dari getLatestHmLast
-  //           if (lastHm) {
-  //             setHmLast(lastHm); // Set nilai HM terakhir
-  //           }
-  //         }
-  //       } catch (error) {
-  //         console.error("Error fetching FBR data:", error); // Tampilkan pesan error jika terjadi kesalahan
-  //         if (isMounted) { // Periksa apakah komponen masih terpasang
-  //           setFbr(undefined); // Kosongkan nilai FBR jika terjadi kesalahan
-  //           setHmLast(undefined); // Kosongkan nilai HM terakhir
-  //           setQtyLast(undefined); // Kosongkan jumlah terakhir
-  //         }
-  //       }
-  //     }
-  //   };
-  
-  //   fetchFbrData(); // Panggil fungsi untuk mengambil data FBR
-  
-  //   return () => {
-  //     isMounted = false; // Tandai bahwa komponen tidak lagi terpasang saat komponen dibongkar
-  //   };
-  // }, [selectedUnit]); // Efek ini dijalankan setiap kali selectedUnit berubah
-  
-
-
-  useEffect(() => {
-    const loadUnitDataQuota = async () => {
-      const today = new Date();
-      const formattedDate = today.toISOString().split('T')[0]; // Mengambil tanggal hari ini dalam format YYYY-MM-DD
-
-      try {
-        // Fetch data dari database untuk tanggal hari ini
-        const quotaData = await fetchQuotaData(formattedDate);
-        console.log('Fetched quota data:', quotaData);
-
-        if (quotaData && Array.isArray(quotaData)) {
-          // Mencari kuota untuk unit yang dipilih
-          let currentUnitQuota = quotaData.find(unit => unit.unitNo === selectedUnit);
-
-          // Jika tidak ada kuota untuk unit yang dipilih, coba ambil kuota dari tanggal sebelumnya
-          if (!currentUnitQuota) {
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1); // Set tanggal ke hari sebelumnya
-            const formattedYesterday = yesterday.toISOString().split('T')[0];
-
-            const previousQuotaData = await fetchQuotaData(formattedYesterday);
-            console.log('Fetched previous quota data:', previousQuotaData);
-
-            currentUnitQuota = previousQuotaData.find(unit => unit.unitNo === selectedUnit);
-          }
-
-          if (currentUnitQuota) {
-            const totalQuota = currentUnitQuota.quota;
-            const usedQuota = currentUnitQuota.used || 0;
-
-            setUnitQuota(totalQuota);
-            const remaining = totalQuota - usedQuota;
-            setRemainingQuota(remaining);
-            console.log(`Remaining Quota for ${selectedUnit}: ${remaining} Liter`);
-            setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${totalQuota} Liter`);
-
-            // Check if issued amount exceeds remaining quota
-            const issuedAmount = currentUnitQuota.issued || 0;
-            if (issuedAmount > remaining) {
-              setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
-            }
-          } else {
-            setUnitQuota(0);
-            setRemainingQuota(0);
-            setQuotaMessage("");
-            console.log(`No quota found for unit: ${selectedUnit}`);
-          }
-        } else {
-          console.error('No quota data found for the specified date');
-        }
-      } catch (error) {
-        console.error('Error fetching quota data:', error);
-      }
-    };
-
-    loadUnitDataQuota();
-  }, [selectedUnit]);
-
 
   function setBase64(value: SetStateAction<string | undefined>): void {
     throw new Error("Function not implemented.");
   }
 
-
-  
 
   useEffect(() => {
     const fetchJdeOptions = async () => {
@@ -881,7 +723,9 @@ const FormTRX: React.FC = () => {
         setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
         
         // Set nilai hm_km berdasarkan data unit yang dipilih
-        setHmkmValue(selectedUnitOption.hm_km); // Perbarui nilai hm_km
+        setHmkmValue(selectedUnitOption.hm_km);
+         setHmKmLast(selectedUnitOption.hm_last);
+         // Perbarui nilai hm_km
         setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
   
   
@@ -940,34 +784,41 @@ const FormTRX: React.FC = () => {
   // Display the FBR value in the input field
  
   
-
   useEffect(() => {
     const fetchUnitData = async () => {
-      if (!selectedUnit) {
-        return; 
-      }
+      if (!selectedUnit) return;
   
       setLoading(true);
       setError(null);
       try {
         const response = await getPrevUnitTrx(selectedUnit);
-        
-        // Check if the response has a status of '200' and contains data
-        if (response.status === '200' && response.data.length > 0) {
-          const unitData = response.data[0]; // Get the first element of the data array
-          console.log('Unit Data:', unitData); 
   
-
-          setHmkmValue(unitData.hm_km); // Set the hm_km value
-          setModel(unitData.model_unit); // Set the model unit
-          setOwner(unitData.owner);
-          setQtyValue(unitData.qty); // Set the owner
+        if (response.status === '200' && response.data.length > 0) {
+         
+          const latestUnitData = response.data
+            .sort((a: { date_trx: string | number | Date; }, b: { date_trx: string | number | Date; }) => new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime())[0];
+  
+          if (latestUnitData) {
+            console.log('Latest Unit Data:', latestUnitData);
+  
+            
+            const hmKmValue = Number(latestUnitData.hm_km) || 0; 
+            const hmKmLastValue = Number(latestUnitData.hm_last) || 0;
+  
+            setHmkmValue(hmKmValue);
+            setHmKmLast(hmKmLastValue);
+            setModel(latestUnitData.model_unit);
+            setOwner(latestUnitData.owner);
+            setQtyValue(Number(latestUnitData.qty) || 0); 
+          } else {
+            setError('No data found');
+          }
         } else {
-          setError('No data found'); // Error message if no data is available
+          setError('No data found');
         }
       } catch (err) {
         setError('Failed to fetch unit data');
-        console.error(err); // Log the error for further investigation
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -975,6 +826,7 @@ const FormTRX: React.FC = () => {
   
     fetchUnitData();
   }, [selectedUnit]);
+  
   
   useEffect(() => {
     console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue }); // Log initial values
@@ -1001,23 +853,66 @@ const FormTRX: React.FC = () => {
   }, [hmkmValue, hmLast, qtyValue]);
   
 
-  // const calculateFBR = (): string => {
-  //   if (
-  //     typeof hmkmTRX === 'number' &&
-  //     typeof hmLast === 'number' &&
-  //     typeof qtyValue === 'number'
-  //   ) {
-  //     const difference = hmkmTRX - hmLast; // Selisih HM/KM Unit
-  //     if (difference > 0) {
-  //       const result = difference / qtyValue; // Rumus FBR: selisih HM/KM / issued sebelumnya
-  //       return result.toFixed(1); // Format hasil dengan 1 desimal
-  //     } else {
-  //       return "N/A"; // Tangani kasus jika selisih tidak valid
-  //     }
-  //   }
-  //   return "N/A"; // Tangani kasus jika input tidak valid
-  // };
-  
+  useEffect(() => {
+    const loadUnitDataQuota = async () => {
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+
+        try {
+            const quotaData = await fetchQuotaData(formattedDate);
+            console.log('Fetched quota data:', quotaData);
+
+            if (quotaData && Array.isArray(quotaData)) {
+                let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
+
+                if (!foundUnitQuota) {
+                    const yesterday = new Date(today);
+                    yesterday.setDate(today.getDate() - 1);
+                    const formattedYesterday = yesterday.toISOString().split('T')[0];
+
+                    const previousQuotaData = await fetchQuotaData(formattedYesterday);
+                    console.log('Fetched previous quota data:', previousQuotaData);
+
+                    foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
+                }
+
+                if (foundUnitQuota) {
+                    setCurrentUnitQuota(foundUnitQuota);
+                    const totalQuota = foundUnitQuota.quota;
+                    const usedQuota = foundUnitQuota.used || 0;
+
+                    if (foundUnitQuota.isActive) {
+                        setUnitQuota(totalQuota);
+                        const remainingQuota = totalQuota - usedQuota; // Use remainingQuota here
+                        setRemainingQuota(remainingQuota);
+                        setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remainingQuota} Liter`);
+                    } else {
+                        setUnitQuota(0);
+                        setRemainingQuota(0);
+                        setQuotaMessage("Pembatasan kuota dinonaktifkan.");
+                    }
+
+                    const issuedAmount = foundUnitQuota.issued || 0;
+                    if (issuedAmount > (foundUnitQuota.isActive ? remainingQuota : 0)) { // Update to use remainingQuota
+                        setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
+                    }
+                } else {
+                    setUnitQuota(0);
+                    setRemainingQuota(0);
+                    setQuotaMessage("");
+                    console.log(`No quota found for unit: ${selectedUnit}`);
+                }
+            } else {
+                console.error('No quota data found for the specified date');
+            }
+        } catch (error) {
+            console.error('Error fetching quota data:', error);
+        }
+    };
+
+    loadUnitDataQuota();
+}, [selectedUnit]);
+
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -1034,19 +929,18 @@ const FormTRX: React.FC = () => {
 
             </IonRow>
           )}
-          {remainingQuota !== undefined && (selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
+         {currentUnitQuota?.isActive && remainingQuota > 0 && (
             <IonRow>
-              <IonCol>
-                <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
-                  <IonLabel style={{ display: "flex", color: remainingQuota === 0 ? "red" : "inherit" }}>
-                    <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                    <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
-                  </IonLabel>
-                </IonItemDivider>
-              </IonCol>
+                <IonCol>
+                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                        <IonLabel style={{ display: "flex" }}>
+                            <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
+                            <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
+                        </IonLabel>
+                    </IonItemDivider>
+                </IonCol>
             </IonRow>
-          )}
-
+        )}
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>
@@ -1157,7 +1051,7 @@ const FormTRX: React.FC = () => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    value={hmkmValue || ""}
+                    value={hmkmValue|| ""}
 
                     // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
@@ -1172,8 +1066,7 @@ const FormTRX: React.FC = () => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-
-
+                    
                     onIonChange={(e) => setHmLast(Number(e.detail.value))}
                     // onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   IonImg,
   IonButton,
@@ -37,13 +37,15 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadStationData = async () => {
+  const loadStationData = useCallback(async () => {
+    try {
+      setLoading(true);
       const cachedData = await getDataFromStorage('stationData');
+
       if (cachedData) {
         setStationData(cachedData);
       } else {
-        const stations: Station[] = await fetchStationData();
+        const stations = await fetchStationData();
         const formattedStations = stations.map((station) => ({
           value: station.fuel_station_name,
           label: station.fuel_station_name,
@@ -51,11 +53,20 @@ const Login: React.FC = () => {
           fuel_station_type: station.fuel_station_type,
         }));
         setStationData(formattedStations);
+       
       }
-    };
-
-    loadStationData();
+    } catch (err) {
+      console.error('Error loading station data:', err);
+      
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadStationData();
+  }, [loadStationData]);
+
 
   const handleLogin = async () => {
     if (!jde || !selectedUnit) {
