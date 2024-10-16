@@ -4,7 +4,8 @@ import { ResponseError } from "../helper/responseError";
 const BE_USER = import.meta.env.VITE_BE_USER_URL;
 
 export async function getOperator() {
-    const url = `${BE_USER}/master/operator`;
+    // const url = `${BE_USER}/master/operator`;
+    const url = `${BE_USER}/api-user/get-user-fuel`;
 
     try {
         const response = await CapacitorHttp.get({

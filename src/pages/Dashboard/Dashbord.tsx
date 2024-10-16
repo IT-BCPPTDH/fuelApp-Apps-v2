@@ -183,7 +183,7 @@ const DashboardFuelMan: React.FC = () => {
   };
 
   const handleRefresh = () => {
-    window.location.reload();
+    route.push('/dashboard');
   };
 
   useEffect(() => {

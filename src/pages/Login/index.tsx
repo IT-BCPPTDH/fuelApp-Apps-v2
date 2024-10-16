@@ -20,22 +20,21 @@ import {
   fetchStationData,
   saveDataToStorage,
   getDataFromStorage,
-  fetchShiftData,
 } from "../../services/dataService";
-import { Station } from "../../models/interfaces";
 import Select from "react-select";
-import { getPrevUnitTrx } from "../../hooks/getDataPrev";
-const Login: React.FC = () => {
+
+// Define props interface
+interface LoginProps {
+  onLoginSuccess: () => void;
+}
+
+const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [jde, setJdeOperator] = useState<string>("");
   const [stationData, setStationData] = useState<{ value: string; label: string; site: string; fuel_station_type: string }[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
-  const router = useIonRouter();
-
-  const [unitData, setUnitData] = useState<any>(null);  // State untuk menyimpan data unit
-  const [noUnit, setNoUnit] = useState<string>(""); // Nilai no_unit yang ingin dipanggil
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const router = useIonRouter();
 
   const loadStationData = useCallback(async () => {
     try {
@@ -53,11 +52,9 @@ const Login: React.FC = () => {
           fuel_station_type: station.fuel_station_type,
         }));
         setStationData(formattedStations);
-       
       }
     } catch (err) {
       console.error('Error loading station data:', err);
-      
     } finally {
       setLoading(false);
     }
@@ -67,11 +64,12 @@ const Login: React.FC = () => {
     loadStationData();
   }, [loadStationData]);
 
-
   const handleLogin = async () => {
+    setLoading(true);
     if (!jde || !selectedUnit) {
       console.error("Employee ID dan Station harus diisi.");
       setShowError(true);
+      setLoading(false);
       return;
     }
 
@@ -79,6 +77,7 @@ const Login: React.FC = () => {
     if (!selectedStation) {
       console.error("Selected station not found");
       setShowError(true);
+      setLoading(false);
       return;
     }
 
@@ -101,8 +100,13 @@ const Login: React.FC = () => {
           jde: jde,
           site: selectedStation.site,
         };
-
+        
         saveDataToStorage("loginData", loginData);
+
+        // Notify the App component about the login success
+        onLoginSuccess();
+
+        // Navigate to the opening page
         router.push("/opening");
       } else {
         console.error("Unexpected response:", response);
@@ -111,28 +115,10 @@ const Login: React.FC = () => {
     } catch (error) {
       console.error("Error during login:", error);
       setShowError(true);
+    } finally {
+      setLoading(false);
     }
   };
-
-  useEffect(() => {
-    // Fungsi untuk memanggil getPrevUnitTrx
-    const fetchUnitData = async () => {
-      setLoading(true); // Set loading state
-      setError(null); // Reset error state
-      try {
-        const data = await getPrevUnitTrx(noUnit);
-        console.log('unitSelect', data)
-        setUnitData(data); // Set data yang didapat ke state
-      } catch (err) {
-        setError('Failed to fetch unit data'); // Set error jika ada masalah
-      } finally {
-        setLoading(false); // Set loading selesai
-      }
-    };
-
-    // Panggil fungsi saat komponen mount
-    fetchUnitData();
-  }, [noUnit]);
 
   return (
     <IonPage>
@@ -198,8 +184,8 @@ const Login: React.FC = () => {
                   ></IonInput>
                 </IonCol>
                 <IonCol className="mr-content">
-                  <IonButton className="check-button" expand="block" onClick={handleLogin}>
-                    Login
+                  <IonButton className="check-button" expand="block" onClick={handleLogin} disabled={loading}>
+                    {loading ? "Loading..." : "Login"}
                   </IonButton>
                 </IonCol>
               </IonRow>

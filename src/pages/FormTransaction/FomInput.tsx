@@ -829,27 +829,27 @@ const FormTRX: React.FC = () => {
   
   
   useEffect(() => {
-    console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue }); // Log initial values
+    console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue }); 
   
     const calculateFBR = (): number => {
       if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyValue === 'number') {
         const difference =  hmLast - hmkmValue ;
-        console.log('Difference (hmkm - hmLast):', difference); // Log the difference
+        console.log('Difference (hmkm - hmLast):', difference); 
   
         if (difference > 0) {
           const result = difference / qtyValue;
-          console.log('Calculated FBR:', result); // Log the calculated FBR
-          return parseFloat(result.toFixed(2)); // Return as a number
+          console.log('Calculated FBR:', result); 
+          return parseFloat(result.toFixed(2)); 
         } else {
           console.log('Difference is not positive');
         }
       } else {
-        console.log('Invalid input types:', { hmkmValue, hmLast, qtyValue }); // Log if types are invalid
+        console.log('Invalid input types:', { hmkmValue, hmLast, qtyValue }); 
       }
-      return NaN; // Return NaN for invalid cases
+      return NaN; 
     };
   
-    setFbrResult(calculateFBR()); // Make sure fbrResult expects a number
+    setFbrResult(calculateFBR()); 
   }, [hmkmValue, hmLast, qtyValue]);
   
 
@@ -880,10 +880,11 @@ const FormTRX: React.FC = () => {
                     setCurrentUnitQuota(foundUnitQuota);
                     const totalQuota = foundUnitQuota.quota;
                     const usedQuota = foundUnitQuota.used || 0;
+                    const additionalQouta = foundUnitQuota.additional || 0;
 
                     if (foundUnitQuota.isActive) {
                         setUnitQuota(totalQuota);
-                        const remainingQuota = totalQuota - usedQuota; // Use remainingQuota here
+                        const remainingQuota = totalQuota + additionalQouta - usedQuota ; // Use remainingQuota here
                         setRemainingQuota(remainingQuota);
                         setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remainingQuota} Liter`);
                     } else {
