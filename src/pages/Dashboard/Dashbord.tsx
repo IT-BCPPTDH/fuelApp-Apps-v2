@@ -19,15 +19,74 @@ import {
 } from '@ionic/react';
 import TableData from '../../components/Table';
 import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate } from '../../utils/getData';
-import { getHomeByIdLkf } from '../../hooks/getHome';
+import { getHomeByIdLkf, getHomeTable } from '../../hooks/getHome';
 import NetworkStatus from '../../components/network';
 import { getDataFromStorage } from '../../services/dataService';
+import { home } from 'ionicons/icons';
+import { updateDataInDB, updateDataInTrx,} from '../../utils/update';
+import { addDataTrxType } from '../../utils/insertData';
+import { deleteAllDataTransaksi } from '../../utils/delete';
 
 // Define the data structure for the card
 interface CardData {
   title: string;
   value: string | number;
   icon: string;
+}
+
+
+interface TableDataItem {
+  hm_km: any;
+  from_data_id: number;
+  unit_no: string;
+  model_unit: string;
+  owner: string;
+  fbr_historis: string;
+  jenis_trx: string;
+  qty_issued: number;
+  fm_awal: number;
+  fm_akhir: number;
+  hm_last:number;
+  jde_operator: string;
+  name_operator: string;
+
+  status: number;
+}
+
+interface DataFormTrx {
+  date: string | number | Date;
+  id?: number; // Auto-incremented ID
+  liters: number;
+  cm: number;
+  from_data_id: string;
+  no_unit: string;
+  model_unit: string;
+  owner: string;
+  date_trx: string;
+  hm_last: number;
+  hm_km: number;
+  qty_last: number;
+  qty: number;
+  name_operator: string;
+  fbr: number;
+  flow_start: number;
+  flow_end: number ;
+  signature: string | null;
+  foto: string;
+  type: string;
+  lkf_id?: string;
+  status: number;
+  jde_operator: string;
+  fuelman_id: string;
+  dip_start: number;
+  dip_end: number;
+  sonding_start: number;
+  sonding_end: number;
+  reference: number;
+ start:string;
+  end: string;
+  created_at:string | number | Date;
+  
 }
 
 const DashboardFuelMan: React.FC = () => {
@@ -55,7 +114,7 @@ const DashboardFuelMan: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [jde, setJde] = useState<string>(''); 
-
+  const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
   const [jdeOptions, setJdeOptions] = useState<
     { JDE: string; fullname: string }[]
   >([]);
@@ -145,20 +204,21 @@ const DashboardFuelMan: React.FC = () => {
             cardData
           }));
 
-          const homeData = await getHomeByIdLkf(id);
+          // const homeData = await getHomeByIdLkf(id);
+          // console.log("data Dari Backen", homeData)
           const loginData = localStorage.getItem('loginData');
-          if (loginData) {
-            const { jde } = JSON.parse(loginData);
-            if (homeData && homeData.fullname) {
-              const matchedEmployee = homeData.fullname.find((employee: any) => employee.JDE === jde);
-              if (matchedEmployee) {
+          // if (loginData) {
+          //   const { jde } = JSON.parse(loginData);
+          //   if (homeData && homeData.fullname) {
+          //     const matchedEmployee = homeData.fullname.find((employee: any) => employee.JDE === jde);
+          //     if (matchedEmployee) {
              
-                setJde(matchedEmployee.jde);
-              } else {
+          //       setJde(matchedEmployee.jde);
+          //     } else {
                
-              }
-            }
-          }
+          //     }
+          //   }
+          // }
         } else {
           setError('No LKF ID found');
         }
@@ -182,15 +242,47 @@ const DashboardFuelMan: React.FC = () => {
     route.push('/closing-data');
   };
 
-  const handleRefresh = () => {
-    route.push('/dashboard');
-  };
+  
+  
+  
+
+
+
+    useEffect(() => {
+    const fetchTableSummary = async () => {
+      if (lkfId) {
+        console.log("Fetching data for LKF ID:", lkfId);
+        try {
+          const response = await getHomeTable(lkfId);
+          console.log("Data Table Dashboard:", response);
+  
+          if (response && response.data && Array.isArray(response.data)) {
+            setData(response.data);
+          } else {
+            console.error("Expected an array in response.data but got:", response);
+            setData([]);
+          }
+        } catch (error) {
+          console.error("Failed to fetch table summary data:", error);
+          setError("Failed to fetch data");
+          setData([]); // Ensure data is cleared in case of error
+        } finally {
+          setLoading(false); // Stop loading indicator
+        }
+      } else {
+        console.log("No LKF ID to fetch data for");
+        setData([]); // Clear data if no LKF ID
+        setLoading(false); // Stop loading indicator
+      }
+    };
+  
+    fetchTableSummary();
+  }, [lkfId]);
 
   useEffect(() => {
     const fetchJdeOptions = async () => {
       const storedJdeOptions = await getDataFromStorage("allOperator");
-      console.log("Stored Nama Options:", storedJdeOptions);
-
+   
       if (storedJdeOptions) {
         // If you are certain the data is in the correct format
         if (Array.isArray(storedJdeOptions)) {
@@ -235,12 +327,68 @@ const DashboardFuelMan: React.FC = () => {
   }, []);
   
   
+
+  const handleRefresh = async () => {
+    if (lkfId) {
+      setLoading(true); // Start loading state
+      try {
+        const response = await getHomeTable(lkfId);
+        console.log("Fetched Edit Transaksi:", response);
+        
+        // Ensure response.data is an array
+        if (response && response.data && Array.isArray(response.data)) {
+          const newData = response.data;
   
-
-
-
-
-
+          // First, delete all existing data in dataTransaksi
+          await deleteAllDataTransaksi();
+  
+          // Then, add the new data
+          for (const item of newData) {
+            const dataPost = {
+              from_data_id: item.from_data_id,
+              no_unit: item.no_unit,
+              model_unit: item.model_unit,
+              owner: item.owner,
+              date_trx: new Date().toISOString(),
+              hm_last: Number(item.hm_last) || 0,
+              hm_km: Number(item.hm_km) || 0,
+              qty_last: Number(item.qty_last) || 0, 
+              qty: Number(item.qty) || 0, 
+              flow_start: Number(item.flow_start) || 0,
+              flow_end: Number(item.flow_end) || 0,
+              name_operator: item.name_operator,
+              fbr: item.fbr,
+              lkf_id: item.lkf_id ?? "",
+              signature: item.signature ?? "",
+              type: item.type ?? "",
+              foto: item.foto ?? "",
+              fuelman_id: item.fuelman_id,
+              status: item.status ?? 0,
+            };
+  
+            await addDataTrxType(dataPost); // Use the dataPost object
+          }
+          
+          // Update local state with the new data
+          setData(newData);
+        } else {
+          console.error("Expected an array in response.data but got:", response);
+          setData([]); // Reset to empty array on error
+        }
+      } catch (error) {
+        console.error("Failed to refresh data:", error);
+        setError("Failed to refresh data");
+        setData([]); 
+      } finally {
+        setLoading(false); 
+      }
+    } else {
+      console.log("No LKF ID to refresh data for");
+      setData([]); 
+      setLoading(false); 
+    }
+  };
+  
   return (
     <IonPage>
       <IonContent>

@@ -17,8 +17,11 @@ import {
   useIonToast,
   useIonRouter,
   IonPage,
-  IonCard
+  IonCard,
+  IonRefresher,
+  IonRefresherContent,
 } from "@ionic/react";
+
 import "./style.css";
 import { postOpening } from "../../hooks/serviceApi";
 import { addDataToDB, getOfflineData, removeDataFromDB } from "../../utils/insertData";
@@ -31,6 +34,8 @@ import { getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from
 import { getStationData} from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
+import { chevronDownCircleOutline } from 'ionicons/icons';
+
 interface Shift {
   id: number;
   name: string;
@@ -172,6 +177,9 @@ const OpeningForm: React.FC = () => {
   useEffect(() => {
     debouncedUpdate(openingSonding, station);
   }, [openingSonding, station, debouncedUpdate]);
+
+  
+
 
   // useEffect(() => {
   //   const updateOpeningDip = async () => {
@@ -421,7 +429,7 @@ useEffect(() => {
   //     console.log("Chace",cachedShiftData)
   //     if (cachedShiftData) {
   //       setCloseShift(cachedShiftData); 
-  //     } else {
+  //     } else 
        
   //     }
   //   };
@@ -441,35 +449,38 @@ useEffect(() => {
 
 
 
-useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const cachedShiftData = await getDataFromStorage('shiftCloseData');
-      if (cachedShiftData && cachedShiftData.length > 0) {
-        setCloseShift(cachedShiftData);
-        const latestShiftData = cachedShiftData[cachedShiftData.length - 1]; 
-        if (latestShiftData.closing_sonding !== undefined) {
-          setOpeningSonding(latestShiftData.closing_sonding); 
-        }
-        if (latestShiftData.flow_meter_end !== undefined) {
-          setFlowMeterAwal(latestShiftData.flow_meter_end); 
-        }
-        if (latestShiftData.opening_dip !== undefined) {
-          setOpeningDip(latestShiftData.opening_dip); 
-        }
-      } else {
-        console.error("No cached shift data found");
+const fetchData = async () => {
+  setLoading(true);
+  try {
+    const cachedShiftData = await getDataFromStorage('shiftCloseData');
+    if (cachedShiftData && cachedShiftData.length > 0) {
+      setCloseShift(cachedShiftData);
+      const latestShiftData = cachedShiftData[cachedShiftData.length - 1]; 
+      if (latestShiftData.closing_sonding !== undefined) {
+        setOpeningSonding(latestShiftData.closing_sonding); 
       }
-    } catch (error) {
-      console.error("Error fetching shift data:", error);
-    } finally {
-      setLoading(false);
+      if (latestShiftData.flow_meter_end !== undefined) {
+        setFlowMeterAwal(latestShiftData.flow_meter_end); 
+      }
+      if (latestShiftData.opening_dip !== undefined) {
+        setOpeningDip(latestShiftData.opening_dip); 
+      }
+    } else {
+      console.error("No cached shift data found");
     }
-  };
+  } catch (error) {
+    console.error("Error fetching shift data:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  fetchData();
-}, []);
+
+const doRefresh = async (event: CustomEvent) => {
+  await fetchData();
+  event.detail.complete(); // Notify that the refresh is complete
+};
+
 
 
 
@@ -523,7 +534,15 @@ useEffect(() => {
           <IonTitle>Form Opening Data Stock (Dip) & Sonding</IonTitle>
         </IonToolbar>
       </IonHeader>
+
+      
       <IonContent>
+      <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
+          <IonRefresherContent refreshingSpinner="circles"
+           />
+          
+        </IonRefresher>
+
         <div className="wrapper-content">
           <div className="padding-content">
             <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>

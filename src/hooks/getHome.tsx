@@ -14,29 +14,25 @@ export class ResponseError extends Error {
 }
 
 // Function to fetch home summary by Lkf ID
-export async function getHomeByIdLkf(lkfId: string): Promise<any> {
-  const url = `${LINK_BACKEND}/api/operator/get-home-summary/${lkfId}`;
+
+
+export async function getHomeByIdLkf(lkf_id: string): Promise<any> {
+
+  const url = `${LINK_BACKEND}/api/operator/get-home-summary/${lkf_id}`;
 
   try {
-    const response = await CapacitorHttp.get({
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await fetch(url, {
+      method: 'GET',
     });
 
-    if (response.status !== 200) {
-      throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
+    if (!response.ok) {
+      throw new ResponseError(`Failed to fetch Dashboard data. Status: ${response.status} ${response.statusText}`, response);
     }
 
-    const data = response.data;
+    const data = await response.json();
+    
+    console.log('Successfully data home :', data);
 
-    if (data && Object.keys(data).length === 0) {
-      console.warn('Data is empty:', data);
-      return null;  // Return null or any default value you see fit
-    }
-
-    console.log('Successfully fetched station data:', data);
     return data;
   } catch (error) {
     if (error instanceof ResponseError) {
@@ -52,9 +48,11 @@ export async function getHomeByIdLkf(lkfId: string): Promise<any> {
   }
 }
 
+
+
 // Function to fetch home table data by Lkf ID
-export async function getHomeTable(lkfId: string): Promise<any> {
-  const url = `${LINK_BACKEND}/api/operator/get-home-table/${lkfId}`;
+export async function getHomeTable(lkf_id: string) {
+  const url = `${LINK_BACKEND}/api/operator/get-home-table/${lkf_id}`;
 
   try {
     const response = await CapacitorHttp.get({
@@ -65,7 +63,7 @@ export async function getHomeTable(lkfId: string): Promise<any> {
     });
 
     if (response.status !== 200) {
-      throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
+      throw new ResponseError(`Failed to fetch Tabek data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
     }
 
     const data = response.data;
@@ -75,7 +73,7 @@ export async function getHomeTable(lkfId: string): Promise<any> {
         console.warn('Data is empty:', data);
         return { status: '200', message: 'No data available', data: [] };
       }
-      console.log('Successfully fetched station data:', data);
+      console.log('Successfully Data Table:', data);
       return data;
     } else {
       console.warn('Data is in unexpected format:', data);

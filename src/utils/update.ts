@@ -39,3 +39,6 @@ export const updateDataInDB = async (id: number, data: Partial<DataLkf>) => {
       throw new Error("Update failed"); // Optionally throw an error for further handling
     }
   };
+
+
+

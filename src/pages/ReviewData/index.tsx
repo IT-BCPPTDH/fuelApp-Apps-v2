@@ -7,7 +7,7 @@ import { getLatestLkfId, getLatestLkfData } from '../../utils/getData';
 import { logoutUser } from '../../hooks/useAuth';
 
 import './style.css';
-import { deleteAllDataTransaksi } from '../../utils/delete';
+import { deleteAllClosingData, deleteAllDataTransaksi } from '../../utils/delete';
 
 
 const ReviewData: React.FC = () => {
@@ -117,7 +117,9 @@ const ReviewData: React.FC = () => {
             // Delete dataTransaksi from IndexedDB
             // await deleteData();
             await deleteAllDataTransaksi();
+            await deleteAllClosingData()
             // Redirect to the home page or login page
+            // route.push('/')
             window.location.href = '/';
         } catch (error) {
             console.error('Logout failed:', error);

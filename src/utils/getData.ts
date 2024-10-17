@@ -114,7 +114,7 @@ export const getCalculationIssued = async (lkfId: string): Promise<number | unde
 
 
 
-export const getCalculationReceive = async (lkfId: string): Promise<number | undefined> => {
+export const getCalculationReceive = async (lkfId: string, ): Promise<number | undefined> => {
   try {
     // Retrieve all transactions where type is 'Receive'
     const receiptTransactions = await db.dataTransaksi

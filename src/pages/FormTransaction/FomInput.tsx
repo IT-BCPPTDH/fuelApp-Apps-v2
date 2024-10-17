@@ -381,13 +381,7 @@ const FormTRX: React.FC = () => {
       qty: Number(quantity) || 0, // Ensure quantity is a number
       flow_start: Number(flowMeterAwal) || 0,
       flow_end: flow_end,
-      dip_start: Number(dipStart) || 0,
-      dip_end: Number(dipEnd) || 0,
-      sonding_start: Number(sondingStart) || 0,
-      sonding_end: Number(sondingEnd) || 0,
       name_operator: fullName!,
-      start: startTime!,
-      end: endTime!,
       fbr: fbrResult,
       lkf_id: lkf_id ?? "",
       signature: signatureBase64 ?? "",
@@ -395,12 +389,7 @@ const FormTRX: React.FC = () => {
       foto: photoPreview ?? "",
       fuelman_id: fuelman_id!,
       status: status ?? 0,
-      jde_operator: "",
-      reference: Number(Refrence) || 0,
-      liters: 0,
-      cm: 0,
-      created_at: new Date().toISOString(),
-      date: ""
+    
     };
 
     try {
@@ -829,29 +818,34 @@ const FormTRX: React.FC = () => {
   
   
   useEffect(() => {
-    console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue }); 
-  
+    console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue });
+
     const calculateFBR = (): number => {
-      if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyValue === 'number') {
-        const difference =  hmLast - hmkmValue ;
-        console.log('Difference (hmkm - hmLast):', difference); 
-  
-        if (difference > 0) {
-          const result = difference / qtyValue;
-          console.log('Calculated FBR:', result); 
-          return parseFloat(result.toFixed(2)); 
+        if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyValue === 'number') {
+            const difference = hmLast - hmkmValue;
+            console.log('Difference (hmLast - hmkm):', difference);
+
+            if (qtyValue === 0) {
+                console.log('qtyValue cannot be zero');
+                return 0;
+            }
+
+            if (difference > 0) {
+                const result = difference / qtyValue;
+                console.log('Calculated FBR:', result);
+                return parseFloat(result.toFixed(2));
+            } else {
+                console.log('Difference is not positive');
+            }
         } else {
-          console.log('Difference is not positive');
+            console.log('Invalid input types:', { hmkmValue, hmLast, qtyValue });
         }
-      } else {
-        console.log('Invalid input types:', { hmkmValue, hmLast, qtyValue }); 
-      }
-      return NaN; 
+        return 0;
     };
-  
-    setFbrResult(calculateFBR()); 
-  }, [hmkmValue, hmLast, qtyValue]);
-  
+
+    setFbrResult(calculateFBR());
+}, [hmkmValue, hmLast, qtyValue]);
+
 
   useEffect(() => {
     const loadUnitDataQuota = async () => {
