@@ -1,8 +1,9 @@
 import { DataFormTrx, DataLkf,SondingData,db } from "../models/db";
 interface ShiftData {
+  openingDip: number;
   shift?: string;
   station?: string;
-  openingDip?: number;
+  op_dip?: string;
   receipt?:number;
   flowMeterStart?: number;
   stokOnhand?:number,
@@ -114,7 +115,7 @@ export const getCalculationIssued = async (lkfId: string): Promise<number | unde
 
 
 
-export const getCalculationReceive = async (lkfId: string): Promise<number | undefined> => {
+export const getCalculationReceive = async (lkfId: string, ): Promise<number | undefined> => {
   try {
     // Retrieve all transactions where type is 'Receive'
     const receiptTransactions = await db.dataTransaksi

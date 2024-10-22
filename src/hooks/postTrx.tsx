@@ -21,13 +21,13 @@ type PostAuthParams = {
     type: string;
     lkf_id?: string;
     status: number;
-    jde_operator: string;
+    // jde_operator: string;
     fuelman_id: string;
     flow_start: number;
     flow_end: number;
     foto: string;
-    end: string;
-    sonding_start: number;
+    // end: string;
+    // sonding_start: number;
 };
 
 export const postTransaksi = async (params: PostAuthParams) => {

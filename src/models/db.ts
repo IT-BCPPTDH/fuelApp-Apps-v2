@@ -58,9 +58,10 @@ interface DataLkfUpdate {
 
 interface DataFormTrx {
   date: string | number | Date;
+
   id?: number; // Auto-incremented ID
-  liters: number;
-  cm: number;
+  // liters: number;
+  // cm: number;
   from_data_id: string;
   no_unit: string;
   model_unit: string;
@@ -79,24 +80,24 @@ interface DataFormTrx {
   type: string;
   lkf_id?: string;
   status: number;
-  jde_operator: string;
   fuelman_id: string;
-  dip_start: number;
-  dip_end: number;
-  sonding_start: number;
-  sonding_end: number;
-  reference: number;
- start:string;
-  end: string;
-  created_at:string | number | Date;
+
   
 }
 
 interface DataDashboard {
   id?: number; // Auto-incremented ID
-  title: string;
-  subtitle: number;
-  icon: string;
+  shift : string;
+  station :string;
+  total_issued:number;
+  total_receive:number;
+  total_transfer:number;
+  closing_dip: number;
+  flow_meter_start:number
+  fuelman_id:number;
+  op_dip:number;
+ 
+
 }
 
 interface SondingData {

@@ -7,7 +7,7 @@ import { getLatestLkfId, getLatestLkfData } from '../../utils/getData';
 import { logoutUser } from '../../hooks/useAuth';
 
 import './style.css';
-import { deleteAllDataTransaksi } from '../../utils/delete';
+import { deleteAllClosingData, deleteAllDataTransaksi } from '../../utils/delete';
 
 
 const ReviewData: React.FC = () => {
@@ -111,13 +111,17 @@ const ReviewData: React.FC = () => {
             localStorage.removeItem('lastDipLiter');
             localStorage.removeItem('lastFlowMeter');
             localStorage.removeItem('CapacitorStorage.shiftCloseData');
+            localStorage.removeItem('cardData');
+            localStorage.removeItem('shiftData');
+            localStorage.removeItem('latestLkfData');
 
            
-    
             // Delete dataTransaksi from IndexedDB
             // await deleteData();
             await deleteAllDataTransaksi();
+            await deleteAllClosingData()
             // Redirect to the home page or login page
+            // route.push('/')
             window.location.href = '/';
         } catch (error) {
             console.error('Logout failed:', error);
