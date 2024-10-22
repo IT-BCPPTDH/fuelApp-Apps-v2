@@ -208,7 +208,7 @@ const handleBulkInsert = async () => {
     return <div>Error: {error}</div>;
   }
 
-  if (paginatedData.length === 0) {
+  if (paginatedData.length < 0) {
     return <div>No data found.</div>;
   }
 

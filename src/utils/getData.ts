@@ -1,8 +1,9 @@
 import { DataFormTrx, DataLkf,SondingData,db } from "../models/db";
 interface ShiftData {
+  openingDip: number;
   shift?: string;
   station?: string;
-  openingDip?: number;
+  op_dip?: string;
   receipt?:number;
   flowMeterStart?: number;
   stokOnhand?:number,

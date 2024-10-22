@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState , SetStateAction} from 'react';
 import {
   IonImg,
   IonCol,
@@ -15,17 +15,20 @@ import {
   useIonRouter,
   IonItem,
   IonText,
-  IonLabel
+  IonLabel,
+  IonSpinner,
+ 
 } from '@ionic/react';
 import TableData from '../../components/Table';
 import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate } from '../../utils/getData';
 import { getHomeByIdLkf, getHomeTable } from '../../hooks/getHome';
 import NetworkStatus from '../../components/network';
-import { getDataFromStorage } from '../../services/dataService';
-import { home } from 'ionicons/icons';
+import { fetchUnitData, getDataFromStorage } from '../../services/dataService';
+import { handLeftSharp, home } from 'ionicons/icons';
 import { updateDataInDB, updateDataInTrx,} from '../../utils/update';
 import { addDataTrxType } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
+import { Network } from '@capacitor/network';
 
 // Define the data structure for the card
 interface CardData {
@@ -90,34 +93,49 @@ interface DataFormTrx {
 }
 
 const DashboardFuelMan: React.FC = () => {
-  const [cardData, setCardData] = useState<CardData[]>([
-    { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
-    { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
-    { title: 'Opening Dip', value: 'No Data', icon: 'openingdeep.svg' },
-    { title: 'Receipt', value: 'No Data', icon: 'receipt.svg' },
-    { title: 'Stock On Hand', value: 'No Data', icon: 'stock.svg' },
-    { title: 'QTY Issued', value: 'No Data', icon: 'issued.svg' },
-    { title: 'Balance', value: 'No Data', icon: 'balance.svg' },
-    { title: 'Closing Dip', value: 'No Data', icon: 'close.svg' },
-    { title: 'Flow Meter Awal', value: 'No Data', icon: 'flwawal.svg' },
-    { title: 'Flow Meter Akhir', value: 'No Data', icon: 'flwakhir.svg' },
-    { title: 'Total Flow Meter', value: 'No Data', icon: 'total.svg' },
-    { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
-  ]);
   const [fullname, setFullname] = useState('');
-   // New state for Fuelman
-  //const [currentDate, setCurrentDate] = useState<string>(''); // State for current date
-  const [latestDate, setLatestDate] = useState<string>(''); // State for latest date
-  const route = useIonRouter();
-  const [loading, setLoading] = useState<boolean>(true);
-  const [lkfId, setLkfId] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [jde, setJde] = useState<string>(''); 
-  const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
-  const [jdeOptions, setJdeOptions] = useState<
-    { JDE: string; fullname: string }[]
-  >([]);
+  // New state for Fuelman
+ //const [currentDate, setCurrentDate] = useState<string>(''); // State for current date
+ const [latestDate, setLatestDate] = useState<string>(''); // State for latest date
+ const route = useIonRouter();
+ const [loading, setLoading] = useState<boolean>(true);
+ const [lkfId, setLkfId] = useState<string>('');
+ const [error, setError] = useState<string | null>(null);
+ const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+ const [jde, setJde] = useState<string>(''); 
+ const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
+ const [jdeOptions, setJdeOptions] = useState<
+   { JDE: string; fullname: string }[]
+ >([]);
+
+ const [opDip, setOpDip] = useState<number | null>(null)
+ const [shift, setOpShift] = useState<string | null>(null)
+ const [station, setOpStation] = useState<string | null>(null)
+ const [receipt, setOpReceipt] = useState<number | null>(null)
+
+ const [unitOptions, setUnitOptions] = useState<
+ {
+   hm_km: SetStateAction<number | null>;
+   qty: SetStateAction<number | null>;
+   hm_last: SetStateAction<number | null>;
+    id: string;
+    unit_no: string;
+     brand: string;
+      owner: string 
+}[]
+>([]);
+
+ const [dataHome, setDataHome] = useState<any[]>([
+ <></>
+ 
+ ]); 
+
+ const [totalIssued, setTotalIssued] = useState<number | null>(null); // State to store total_issued
+
+  const [cardData, setCardData] = useState<CardData[]>([
+
+  ]);
+ 
   useEffect(() => {
     const handleOnlineStatus = () => {
       setIsOnline(navigator.onLine);
@@ -154,6 +172,7 @@ const DashboardFuelMan: React.FC = () => {
       }
     };
 
+  
     const fetchLkfIdAndData = async () => {
       try {
         const id = await getLatestLkfId();
@@ -174,20 +193,6 @@ const DashboardFuelMan: React.FC = () => {
           const totalFlowMeter = qtyIssued;
           const variance = totalFlowMeter - qtyIssued;
 
-          setCardData([
-            { title: 'Shift', value: shiftData.shift || 'No Data', icon: 'shift.svg' },
-            { title: 'FS/FT No', value: shiftData.station || 'No Data', icon: 'fs.svg' },
-            { title: 'Opening Dip', value: openingDip, icon: 'openingdeep.svg' },
-            { title: 'Receipt', value: qtyReceive, icon: 'receipt.svg' },
-            { title: 'Stock On Hand', value: stockOnHand, icon: 'stock.svg' },
-            { title: 'QTY Issued', value: qtyIssued, icon: 'issued.svg' },
-            { title: 'Balance', value: stockOnHand, icon: 'balance.svg' },
-            { title: 'Closing Dip', value: openingDip - qtyIssued, icon: 'close.svg' },
-            { title: 'Flow Meter Awal', value: flowMeterStart, icon: 'flwawal.svg' },
-            { title: 'Flow Meter Akhir', value: flowMeterEnd, icon: 'flwakhir.svg' },
-            { title: 'Total Flow Meter', value: totalFlowMeter, icon: 'total.svg' },
-            { title: 'Variance', value: variance, icon: 'variance.svg' }
-          ]);
 
           localStorage.setItem('shiftData', JSON.stringify({
             shiftData,
@@ -204,21 +209,20 @@ const DashboardFuelMan: React.FC = () => {
             cardData
           }));
 
-          // const homeData = await getHomeByIdLkf(id);
-          // console.log("data Dari Backen", homeData)
+          const homeData = await getHomeByIdLkf(id);
           const loginData = localStorage.getItem('loginData');
-          // if (loginData) {
-          //   const { jde } = JSON.parse(loginData);
-          //   if (homeData && homeData.fullname) {
-          //     const matchedEmployee = homeData.fullname.find((employee: any) => employee.JDE === jde);
-          //     if (matchedEmployee) {
+          if (loginData) {
+            const { jde } = JSON.parse(loginData);
+            if (homeData && homeData.fullname) {
+              const matchedEmployee = homeData.fullname.find((employee: any) => employee.JDE === jde);
+              if (matchedEmployee) {
              
-          //       setJde(matchedEmployee.jde);
-          //     } else {
+                setJde(matchedEmployee.jde);
+              } else {
                
-          //     }
-          //   }
-          // }
+              }
+            }
+          }
         } else {
           setError('No LKF ID found');
         }
@@ -238,46 +242,10 @@ const DashboardFuelMan: React.FC = () => {
     fetchLkfIdAndData();
   }, []);
 
+
   const handleLogout = () => {
     route.push('/closing-data');
   };
-
-  
-  
-  
-
-
-
-    useEffect(() => {
-    const fetchTableSummary = async () => {
-      if (lkfId) {
-        console.log("Fetching data for LKF ID:", lkfId);
-        try {
-          const response = await getHomeTable(lkfId);
-          console.log("Data Table Dashboard:", response);
-  
-          if (response && response.data && Array.isArray(response.data)) {
-            setData(response.data);
-          } else {
-            console.error("Expected an array in response.data but got:", response);
-            setData([]);
-          }
-        } catch (error) {
-          console.error("Failed to fetch table summary data:", error);
-          setError("Failed to fetch data");
-          setData([]); // Ensure data is cleared in case of error
-        } finally {
-          setLoading(false); // Stop loading indicator
-        }
-      } else {
-        console.log("No LKF ID to fetch data for");
-        setData([]); // Clear data if no LKF ID
-        setLoading(false); // Stop loading indicator
-      }
-    };
-  
-    fetchTableSummary();
-  }, [lkfId]);
 
   useEffect(() => {
     const fetchJdeOptions = async () => {
@@ -345,6 +313,7 @@ const DashboardFuelMan: React.FC = () => {
           // Then, add the new data
           for (const item of newData) {
             const dataPost = {
+              date:"",
               from_data_id: item.from_data_id,
               no_unit: item.no_unit,
               model_unit: item.model_unit,
@@ -363,13 +332,13 @@ const DashboardFuelMan: React.FC = () => {
               type: item.type ?? "",
               foto: item.foto ?? "",
               fuelman_id: item.fuelman_id,
-              status: item.status ?? 0,
+              status: item.status ?? 1,
             };
   
-            await addDataTrxType(dataPost); // Use the dataPost object
+            await addDataTrxType(dataPost); 
           }
           
-          // Update local state with the new data
+         
           setData(newData);
         } else {
           console.error("Expected an array in response.data but got:", response);
@@ -387,11 +356,113 @@ const DashboardFuelMan: React.FC = () => {
       setData([]); 
       setLoading(false); 
     }
+    updateAllData()
+    updateCard()
   };
+
+  useEffect(() => {
+    const loadUnitData = async () => {
+      const cachedUnitData = await getDataFromStorage('allUnit');
+      if (cachedUnitData) {
+        setUnitOptions(cachedUnitData);
+      } else {
+        const units = await fetchUnitData();
+        setUnitOptions(units);
+
+      }
+    };
+
+    loadUnitData();
+  }, []);
+
+  const updateAllData = async ()=>{
+    const units = await fetchUnitData();
+   
+    
+  }
+
+  const updateCard = async ()=>{
+    localStorage.removeItem('cardData')
+    const cards = await fetchCardData(lkfId);
+    
+  }
+  const fetchCardData = async (lkfId: string) => {
+    try {
+      // First, try to retrieve data from local storage
+      const cachedData = localStorage.getItem('cardData');
+      
+      if (cachedData) {
+        console.log("Using cached data");
+        const preparedData = JSON.parse(cachedData);
+        setDataHome(preparedData);
+      } else {
+        console.log("Fetching data for LKF ID:", lkfId); 
+        const dataHome = await getHomeByIdLkf(lkfId); // Fetch data using the API function
+        console.log("Full Content Cards:", dataHome); // Log the full API response
+    
+        // Check if the data is valid and has content
+        if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
+          const item = dataHome.data[0]; // Get the first item from the data array
+          
+          // Update state with the fetched data
+          setOpDip(item.op_dip);
+          setOpShift(item.shift);
+          setOpStation(item.station);
+          setOpReceipt(item.total_receive);
+          setTotalIssued(item.total_issued);
+    
+          // Prepare data for rendering
+          const preparedData = [
+            { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
+            { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
+            { title: 'Opening Dip', value: item.op_dip, icon: 'openingdeep.svg' },
+            { title: 'Receipt', value: item.total_receive, icon: 'receipt.svg' },
+            { title: 'Stock On Hand', value: item.op_dip + item.total_receive - item.total_issued, icon: 'stock.svg' },
+            { title: 'QTY Issued', value: item.total_issued, icon: 'issued.svg' },
+            { title: 'Balance', value: item.op_dip + item.total_receive - item.total_issued, icon: 'balance.svg' },
+            { title: 'Closing Dip', value: item.op_dip, icon: 'close.svg' },
+            { title: 'Flow Meter Awal', value: item.flow_meter_start, icon: 'flwawal.svg' },
+            { title: 'Flow Meter Akhir', value: item.flow_meter_start + item.total_issued, icon: 'flwakhir.svg' },
+            { title: 'Total Flow Meter', value: item.total_issued, icon: 'total.svg' },
+            { title: 'Variance', value: item.totalVariance, icon: 'variance.svg' }
+          ];
+    
+          setDataHome(preparedData);
+          
+         
+          localStorage.setItem('cardData', JSON.stringify(preparedData));
+          
+        } else {
+          console.error("No data found or invalid format:", dataHome); 
+          setDataHome([]); // Clear data if empty or invalid format
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching card data:", error);
+      setDataHome([]); // Clear data in case of error
+    }
+  }; 
+  
+  useEffect(() => {
+    if (lkfId) {
+      const intervalId = setInterval(() => {
+        fetchCardData(lkfId);
+      }, 5000); 
+  
+      return () => {
+        clearInterval(intervalId); 
+      };
+    }
+  }, [lkfId]);
+
+
+ 
   
   return (
     <IonPage>
       <IonContent>
+        
+  
         <IonHeader style={{height:"60px"}}>
           <IonRow>
             <IonCol>
@@ -429,6 +500,10 @@ const DashboardFuelMan: React.FC = () => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Refresh
             </IonButton>
+            {/* <IonButton color="primary" onClick={updateAllData}>
+              <IonImg src='refresh.svg' alt="Refresh" />
+              Update Data
+            </IonButton> */}
             <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout}>
               Close LFK & Logout
             </IonButton>
@@ -449,7 +524,7 @@ const DashboardFuelMan: React.FC = () => {
         </div>
         <IonGrid >
           <IonRow >
-            {cardData.map((card, index) => (
+            {/* {cardData.map((card, index) => (
               <IonCol size="4" key={index}>
                 <IonCard style={{height:"90px"}} >
                   <IonCardHeader>
@@ -463,7 +538,42 @@ const DashboardFuelMan: React.FC = () => {
                   
                 </IonCard>
               </IonCol>
-            ))}
+            ))} */}
+
+
+{dataHome.length > 0 ? (
+    dataHome.map((card, index) => (
+      <IonCol size="4" key={index}>
+        <IonCard style={{ height: "90px" }}>
+          <IonCardHeader>
+            <IonCardSubtitle style={{ fontSize: "16px" }}>
+              {card.title}
+            </IonCardSubtitle>
+            <div style={{ display: "inline-flex", gap: "10px" }}>
+              <IonImg
+                src={card.icon}
+                alt={card.title}
+                style={{ width: '30px', height: '30px', marginTop: "10px" }}
+              />
+              <IonCardContent
+                style={{ fontSize: "24px", fontWeight: "500", marginTop: "-10px" }}
+              >
+                {card.value}
+              </IonCardContent>
+            </div>
+          </IonCardHeader>
+        </IonCard>
+      </IonCol>
+    ))
+  ) : (
+    // Show a loading spinner or "No data" message when dataHome is empty
+    <IonCol size="12">
+      <IonCard style={{ textAlign: "center", padding: "20px" }}>
+        <IonSpinner name="dots" />
+        <p>Loading data...</p>
+      </IonCard>
+    </IonCol>
+  )}
           <IonRow>
           <p style={{
               display: 'flex',

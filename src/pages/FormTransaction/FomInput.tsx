@@ -168,10 +168,10 @@ const FormTRX: React.FC = () => {
   const [remainingQuota, setRemainingQuota] = useState(0);
   const [quantity, setQuantity] =useState<number | undefined>(undefined); 
   const [quantityError, setQuantityError] = useState("");
-  const [employeeError, setemployeeError] = useState("");
+  const [employeeError, setemployeeError] = useState<boolean>(false);
   const [unitQouta, setUnitQouta] = useState(0);
   const [isError, setIsError] = useState(false);
-
+ 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedId, setSelectID] = useState<string | undefined>();
   // const [operatorOptions, setOperatorOptions] = useState<{ id: number; JDE: string; fullname: string; }[]>([]);
@@ -349,15 +349,20 @@ const FormTRX: React.FC = () => {
     if (
       !selectedType ||
       !selectedUnit ||
-      quantity === null ||  // Ensure quantity is not null
+      !operatorOptions ||
+      quantity === null || 
+      fuelman_id === null || 
+      quantity === null ||
       fbr === null ||
       flowMeterAwal === null ||
       flowMeterAkhir === null ||
       !startTime ||
       !endTime
     ) {
-      setModalMessage("Form is incomplete");
-      setErrorModalOpen(true);
+    
+      setShowError(true);
+      setemployeeError(true)
+    
       return;
     }
 
@@ -389,7 +394,7 @@ const FormTRX: React.FC = () => {
       foto: photoPreview ?? "",
       fuelman_id: fuelman_id!,
       status: status ?? 0,
-    
+      date: ""
     };
 
     try {
@@ -496,30 +501,7 @@ const FormTRX: React.FC = () => {
     return ""; 
   };
 
-  const fetchUnitOptions = async () => {
-    const storedUnitOptions = await getDataFromStorage("allUnit");
 
-    console.log("Stored unit options:", storedUnitOptions);
-
-    if (storedUnitOptions) {
-
-      if (typeof storedUnitOptions === "string") {
-        try {
-          const parsedUnitOptions = JSON.parse(storedUnitOptions);
-          console.log("Parsed unit options:", parsedUnitOptions);
-          setUnitOptions(parsedUnitOptions);
-        } catch (error) {
-          console.error("Failed to parse unit options from localStorage:", error);
-        }
-      } else {
-      
-        console.log("Unit options are already an object:", storedUnitOptions);
-        setUnitOptions(storedUnitOptions);
-      }
-    } else {
-      console.log("No unit options found in localStorage.");
-    }
-  };
 
   useEffect(() => {
     console.log("unitOptions updated:", unitOptions);
@@ -908,6 +890,9 @@ const FormTRX: React.FC = () => {
     loadUnitDataQuota();
 }, [selectedUnit]);
 
+
+
+
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -1015,24 +1000,36 @@ const FormTRX: React.FC = () => {
                         disabled={isFormDisabled}
                       /></div>
                   </IonCol>
-                  <IonCol size="8">
-                    <div><IonLabel>
-                      {" "}
-                      Type Transaksi Issued <span style={{ color: "red" }}>*</span>
-                    </IonLabel>
-                      <IonRadioGroup
-                        className="radio-display"
-                        value={selectedType}
-                        onIonChange={handleRadioChange}
-                        compareWith={compareWith}
-                      >
-                        {typeTrx.map((type) => (
-                          <IonItem key={type.id} className="item-no-border">
-                            <IonRadio value={type}>{type.name}</IonRadio>
-                          </IonItem>
-                        ))}
-                      </IonRadioGroup></div>
-                  </IonCol>
+                    <IonCol size="8"
+                    >
+                      <div>
+                        <IonLabel>
+                          Type Transaksi Issued <span style={{ color: "red" }}>*</span>
+                        </IonLabel>
+                        <IonRadioGroup
+                        style={{
+                          backgroundColor: showError && selectedType === undefined ? "rgba(255, 0, 0, 0.1)" : "transparent", // Apply red background if error
+                          padding: "10px", // Ensure the block has padding for visibility
+                          borderRadius: "5px", // Add border-radius for rounded corners
+                        }}
+                          className="radio-display"
+                          value={selectedType}
+                          onIonChange={handleRadioChange}
+                          compareWith={compareWith}
+                        >
+                          {typeTrx.map((type) => (
+                            <IonItem key={type.id} className="item-no-border">
+                              <IonRadio value={type}>{type.name}</IonRadio>
+                            </IonItem>
+                          ))}
+                        </IonRadioGroup>
+
+                        {showError && selectedType === undefined && (
+                          <p style={{ color: "red" }}>* Pilih salah satu tipe</p>
+                        )}
+                      </div>
+                    </IonCol>
+
                 </IonRow>
               </IonGrid>
               <IonRow>
@@ -1051,6 +1048,9 @@ const FormTRX: React.FC = () => {
                     // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
+                   {showError && hmkmValue === undefined && (
+                        <p style={{ color: "red" }}>* Field harus diisi</p>
+                      )}
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1108,9 +1108,9 @@ const FormTRX: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Add validation for empty or undefined quantity */}
+     
                   {showError && (!quantity || quantity === undefined) && (
-                    <p style={{ color: "red" }}>* Field harus diisi</p>
+                    <p style={{ color: "red" }}>* Tipe Trasaksi harus di pilih</p>
                   )}
 
                 </IonCol>
@@ -1180,69 +1180,74 @@ const FormTRX: React.FC = () => {
                 </IonCol>
               </IonRow>
               <IonRow>
-                <IonCol>
-                  <IonLabel className="label-input">
-                    Select Employee ID <span style={{ color: "red" }}>*</span>
-                  </IonLabel>
-                  <Select
-                    className="select-custom"
-                    styles={{
-                      container: (provided) => ({
-                        ...provided,
-                        marginTop: "10px",
-                        backgroundColor: "white",
-                        zIndex: 10,
-                        height: "57px", // Set the height
-                      }),
-                      control: (provided) => ({
-                        ...provided,
-                        height: "57px", // Set the height of the control
-                        minHeight: "57px", // Ensure minimum height
-                      }),
-                      valueContainer: (provided) => ({
-                        ...provided,
-                        padding: "0 6px", // Adjust padding
-                      }),
-                      singleValue: (provided) => ({
-                        ...provided,
-                        lineHeight: "57px", // Center text vertically
-                      }),
-                    }}
-                    value={
-                      fuelman_id
-                        ? { value: fuelman_id, label: fuelman_id }
-                        : null
-                    }
-                    onChange={handleChangeEmployeeId}
-                    options={operatorOptions.map((operator) => ({
-                      value: operator.JDE || '',
-                      label: operator.JDE || '',
-                    }))}
-                    placeholder="Select Employee ID"
-                    isSearchable={true}
-                    isDisabled={isFormDisabled}
-                  />
-                   {employeeError && (
-                    <div style={{ color: "red", marginTop: "5px" }}>
-                      {employeeError}
-                    </div>
-                  )}
-                </IonCol>
-                <IonCol>
-                  <IonLabel>
-                    Nama Driver <span style={{ color: "red" }}>*</span>
-                  </IonLabel>
-                  <IonInput
-                    style={{ background: "#E8E8E8" }}
-                    className="custom-input"
-                    type="text"
+                
+              <IonCol
+                style={{
+                  backgroundColor: employeeError ? "rgba(255, 0, 0, 0.1)" : "transparent", // Apply red background if error
+                  padding: "10px", // Ensure the block has padding for visibility
+                }}
+              >
+            <IonLabel className="label-input">
+              Select Employee ID <span style={{ color: "red" }}>*</span>
+            </IonLabel>
+            <Select
+              className="select-custom"
+              styles={{
+                container: (provided) => ({
+                  ...provided,
+                  marginTop: "10px",
+                  backgroundColor: "white",
+                  zIndex: 10,
+                  height: "57px", // Set the height
+                }),
+                control: (provided) => ({
+                  ...provided,
+                  height: "57px", // Set the height of the control
+                  minHeight: "57px", // Ensure minimum height
+                  borderColor: employeeError ? "red" : provided.borderColor, // Highlight border red on error
+                }),
+                valueContainer: (provided) => ({
+                  ...provided,
+                  padding: "0 6px", // Adjust padding
+                }),
+                singleValue: (provided) => ({
+                  ...provided,
+                  lineHeight: "57px", // Center text vertically
+                }),
+              }}
+              value={fuelman_id ? { value: fuelman_id, label: fuelman_id } : null}
+              onChange={handleChangeEmployeeId}
+              options={operatorOptions.map((operator) => ({
+                value: operator.JDE || '',
+                label: operator.JDE || '',
+              }))}
+              placeholder="Select Employee ID"
+              isSearchable={true}
+              isDisabled={isFormDisabled}
+            />
 
-                    value={fullName}
-                    placeholder="Input Driver Name"
-                    readonly
-                    disabled={isFormDisabled}
-                  />
-                </IonCol>
+            {employeeError && (
+              <div style={{ color: "red", marginTop: "5px" }}>
+                {employeeError}
+              </div>
+            )}
+          </IonCol>
+
+          <IonCol>
+            <IonLabel>
+              Nama Driver <span style={{ color: "red" }}>*</span>
+            </IonLabel>
+            <IonInput
+              style={{ background: "#E8E8E8" }}
+              className="custom-input"
+              type="text"
+              value={fullName}
+              placeholder="Input Driver Name"
+              readonly
+              disabled={isFormDisabled}
+            />
+          </IonCol>
+
               </IonRow>
               <IonRow>
                 <IonCol>
@@ -1254,7 +1259,12 @@ const FormTRX: React.FC = () => {
                     type="time"
                     onIonChange={(e) => setStartTime(e.detail.value as string)}
                     disabled={isFormDisabled}
+                    value={startTime}
                   />
+                   {showError && startTime === undefined && (
+                        <p style={{ color: "red" }}>* Jam mulai pengisian harus input</p>
+                      )}
+                      
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1265,7 +1275,11 @@ const FormTRX: React.FC = () => {
                     type="time"
                     onIonChange={(e) => setEndTime(e.detail.value as string)}
                     disabled={isFormDisabled}
+                    value={endTime}
                   />
+                   {showError && endTime === undefined && (
+                        <p style={{ color: "red" }}>* Jam mulai selesai harus input</p>
+                      )}
                 </IonCol>
               </IonRow>
               <IonRow>

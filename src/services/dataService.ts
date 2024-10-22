@@ -10,6 +10,7 @@ import { getOperator } from '../hooks/getAllOperator';
 import { getStationData } from '../hooks/getDataTrxStation';
 import { getPrevUnitTrx } from '../hooks/getDataPrev';
 import { postAuthLogin } from '../hooks/useAuth';
+import { getHomeByIdLkf } from '../hooks/getHome';
 
 
 
@@ -218,4 +219,29 @@ export const fetchUnitLastTrx = async (unitNo: string): Promise<any[]> => {
 //     return [];
 //   }
 // }
+
+
+export const fetchStationOnTrans = async (lkf_id: string): Promise<any> => {
+  try {
+    const response = await getHomeByIdLkf(lkf_id);
+    console.log("Raw DataHome:", response);
+
+    // Check for a valid response structure
+    if (response && response.status === '200' && response.data) {
+      await saveDataToStorage('dataHomeCard', response.data);
+      console.log("Shift data fetched successfully:", response.data);
+
+      return response.data; // Return the data directly
+    } else {
+      console.error('Unexpected data format or status. Response:', response);
+      return null; // Return null instead of an empty array
+    }
+  } catch (error) {
+    console.error('Failed to fetch Shift Data. Error:', error);
+    return null; // Return null on error
+  }
+};
+
+
+
 

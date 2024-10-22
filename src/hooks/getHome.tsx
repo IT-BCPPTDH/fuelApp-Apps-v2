@@ -14,39 +14,54 @@ export class ResponseError extends Error {
 }
 
 // Function to fetch home summary by Lkf ID
-
-
+// Function to fetch home summary by LKF ID
 export async function getHomeByIdLkf(lkf_id: string): Promise<any> {
-
   const url = `${LINK_BACKEND}/api/operator/get-home-summary/${lkf_id}`;
 
   try {
-    const response = await fetch(url, {
-      method: 'GET',
+    const response = await CapacitorHttp.get({
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
-    if (!response.ok) {
-      throw new ResponseError(`Failed to fetch Dashboard data. Status: ${response.status} ${response.statusText}`, response);
+    if (response.status !== 200) {
+      throw new ResponseError(`Failed to fetch home summary. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
     }
 
-    const data = await response.json();
-    
-    console.log('Successfully data home :', data);
+    const data = response.data;
+    console.log('home data:', data);
 
     return data;
   } catch (error) {
-    if (error instanceof ResponseError) {
-      console.error('ResponseError:', error.message);
-      throw error;  // Rethrow or handle the error as needed
-    } else if (error instanceof Error) {
-      console.error('Error:', error.message);
-      throw new Error('An unexpected error occurred.');  // General error message
-    } else {
-      console.error('Unknown error:', error);
-      throw new Error('An unexpected error occurred.');
-    }
+    handleError(error);
   }
 }
+
+
+
+
+
+
+// Helper function to handle errors
+function handleError(error: any) {
+  if (error instanceof ResponseError) {
+    console.error('ResponseError:', error.message);
+    throw error;  // Rethrow or handle the error as needed
+  } else if (error instanceof Error) {
+    console.error('Error:', error.message);
+    throw new Error('An unexpected error occurred.');  // General error message
+  } else {
+    console.error('Unknown error:', error);
+    throw new Error('An unexpected error occurred.');
+  }
+}
+
+
+
+
+
 
 
 

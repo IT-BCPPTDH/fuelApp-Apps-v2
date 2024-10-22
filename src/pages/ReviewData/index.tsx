@@ -111,9 +111,11 @@ const ReviewData: React.FC = () => {
             localStorage.removeItem('lastDipLiter');
             localStorage.removeItem('lastFlowMeter');
             localStorage.removeItem('CapacitorStorage.shiftCloseData');
+            localStorage.removeItem('cardData');
+            localStorage.removeItem('shiftData');
+            localStorage.removeItem('latestLkfData');
 
            
-    
             // Delete dataTransaksi from IndexedDB
             // await deleteData();
             await deleteAllDataTransaksi();
