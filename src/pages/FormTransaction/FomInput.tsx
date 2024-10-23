@@ -366,7 +366,6 @@ const FormTRX: React.FC = () => {
       return;
     }
 
-    // Convert values to numbers where necessary
     const flow_end: number = Number(calculateFlowEnd()) || 0;
 
     // Prepare form data
