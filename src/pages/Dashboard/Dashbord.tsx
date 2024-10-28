@@ -1,4 +1,4 @@
-import React, { useEffect, useState , SetStateAction} from 'react';
+import React, { useEffect, useState, SetStateAction } from 'react';
 import {
   IonImg,
   IonCol,
@@ -17,7 +17,10 @@ import {
   IonText,
   IonLabel,
   IonSpinner,
- 
+  IonSkeletonText,
+  IonThumbnail,
+  
+
 } from '@ionic/react';
 import TableData from '../../components/Table';
 import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate } from '../../utils/getData';
@@ -25,7 +28,7 @@ import { getHomeByIdLkf, getHomeTable } from '../../hooks/getHome';
 import NetworkStatus from '../../components/network';
 import { fetchUnitData, getDataFromStorage } from '../../services/dataService';
 import { handLeftSharp, home } from 'ionicons/icons';
-import { updateDataInDB, updateDataInTrx,} from '../../utils/update';
+import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
 import { addDataTrxType } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
 import { Network } from '@capacitor/network';
@@ -49,7 +52,7 @@ interface TableDataItem {
   qty_issued: number;
   fm_awal: number;
   fm_akhir: number;
-  hm_last:number;
+  hm_last: number;
   jde_operator: string;
   name_operator: string;
 
@@ -73,7 +76,7 @@ interface DataFormTrx {
   name_operator: string;
   fbr: number;
   flow_start: number;
-  flow_end: number ;
+  flow_end: number;
   signature: string | null;
   foto: string;
   type: string;
@@ -86,56 +89,68 @@ interface DataFormTrx {
   sonding_start: number;
   sonding_end: number;
   reference: number;
- start:string;
+  start: string;
   end: string;
-  created_at:string | number | Date;
-  
+  created_at: string | number | Date;
+
 }
 
 const DashboardFuelMan: React.FC = () => {
   const [fullname, setFullname] = useState('');
   // New state for Fuelman
- //const [currentDate, setCurrentDate] = useState<string>(''); // State for current date
- const [latestDate, setLatestDate] = useState<string>(''); // State for latest date
- const route = useIonRouter();
- const [loading, setLoading] = useState<boolean>(true);
- const [lkfId, setLkfId] = useState<string>('');
- const [error, setError] = useState<string | null>(null);
- const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
- const [jde, setJde] = useState<string>(''); 
- const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
- const [jdeOptions, setJdeOptions] = useState<
-   { JDE: string; fullname: string }[]
- >([]);
+  //const [currentDate, setCurrentDate] = useState<string>(''); // State for current date
+  const [latestDate, setLatestDate] = useState<string>(''); // State for latest date
+  const route = useIonRouter();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [lkfId, setLkfId] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [jde, setJde] = useState<string>('');
+  const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
+  const [jdeOptions, setJdeOptions] = useState<
+    { JDE: string; fullname: string }[]
+  >([]);
 
- const [opDip, setOpDip] = useState<number | null>(null)
- const [shift, setOpShift] = useState<string | null>(null)
- const [station, setOpStation] = useState<string | null>(null)
- const [receipt, setOpReceipt] = useState<number | null>(null)
+  const [opDip, setOpDip] = useState<number | null>(null)
+  const [shift, setOpShift] = useState<string | null>(null)
+  const [station, setOpStation] = useState<string | null>(null)
+  const [receipt, setOpReceipt] = useState<number | null>(null)
 
- const [unitOptions, setUnitOptions] = useState<
- {
-   hm_km: SetStateAction<number | null>;
-   qty: SetStateAction<number | null>;
-   hm_last: SetStateAction<number | null>;
-    id: string;
-    unit_no: string;
-     brand: string;
-      owner: string 
-}[]
->([]);
+  const [unitOptions, setUnitOptions] = useState<
+    {
+      hm_km: SetStateAction<number | null>;
+      qty: SetStateAction<number | null>;
+      hm_last: SetStateAction<number | null>;
+      id: string;
+      unit_no: string;
+      brand: string;
+      owner: string
+    }[]
+  >([]);
 
- const [dataHome, setDataHome] = useState<any[]>([
- <></>
- 
- ]); 
+  const [dataHome, setDataHome] = useState<any[]>([
+    // { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
+    //   { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
+    //   { title: 'Opening Dip', value: 'No Data', icon: 'openingdeep.svg' },
+    //   { title: 'Receipt', value: 'No Data', icon: 'receipt.svg' },
+    //   { title: 'Stock On Hand', value: 'No Data', icon: 'stock.svg' },
+    //   { title: 'QTY Issued', value: 'No Data', icon: 'issued.svg' },
+    //   { title: 'Balance', value: 'No Data', icon: 'balance.svg' },
+    //   { title: 'Closing Dip', value: 'No Data', icon: 'close.svg' },
+    //   { title: 'Flow Meter Awal', value: 'No Data', icon: 'flwawal.svg' },
+    //   { title: 'Flow Meter Akhir', value: 'No Data', icon: 'flwakhir.svg' },
+    //   { title: 'Total Flow Meter', value: 'No Data', icon: 'total.svg' },
+    //   { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
 
- const [totalIssued, setTotalIssued] = useState<number | null>(null); // State to store total_issued
+
+  ]);
+
+  const [totalIssued, setTotalIssued] = useState<number | null>(null); // State to store total_issued
 
   const [cardData, setCardData] = useState<CardData[]>([
 
   ]);
- 
+
   useEffect(() => {
     const handleOnlineStatus = () => {
       setIsOnline(navigator.onLine);
@@ -172,7 +187,7 @@ const DashboardFuelMan: React.FC = () => {
       }
     };
 
-  
+
     const fetchLkfIdAndData = async () => {
       try {
         const id = await getLatestLkfId();
@@ -194,20 +209,20 @@ const DashboardFuelMan: React.FC = () => {
           const variance = totalFlowMeter - qtyIssued;
 
 
-          localStorage.setItem('shiftData', JSON.stringify({
-            shiftData,
-            calculationIssued,
-            calculationReceive,
-            qtyReceive,
-            qtyIssued,
-            openingDip,
-            stockOnHand,
-            flowMeterStart,
-            flowMeterEnd,
-            totalFlowMeter,
-            variance,
-            cardData
-          }));
+          // localStorage.setItem('shiftData', JSON.stringify({
+          //   shiftData,
+          //   calculationIssued,
+          //   calculationReceive,
+          //   qtyReceive,
+          //   qtyIssued,
+          //   openingDip,
+          //   stockOnHand,
+          //   flowMeterStart,
+          //   flowMeterEnd,
+          //   totalFlowMeter,
+          //   variance,
+          //   cardData
+          // }));
 
           const homeData = await getHomeByIdLkf(id);
           const loginData = localStorage.getItem('loginData');
@@ -216,10 +231,10 @@ const DashboardFuelMan: React.FC = () => {
             if (homeData && homeData.fullname) {
               const matchedEmployee = homeData.fullname.find((employee: any) => employee.JDE === jde);
               if (matchedEmployee) {
-             
+
                 setJde(matchedEmployee.jde);
               } else {
-               
+
               }
             }
           }
@@ -250,7 +265,7 @@ const DashboardFuelMan: React.FC = () => {
   useEffect(() => {
     const fetchJdeOptions = async () => {
       const storedJdeOptions = await getDataFromStorage("allOperator");
-   
+
       if (storedJdeOptions) {
         // If you are certain the data is in the correct format
         if (Array.isArray(storedJdeOptions)) {
@@ -271,18 +286,18 @@ const DashboardFuelMan: React.FC = () => {
       // Fetch loginData and allOperator from Capacitor Storage
       const storedLoginData = await getDataFromStorage("loginData");
       const storedJdeOptions = await getDataFromStorage("allOperator");
-  
+
       if (storedLoginData && storedJdeOptions) {
         // Parse the stored loginData and allOperator
         const loginData = JSON.parse(storedLoginData);
         const allOperators = Array.isArray(storedJdeOptions) ? storedJdeOptions : JSON.parse(storedJdeOptions);
-  
+
         // Get the JDE from loginData
         const loggedInJde = loginData.jde;
-  
+
         // Find the operator that matches the JDE from loginData
         const operator = allOperators.find((emp: { jde: string }) => emp.jde === loggedInJde);
-  
+
         // If the operator is found, set it; otherwise, set an empty array
         setJdeOptions(operator ? [operator] : []);
         setFullname(operator ? operator.fullname : ""); // Set fullname for the Fuelman display
@@ -290,11 +305,11 @@ const DashboardFuelMan: React.FC = () => {
         console.log("No JDE options or loginData found in storage.");
       }
     };
-  
+
     fetchJdeOptions();
   }, []);
-  
-  
+
+
 
   const handleRefresh = async () => {
     if (lkfId) {
@@ -302,18 +317,18 @@ const DashboardFuelMan: React.FC = () => {
       try {
         const response = await getHomeTable(lkfId);
         console.log("Fetched Edit Transaksi:", response);
-        
+
         // Ensure response.data is an array
         if (response && response.data && Array.isArray(response.data)) {
           const newData = response.data;
-  
+
           // First, delete all existing data in dataTransaksi
           await deleteAllDataTransaksi();
-  
+
           // Then, add the new data
           for (const item of newData) {
             const dataPost = {
-              date:"",
+              date: "",
               from_data_id: item.from_data_id,
               no_unit: item.no_unit,
               model_unit: item.model_unit,
@@ -321,8 +336,8 @@ const DashboardFuelMan: React.FC = () => {
               date_trx: new Date().toISOString(),
               hm_last: Number(item.hm_last) || 0,
               hm_km: Number(item.hm_km) || 0,
-              qty_last: Number(item.qty_last) || 0, 
-              qty: Number(item.qty) || 0, 
+              qty_last: Number(item.qty_last) || 0,
+              qty: Number(item.qty) || 0,
               flow_start: Number(item.flow_start) || 0,
               flow_end: Number(item.flow_end) || 0,
               name_operator: item.name_operator,
@@ -334,11 +349,11 @@ const DashboardFuelMan: React.FC = () => {
               fuelman_id: item.fuelman_id,
               status: item.status ?? 1,
             };
-  
-            await addDataTrxType(dataPost); 
+
+            await addDataTrxType(dataPost);
           }
-          
-         
+
+
           setData(newData);
         } else {
           console.error("Expected an array in response.data but got:", response);
@@ -347,14 +362,14 @@ const DashboardFuelMan: React.FC = () => {
       } catch (error) {
         console.error("Failed to refresh data:", error);
         setError("Failed to refresh data");
-        setData([]); 
+        setData([]);
       } finally {
-        setLoading(false); 
+        setLoading(false);
       }
     } else {
       console.log("No LKF ID to refresh data for");
-      setData([]); 
-      setLoading(false); 
+      setData([]);
+      setLoading(false);
     }
     updateAllData()
     updateCard()
@@ -375,42 +390,42 @@ const DashboardFuelMan: React.FC = () => {
     loadUnitData();
   }, []);
 
-  const updateAllData = async ()=>{
+  const updateAllData = async () => {
     const units = await fetchUnitData();
-   
-    
+
+
   }
 
-  const updateCard = async ()=>{
+  const updateCard = async () => {
     localStorage.removeItem('cardData')
     const cards = await fetchCardData(lkfId);
-    
+
   }
   const fetchCardData = async (lkfId: string) => {
     try {
       // First, try to retrieve data from local storage
       const cachedData = localStorage.getItem('cardData');
-      
+
       if (cachedData) {
         console.log("Using cached data");
         const preparedData = JSON.parse(cachedData);
         setDataHome(preparedData);
       } else {
-        console.log("Fetching data for LKF ID:", lkfId); 
+        console.log("Fetching data for LKF ID:", lkfId);
         const dataHome = await getHomeByIdLkf(lkfId); // Fetch data using the API function
         console.log("Full Content Cards:", dataHome); // Log the full API response
-    
+
         // Check if the data is valid and has content
         if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
           const item = dataHome.data[0]; // Get the first item from the data array
-          
+
           // Update state with the fetched data
           setOpDip(item.op_dip);
           setOpShift(item.shift);
           setOpStation(item.station);
           setOpReceipt(item.total_receive);
           setTotalIssued(item.total_issued);
-    
+
           // Prepare data for rendering
           const preparedData = [
             { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
@@ -426,14 +441,14 @@ const DashboardFuelMan: React.FC = () => {
             { title: 'Total Flow Meter', value: item.total_issued, icon: 'total.svg' },
             { title: 'Variance', value: item.totalVariance, icon: 'variance.svg' }
           ];
-    
+
           setDataHome(preparedData);
-          
-         
+
+
           localStorage.setItem('cardData', JSON.stringify(preparedData));
-          
+
         } else {
-          console.error("No data found or invalid format:", dataHome); 
+          console.error("No data found or invalid format:", dataHome);
           setDataHome([]); // Clear data if empty or invalid format
         }
       }
@@ -441,33 +456,22 @@ const DashboardFuelMan: React.FC = () => {
       console.error("Error fetching card data:", error);
       setDataHome([]); // Clear data in case of error
     }
-  }; 
-  
+  };
+
   useEffect(() => {
     if (lkfId) {
-      const intervalId = setInterval(() => {
-        fetchCardData(lkfId);
-      }, 5000); 
-  
-      return () => {
-        clearInterval(intervalId); 
-      };
+      fetchCardData(lkfId);
     }
   }, [lkfId]);
 
-
- 
-  
   return (
     <IonPage>
       <IonContent>
-        
-  
-        <IonHeader style={{height:"60px"}}>
+        <IonHeader style={{ height: "60px" }}>
           <IonRow>
             <IonCol>
               <div className='logoDashboard'>
-                <IonImg style={{ padding:"10px", marginLeft:"15px"}} src="logodh.png" alt='logo-dashboard' />
+                <IonImg style={{ padding: "10px", marginLeft: "15px" }} src="logodh.png" alt='logo-dashboard' />
               </div>
             </IonCol>
             <IonCol style={{ textAlign: 'right' }}>
@@ -475,8 +479,8 @@ const DashboardFuelMan: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 marginRight: '15px',
-                color:"green"
-               
+                color: "green"
+
               }}>
                 <div
                   style={{
@@ -485,10 +489,10 @@ const DashboardFuelMan: React.FC = () => {
                     borderRadius: '50%',
                     backgroundColor: isOnline ? '#73A33F' : 'red',
                     marginRight: '5px',
-                    
+
                   }}
                 />
-                <NetworkStatus/>
+                <NetworkStatus />
               </div>
             </IonCol>
           </IonRow>
@@ -517,9 +521,9 @@ const DashboardFuelMan: React.FC = () => {
             </IonRow>
           </IonGrid>
           <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <h4 >Fuelman : {fullname}</h4>
-          
-          <h4 >{latestDate}</h4>
+            <h4 >Fuelman : {fullname}</h4>
+
+            <h4 >{latestDate}</h4>
           </IonRow>
         </div>
         <IonGrid >
@@ -541,69 +545,87 @@ const DashboardFuelMan: React.FC = () => {
             ))} */}
 
 
-{dataHome.length > 0 ? (
-    dataHome.map((card, index) => (
-      <IonCol size="4" key={index}>
-        <IonCard style={{ height: "90px" }}>
-          <IonCardHeader>
-            <IonCardSubtitle style={{ fontSize: "16px" }}>
-              {card.title}
-            </IonCardSubtitle>
-            <div style={{ display: "inline-flex", gap: "10px" }}>
-              <IonImg
-                src={card.icon}
-                alt={card.title}
-                style={{ width: '30px', height: '30px', marginTop: "10px" }}
-              />
-              <IonCardContent
-                style={{ fontSize: "24px", fontWeight: "500", marginTop: "-10px" }}
-              >
-                {card.value}
-              </IonCardContent>
-            </div>
-          </IonCardHeader>
-        </IonCard>
-      </IonCol>
-    ))
-  ) : (
-    // Show a loading spinner or "No data" message when dataHome is empty
-    <IonCol size="12">
-      <IonCard style={{ textAlign: "center", padding: "20px" }}>
-        <IonSpinner name="dots" />
-        <p>Loading data...</p>
-      </IonCard>
-    </IonCol>
-  )}
-          <IonRow>
-          <p style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexDirection: 'column',
-            }}>
-            <p style={{ 
-              color: "#E16104", 
-              textAlign: 'justify', 
-              marginLeft: "15px", 
-              marginRight: "15px", 
-              marginTop:"-15px"
-            }}>
-              * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
-              * QTY Issued adalah Issued + Transfer
-            </p>
-            </p>
+            {dataHome.length > 0 ? (
+              dataHome.map((card, index) => (
+                <IonCol size="4" key={index}>
+                  <IonCard style={{ height: "90px" }}>
+                    <IonCardHeader>
+                      <IonCardSubtitle style={{ fontSize: "16px" }}>
+                        {card.title}
+                      </IonCardSubtitle>
+                      <div style={{ display: "inline-flex", gap: "10px" }}>
+                        <IonImg
+                          src={card.icon}
+                          alt={card.title}
+                          style={{ width: '30px', height: '30px', marginTop: "10px" }}
+                        />
+                        <IonCardContent
+                          style={{ fontSize: "24px", fontWeight: "500", marginTop: "-10px" }}
+                        >
+                          {card.value}
+                        </IonCardContent>
+                      </div>
+                    </IonCardHeader>
+                  </IonCard>
+                </IonCol>
+              ))
+            ) : (
+              Array(12).fill(0).map((_, index) => (
+                <IonCol size="4" key={index}>
+                  <IonCard style={{ height: "90px" }}>
+                    <IonCardHeader>
+                      <IonCardSubtitle style={{ fontSize: "16px" }}>
+                        <IonSkeletonText animated={true} style={{ width: "60%" }} />
+                      </IonCardSubtitle>
+                      <div style={{ display: "inline-flex", gap: "10px" }}>
+                        <IonThumbnail slot="start">
+                          <IonSkeletonText animated={true} style={{ width: '30px', height: '30px' }} />
+                        </IonThumbnail>
+                        <IonText style={{ fontSize: "16px" }}>
+                          <IonSkeletonText animated={true} style={{ width: "60%" }} />
+                        </IonText>
+                        <IonCardContent
+                          style={{ fontSize: "24px", fontWeight: "500", marginTop: "-10px" }}
+                        >
+                          <IonSkeletonText animated={true} style={{ width: "50%" }} />
+                        </IonCardContent>
+                      </div>
+                    </IonCardHeader>
+                  </IonCard>
+                </IonCol>
+              ))
+            )}
+
+            <IonRow>
+              <p style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexDirection: 'column',
+              }}>
+                <p style={{
+                  color: "#E16104",
+                  textAlign: 'justify',
+                  marginLeft: "15px",
+                  marginRight: "15px",
+                  marginTop: "-15px"
+                }}>
+                  * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
+                  * QTY Issued adalah Issued + Transfer
+                </p>
+              </p>
+            </IonRow>
           </IonRow>
-          </IonRow>
-            <IonButton 
-              style={{ padding: "15px", marginTop:"-40px" }} 
-              className='check-button' 
-              onClick={() => route.push('/transaction')}>
-              <IonImg src='plus.svg'/>
-              <span style={{ marginLeft: "10px" }}>Tambah Data</span>
-            </IonButton>
+          <IonButton
+            style={{ padding: "15px", marginTop: "-40px" }}
+            className='check-button'
+            onClick={() => route.push('/transaction')}>
+            <IonImg src='plus.svg' />
+            <span style={{ marginLeft: "10px" }}>Tambah Data</span>
+          </IonButton>
           <TableData />
         </IonGrid>
-        
+
       </IonContent>
     </IonPage>
   );
