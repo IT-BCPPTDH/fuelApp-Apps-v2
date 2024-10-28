@@ -16,7 +16,7 @@ export class ResponseError extends Error {
 // Function to fetch home summary by Lkf ID
 // Function to fetch home summary by LKF ID
 export async function getHomeByIdLkf(lkf_id: string): Promise<any> {
-  const url = `${LINK_BACKEND}/api/operator/get-home-summary/${lkf_id}`;
+  const url = `${LINK_BACKEND}/api/operator/get-home-summary-tab/${lkf_id}`;
 
   try {
     const response = await CapacitorHttp.get({

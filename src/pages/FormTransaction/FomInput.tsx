@@ -55,6 +55,7 @@ import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getUnitQuotaActive } from "../../hooks/getQoutaUnit";
 
+
 interface Typetrx {
   id: number;
   name: string;
@@ -565,16 +566,33 @@ const FormTRX: React.FC = () => {
     return hmkmTRX !== undefined && hmLast !== undefined && hmLast > hmkmTRX;
   };
 
+  
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
     if (e.nativeEvent.key === "Enter") {
       e.preventDefault();
-
-      // Check which input is focused and move to the next one
-      if (input1Ref.current) {
-        input2Ref.current?.setFocus();
+  
+      
+      const currentHmLast = hmkmValue ?? 0; 
+      const lastHmKm = hmkmTRX ?? 0; 
+  
+   
+      if (currentHmLast < lastHmKm) {
+        setShowError(true); 
+      } else {
+        setShowError(false); 
+  
+        
+        if (input1Ref.current) {
+          input2Ref.current?.setFocus();
+        }
       }
     }
   };
+  
+
+
+ 
 
   useEffect(() => {
     console.log("unitOptions updated:", unitOptions);
@@ -752,8 +770,6 @@ const FormTRX: React.FC = () => {
   
   
   // Display the FBR value in the input field
- 
-  
   useEffect(() => {
     const fetchUnitData = async () => {
       if (!selectedUnit) return;
@@ -764,22 +780,17 @@ const FormTRX: React.FC = () => {
         const response = await getPrevUnitTrx(selectedUnit);
   
         if (response.status === '200' && response.data.length > 0) {
-         
           const latestUnitData = response.data
             .sort((a: { date_trx: string | number | Date; }, b: { date_trx: string | number | Date; }) => new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime())[0];
-  
           if (latestUnitData) {
-            console.log('Latest Unit Data:', latestUnitData);
-  
-            
             const hmKmValue = Number(latestUnitData.hm_km) || 0; 
             const hmKmLastValue = Number(latestUnitData.hm_last) || 0;
-  
             setHmkmValue(hmKmValue);
             setHmKmLast(hmKmLastValue);
             setModel(latestUnitData.model_unit);
             setOwner(latestUnitData.owner);
             setQtyValue(Number(latestUnitData.qty) || 0); 
+            localStorage.setItem('latestUnitDataHMKM', JSON.stringify(latestUnitData));
           } else {
             setError('No data found');
           }
@@ -796,7 +807,6 @@ const FormTRX: React.FC = () => {
   
     fetchUnitData();
   }, [selectedUnit]);
-  
   
   useEffect(() => {
     console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue });
@@ -1042,7 +1052,10 @@ const FormTRX: React.FC = () => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    value={hmkmValue|| ""}
+                    value={hmkmValue|| ""
+                    
+                     }
+                     disabled={isFormDisabled}
 
                     // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
@@ -1061,8 +1074,9 @@ const FormTRX: React.FC = () => {
                     type="number"
                     placeholder="Input HM Terakhir"
                     
+                    
                     onIonChange={(e) => setHmLast(Number(e.detail.value))}
-                    // onIonChange={handleHmkmUnitChange}
+                    
                     onKeyDown={handleKeyDown}
                   />
 

@@ -478,7 +478,7 @@ const fetchData = async () => {
 
 const doRefresh = async (event: CustomEvent) => {
   await fetchData();
-  event.detail.complete(); // Notify that the refresh is complete
+  event.detail.complete(); 
 };
 
 

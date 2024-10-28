@@ -39,13 +39,15 @@ const App: React.FC = () => {
         setIsLoggedIn(isLoggedInCookie === 'true' ? 'true' : 'false');
     };
 
-    if (isLoggedIn === null) {
+   
+ if (isLoggedIn === null) {
         return <div>Loading...</div>; 
     }
-
     return (
         <IonApp>
+            
             <IonReactRouter>
+                
                 <Route exact path="/login">
                     {isLoggedIn === 'true' ? <Redirect to="/opening" /> : <Login onLoginSuccess={updateLoginStatus} />}
                 </Route>
@@ -65,7 +67,7 @@ const App: React.FC = () => {
                     {isLoggedIn === 'true' ? <ReviewData /> : <Redirect to="/login" />}
                 </Route>
                 <Route exact path="/">
-                    {isLoggedIn === 'true' ? <Redirect to="/opening" /> : <Redirect to="/login" />}
+                    {isLoggedIn === 'true' ? <Redirect to="/dashboard" /> : <Redirect to="/login" />}
                 </Route>
             </IonReactRouter>
         </IonApp>
