@@ -226,13 +226,28 @@ const FormTRX: React.FC = () => {
     };
   }, []);
 
+  // useEffect(() => {
+  //   const userData = localStorage.getItem("cardData");
+  //   console.log("dataUse",userData)
+  //   if (userData) {
+  //     const parsedData = JSON.parse(userData);
+  //     setFlowMeterAwal(parsedData.title);
+  //   }
+  // }, []);
+
   useEffect(() => {
-    const userData = localStorage.getItem("shiftData");
+    const userData = localStorage.getItem("cardData");
+    console.log("dataUse", userData);
+
     if (userData) {
       const parsedData = JSON.parse(userData);
-      setFlowMeterAwal(parsedData.flowMeterEnd);
+      // Mencari item dengan title "Flow Meter Awal"
+      const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Awal");
+      if (flowMeterItem) {
+        setFlowMeterAwal(flowMeterItem.value); 
+      }
     }
-  }, []);
+  }, [])
 
 
   useEffect(() => {

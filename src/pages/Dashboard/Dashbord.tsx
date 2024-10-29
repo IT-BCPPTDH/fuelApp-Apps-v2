@@ -129,18 +129,18 @@ const DashboardFuelMan: React.FC = () => {
   >([]);
 
   const [dataHome, setDataHome] = useState<any[]>([
-    // { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
-    //   { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
-    //   { title: 'Opening Dip', value: 'No Data', icon: 'openingdeep.svg' },
-    //   { title: 'Receipt', value: 'No Data', icon: 'receipt.svg' },
-    //   { title: 'Stock On Hand', value: 'No Data', icon: 'stock.svg' },
-    //   { title: 'QTY Issued', value: 'No Data', icon: 'issued.svg' },
-    //   { title: 'Balance', value: 'No Data', icon: 'balance.svg' },
-    //   { title: 'Closing Dip', value: 'No Data', icon: 'close.svg' },
-    //   { title: 'Flow Meter Awal', value: 'No Data', icon: 'flwawal.svg' },
-    //   { title: 'Flow Meter Akhir', value: 'No Data', icon: 'flwakhir.svg' },
-    //   { title: 'Total Flow Meter', value: 'No Data', icon: 'total.svg' },
-    //   { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
+    { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
+      { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
+      { title: 'Opening Dip', value: 'No Data', icon: 'openingdeep.svg' },
+      { title: 'Receipt', value: 'No Data', icon: 'receipt.svg' },
+      { title: 'Stock On Hand', value: 'No Data', icon: 'stock.svg' },
+      { title: 'QTY Issued', value: 'No Data', icon: 'issued.svg' },
+      { title: 'Balance', value: 'No Data', icon: 'balance.svg' },
+      { title: 'Closing Dip', value: 'No Data', icon: 'close.svg' },
+      { title: 'Flow Meter Awal', value: 'No Data', icon: 'flwawal.svg' },
+      { title: 'Flow Meter Akhir', value: 'No Data', icon: 'flwakhir.svg' },
+      { title: 'Total Flow Meter', value: 'No Data', icon: 'total.svg' },
+      { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
 
 
   ]);
@@ -403,50 +403,50 @@ const DashboardFuelMan: React.FC = () => {
   }
   const fetchCardData = async (lkfId: string) => {
     try {
-      // First, try to retrieve data from local storage
+      // Try to retrieve data from local storage
       const cachedData = localStorage.getItem('cardData');
-
+  
       if (cachedData) {
         console.log("Using cached data");
         const preparedData = JSON.parse(cachedData);
         setDataHome(preparedData);
       } else {
         console.log("Fetching data for LKF ID:", lkfId);
-        const dataHome = await getHomeByIdLkf(lkfId); // Fetch data using the API function
+        const dataHome = await getHomeByIdLkf(lkfId);
         console.log("Full Content Cards:", dataHome); // Log the full API response
-
+  
         // Check if the data is valid and has content
         if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
           const item = dataHome.data[0]; // Get the first item from the data array
-
+  
           // Update state with the fetched data
-          setOpDip(item.op_dip);
           setOpShift(item.shift);
+          setOpDip(item.total_opening);
           setOpStation(item.station);
           setOpReceipt(item.total_receive);
           setTotalIssued(item.total_issued);
-
+  
           // Prepare data for rendering
           const preparedData = [
-            { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
+            { title: 'Shift', value: item.shift  || 'No Data', icon: 'shift.svg' },
             { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
-            { title: 'Opening Dip', value: item.op_dip, icon: 'openingdeep.svg' },
-            { title: 'Receipt', value: item.total_receive, icon: 'receipt.svg' },
-            { title: 'Stock On Hand', value: item.op_dip + item.total_receive - item.total_issued, icon: 'stock.svg' },
-            { title: 'QTY Issued', value: item.total_issued, icon: 'issued.svg' },
-            { title: 'Balance', value: item.op_dip + item.total_receive - item.total_issued, icon: 'balance.svg' },
-            { title: 'Closing Dip', value: item.op_dip, icon: 'close.svg' },
-            { title: 'Flow Meter Awal', value: item.flow_meter_start, icon: 'flwawal.svg' },
-            { title: 'Flow Meter Akhir', value: item.flow_meter_start + item.total_issued, icon: 'flwakhir.svg' },
-            { title: 'Total Flow Meter', value: item.total_issued, icon: 'total.svg' },
-            { title: 'Variance', value: item.totalVariance, icon: 'variance.svg' }
+            { title: 'Opening Dip', value: item.total_opening || 0, icon: 'openingdeep.svg' },
+            { title: 'Receipt', value: item.total_receive || 0, icon: 'receipt.svg' },
+            { title: 'Stock On Hand', value: (item.total_opening  + item.total_receive - item.total_issued) || 'No Data', icon: 'stock.svg' },
+            { title: 'QTY Issued', value: item.total_issued || 0, icon: 'issued.svg' },
+            { title: 'Balance', value: (item.total_opening + item.total_receive - item.total_issued) || 'No Data', icon: 'balance.svg' },
+            { title: 'Closing Dip', value: item.total_opening || 'No Data', icon: 'close.svg' },
+            { title: 'Flow Meter Awal', value: item.flow_meter_start || 'No Data', icon: 'flwawal.svg' },
+            { title: 'Flow Meter Akhir', value: (item.flow_meter_start + item.total_issued) || 'No Data', icon: 'flwakhir.svg' },
+            { title: 'Total Flow Meter', value: item.total_issued || 'No Data', icon: 'total.svg' },
+            { title: 'Variance', value: item.totalVariance || 'No Data', icon: 'variance.svg' }
           ];
-
+  
           setDataHome(preparedData);
-
-
+  
+          // Optionally cache the prepared data
           localStorage.setItem('cardData', JSON.stringify(preparedData));
-
+  
         } else {
           console.error("No data found or invalid format:", dataHome);
           setDataHome([]); // Clear data if empty or invalid format
@@ -457,6 +457,7 @@ const DashboardFuelMan: React.FC = () => {
       setDataHome([]); // Clear data in case of error
     }
   };
+  
 
   useEffect(() => {
     if (lkfId) {
