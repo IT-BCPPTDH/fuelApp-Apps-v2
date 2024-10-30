@@ -84,7 +84,7 @@ const typeTrx: Typetrx[] = [
   { id: 1, name: "Issued" },
   { id: 2, name: "Transfer" },
   { id: 3, name: "Receipt" },
-  { id: 4, name: "Receive KPC" },
+  { id: 4, name: "Receipt KPC" },
 ];
 
 const compareWith = (o1: Typetrx, o2: Typetrx) => o1.id === o2.id;
