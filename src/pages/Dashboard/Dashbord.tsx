@@ -115,7 +115,9 @@ const DashboardFuelMan: React.FC = () => {
   const [shift, setOpShift] = useState<string | null>(null)
   const [station, setOpStation] = useState<string | null>(null)
   const [receipt, setOpReceipt] = useState<number | null>(null)
-
+  const [transfer, setOpTransfer] = useState<string | null>(null)
+  const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
+  const [totalPengeluaran, setTotalPengeluaran] = useState(0);
   const [unitOptions, setUnitOptions] = useState<
     {
       hm_km: SetStateAction<number | null>;
@@ -150,6 +152,9 @@ const DashboardFuelMan: React.FC = () => {
   const [cardData, setCardData] = useState<CardData[]>([
 
   ]);
+
+ 
+  
 
   useEffect(() => {
     const handleOnlineStatus = () => {
@@ -401,6 +406,63 @@ const DashboardFuelMan: React.FC = () => {
     const cards = await fetchCardData(lkfId);
 
   }
+  // const fetchCardData = async (lkfId: string) => {
+  //   try {
+  //     // Try to retrieve data from local storage
+  //     const cachedData = localStorage.getItem('cardData');
+  
+  //     if (cachedData) {
+  //       console.log("Using cached data");
+  //       const preparedData = JSON.parse(cachedData);
+  //       setDataHome(preparedData);
+  //     } else {
+  //       console.log("Fetching data for LKF ID:", lkfId);
+  //       const dataHome = await getHomeByIdLkf(lkfId);
+  //       console.log("Full Content Cards:", dataHome); // Log the full API response
+  
+  //       // Check if the data is valid and has content
+  //       if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
+  //         const item = dataHome.data[0]; // Get the first item from the data array
+  
+  //         // Update state with the fetched data
+  //         setOpShift(item.shift);
+  //         setOpDip(item.total_opening);
+  //         setOpStation(item.station);
+  //         setOpReceipt(item.total_receive);
+  //         setTotalIssued(item.total_issued);
+  
+  //         // Prepare data for rendering
+  //         const preparedData = [
+  //           { title: 'Shift', value: item.shift  || 'No Data', icon: 'shift.svg' },
+  //           { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
+  //           { title: 'Opening Dip', value: item.total_opening || 0, icon: 'openingdeep.svg' },
+  //           { title: 'Receipt', value: item.total_receive || 0, icon: 'receipt.svg' },
+  //           { title: 'Stock On Hand', value: (item.total_opening  + item.total_receive - item.total_issued) || 'No Data', icon: 'stock.svg' },
+  //           { title: 'QTY Issued', value: item.total_issued || 0, icon: 'issued.svg' },
+  //           { title: 'Balance', value: (item.total_opening + item.total_receive - item.total_issued) || 'No Data', icon: 'balance.svg' },
+  //           { title: 'Closing Dip', value: item.total_opening || 'No Data', icon: 'close.svg' },
+  //           { title: 'Flow Meter Awal', value: item.flow_meter_start || 'No Data', icon: 'flwawal.svg' },
+  //           { title: 'Flow Meter Akhir', value: (item.flow_meter_start + item.total_issued) || 'No Data', icon: 'flwakhir.svg' },
+  //           { title: 'Total Flow Meter', value: item.total_issued || 'No Data', icon: 'total.svg' },
+  //           { title: 'Variance', value: item.totalVariance || 'No Data', icon: 'variance.svg' }
+  //         ];
+  
+  //         setDataHome(preparedData);
+  
+  //         // Optionally cache the prepared data
+  //         localStorage.setItem('cardData', JSON.stringify(preparedData));
+  
+  //       } else {
+  //         console.error("No data found or invalid format:", dataHome);
+  //         setDataHome([]); // Clear data if empty or invalid format
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching card data:", error);
+  //     setDataHome([]); // Clear data in case of error
+  //   }
+  // };
+  
   const fetchCardData = async (lkfId: string) => {
     try {
       // Try to retrieve data from local storage
@@ -419,12 +481,23 @@ const DashboardFuelMan: React.FC = () => {
         if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
           const item = dataHome.data[0]; // Get the first item from the data array
   
+          // Calculate stock on hand, total issued, and other values
+          const openingDip = item.total_opening || 0;
+          const received = item.total_receive || 0;
+          const receivedKpc = item.total_receive_kpc || 0;
+          const issued = item.total_issued || 0;
+          const transfer = item.total_transfer || 0;
+          const stockOnHand = openingDip + received + receivedKpc - issued - transfer;
+          const totalIssued =  issued + transfer;
+          
           // Update state with the fetched data
           setOpShift(item.shift);
-          setOpDip(item.total_opening);
+          setOpDip(openingDip);
           setOpStation(item.station);
-          setOpReceipt(item.total_receive);
-          setTotalIssued(item.total_issued);
+          setOpReceipt(received);
+          setTotalIssued(issued);
+          setOpTransfer(transfer)
+          setOpReceiveKpc(receiveKpc)
   
 
            // Calculate closing balance and variance
@@ -433,18 +506,18 @@ const DashboardFuelMan: React.FC = () => {
         console.log("variance",variance)
           // Prepare data for rendering
           const preparedData = [
-            { title: 'Shift', value: item.station  || 'No Data', icon: 'shift.svg' },
+            { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
             { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
-            { title: 'Opening Dip', value: item.total_opening || 0, icon: 'openingdeep.svg' },
-            { title: 'Receipt', value: item.total_receive || 0, icon: 'receipt.svg' },
-            { title: 'Stock On Hand', value: (item.total_opening + item.total_receive - item.total_issued) || 'No Data', icon: 'stock.svg' },
-            { title: 'QTY Issued', value: item.total_issued || 0, icon: 'issued.svg' },
-            { title: 'Balance', value: closingBalance || 'No Data', icon: 'balance.svg' },
-            { title: 'Closing Dip', value: item.total_opening || 'No Data', icon: 'close.svg' },
+            { title: 'Opening Dip', value: openingDip, icon: 'openingdeep.svg' },
+            { title: 'Receipt', value: received, icon: 'receipt.svg' },
+            { title: 'Stock On Hand', value: stockOnHand || 'No Data', icon: 'stock.svg' },
+            { title: 'QTY Issued', value:  totalIssued  || 0, icon: 'issued.svg' },
+            { title: 'Balance', value: stockOnHand || 'No Data', icon: 'balance.svg' },
+            { title: 'Closing Dip', value: openingDip || 'No Data', icon: 'close.svg' },
             { title: 'Flow Meter Awal', value: item.flow_meter_start || 'No Data', icon: 'flwawal.svg' },
-            { title: 'Flow Meter Akhir', value: (item.flow_meter_start + item.total_issued) || 'No Data', icon: 'flwakhir.svg' },
-            { title: 'Total Flow Meter', value: item.total_issued || 'No Data', icon: 'total.svg' },
-            { title: 'Variance', value: item.variance || 0, icon: 'variance.svg' }
+            { title: 'Flow Meter Akhir', value: (item.flow_meter_start + issued) || 'No Data', icon: 'flwakhir.svg' },
+            { title: 'Total Flow Meter', value: issued || 'No Data', icon: 'total.svg' },
+            { title: 'Variance', value: item.totalVariance || 'No Data', icon: 'variance.svg' }
           ];
   
           setDataHome(preparedData);
@@ -463,7 +536,6 @@ const DashboardFuelMan: React.FC = () => {
     }
   };
   
-
   useEffect(() => {
     if (lkfId) {
       fetchCardData(lkfId);
