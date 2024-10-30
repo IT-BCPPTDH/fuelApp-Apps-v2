@@ -19,10 +19,16 @@ const ReviewData: React.FC = () => {
     const [stock, setStockOnHand] = useState<number | undefined>(undefined);
     const [qtyIssued, setIssued] = useState<number | undefined>(undefined);
     const [flowMeterStart, setFlowMeterStart] = useState<number | undefined>(undefined);
-    const [totalFlowMeter, setTotalFlowMeter] = useState<number | undefined>(undefined);
+
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
     const [station, setStation] = useState<string | undefined>(undefined);
 
+    const [flowMeteAkhir, setFlowMeterAkhir] = useState<number>();
+    
+    const [totalIssued, setTotalIssued] = useState<number>();
+    const [stockOnHand, setDataStock] = useState<number >();
+    const [flowMeterAwal, setFlowMeterAwal] = useState<number>();
+    const [totalDataFlowMeter, setTotalFlowMeter] = useState<number>();
 
     useEffect(() => {
         const fetchLatestLkfId = async () => {
@@ -61,6 +67,48 @@ const ReviewData: React.FC = () => {
         };
         fetchLatestLkfId();
     }, []);
+
+
+
+
+    useEffect(() => {
+        const getCardData = () => {
+            try {
+                const cachedData = localStorage.getItem('cardData');
+                if (cachedData) {
+                    const cardData = JSON.parse(cachedData);
+
+                    const totalIsssued = cardData.find((item: { title: string; }) => item.title === "QTY Issued");
+
+                    const closeData = cardData.find((item: { title: string; }) => item.title === "Stock On Hand");
+                    const flowMeterAwal = cardData.find((item: { title: string; }) => item.title === "Flow Meter Awal");
+                    const totalMeter = cardData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
+
+                    
+
+                    if (totalIsssued) {
+                        setTotalIssued(Number(totalIsssued.value || 0));
+                    }
+
+                    if (closeData) {
+                        setDataStock(Number(closeData.value || 0));
+                    }
+
+                    if (flowMeterAwal) {
+                        setFlowMeterAwal(Number(flowMeterAwal.value || 0));
+                    }
+                    if (totalMeter) {
+                        setTotalFlowMeter(Number(totalMeter.value || 0));
+                    }
+                }
+            } catch (error) {
+                console.error('Error retrieving cardData from localStorage:', error);
+            }
+        };
+
+        getCardData();
+    }, []);
+
 
     const handleLogout = async () => {
         try {
@@ -149,22 +197,22 @@ const ReviewData: React.FC = () => {
                             <IonLabel className='font-review'>Receive : {receive}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Stock On Hand : {stock}</IonLabel>
+                            <IonLabel className='font-review'>Stock On Hand : {stockOnHand}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Issued : {qtyIssued}</IonLabel>
+                            <IonLabel className='font-review'>Issued : {totalIssued}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Balance : {stock}</IonLabel>
+                            <IonLabel className='font-review'>Balance : {stockOnHand}</IonLabel>
                         </IonItem>
                         <IonItem>
                             <IonLabel className='font-review'>Closing Sonding / Dip : {closeSonding}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Start Meter : {flowMeterStart}</IonLabel>
+                            <IonLabel className='font-review'>Start Meter : {flowMeterAwal}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Total Meter : {totalFlowMeter}</IonLabel>
+                            <IonLabel className='font-review'>Total Meter : {totalDataFlowMeter}</IonLabel>
                         </IonItem>
                         <IonItem>
                             <IonLabel className='font-review'>Daily Variance :</IonLabel>

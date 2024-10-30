@@ -21,7 +21,7 @@ interface DataLkf {
   hm_end:number,
   closing_dip:number;
   closing_sonding: number;
-  flow_meter_end:number;
+  flow_meter_end:number ;
   note:string;
   signature:string;
   close_data:number,

@@ -140,7 +140,7 @@ const DashboardFuelMan: React.FC = () => {
       { title: 'Flow Meter Awal', value: 'No Data', icon: 'flwawal.svg' },
       { title: 'Flow Meter Akhir', value: 'No Data', icon: 'flwakhir.svg' },
       { title: 'Total Flow Meter', value: 'No Data', icon: 'total.svg' },
-      { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
+      { title: 'Variance', value: 0, icon: 'variance.svg' }
 
 
   ]);
@@ -426,26 +426,31 @@ const DashboardFuelMan: React.FC = () => {
           setOpReceipt(item.total_receive);
           setTotalIssued(item.total_issued);
   
+
+           // Calculate closing balance and variance
+        const closingBalance = item.total_opening + item.total_receive - item.total_issued;
+        const variance  = item.total_opening - closingBalance;
+        console.log("variance",variance)
           // Prepare data for rendering
           const preparedData = [
-            { title: 'Shift', value: item.shift  || 'No Data', icon: 'shift.svg' },
+            { title: 'Shift', value: item.station  || 'No Data', icon: 'shift.svg' },
             { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
             { title: 'Opening Dip', value: item.total_opening || 0, icon: 'openingdeep.svg' },
             { title: 'Receipt', value: item.total_receive || 0, icon: 'receipt.svg' },
-            { title: 'Stock On Hand', value: (item.total_opening  + item.total_receive - item.total_issued) || 'No Data', icon: 'stock.svg' },
+            { title: 'Stock On Hand', value: (item.total_opening + item.total_receive - item.total_issued) || 'No Data', icon: 'stock.svg' },
             { title: 'QTY Issued', value: item.total_issued || 0, icon: 'issued.svg' },
-            { title: 'Balance', value: (item.total_opening + item.total_receive - item.total_issued) || 'No Data', icon: 'balance.svg' },
+            { title: 'Balance', value: closingBalance || 'No Data', icon: 'balance.svg' },
             { title: 'Closing Dip', value: item.total_opening || 'No Data', icon: 'close.svg' },
             { title: 'Flow Meter Awal', value: item.flow_meter_start || 'No Data', icon: 'flwawal.svg' },
             { title: 'Flow Meter Akhir', value: (item.flow_meter_start + item.total_issued) || 'No Data', icon: 'flwakhir.svg' },
             { title: 'Total Flow Meter', value: item.total_issued || 'No Data', icon: 'total.svg' },
-            { title: 'Variance', value: item.totalVariance || 'No Data', icon: 'variance.svg' }
+            { title: 'Variance', value: item.variance || 0, icon: 'variance.svg' }
           ];
   
           setDataHome(preparedData);
   
           // Optionally cache the prepared data
-          localStorage.setItem('cardData', JSON.stringify(preparedData));
+          // localStorage.setItem('cardData', JSON.stringify(preparedData));
   
         } else {
           console.error("No data found or invalid format:", dataHome);

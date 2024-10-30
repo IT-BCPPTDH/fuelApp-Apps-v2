@@ -28,7 +28,7 @@ import { getAllSonding } from '../../hooks/getAllSonding';
 import { getStation } from "../../hooks/useStation";
 import { updateDataToDB } from '../../utils/insertData';
 import { fetchSondingData, getDataFromStorage } from '../../services/dataService';
-
+import { getHomeByIdLkf } from '../../hooks/getHome';
 const FormClosing: React.FC = () => {
     const route = useIonRouter();
     const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -54,16 +54,18 @@ const FormClosing: React.FC = () => {
     const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
     const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
     const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
-    
+    const [lkfId, setLkfId] = useState<string>('');
+    const [flowMeteAkhir, setFlowMeterAkhir] = useState<number>();
+    const [closeData, setCloseData] = useState<number>();
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
             setLatestLkfId(id);
 
-            const shiftData = localStorage.getItem("shiftData");
+            const shiftData = localStorage.getItem("cardData");
             if (shiftData) {
                 const parsedData = JSON.parse(shiftData);
-                setFlowMeterEnd(parsedData.flowMeterEnd || 0);
+                setFlowMeterEnd(parsedData.flow_meter_sta || 0);
                 setStockOnHand(parsedData.stockOnHand || 0);
                 setReceiptKPC(parsedData.receiptKPC || 0);
                 setReceipt(parsedData.receipt || 0);
@@ -82,6 +84,34 @@ const FormClosing: React.FC = () => {
         fetchLatestLkfId();
     }, []);
 
+
+
+    useEffect(() => {
+        const getCardData = () => {
+            try {
+                const cachedData = localStorage.getItem('cardData');
+                if (cachedData) {
+                    const cardData = JSON.parse(cachedData);
+
+                    const flowMeterEndData = cardData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
+                    const closeData = cardData.find((item: { title: string; }) => item.title === "Stock On Hand");
+                    if (flowMeterEndData) {
+                        setFlowMeterAkhir(Number(flowMeterEndData.value || 0));
+                    }
+
+                    if (closeData) {
+                        setCloseData(Number(closeData.value || 0));
+                    }
+                }
+            } catch (error) {
+                console.error('Error retrieving cardData from localStorage:', error);
+            }
+        };
+
+        getCardData();
+    }, []);
+    
+   
     useEffect(() => {
         const fetchSondingMasterData = async () => {
             try {
@@ -118,10 +148,10 @@ const FormClosing: React.FC = () => {
     }, [closingSonding, station, sondingMasterData]);
 
     useEffect(() => {
-        if (closingDip !== undefined && stockOnHand !== undefined) {
-            setVariance(closingDip - stockOnHand);
+        if (closingDip !== undefined && closeData !== undefined) {
+            setVariance(closingDip - closeData);
         }
-    }, [closingDip, stockOnHand]);
+    }, [closingDip, closeData]);
 
     const calculateCloseData = () => {
         return (stockOnHand + receiptKPC + receipt - issued - transfer);
@@ -246,7 +276,10 @@ const FormClosing: React.FC = () => {
         fetchLoginData(); // Call the function to fetch login data
     }, [closingSonding, sondingMasterData]);
     
-
+    const handleClose = async (e: { preventDefault: () => void; }) =>{
+        e.preventDefault()
+        route.push('/dashboard')
+    }
     return (
         <IonPage>
             <IonHeader translucent={true} className="ion-no-border">
@@ -262,14 +295,19 @@ const FormClosing: React.FC = () => {
                             <IonRow>
                                 <IonCol>
                                     <IonLabel>Flow Meter Akhir *</IonLabel>
-                                    <IonInput 
+                                    <IonInput
                                         className="custom-input"
                                         type="number"
                                         name="flowMeterEnd"
-                                        value={flowMeterEnd}
-                                        onIonChange={(e) => setFlowMeterEnd(Number(e.detail.value))}
-                                        placeholder="Input Flow Meter"
+                                        value={flowMeteAkhir}
+                                         placeholder="Input Flow Meter"
+                                        onIonChange={(e) => {
+                                            const newValue = Number(e.detail.value);
+                                            setFlowMeterAkhir(newValue);
+                                        }}
+                                       
                                     />
+
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Sonding (Cm) *</IonLabel>
@@ -306,9 +344,13 @@ const FormClosing: React.FC = () => {
                                         style={{background:"#cfcfcf"}}
                                         className="custom-input"
                                         type="number"
-                                        value={calculateCloseData()}
-                                        disabled
-                                        placeholder="Input Close Data"
+                                       placeholder="Input Close Dip (Liters)"
+                                        name="closingDip"
+                                        value={closeData || 0}// Default to 0 if undefined
+                                        onIonChange={(e) => {
+                                            const newValue = Number(e.detail.value);
+                                            setCloseData(newValue);
+                                        }}
                                     />
                                 </IonCol>
                                 <IonCol>
@@ -352,7 +394,7 @@ const FormClosing: React.FC = () => {
                                 </IonButton>
                             </IonItem>
                             <div style={{ marginTop: "20px", float: "inline-end" }}>
-                                <IonButton color="light">
+                                <IonButton onClick={handleClose} color="light">
                                     <IonIcon slot="start" icon={closeCircleOutline} />Tutup Form
                                 </IonButton>
                                 <IonButton onClick={handleSubmit} className="check-close">
@@ -373,3 +415,5 @@ const FormClosing: React.FC = () => {
 };
 
 export default FormClosing;
+
+
