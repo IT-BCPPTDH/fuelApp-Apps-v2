@@ -118,6 +118,10 @@ const DashboardFuelMan: React.FC = () => {
   const [transfer, setOpTransfer] = useState<string | null>(null)
   const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
   const [totalPengeluaran, setTotalPengeluaran] = useState(0);
+ 
+  const [pendingStatus, setPendingStatus] = useState(true);
+ 
+  const [result, setResult] = useState<number | null>(null);
   const [unitOptions, setUnitOptions] = useState<
     {
       hm_km: SetStateAction<number | null>;
@@ -129,6 +133,8 @@ const DashboardFuelMan: React.FC = () => {
       owner: string
     }[]
   >([]);
+  const [totalQuantityIssued, setTotalQuantityIssued] = useState<number>(0);
+
 
   const [dataHome, setDataHome] = useState<any[]>([
     { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
@@ -214,21 +220,7 @@ const DashboardFuelMan: React.FC = () => {
           const variance = totalFlowMeter - qtyIssued;
 
 
-          // localStorage.setItem('shiftData', JSON.stringify({
-          //   shiftData,
-          //   calculationIssued,
-          //   calculationReceive,
-          //   qtyReceive,
-          //   qtyIssued,
-          //   openingDip,
-          //   stockOnHand,
-          //   flowMeterStart,
-          //   flowMeterEnd,
-          //   totalFlowMeter,
-          //   variance,
-          //   cardData
-          // }));
-
+       
           const homeData = await getHomeByIdLkf(id);
           const loginData = localStorage.getItem('loginData');
           if (loginData) {
@@ -378,6 +370,7 @@ const DashboardFuelMan: React.FC = () => {
     }
     updateAllData()
     updateCard()
+    
   };
 
   useEffect(() => {
@@ -397,75 +390,33 @@ const DashboardFuelMan: React.FC = () => {
 
   const updateAllData = async () => {
     const units = await fetchUnitData();
-
-
   }
 
   const updateCard = async () => {
     localStorage.removeItem('cardData')
     const cards = await fetchCardData(lkfId);
+    console.log("", cardData)
 
   }
-  // const fetchCardData = async (lkfId: string) => {
-  //   try {
-  //     // Try to retrieve data from local storage
-  //     const cachedData = localStorage.getItem('cardData');
-  
-  //     if (cachedData) {
-  //       console.log("Using cached data");
-  //       const preparedData = JSON.parse(cachedData);
-  //       setDataHome(preparedData);
-  //     } else {
-  //       console.log("Fetching data for LKF ID:", lkfId);
-  //       const dataHome = await getHomeByIdLkf(lkfId);
-  //       console.log("Full Content Cards:", dataHome); // Log the full API response
-  
-  //       // Check if the data is valid and has content
-  //       if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
-  //         const item = dataHome.data[0]; // Get the first item from the data array
-  
-  //         // Update state with the fetched data
-  //         setOpShift(item.shift);
-  //         setOpDip(item.total_opening);
-  //         setOpStation(item.station);
-  //         setOpReceipt(item.total_receive);
-  //         setTotalIssued(item.total_issued);
-  
-  //         // Prepare data for rendering
-  //         const preparedData = [
-  //           { title: 'Shift', value: item.shift  || 'No Data', icon: 'shift.svg' },
-  //           { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
-  //           { title: 'Opening Dip', value: item.total_opening || 0, icon: 'openingdeep.svg' },
-  //           { title: 'Receipt', value: item.total_receive || 0, icon: 'receipt.svg' },
-  //           { title: 'Stock On Hand', value: (item.total_opening  + item.total_receive - item.total_issued) || 'No Data', icon: 'stock.svg' },
-  //           { title: 'QTY Issued', value: item.total_issued || 0, icon: 'issued.svg' },
-  //           { title: 'Balance', value: (item.total_opening + item.total_receive - item.total_issued) || 'No Data', icon: 'balance.svg' },
-  //           { title: 'Closing Dip', value: item.total_opening || 'No Data', icon: 'close.svg' },
-  //           { title: 'Flow Meter Awal', value: item.flow_meter_start || 'No Data', icon: 'flwawal.svg' },
-  //           { title: 'Flow Meter Akhir', value: (item.flow_meter_start + item.total_issued) || 'No Data', icon: 'flwakhir.svg' },
-  //           { title: 'Total Flow Meter', value: item.total_issued || 'No Data', icon: 'total.svg' },
-  //           { title: 'Variance', value: item.totalVariance || 'No Data', icon: 'variance.svg' }
-  //         ];
-  
-  //         setDataHome(preparedData);
-  
-  //         // Optionally cache the prepared data
-  //         localStorage.setItem('cardData', JSON.stringify(preparedData));
-  
-  //       } else {
-  //         console.error("No data found or invalid format:", dataHome);
-  //         setDataHome([]); // Clear data if empty or invalid format
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching card data:", error);
-  //     setDataHome([]); // Clear data in case of error
-  //   }
-  // };
-  
+  const IssuedTotal = async () => {
+    try {
+      const fetchedResult = await getCalculationIssued(lkfId);
+      console.log(`Fetched result: ${fetchedResult}`); 
+      setResult(fetchedResult ?? null); 
+      // Set to null if fetchedResult is undefined
+    } catch (error) {
+      console.error('Error fetching issued total:', error);
+    }
+  };
+
+  useEffect(() => {
+    IssuedTotal();
+  }, [lkfId]);
+ 
+
   const fetchCardData = async (lkfId: string) => {
     try {
-      // Try to retrieve data from local storage
+    
       const cachedData = localStorage.getItem('cardData');
   
       if (cachedData) {
@@ -481,23 +432,33 @@ const DashboardFuelMan: React.FC = () => {
         if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
           const item = dataHome.data[0]; // Get the first item from the data array
   
-          // Calculate stock on hand, total issued, and other values
+          // Calculate stock on hand and other values
           const openingDip = item.total_opening || 0;
           const received = item.total_receive || 0;
           const receivedKpc = item.total_receive_kpc || 0;
           const issued = item.total_issued || 0;
           const transfer = item.total_transfer || 0;
           const stockOnHand = openingDip + received + receivedKpc - issued - transfer;
-          const totalIssued =  issued + transfer;
-          
+  
+          // Fetch the total quantity issued using the provided lkfId
+          const fetchedResult = await getCalculationIssued(lkfId);
+          console.log("Fetched total quantity issued:", fetchedResult); // Log fetched result
+  
+          // Check if fetchedResult is defined
+          if (fetchedResult === undefined) {
+            console.warn("Fetched result is undefined, using default value of 0");
+          }
+  
+          setTotalQuantityIssued(fetchedResult ?? 0); // Update state with fetched total issued
+  
           // Update state with the fetched data
           setOpShift(item.shift);
           setOpDip(openingDip);
           setOpStation(item.station);
           setOpReceipt(received);
           setTotalIssued(issued);
-          setOpTransfer(transfer)
-          setOpReceiveKpc(receiveKpc)
+          setOpTransfer(transfer);
+          setOpReceiveKpc(receivedKpc);
   
           // Prepare data for rendering
           const preparedData = [
@@ -506,7 +467,7 @@ const DashboardFuelMan: React.FC = () => {
             { title: 'Opening Dip', value: openingDip, icon: 'openingdeep.svg' },
             { title: 'Receipt', value: received, icon: 'receipt.svg' },
             { title: 'Stock On Hand', value: stockOnHand || 'No Data', icon: 'stock.svg' },
-            { title: 'QTY Issued', value:  totalIssued  || 0, icon: 'issued.svg' },
+            { title: 'QTY Issued', value: fetchedResult ?? 0, icon: 'issued.svg' }, // Use fetchedResult here
             { title: 'Balance', value: stockOnHand || 'No Data', icon: 'balance.svg' },
             { title: 'Closing Dip', value: openingDip || 'No Data', icon: 'close.svg' },
             { title: 'Flow Meter Awal', value: item.flow_meter_start || 'No Data', icon: 'flwawal.svg' },
@@ -530,6 +491,7 @@ const DashboardFuelMan: React.FC = () => {
       setDataHome([]); // Clear data in case of error
     }
   };
+  
   
   useEffect(() => {
     if (lkfId) {
@@ -581,8 +543,8 @@ const DashboardFuelMan: React.FC = () => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Update Data
             </IonButton> */}
-            <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout}>
-              Close LFK & Logout
+             <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout} disabled={pendingStatus}>
+              Close LKF & Logout
             </IonButton>
           </div>
         </div>
@@ -696,7 +658,7 @@ const DashboardFuelMan: React.FC = () => {
             <IonImg src='plus.svg' />
             <span style={{ marginLeft: "10px" }}>Tambah Data</span>
           </IonButton>
-          <TableData />
+          <TableData setPendingStatus={setPendingStatus} />
         </IonGrid>
 
       </IonContent>
