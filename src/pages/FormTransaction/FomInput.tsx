@@ -54,7 +54,9 @@ import Select, { ActionMeta, SingleValue } from "react-select";
 import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getUnitQuotaActive } from "../../hooks/getQoutaUnit";
-
+import { getHomeByIdLkf, getHomeTable} from "../../hooks/getHome";
+import { deleteAllDataTransaksi } from "../../utils/delete";
+import { getCalculationIssued } from "../../utils/getData";
 
 interface Typetrx {
   id: number;
@@ -80,6 +82,26 @@ interface UnitQuota {
   isActive?: boolean;
 }
 
+
+interface TableDataItem {
+  hm_km: any;
+  from_data_id: number;
+  unit_no: string;
+  model_unit: string;
+  owner: string;
+  fbr_historis: string;
+  jenis_trx: string;
+  qty_issued: number;
+  fm_awal: number;
+  fm_akhir: number;
+  hm_last: number;
+  jde_operator: string;
+  name_operator: string;
+
+  status: number;
+}
+
+
 const typeTrx: Typetrx[] = [
   { id: 1, name: "Issued" },
   { id: 2, name: "Transfer" },
@@ -100,7 +122,7 @@ const FormTRX: React.FC = () => {
 
   const [signature, setSignature] = useState<File | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
-
+  const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
   const [model, setModel] = useState<string>("");
   const [owner, setOwner] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
@@ -126,7 +148,7 @@ const FormTRX: React.FC = () => {
   );
   const [startTime, setStartTime] = useState<string | undefined>(undefined);
   const [endTime, setEndTime] = useState<string | undefined>(undefined);
-  const [lkf_id, setLkfId] = useState<number | undefined>(undefined);
+ 
   const [stockData, setStockData] = useState<number | undefined>(undefined);
   const [signatureBase64, setSignatureBase64] = useState<string | undefined>(
     undefined
@@ -159,7 +181,7 @@ const FormTRX: React.FC = () => {
   const [modalMessage, setModalMessage] = useState("");
 
 
-  const [status, setStatus] = useState<number>(0); // Default to 0
+  const [status, setStatus] = useState<number>(1); // Default to 0
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
   const [quotaMessage, setQuotaMessage] = useState("");
@@ -193,7 +215,7 @@ const FormTRX: React.FC = () => {
   const [hmkmValue, setHmkmValue] = useState<number | null>(null);
   const [hmkmLast, setHmKmLast] = useState<number | null>(null);
  
- 
+  const [lkfId, setLkfId] = useState<string>('');
   const [qtyValue, setQtyValue] = useState<number | null>(null);
  
   const [hmKm, setHmKm] = useState<string>("");
@@ -205,6 +227,14 @@ const FormTRX: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [quotaData, setQuotaData] = useState(null);
   const [currentUnitQuota, setCurrentUnitQuota] = useState<UnitQuota | null>(null);
+  const [totalQuantityIssued, setTotalQuantityIssued] = useState<number>(0);
+  const [opDip, setOpDip] = useState<number | null>(null)
+  const [shift, setOpShift] = useState<string | null>(null)
+  const [station, setOpStation] = useState<string | null>(null)
+  const [receipt, setOpReceipt] = useState<number | null>(null)
+  const [transfer, setOpTransfer] = useState<string | null>(null)
+  const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
+  const [totalIssued, setTotalIssued] = useState<number | null>(null);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -357,10 +387,113 @@ const FormTRX: React.FC = () => {
   };
 
   // Ensure quantity is initialized and handle potential undefined
+  // const handlePost = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+  //   console.log("Initial Status:", status);
+
+  //   // Validate form fields
+  //   if (
+  //     !selectedType ||
+  //     !selectedUnit ||
+  //     !operatorOptions ||
+  //     quantity === null || 
+  //     fuelman_id === null || 
+  //     quantity === null ||
+  //     fbr === null ||
+  //     flowMeterAwal === null ||
+  //     flowMeterAkhir === null ||
+  //     !startTime ||
+  //     !endTime
+  //   ) {
+    
+  //     setShowError(true);
+  //     setemployeeError(true)
+    
+  //     return;
+  //   }
+
+  //   const flow_end: number = Number(calculateFlowEnd()) || 0;
+
+  //   // Prepare form data
+  //   const fromDataId = Date.now().toString();
+  //   const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
+  //   const lkf_id = await getLatestLkfId();
+
+  //   const dataPost: DataFormTrx = {
+  //     from_data_id: fromDataId,
+  //     no_unit: selectedUnit!,
+  //     model_unit: model!,
+  //     owner: owner!,
+  //     date_trx: new Date().toISOString(),
+  //     hm_last: Number(hmLast) || 0,
+  //     hm_km: Number(hmkmTRX) || 0,
+  //     qty_last: Number(quantity) || 0, // Ensure quantity is a number
+  //     qty: Number(quantity) || 0, // Ensure quantity is a number
+  //     flow_start: Number(flowMeterAwal) || 0,
+  //     flow_end: flow_end,
+  //     name_operator: fullName!,
+  //     fbr: fbrResult,
+  //     lkf_id: lkf_id ?? "",
+  //     signature: signatureBase64 ?? "",
+  //     type: selectedType?.name ?? "",
+  //     foto: photoPreview ?? "",
+  //     fuelman_id: fuelman_id!,
+  //     status: status ?? 0,
+  //     date: ""
+  //   };
+
+  //   try {
+  //     // Handle saving and posting based on status
+  //     if (status === 0) {
+  //       console.log("Saving data as draft (offline)...");
+  //       await insertNewData(dataPost);
+  //       setModalMessage("Data saved as draft");
+
+  //     } else if (status === 1 && isOnline) {
+  //       console.log("Posting data to backend...");
+  //       const response = await postTransaksi(dataPost);
+  //         await insertNewData(dataPost);
+  //       if (response.ok && (response.status === 200 || response.status === 201)) {
+         
+  //         if (quantity) {
+  //           updateLocalStorageQuota(selectedUnit, quantity);
+  //         }
+  //         setModalMessage("Transaction posted successfully and saved locally");
+  //       } else {
+  //         setModalMessage("Failed to post transaction. Please try again.");
+  //         setErrorModalOpen(true);
+  //       }
+  //     }
+
+  //     // Navigate to the dashboard
+  //     setSuccessModalOpen(true);
+  //     route.push("/dashboard");
+
+  //   } catch (error) {
+  //     console.error("Error occurred while posting data:", error);
+  //     setModalMessage("Error occurred while posting data: " + error);
+  //     setErrorModalOpen(true);
+  //   }
+  // };
+
+
+
+  const updateAllData = async () => {
+    const units = await fetchUnitData();
+  }
+
+
+  const updateCard = async () => {
+    localStorage.removeItem('cardData')
+    // const cards = await fetchCardData(lkfId);
+    
+
+  }
+
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Initial Status:", status);
-
+  
     // Validate form fields
     if (
       !selectedType ||
@@ -368,27 +501,24 @@ const FormTRX: React.FC = () => {
       !operatorOptions ||
       quantity === null || 
       fuelman_id === null || 
-      quantity === null ||
       fbr === null ||
       flowMeterAwal === null ||
       flowMeterAkhir === null ||
       !startTime ||
       !endTime
     ) {
-    
       setShowError(true);
-      setemployeeError(true)
-    
+      setemployeeError(true);
       return;
     }
-
+  
     const flow_end: number = Number(calculateFlowEnd()) || 0;
-
+  
     // Prepare form data
     const fromDataId = Date.now().toString();
     const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
-    const lkf_id = await getLatestLkfId();
-
+    const lkf_id = await getLatestLkfId(); 
+  
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -397,8 +527,8 @@ const FormTRX: React.FC = () => {
       date_trx: new Date().toISOString(),
       hm_last: Number(hmLast) || 0,
       hm_km: Number(hmkmTRX) || 0,
-      qty_last: Number(quantity) || 0, // Ensure quantity is a number
-      qty: Number(quantity) || 0, // Ensure quantity is a number
+      qty_last: Number(quantity) || 0,
+      qty: Number(quantity) || 0,
       flow_start: Number(flowMeterAwal) || 0,
       flow_end: flow_end,
       name_operator: fullName!,
@@ -408,45 +538,56 @@ const FormTRX: React.FC = () => {
       type: selectedType?.name ?? "",
       foto: photoPreview ?? "",
       fuelman_id: fuelman_id!,
-      status: status ?? 0,
-      date: ""
+      jde_operator: fuelman_id!,
+      status: status ?? 1,
+      date: "",
+      start: startTime,
+      end: endTime,
     };
-
+  
     try {
-      // Handle saving and posting based on status
-      if (status === 0) {
-        console.log("Saving data as draft (offline)...");
-        await insertNewData(dataPost);
-        setModalMessage("Data saved as draft");
-
-      } else if (status === 1 && isOnline) {
-        console.log("Posting data to backend...");
+      if (isOnline) {
         const response = await postTransaksi(dataPost);
-        // await insertNewData(dataPost);
-        if (response.ok && (response.status === 200 || response.status === 201)) {
-          // Update local storage quota
+        const responseStatus = response.status;
+  
+        if (response.ok) {
+          // Update status based on response
+          dataPost.status = responseStatus === 200 ? 1 : 0;
+          await insertNewData(dataPost); // Save to IndexedDB
           if (quantity) {
             updateLocalStorageQuota(selectedUnit, quantity);
           }
           setModalMessage("Transaction posted successfully and saved locally");
         } else {
-          setModalMessage("Failed to post transaction. Please try again.");
+          // If posting fails, still save locally
+          await insertNewData(dataPost);
+          setModalMessage("Failed to post transaction. Saved locally instead.");
           setErrorModalOpen(true);
         }
+      } else {
+        // If offline, just insert into IndexedDB
+        await insertNewData(dataPost);
+        setModalMessage("Transaction saved locally. Will be sent when online.");
+        route.push("/dashboard");
       }
-
+  
+      // // Fetch the updated data to display in the table
+      // const updatedData = await getHomeByIdLkf(lkfId);
+      // if (updatedData && updatedData.data) {
+      //   setData(updatedData.data); // Update the table with the latest data
+      // }
+  
       // Navigate to the dashboard
-      setSuccessModalOpen(true);
       route.push("/dashboard");
-
+  
     } catch (error) {
       console.error("Error occurred while posting data:", error);
       setModalMessage("Error occurred while posting data: " + error);
       setErrorModalOpen(true);
     }
   };
-
-
+  
+  
   const updateLocalStorageQuota = async (unitNo: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
     if (unitQuota) {
@@ -475,7 +616,7 @@ const FormTRX: React.FC = () => {
         if (currentUnitQuota) {
           setUnitQuota(currentUnitQuota.quota);
           setUsedQuota(currentUnitQuota.used);
-          setRemainingQuota(currentUnitQuota.quota - currentUnitQuota.used); // Calculate remaining quota
+          setRemainingQuota(currentUnitQuota.quota - currentUnitQuota.used); 
         } else {
           setUnitQuota(0);
           setUsedQuota(0);
@@ -793,6 +934,8 @@ const FormTRX: React.FC = () => {
       setError(null);
       try {
         const response = await getPrevUnitTrx(selectedUnit);
+        console.log("Data",response)
+        localStorage.setItem('allUnitDataHMKM', JSON.stringify(response));
   
         if (response.status === '200' && response.data.length > 0) {
           const latestUnitData = response.data
@@ -822,6 +965,8 @@ const FormTRX: React.FC = () => {
   
     fetchUnitData();
   }, [selectedUnit]);
+
+  
   
   useEffect(() => {
     console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue });
@@ -877,32 +1022,33 @@ const FormTRX: React.FC = () => {
                 }
 
                 if (foundUnitQuota) {
-                    setCurrentUnitQuota(foundUnitQuota);
-                    const totalQuota = foundUnitQuota.quota;
-                    const usedQuota = foundUnitQuota.used || 0;
-                    const additionalQouta = foundUnitQuota.additional || 0;
-
-                    if (foundUnitQuota.isActive) {
-                        setUnitQuota(totalQuota);
-                        const remainingQuota = totalQuota + additionalQouta - usedQuota ; // Use remainingQuota here
-                        setRemainingQuota(remainingQuota);
-                        setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remainingQuota} Liter`);
-                    } else {
-                        setUnitQuota(0);
-                        setRemainingQuota(0);
-                        setQuotaMessage("Pembatasan kuota dinonaktifkan.");
-                    }
-
-                    const issuedAmount = foundUnitQuota.issued || 0;
-                    if (issuedAmount > (foundUnitQuota.isActive ? remainingQuota : 0)) { // Update to use remainingQuota
-                        setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
-                    }
-                } else {
-                    setUnitQuota(0);
-                    setRemainingQuota(0);
-                    setQuotaMessage("");
-                    console.log(`No quota found for unit: ${selectedUnit}`);
-                }
+                  setCurrentUnitQuota(foundUnitQuota);
+                  const totalQuota = foundUnitQuota.quota;
+                  const usedQuota = foundUnitQuota.used || 0;
+                  const additionalQuota = foundUnitQuota.additional || 0;
+              
+                  if (foundUnitQuota.isActive) {
+                      setUnitQuota(totalQuota);
+                      const remainingQuota = totalQuota + additionalQuota - usedQuota; 
+                      setRemainingQuota(remainingQuota);
+                      setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remainingQuota} Liter`);
+              
+                      const issuedAmount = foundUnitQuota.issued || 0;
+                      // Check if the issued amount exceeds the remaining quota
+                      if (issuedAmount > remainingQuota) {
+                          setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
+                      }
+                  } else {
+                      setUnitQuota(0);
+                      setRemainingQuota(0);
+                      setQuotaMessage("Pembatasan kuota dinonaktifkan.");
+                  }
+              } else {
+                  setUnitQuota(0);
+                  setRemainingQuota(0);
+                  setQuotaMessage("");
+                  console.log(`No quota found for unit: ${selectedUnit}`);
+              }
             } else {
                 console.error('No quota data found for the specified date');
             }
@@ -916,6 +1062,75 @@ const FormTRX: React.FC = () => {
 
 
 
+
+const handleRefresh = async () => {
+  const response = await getHomeTable(lkfId);
+  if (lkfId) {
+    setLoading(true); // Start loading state
+    try {
+      const response = await getHomeTable(lkfId);
+      console.log("Fetched Edit Transaksi:", response);
+
+      // Ensure response.data is an array
+      if (response && response.data && Array.isArray(response.data)) {
+        const newData = response.data;
+
+        // First, delete all existing data in dataTransaksi
+        await deleteAllDataTransaksi();
+
+        // Then, add the new data
+        for (const item of newData) {
+          const dataPost = {
+            date: "",
+            from_data_id: item.from_data_id,
+            no_unit: item.no_unit,
+            model_unit: item.model_unit,
+            owner: item.owner,
+            date_trx: new Date().toISOString(),
+            hm_last: Number(item.hm_last) || 0,
+            hm_km: Number(item.hm_km) || 0,
+            qty_last: Number(item.qty_last) || 0,
+            qty: Number(item.qty) || 0,
+            flow_start: Number(item.flow_start) || 0,
+            flow_end: Number(item.flow_end) || 0,
+            name_operator: item.name_operator,
+            fbr: item.fbr,
+            lkf_id: item.lkf_id ?? "",
+            signature: item.signature ?? "",
+            type: item.type ?? "",
+            foto: item.foto ?? "",
+            fuelman_id: item.fuelman_id,
+            jde_operator: item.fuelman_id,
+            start: item.start,
+            end: item.end,
+            status: item.status ?? 1,
+          };
+
+          await addDataTrxType(dataPost);
+        }
+
+
+        setData(newData);
+      } else {
+        console.error("Expected an array in response.data but got:", response);
+        setData([]); // Reset to empty array on error
+      }
+    } catch (error) {
+      console.error("Failed to refresh data:", error);
+      setError("Failed to refresh data");
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  } else {
+    console.log("No LKF ID to refresh data for");
+    setData([]);
+    setLoading(false);
+  }
+  updateAllData()
+  updateCard()
+  
+};
 
   return (
     <IonPage>
@@ -1072,7 +1287,7 @@ const FormTRX: React.FC = () => {
                      }
                      disabled={isFormDisabled}
 
-                    // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
+                    onIonChange={(e) => setHmkmValue(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
                    {showError && hmkmValue === undefined && (
@@ -1115,14 +1330,14 @@ const FormTRX: React.FC = () => {
               <IonRow>
                 <IonCol>
                   <IonLabel>
-                    Qty Issued / Receive / Transfer{" "}
+                    Qty Issued / Receipt/ Transfer{" "}
                     <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonInput
                     className="custom-input"
                     ref={input2Ref}
                     type="number"
-                    placeholder="Qty Issued / Receive / Transfer"
+                    placeholder="Qty Issued / Receipt/ Transfer"
                     onIonChange={handleQuantityChange}
                     value={quantity}
 
@@ -1138,7 +1353,7 @@ const FormTRX: React.FC = () => {
 
      
                   {showError && (!quantity || quantity === undefined) && (
-                    <p style={{ color: "red" }}>* Tipe Trasaksi harus di pilih</p>
+                    <p style={{ color: "red" }}>* Tipe transaksi  harus dipilih</p>
                   )}
 
                 </IonCol>

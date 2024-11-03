@@ -133,7 +133,7 @@ const ReviewData: React.FC = () => {
     
             // Remove cookies after successful logout
             Cookies.remove('isLoggedIn');
-    
+            Cookies.remove('session_token');
             // Clear specific shift data from local storage
             const shiftData = localStorage.getItem('shiftData');
             if (shiftData) {

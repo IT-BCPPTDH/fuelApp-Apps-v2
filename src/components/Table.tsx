@@ -131,11 +131,6 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
   }
 };
 
-
-
-
-
-
 const handleBulkInsert = async () => {
 
   if (!navigator.onLine) {
@@ -286,11 +281,7 @@ useEffect(() => {
           <div style={{ fontSize: "20px", fontWeight: "600", color: "#222428" }}>LKF:</div>
           <span style={{ fontSize: "20px", color: "#222428" }}>{nomorLKF || 'Loading...'}</span>
         </IonCol>
-        <IonCol>
-          <IonText style={{ fontSize: '20px', fontWeight: '600' }}>
-            Total Quantity Issued: {totalQtyIssued}
-          </IonText>
-        </IonCol>
+        
         <IonCol>
           <IonSearchbar 
             placeholder="Search Unit" 

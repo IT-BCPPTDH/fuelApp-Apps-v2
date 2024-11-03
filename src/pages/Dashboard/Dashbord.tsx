@@ -104,7 +104,7 @@ const DashboardFuelMan: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [lkfId, setLkfId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
   const [jde, setJde] = useState<string>('');
   const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
   const [jdeOptions, setJdeOptions] = useState<
@@ -167,12 +167,14 @@ const DashboardFuelMan: React.FC = () => {
       setIsOnline(navigator.onLine);
     };
 
+ 
+   
     window.addEventListener('online', handleOnlineStatus);
-    window.addEventListener('offline', handleOnlineStatus);
 
     return () => {
       window.removeEventListener('online', handleOnlineStatus);
-      window.removeEventListener('offline', handleOnlineStatus);
+     
+      
     };
   }, []);
 
@@ -309,6 +311,7 @@ const DashboardFuelMan: React.FC = () => {
 
 
   const handleRefresh = async () => {
+    const response = await getHomeTable(lkfId);
     if (lkfId) {
       setLoading(true); // Start loading state
       try {
@@ -344,6 +347,9 @@ const DashboardFuelMan: React.FC = () => {
               type: item.type ?? "",
               foto: item.foto ?? "",
               fuelman_id: item.fuelman_id,
+              jde_operator: item.fuelman_id,
+              start: item.start,
+              end: item.end,
               status: item.status ?? 1,
             };
 
@@ -372,6 +378,7 @@ const DashboardFuelMan: React.FC = () => {
     updateCard()
     
   };
+
 
   useEffect(() => {
     const loadUnitData = async () => {
@@ -468,12 +475,12 @@ const DashboardFuelMan: React.FC = () => {
             { title: 'Receipt', value: received, icon: 'receipt.svg' },
             { title: 'Stock On Hand', value: stockOnHand || 'No Data', icon: 'stock.svg' },
             { title: 'QTY Issued', value: fetchedResult ?? 0, icon: 'issued.svg' }, // Use fetchedResult here
-            { title: 'Balance', value: stockOnHand || 'No Data', icon: 'balance.svg' },
-            { title: 'Closing Dip', value: openingDip || 'No Data', icon: 'close.svg' },
-            { title: 'Flow Meter Awal', value: item.flow_meter_start || 'No Data', icon: 'flwawal.svg' },
-            { title: 'Flow Meter Akhir', value: (item.flow_meter_start + issued) || 'No Data', icon: 'flwakhir.svg' },
-            { title: 'Total Flow Meter', value: issued || 'No Data', icon: 'total.svg' },
-            { title: 'Variance', value: item.totalVariance || 'No Data', icon: 'variance.svg' }
+            { title: 'Balance', value: stockOnHand || 0 , icon: 'balance.svg' },
+            { title: 'Closing Dip', value: openingDip || 0 , icon: 'close.svg' },
+            { title: 'Flow Meter Awal', value: item.flow_meter_start || 0, icon: 'flwawal.svg' },
+            { title: 'Flow Meter Akhir', value: (item.flow_meter_start + issued) || 0 , icon: 'flwakhir.svg' },
+            { title: 'Total Flow Meter', value: issued || 0, icon: 'total.svg' },
+            { title: 'Variance', value: item.totalVariance || 0, icon: 'variance.svg' }
           ];
   
           setDataHome(preparedData);
@@ -522,7 +529,7 @@ const DashboardFuelMan: React.FC = () => {
                     width: '12px',
                     height: '12px',
                     borderRadius: '50%',
-                    backgroundColor: isOnline ? '#73A33F' : 'red',
+                    backgroundColor: isOnline ? '#73A33F' : 'green',
                     marginRight: '5px',
 
                   }}

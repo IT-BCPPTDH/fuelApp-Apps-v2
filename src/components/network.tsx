@@ -1,48 +1,53 @@
 import React, { useEffect, useState } from 'react';
-import { Network, NetworkStatus as CapacitorNetworkStatus } from '@capacitor/network';
+import { Network } from '@capacitor/network';
 
+const NetworkStatus = () => {
+  const [isOnline, setIsOnline] = useState(false);
 
-const NetworkStatus: React.FC = () => {
-    const [networkStatus, setNetworkStatus] = useState<CapacitorNetworkStatus | null>(null);
+  const checkNetworkStatus = async () => {
+    const status = await Network.getStatus();
 
-    useEffect(() => {
-        const logCurrentNetworkStatus = async () => {
-            const status = await Network.getStatus();
-            setNetworkStatus(status);
-            console.log('Network status:', status);
-        };
-
-        // Initial check for network status
-        logCurrentNetworkStatus();
-
-        // Listener for network status changes
-        const unsubscribe = Network.addListener('networkStatusChange', (status: CapacitorNetworkStatus) => {
-            console.log('Network status changed', status);
-            setNetworkStatus(status);
+    if (status.connected) {
+      try {
+        const response = await fetch('10.27.240.110/ping', { // Ganti dengan URL server lokal
+          method: 'GET',
+          mode: 'cors', // Pastikan server mendukung CORS
         });
 
-        return () => {
-            // Clean up the listener on component unmount
-        };
-    }, []);
+        if (response.ok) {
+          setIsOnline(true);
+        } else {
+          setIsOnline(false);
+        }
+      } catch (error) {
+        console.error('Error pinging server:', error);
+        setIsOnline(false);
+      }
+    } else {
+      setIsOnline(false);
+    }
+  };
 
-    return (
-      
-            <>
-             {networkStatus ? (
-                    <div>
-                        <p>{networkStatus.connected ? 'Online' : 'Offline'}</p>
-                        
-                    </div>
-                ) : (
-                    <p>Loading network status...</p>
-                )}
-            </>
-         
-               
-           
-       
-    );
+  useEffect(() => {
+    checkNetworkStatus();
+
+    const addListener = async () => {
+      const networkListener = await Network.addListener('networkStatusChange', checkNetworkStatus);
+      return networkListener;
+    };
+
+    const listenerPromise = addListener();
+
+    return () => {
+      listenerPromise.then(listener => listener.remove());
+    };
+  }, []);
+
+  return (
+    <div style={{ color: isOnline ? 'green' : 'red', fontSize: '14px' }}>
+      <p>{isOnline ? 'Online With Internet' : 'Offline'}</p>
+    </div>
+  );
 };
 
 export default NetworkStatus;

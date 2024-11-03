@@ -22,6 +22,7 @@ import {
   getDataFromStorage,
 } from "../../services/dataService";
 import Select from "react-select";
+import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 
 // Define props interface
 interface LoginProps {
@@ -34,6 +35,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
+  const [alreadyLoggedIn, setAlreadyLoggedIn] = useState<boolean>(false);
   const router = useIonRouter();
 
   const loadStationData = useCallback(async () => {
@@ -62,6 +64,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
   useEffect(() => {
     loadStationData();
+    // Check if the user is already logged in
+    const token = Cookies.get("session_token");
+    if (token) {
+      setAlreadyLoggedIn(true);
+    }
   }, [loadStationData]);
 
   const handleLogin = async () => {
@@ -133,61 +140,70 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </IonCol>
               </IonRow>
               <IonRow className="mt-content">
-                <span className="title-checkin">Please Sign In to Continue</span>
-                <IonCol size="12">
-                  <IonLabel>Select Station</IonLabel>
-                  <div style={{ marginTop: "10px" }}>
-                    <Select
-                      className="select-custom"
-                      styles={{
-                        container: (provided) => ({
-                          ...provided,
-                          marginTop: "10px",
-                          backgroundColor: "white",
-                          zIndex: 10,
-                          height: "56px",
-                        }),
-                        control: (provided) => ({
-                          ...provided,
-                          height: "56px",
-                          minHeight: "56px",
-                        }),
-                        valueContainer: (provided) => ({
-                          ...provided,
-                          padding: "0 6px",
-                        }),
-                        singleValue: (provided) => ({
-                          ...provided,
-                          lineHeight: "56px",
-                        }),
-                      }}
-                      value={stationData.find(station => station.value === selectedUnit)}
-                      onChange={(selectedOption) => {
-                        const selectedValue = selectedOption?.value || "";
-                        setSelectedUnit(selectedValue);
-                      }}
-                      options={stationData}
-                      placeholder="Select a station"
-                      isClearable={true}
-                      isDisabled={stationData.length === 0}
-                      noOptionsMessage={() => "No stations available"}
-                    />
-                  </div>
-                </IonCol>
-                <IonCol size="12" className="mt10">
-                  <IonLabel>Employee ID</IonLabel>
-                  <IonInput
-                    className="custom-input input-custom"
-                    placeholder="Employee ID"
-                    value={jde}
-                    onIonInput={(e) => setJdeOperator(e.detail.value as string)}
-                  ></IonInput>
-                </IonCol>
-                <IonCol className="mr-content">
-                  <IonButton className="check-button" expand="block" onClick={handleLogin} disabled={loading}>
-                    {loading ? "Loading..." : "Login"}
-                  </IonButton>
-                </IonCol>
+                {alreadyLoggedIn ? (
+                  <IonCol size="12">
+                    <IonTitle style={{ marginTop: "10px", color: "red" }}>
+                      Anda sudah login!
+                    </IonTitle>
+                  </IonCol>
+                ) : (
+                  <>
+                    <IonCol size="12">
+                      <IonLabel>Select Station</IonLabel>
+                      <div style={{ marginTop: "10px" }}>
+                        <Select
+                          className="select-custom"
+                          styles={{
+                            container: (provided) => ({
+                              ...provided,
+                              marginTop: "10px",
+                              backgroundColor: "white",
+                              zIndex: 10,
+                              height: "56px",
+                            }),
+                            control: (provided) => ({
+                              ...provided,
+                              height: "56px",
+                              minHeight: "56px",
+                            }),
+                            valueContainer: (provided) => ({
+                              ...provided,
+                              padding: "0 6px",
+                            }),
+                            singleValue: (provided) => ({
+                              ...provided,
+                              lineHeight: "56px",
+                            }),
+                          }}
+                          value={stationData.find(station => station.value === selectedUnit)}
+                          onChange={(selectedOption) => {
+                            const selectedValue = selectedOption?.value || "";
+                            setSelectedUnit(selectedValue);
+                          }}
+                          options={stationData}
+                          placeholder="Select a station"
+                          isClearable={true}
+                          isDisabled={stationData.length === 0}
+                          noOptionsMessage={() => "No stations available"}
+                        />
+                      </div>
+                    </IonCol>
+                    <IonCol size="12" className="mt10">
+                      <IonLabel>Employee ID</IonLabel>
+                      <IonInput
+                        className="custom-input input-custom"
+                        placeholder="Employee ID"
+                        value={jde}
+                        onIonInput={(e) => setJdeOperator(e.detail.value as string)}
+                      ></IonInput>
+                    </IonCol>
+                    <IonCol className="mr-content">
+                      <IonButton className="check-button" expand="block" onClick={handleLogin} disabled={loading}>
+                        {loading ? "Loading..." : "Login"}
+                      </IonButton>
+                    </IonCol>
+                  </>
+                )}
               </IonRow>
               {showError && (
                 <IonRow className="bg-text">
