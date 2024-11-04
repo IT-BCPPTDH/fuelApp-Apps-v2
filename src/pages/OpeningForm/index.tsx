@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useCallback } from "react";
+import React, { useEffect, useState,useCallback, useRef } from "react";
 import {
   IonButton,
   IonCol,
@@ -84,6 +84,8 @@ const OpeningForm: React.FC = () => {
  const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
 
 const [prevHmAwal, setPrevHmAwal] = useState<number | undefined>(undefined);
+const input1Ref = useRef<HTMLIonInputElement>(null);
+const input2Ref = useRef<HTMLIonInputElement>(null);
 
   useEffect(() => {
     const determineShift = () => {
@@ -658,15 +660,15 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               }}
             />
            {showError && (
-              <p style={{ color: "red" }}>
-                {flowMeterAwal === undefined
-                  ? '* Field harus diisi'
-                  : (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal)
-                    ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
-                    : ''
-                }
-              </p>
-            )}
+            <p style={{ color: "red" }}>
+              {flowMeterAwal === undefined
+                ? '* Field harus diisi'
+                : (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal)
+                  ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
+                  : ''
+              }
+            </p>
+          )}
           </div>
           <div className="padding-content">
             <IonLabel>

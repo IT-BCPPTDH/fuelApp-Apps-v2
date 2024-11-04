@@ -242,6 +242,9 @@ const [selesaiTime, setSelesaiTime] = useState<string | undefined>(undefined);
 const [startTime, setStartTime] = useState<string | undefined>(undefined);
 const [endTime, setEndTime] = useState<string | undefined>(undefined);
 
+
+
+const [stock, setStock] = useState<number>(0);
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -271,20 +274,7 @@ const [endTime, setEndTime] = useState<string | undefined>(undefined);
   //   }
   // }, []);
 
-  useEffect(() => {
-    const userData = localStorage.getItem("cardDash");
-    console.log("dataUse", userData);
 
-    if (userData) {
-      const parsedData = JSON.parse(userData);
-      // Mencari item dengan title "Flow Meter Awal"
-      const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
-      console.log("flow akhir",flowMeterItem)
-      if (flowMeterItem) {
-        setFlowMeterAwal(flowMeterItem.value); 
-      }
-    }
-  }, [])
 
 
   useEffect(() => {
@@ -347,6 +337,8 @@ const [endTime, setEndTime] = useState<string | undefined>(undefined);
 
     fetchStationData();
   }, []);
+
+
 
   const handleRadioChange = (event: CustomEvent) => {
     const selectedValue = event.detail.value as Typetrx;
@@ -444,8 +436,12 @@ const [endTime, setEndTime] = useState<string | undefined>(undefined);
       return;
     }
   
-    const flow_end: number = Number(calculateFlowEnd()) || 0;
-  
+
+    const typeTrxValue = typeTrx[0];
+    const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
+
+
+ 
     // Prepare form data
     const fromDataId = Date.now().toString();
     const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
@@ -583,18 +579,6 @@ const [endTime, setEndTime] = useState<string | undefined>(undefined);
     setSignatureBase64(newSignature);
     // Directly set the signature state
     console.log("Updated Signature:", newSignature);
-  };
-
-  const calculateFlowEnd = (): string | number => {
-    if (flowMeterAwal !== undefined && quantity !== undefined) {
-      const totaFlowEnd = flowMeterAwal + quantity;
-      if (totaFlowEnd !== 0) {
-        return totaFlowEnd;
-      } else {
-        return "N/A"; 
-      }
-    }
-    return ""; 
   };
 
 
@@ -813,41 +797,10 @@ const [endTime, setEndTime] = useState<string | undefined>(undefined);
   };
   
   
-  const handleQuantityChange = (e: any) => {
-    const inputQuantity = Number(e.detail.value); // Ambil nilai input dan ubah menjadi angka
-  
-    // Pastikan input adalah angka yang valid
-    if (isNaN(inputQuantity) || inputQuantity <= 0) {
-      setQuantityError("Qty Issued harus lebih besar dari 0"); // Set pesan error jika qty tidak valid
-      setIsError(true); // Tandai bahwa ada error
-      setQuantity(undefined); // Reset jumlah jika tidak valid
-      return;
-    }
-  
-    // Validasi untuk unit yang dimulai dengan LV atau HLV
-    if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-      if (inputQuantity > remainingQuota) {
-        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!"); // Set pesan error jika qty melebihi sisa kouta
-        setIsError(true); // Tandai bahwa ada error
-      } else {
-        setQuantityError(""); // Kosongkan pesan error jika qty valid
-        setIsError(false); // Tidak ada error
-      }
-    } else {
-      // Kosongkan error untuk unit lainnya
-      setQuantityError(""); // Kosongkan pesan error
-      setIsError(false); // Tidak ada error
-    }
-  
-    // Perbarui state jumlah setelah validasi
-    setQuantity(inputQuantity); // Set jumlah yang valid
-  };
-  
- 
 
 
-  
-  
+
+
   // Display the FBR value in the input field
   useEffect(() => {
     const fetchUnitData = async () => {
@@ -997,6 +950,76 @@ const handleEndTimeChange = (e: CustomEvent) => {
 };
 
 
+useEffect(() => {
+  const userData = localStorage.getItem("cardDash");
+  console.log("dataUse", userData);
+
+  if (userData) {
+    const parsedData = JSON.parse(userData);
+    // Mencari item dengan title "Flow Meter Awal"
+    const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
+    const flowStockItem= parsedData.find((item: { title: string; }) => item.title === "Stock On Hand");
+    console.log("flow akhir",flowMeterItem)
+    console.log("stock ni",flowStockItem)
+
+    if (flowMeterItem) {
+      setFlowMeterAwal(flowMeterItem.value); 
+    }
+    if (flowStockItem) {
+      setStock(flowStockItem.value); 
+    }
+  }
+}, [])
+
+const handleQuantityChange = (e: any) => {
+  const inputQuantity = Number(e.detail.value); // Mengambil nilai dari input
+
+  // Pastikan input adalah angka yang valid
+  if (isNaN(inputQuantity) || inputQuantity <= 0) {
+      setQuantityError("Qty Issued harus lebih besar dari 0");
+      setIsError(true);
+      return; // Keluar jika tidak valid
+  }
+
+  // Validasi untuk unit yang dimulai dengan LV atau HLV
+  if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
+      if (inputQuantity > remainingQuota) {
+          setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+          setIsError(true);
+          return; // Keluar jika melebihi sisa kouta
+      }
+  } else {
+      // Cek Qty Issued tidak boleh lebih besar dari Stock On Hand
+      if (inputQuantity > stock) {
+          setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
+          setIsError(true);
+          return; // Keluar jika melebihi Stock On Hand
+      }
+  }
+
+  // Jika semua validasi berhasil, perbarui state
+  setQuantity(inputQuantity); // Set jumlah yang valid
+  setQuantityError(""); // Kosongkan pesan error
+  setIsError(false); // Tidak ada error
+};
+
+
+
+const calculateFlowEnd = (typeTrx: string): string | number => {
+  if (flowMeterAwal !== undefined && quantity !== undefined) {
+    
+    // Jika tipe transaksi adalah Receipt atau Receipt KPC
+    if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
+      return flowMeterAwal !== 0 ? flowMeterAwal : "N/A";
+    } else {
+      // Jika tipeTrx bukan receipt atau receipt KPC, lakukan perhitungan
+      const totaFlowEnd = flowMeterAwal + quantity;
+      return totaFlowEnd !== 0 ? totaFlowEnd : "N/A"; 
+    }
+  }
+  return ""; 
+};
+
 
   return (
     <IonPage>
@@ -1128,7 +1151,6 @@ const handleEndTimeChange = (e: CustomEvent) => {
                             </IonItem>
                           ))}
                         </IonRadioGroup>
-
                         {showError && selectedType === undefined && (
                           <p style={{ color: "red" }}>* Pilih salah satu tipe</p>
                         )}
@@ -1158,7 +1180,7 @@ const handleEndTimeChange = (e: CustomEvent) => {
                   />
                    {showError && hmkmValue === undefined && (
                         <p style={{ color: "red" }}>* Field harus diisi</p>
-                      )}
+                   )}
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1275,15 +1297,16 @@ const handleEndTimeChange = (e: CustomEvent) => {
                     }}
                     labelPlacement="stacked"
                     onIonChange={(e) =>
-                      setFlowMeterAkhir(Number(e.detail.value))
+                        setFlowMeterAkhir(Number(e.detail.value))
                     }
                     value={
-                      typeof calculateFlowEnd() === "number"
-                        ? calculateFlowEnd()
-                        : ""
+                      typeof calculateFlowEnd(selectedType?.name || "") === "number" 
+                          ? calculateFlowEnd(selectedType?.name || "")
+                          : ""
                     }
                     placeholder=""
                   />
+                  
                 </IonCol>
               </IonRow>
               <IonRow>

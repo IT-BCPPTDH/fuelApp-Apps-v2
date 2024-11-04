@@ -56,8 +56,14 @@ const FormClosing: React.FC = () => {
     const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
     const [lkfId, setLkfId] = useState<string>('');
     const [flowMeteAkhir, setFlowMeterAkhir] = useState<number>(0);
-    
+
+    const [previousHmEnd, setPreviousHmEnd] = useState(0);
+    const [errorMessage, setErrorMessage] = useState('');
     const [closeData, setCloseData] = useState<number | undefined>(undefined);
+    const [closeShift, setCloseShift] = useState<any[]>([]);
+    const [isCloseShiftDisabled, setIsCloseShiftDisabled] = useState(true);
+  
+    
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
@@ -228,12 +234,24 @@ const FormClosing: React.FC = () => {
         setClosingSonding(value);
     };
 
+
+
     const handleHmEndChange = (e: CustomEvent) => {
-        const value = Number(e.detail.value);
-        setHmEnd(value); 
+        const hmEndInput = Number(e.detail.value);
+        
+        if (hmEndInput < previousHmEnd) {
+            setErrorMessage(`Nilai  Hm/Km Akhir tidak boleh lebih kecil dari sebelumnya: ${previousHmEnd}.`);
+            setIsCloseShiftDisabled(true); // Disable the button
+        } else {
+            setErrorMessage('');
+            setHmEnd(hmEndInput);
+            setPreviousHmEnd(hmEndInput); // Update previous value
+            setIsCloseShiftDisabled(false); // Enable the button
+        }
     };
+
     
-  
+
 
     const varianceColor = variant !== undefined && variant < 0 ? 'red' : 'black';
      // Load Sonding Data
@@ -288,6 +306,27 @@ const FormClosing: React.FC = () => {
         e.preventDefault()
         route.push('/dashboard')
     }
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const cachedShiftData = await getDataFromStorage('shiftCloseData');
+                if (cachedShiftData && cachedShiftData.length > 0) {
+                    const latestShiftData = cachedShiftData[cachedShiftData.length - 1];
+                    if (latestShiftData.hm_end !== undefined) {
+                        setHmEnd(latestShiftData.hm_end);
+                        setPreviousHmEnd(latestShiftData.hm_end); 
+                    }
+                } else {
+                    console.error("No cached shift data found");
+                }
+            } catch (error) {
+                console.error("Error fetching shift data:", error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
     return (
         <IonPage>
             <IonHeader translucent={true} className="ion-no-border">
@@ -297,6 +336,7 @@ const FormClosing: React.FC = () => {
             </IonHeader>
 
             <IonContent>
+                
                 <div style={{ marginTop: "20px" }}>
                     <div style={{ marginTop: "30px" }}>
                         <IonGrid>
@@ -307,6 +347,7 @@ const FormClosing: React.FC = () => {
                                         className="custom-input"
                                         type="number"
                                         value={flowMeteAkhir}
+                                        disabled
                                         onIonChange={(e) => {
                                             const newValue = Number(e.detail.value);
                                             setFlowMeterAkhir(newValue);
@@ -338,10 +379,10 @@ const FormClosing: React.FC = () => {
                                     <IonInput
                                         className="custom-input"
                                         type="number"
-                                        value={hmEnd}
                                         onIonChange={handleHmEndChange}
                                         placeholder="HM KM Akhir"
                                     />
+                                     {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Data *</IonLabel>
@@ -402,7 +443,7 @@ const FormClosing: React.FC = () => {
                                 <IonButton onClick={handleClose} color="light">
                                     <IonIcon slot="start" icon={closeCircleOutline} />Tutup Form
                                 </IonButton>
-                                <IonButton onClick={handleSubmit} className="check-close">
+                                <IonButton onClick={handleSubmit} className="check-close"  disabled={isCloseShiftDisabled} >
                                     <IonIcon slot="start" icon={saveOutline} />Close Shift & Logout
                                 </IonButton>
                             </div>
