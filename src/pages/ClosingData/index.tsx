@@ -41,7 +41,7 @@ const FormClosing: React.FC = () => {
     const [variant, setVariance] = useState<number | undefined>(undefined);
     const [showError, setShowError] = useState<boolean>(false);
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
-    const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
+    const [flowMeterEnd, setFlowMeterEnd] = useState<number | undefined>(undefined);
     const [hmEnd, setHmEnd] = useState<number>(0);
     const [stockOnHand, setStockOnHand] = useState<number>(0);
     
@@ -55,17 +55,19 @@ const FormClosing: React.FC = () => {
     const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
     const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
     const [lkfId, setLkfId] = useState<string>('');
-    const [flowMeteAkhir, setFlowMeterAkhir] = useState<number>();
-    const [closeData, setCloseData] = useState<number>();
+    const [flowMeteAkhir, setFlowMeterAkhir] = useState<number>(0);
+    
+    const [closeData, setCloseData] = useState<number | undefined>(undefined);
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
             setLatestLkfId(id);
 
-            const shiftData = localStorage.getItem("cardData");
+            const shiftData = localStorage.getItem("cardDash");
             if (shiftData) {
                 const parsedData = JSON.parse(shiftData);
-                setFlowMeterEnd(parsedData.flow_meter_sta || 0);
+                console.log('Parsed Data from localStorage:', parsedData); 
+                setFlowMeterEnd(parsedData.flow_meter_end || 0);
                 setStockOnHand(parsedData.stockOnHand || 0);
                 setReceiptKPC(parsedData.receiptKPC || 0);
                 setReceipt(parsedData.receipt || 0);
@@ -87,14 +89,14 @@ const FormClosing: React.FC = () => {
 
 
     useEffect(() => {
-        const getCardData = () => {
+        const getcardDash = () => {
             try {
-                const cachedData = localStorage.getItem('cardData');
+                const cachedData = localStorage.getItem('cardDash');
                 if (cachedData) {
-                    const cardData = JSON.parse(cachedData);
+                    const cardDash = JSON.parse(cachedData);
 
-                    const flowMeterEndData = cardData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
-                    const closeData = cardData.find((item: { title: string; }) => item.title === "Stock On Hand");
+                    const flowMeterEndData = cardDash.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
+                    const closeData = cardDash.find((item: { title: string; }) => item.title === "Stock On Hand");
                     if (flowMeterEndData) {
                         setFlowMeterAkhir(Number(flowMeterEndData.value || 0));
                     }
@@ -104,14 +106,14 @@ const FormClosing: React.FC = () => {
                     }
                 }
             } catch (error) {
-                console.error('Error retrieving cardData from localStorage:', error);
+                console.error('Error retrieving cardDash from localStorage:', error);
             }
         };
 
-        getCardData();
+        getcardDash();
     }, []);
     
-   
+
     useEffect(() => {
         const fetchSondingMasterData = async () => {
             try {
@@ -162,6 +164,12 @@ const FormClosing: React.FC = () => {
     };
 
     const handleSubmit = async () => {
+        // Ensure closeData is set to the closingDip value if it is 0
+        const calculatedCloseData = calculateCloseData(); // assuming this is your formula to get close data
+    
+        // Check if calculatedCloseData is 0 and set it to the input closingDip if true
+        const finalCloseData = calculatedCloseData === 0 ? closingDip : calculatedCloseData;
+    
         const UpdateData: DataLkf = {
             date: new Date().toISOString().split('T')[0],
             shift: '',
@@ -170,8 +178,7 @@ const FormClosing: React.FC = () => {
             jde: '',
             fuelman_id: Cookies.get('fuelman_id') || '',
             station: station || '',
-            flow_meter_start: 0,
-            hm_end: hmEnd,
+            hm_end: hmEnd || 0,
             note: note,
             signature: signatureBase64 || '',
             name: '',
@@ -181,13 +188,14 @@ const FormClosing: React.FC = () => {
             lkf_id: latestLkfId || '',
             opening_dip: openingDip || 0,
             opening_sonding: 0,
-            flow_meter_end: flowMeterEnd,
+            flow_meter_end: flowMeteAkhir || 0,
             closing_sonding: closingSonding || 0,
             closing_dip: closingDip || 0,
-            close_data: calculateCloseData(),
-            variant: variant|| 0,
+            close_data: finalCloseData || 0, // Use the final close data here
+            variant: variant || 0,
+            flow_meter_start: 0
         };
-
+    
         try {
             const response = await updateData(UpdateData);
             if (response.oke && (response.status === 200 || response.status === 201)) {
@@ -212,6 +220,7 @@ const FormClosing: React.FC = () => {
             setShowError(true);
         }
     };
+    
 
     const handleClosingSondingChange = (e: CustomEvent) => {
         const value = Number(e.detail.value);
@@ -220,12 +229,11 @@ const FormClosing: React.FC = () => {
     };
 
     const handleHmEndChange = (e: CustomEvent) => {
-        setHmEnd(Number(e.detail.value));
+        const value = Number(e.detail.value);
+        setHmEnd(value); 
     };
-
-    const handleStockOnHandChange = (e: CustomEvent) => {
-        setStockOnHand(Number(e.detail.value));
-    };
+    
+  
 
     const varianceColor = variant !== undefined && variant < 0 ? 'red' : 'black';
      // Load Sonding Data
@@ -298,14 +306,11 @@ const FormClosing: React.FC = () => {
                                     <IonInput
                                         className="custom-input"
                                         type="number"
-                                        name="flowMeterEnd"
                                         value={flowMeteAkhir}
-                                         placeholder="Input Flow Meter"
                                         onIonChange={(e) => {
                                             const newValue = Number(e.detail.value);
                                             setFlowMeterAkhir(newValue);
                                         }}
-                                       
                                     />
 
                                 </IonCol>
@@ -415,11 +420,3 @@ const FormClosing: React.FC = () => {
 };
 
 export default FormClosing;
-
-
-
-
-
-
-
-

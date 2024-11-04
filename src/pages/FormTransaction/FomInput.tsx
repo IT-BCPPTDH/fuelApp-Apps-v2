@@ -146,9 +146,7 @@ const FormTRX: React.FC = () => {
   const [flowMeterAkhir, setFlowMeterAkhir] = useState<number | undefined>(
     undefined
   );
-  const [startTime, setStartTime] = useState<string | undefined>(undefined);
-  const [endTime, setEndTime] = useState<string | undefined>(undefined);
- 
+  
   const [stockData, setStockData] = useState<number | undefined>(undefined);
   const [signatureBase64, setSignatureBase64] = useState<string | undefined>(
     undefined
@@ -236,6 +234,14 @@ const FormTRX: React.FC = () => {
   const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
   const [totalIssued, setTotalIssued] = useState<number | null>(null);
 
+  const [showErrorIsi, setShowErrorIsi] = useState<boolean>(false);
+
+  const [isiTime, setIsiTime] = useState<string | undefined>(undefined);
+const [selesaiTime, setSelesaiTime] = useState<string | undefined>(undefined);
+
+const [startTime, setStartTime] = useState<string | undefined>(undefined);
+const [endTime, setEndTime] = useState<string | undefined>(undefined);
+
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -266,13 +272,14 @@ const FormTRX: React.FC = () => {
   // }, []);
 
   useEffect(() => {
-    const userData = localStorage.getItem("cardData");
+    const userData = localStorage.getItem("cardDash");
     console.log("dataUse", userData);
 
     if (userData) {
       const parsedData = JSON.parse(userData);
       // Mencari item dengan title "Flow Meter Awal"
-      const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Awal");
+      const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
+      console.log("flow akhir",flowMeterItem)
       if (flowMeterItem) {
         setFlowMeterAwal(flowMeterItem.value); 
       }
@@ -386,96 +393,7 @@ const FormTRX: React.FC = () => {
     route.push("/dashboard");
   };
 
-  // Ensure quantity is initialized and handle potential undefined
-  // const handlePost = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   console.log("Initial Status:", status);
-
-  //   // Validate form fields
-  //   if (
-  //     !selectedType ||
-  //     !selectedUnit ||
-  //     !operatorOptions ||
-  //     quantity === null || 
-  //     fuelman_id === null || 
-  //     quantity === null ||
-  //     fbr === null ||
-  //     flowMeterAwal === null ||
-  //     flowMeterAkhir === null ||
-  //     !startTime ||
-  //     !endTime
-  //   ) {
-    
-  //     setShowError(true);
-  //     setemployeeError(true)
-    
-  //     return;
-  //   }
-
-  //   const flow_end: number = Number(calculateFlowEnd()) || 0;
-
-  //   // Prepare form data
-  //   const fromDataId = Date.now().toString();
-  //   const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
-  //   const lkf_id = await getLatestLkfId();
-
-  //   const dataPost: DataFormTrx = {
-  //     from_data_id: fromDataId,
-  //     no_unit: selectedUnit!,
-  //     model_unit: model!,
-  //     owner: owner!,
-  //     date_trx: new Date().toISOString(),
-  //     hm_last: Number(hmLast) || 0,
-  //     hm_km: Number(hmkmTRX) || 0,
-  //     qty_last: Number(quantity) || 0, // Ensure quantity is a number
-  //     qty: Number(quantity) || 0, // Ensure quantity is a number
-  //     flow_start: Number(flowMeterAwal) || 0,
-  //     flow_end: flow_end,
-  //     name_operator: fullName!,
-  //     fbr: fbrResult,
-  //     lkf_id: lkf_id ?? "",
-  //     signature: signatureBase64 ?? "",
-  //     type: selectedType?.name ?? "",
-  //     foto: photoPreview ?? "",
-  //     fuelman_id: fuelman_id!,
-  //     status: status ?? 0,
-  //     date: ""
-  //   };
-
-  //   try {
-  //     // Handle saving and posting based on status
-  //     if (status === 0) {
-  //       console.log("Saving data as draft (offline)...");
-  //       await insertNewData(dataPost);
-  //       setModalMessage("Data saved as draft");
-
-  //     } else if (status === 1 && isOnline) {
-  //       console.log("Posting data to backend...");
-  //       const response = await postTransaksi(dataPost);
-  //         await insertNewData(dataPost);
-  //       if (response.ok && (response.status === 200 || response.status === 201)) {
-         
-  //         if (quantity) {
-  //           updateLocalStorageQuota(selectedUnit, quantity);
-  //         }
-  //         setModalMessage("Transaction posted successfully and saved locally");
-  //       } else {
-  //         setModalMessage("Failed to post transaction. Please try again.");
-  //         setErrorModalOpen(true);
-  //       }
-  //     }
-
-  //     // Navigate to the dashboard
-  //     setSuccessModalOpen(true);
-  //     route.push("/dashboard");
-
-  //   } catch (error) {
-  //     console.error("Error occurred while posting data:", error);
-  //     setModalMessage("Error occurred while posting data: " + error);
-  //     setErrorModalOpen(true);
-  //   }
-  // };
-
+ 
 
 
   const updateAllData = async () => {
@@ -484,11 +402,25 @@ const FormTRX: React.FC = () => {
 
 
   const updateCard = async () => {
-    localStorage.removeItem('cardData')
-    // const cards = await fetchCardData(lkfId);
+
     
 
   }
+
+
+  
+
+
+  const getdata = async() => {
+   
+    const cars = await getHomeByIdLkf(lkfId);
+   console.log("Data_apa",cars)
+ 
+  };
+
+  useEffect(()=>{
+    getdata()
+  })
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -548,12 +480,13 @@ const FormTRX: React.FC = () => {
     try {
       if (isOnline) {
         const response = await postTransaksi(dataPost);
+        await insertNewData(dataPost); 
         const responseStatus = response.status;
   
         if (response.ok) {
           // Update status based on response
           dataPost.status = responseStatus === 200 ? 1 : 0;
-          await insertNewData(dataPost); // Save to IndexedDB
+        // Save to IndexedDB
           if (quantity) {
             updateLocalStorageQuota(selectedUnit, quantity);
           }
@@ -568,15 +501,23 @@ const FormTRX: React.FC = () => {
         // If offline, just insert into IndexedDB
         await insertNewData(dataPost);
         setModalMessage("Transaction saved locally. Will be sent when online.");
-        route.push("/dashboard");
       }
   
-      // // Fetch the updated data to display in the table
-      // const updatedData = await getHomeByIdLkf(lkfId);
+      // Fetch the updated data to display in the table
+      // const updatedData = await getHomeByIdLkf(lkf_id);
       // if (updatedData && updatedData.data) {
       //   setData(updatedData.data); // Update the table with the latest data
       // }
   
+      // Update cardData in local storage
+      // const cardData = await getCardData(); 
+      // const updatedCardData = {
+      //   // ...cardData,
+      //   lastTransaction: dataPost, 
+      // };
+      // localStorage.setItem('cardData', JSON.stringify(updatedCardData));
+
+      getdata()
       // Navigate to the dashboard
       route.push("/dashboard");
   
@@ -586,7 +527,6 @@ const FormTRX: React.FC = () => {
       setErrorModalOpen(true);
     }
   };
-  
   
   const updateLocalStorageQuota = async (unitNo: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
@@ -698,25 +638,7 @@ const FormTRX: React.FC = () => {
     console.log("operatorOptions updated:", operatorOptions);
   }, [operatorOptions]);
 
-  const handleHmkmUnitChange = (e: CustomEvent) => {
-    const value = Number(e.detail.value);
-    if (hmLast !== undefined && value < hmLast) {
-      setShowError(true);
-    } else {
-      setShowError(false);
-    }
-    setHmkmValue(value);
-  };
-
-  const handleHmLastChange = (e: CustomEvent) => {
-    const newValue = Number(e.detail.value);
-    if (hmLast !== undefined && newValue < hmLast) {
-      setShowError(true);
-    } else {
-      setShowError(false);
-    }
-    setHmLast(newValue);
-  };
+ 
 
   const isSaveButtonDisabled = () => {
     return hmkmTRX !== undefined && hmLast !== undefined && hmLast > hmkmTRX;
@@ -726,19 +648,17 @@ const FormTRX: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
     if (e.nativeEvent.key === "Enter") {
-      e.preventDefault();
-  
-      
+    
       const currentHmLast = hmkmValue ?? 0; 
       const lastHmKm = hmkmTRX ?? 0; 
   
-   
-      if (currentHmLast < lastHmKm) {
+      console.log("Current HM Last:", currentHmLast);
+      console.log("Last HM Km:", lastHmKm);
+  
+      if (currentHmLast > lastHmKm) {
         setShowError(true); 
       } else {
         setShowError(false); 
-  
-        
         if (input1Ref.current) {
           input2Ref.current?.setFocus();
         }
@@ -747,6 +667,9 @@ const FormTRX: React.FC = () => {
   };
   
 
+
+ 
+  
 
  
 
@@ -1061,76 +984,19 @@ const FormTRX: React.FC = () => {
 }, [selectedUnit]);
 
 
+const handleEndTimeChange = (e: CustomEvent) => {
+  const newEndTime = e.detail.value as string;
+  setEndTime(newEndTime);
 
-
-const handleRefresh = async () => {
-  const response = await getHomeTable(lkfId);
-  if (lkfId) {
-    setLoading(true); // Start loading state
-    try {
-      const response = await getHomeTable(lkfId);
-      console.log("Fetched Edit Transaksi:", response);
-
-      // Ensure response.data is an array
-      if (response && response.data && Array.isArray(response.data)) {
-        const newData = response.data;
-
-        // First, delete all existing data in dataTransaksi
-        await deleteAllDataTransaksi();
-
-        // Then, add the new data
-        for (const item of newData) {
-          const dataPost = {
-            date: "",
-            from_data_id: item.from_data_id,
-            no_unit: item.no_unit,
-            model_unit: item.model_unit,
-            owner: item.owner,
-            date_trx: new Date().toISOString(),
-            hm_last: Number(item.hm_last) || 0,
-            hm_km: Number(item.hm_km) || 0,
-            qty_last: Number(item.qty_last) || 0,
-            qty: Number(item.qty) || 0,
-            flow_start: Number(item.flow_start) || 0,
-            flow_end: Number(item.flow_end) || 0,
-            name_operator: item.name_operator,
-            fbr: item.fbr,
-            lkf_id: item.lkf_id ?? "",
-            signature: item.signature ?? "",
-            type: item.type ?? "",
-            foto: item.foto ?? "",
-            fuelman_id: item.fuelman_id,
-            jde_operator: item.fuelman_id,
-            start: item.start,
-            end: item.end,
-            status: item.status ?? 1,
-          };
-
-          await addDataTrxType(dataPost);
-        }
-
-
-        setData(newData);
-      } else {
-        console.error("Expected an array in response.data but got:", response);
-        setData([]); // Reset to empty array on error
-      }
-    } catch (error) {
-      console.error("Failed to refresh data:", error);
-      setError("Failed to refresh data");
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
+  // Cek apakah endTime lebih kecil dari startTime
+  if (startTime && newEndTime < startTime) {
+    setShowError(true);
   } else {
-    console.log("No LKF ID to refresh data for");
-    setData([]);
-    setLoading(false);
+    setShowError(false);
   }
-  updateAllData()
-  updateCard()
-  
 };
+
+
 
   return (
     <IonPage>
@@ -1303,8 +1169,6 @@ const handleRefresh = async () => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    
-                    
                     onIonChange={(e) => setHmLast(Number(e.detail.value))}
                     
                     onKeyDown={handleKeyDown}
@@ -1395,7 +1259,7 @@ const handleRefresh = async () => {
                   <IonInput
                     className="custom-input"
                     type="number"
-                    value={flowMeterAwal?.toString() || ""}
+                    value={flowMeterAwal }
                     placeholder="Input Flow meter awal"
                     disabled={isFormDisabled}
                   />
@@ -1500,14 +1364,16 @@ const handleRefresh = async () => {
                   <IonInput
                     className="custom-input"
                     type="time"
-                    onIonChange={(e) => setStartTime(e.detail.value as string)}
+                    onIonChange={(e) => {
+                      setStartTime(e.detail.value as string);
+                      setShowError(false); // Reset error saat mulai diubah
+                    }}
                     disabled={isFormDisabled}
                     value={startTime}
                   />
-                   {showError && startTime === undefined && (
-                        <p style={{ color: "red" }}>* Jam mulai pengisian harus input</p>
-                      )}
-                      
+                  {showError && startTime === undefined && (
+                    <p style={{ color: "red" }}>* Jam mulai pengisian harus input</p>
+                  )}
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1516,13 +1382,16 @@ const handleRefresh = async () => {
                   <IonInput
                     className="custom-input"
                     type="time"
-                    onIonChange={(e) => setEndTime(e.detail.value as string)}
+                    onIonChange={handleEndTimeChange} // Menggunakan fungsi yang sudah dibuat
                     disabled={isFormDisabled}
                     value={endTime}
                   />
-                   {showError && endTime === undefined && (
-                        <p style={{ color: "red" }}>* Jam mulai selesai harus input</p>
-                      )}
+                  {showError && endTime === undefined && (
+                    <p style={{ color: "red" }}>* Jam selesai pengisian harus input</p>
+                  )}
+                  {showError && startTime && endTime && endTime < startTime && (
+                    <p style={{ color: "red" }}>* Jam selesai tidak boleh lebih kecil dari jam mulai</p>
+                  )}
                 </IonCol>
               </IonRow>
               <IonRow>

@@ -44,8 +44,8 @@ const NetworkStatus = () => {
   }, []);
 
   return (
-    <div style={{ color: isOnline ? 'green' : 'red', fontSize: '14px' }}>
-      <p>{isOnline ? 'Online With Internet' : 'Offline'}</p>
+    <div style={{ color: isOnline ? 'green' : 'green', fontSize: '14px' }}>
+      <p>{isOnline ? 'Online With Internet' : 'Online'}</p>
     </div>
   );
 };

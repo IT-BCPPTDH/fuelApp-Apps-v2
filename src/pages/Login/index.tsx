@@ -22,6 +22,7 @@ import {
   getDataFromStorage,
 } from "../../services/dataService";
 import Select from "react-select";
+import AsyncSelect from 'react-select/async';
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 
 // Define props interface
@@ -37,6 +38,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [alreadyLoggedIn, setAlreadyLoggedIn] = useState<boolean>(false);
   const router = useIonRouter();
+
+  const [jdeOptions, setJdeOptions] = useState<
+  { JDE: string; fullname: string }[]
+>([]);
 
   const loadStationData = useCallback(async () => {
     try {
@@ -61,6 +66,30 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       setLoading(false);
     }
   }, []);
+
+
+
+
+  useEffect(() => {
+    const fetchJdeOptions = async () => {
+      const storedJdeOptions = await getDataFromStorage("allOperator");
+
+      if (storedJdeOptions) {
+        // If you are certain the data is in the correct format
+        if (Array.isArray(storedJdeOptions)) {
+          setJdeOptions(storedJdeOptions);
+        } else {
+          console.log("Data FuelMan");
+        }
+      } else {
+        console.log("No JDE options found in storage.");
+      }
+    };
+
+    fetchJdeOptions();
+  }, []);
+
+
 
   useEffect(() => {
     loadStationData();

@@ -71,7 +71,7 @@ const OpeningForm: React.FC = () => {
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
   const [date, setDate] = useState<string>(new Date().toISOString());
- 
+  const [hmAkhir, setHmAkhir] = useState<number | undefined>(undefined);
 
   const [stationOptions, setStationOptions] = useState<string[]>([]);
 
@@ -82,6 +82,8 @@ const OpeningForm: React.FC = () => {
   const [presentToast] = useIonToast();
 
  const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
+
+const [prevHmAwal, setPrevHmAwal] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     const determineShift = () => {
@@ -243,7 +245,7 @@ useEffect(() => {
     if (
       !date ||
       !shiftSelected ||
-      hmAwal === undefined ||
+      hmAkhir === undefined ||
       openingDip === undefined ||
       openingSonding === undefined ||
       flowMeterAwal === undefined ||
@@ -259,7 +261,7 @@ useEffect(() => {
     const dataPost: DataLkf = {
       date: new Date(date).toISOString(),
       shift: shiftSelected.name,
-      hm_start: hmAwal,
+      hm_start: hmAkhir,
       opening_dip: openingDip,
       opening_sonding: openingSonding,
       flow_meter_start: flowMeterAwal,
@@ -465,6 +467,12 @@ const fetchData = async () => {
       if (latestShiftData.opening_dip !== undefined) {
         setOpeningDip(latestShiftData.opening_dip); 
       }
+      if (latestShiftData.hm_end !== undefined) {
+        setHmAkhir(latestShiftData.hm_end);
+        setPrevHmAwal(latestShiftData.hm_end);  // Set HM Awal
+      }
+      
+
     } else {
       console.error("No cached shift data found");
     }
@@ -505,7 +513,8 @@ useEffect(() => {
           const filteredShiftClose = shiftClose.map(data => ({
             closing_sonding: data.closing_sonding,
             closing_dip: data.closing_dip,
-            flow_meter_en: data.flow_meter_end
+            flow_meter_en: data.flow_meter_end,
+            hm_end: data. hm_end
           })).filter(data => data.closing_sonding !== undefined && data.closing_dip !== undefined && data.flow_meter_en !== undefined);
 
           // Log the filtered data for debugging
@@ -526,6 +535,16 @@ useEffect(() => {
 
 
 
+
+const handleFlowMeterAwalChange = (e: CustomEvent) => {
+  const value = Number(e.detail.value);
+  if (prevFlowMeterAwal !== undefined && value < prevFlowMeterAwal) {
+    setShowError(true);
+  } else {
+    setShowError(false);
+  }
+  setFlowMeterAwal(value);
+};
 
   return (
     <IonPage>
@@ -635,15 +654,10 @@ useEffect(() => {
               value={flowMeterAwal}
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
-                setFlowMeterAwal(value);
-                if (prevFlowMeterAwal !== undefined && value < prevFlowMeterAwal) {
-                  setShowError(true);
-                } else {
-                  setShowError(false);
-                }
+                handleFlowMeterAwalChange(e); // Call the handler here
               }}
             />
-            {showError && (
+           {showError && (
               <p style={{ color: "red" }}>
                 {flowMeterAwal === undefined
                   ? '* Field harus diisi'
@@ -659,22 +673,22 @@ useEffect(() => {
               HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
             </IonLabel>
             <IonInput
-              className={`custom-input ${showError && (hmAwal === undefined || (station !== "FT" && hmAwal === 0)) ? "input-error" : ""}`}
+              className={`custom-input ${showError && (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0)) ? "input-error" : ""}`}
               type="number"
               placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
-              value={hmAwal}
+              value={hmAkhir}
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
                 if (station !== "FT" && value === 0) {
-                  setHmAwal(undefined);
+                  setHmAkhir(undefined);
                   setShowError(true);
                 } else {
-                  setHmAwal(value);
+                  setHmAkhir(value); // Make sure to set HM Awal based on user input
                   setShowError(false);
                 }
               }}
-            />
-            {showError && hmAwal === undefined && (
+/>
+            {showError && hmAkhir === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>

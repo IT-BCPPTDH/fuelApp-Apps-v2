@@ -27,14 +27,15 @@ import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculati
 import { getHomeByIdLkf, getHomeTable } from '../../hooks/getHome';
 import NetworkStatus from '../../components/network';
 import { fetchUnitData, getDataFromStorage } from '../../services/dataService';
-import { handLeftSharp, home } from 'ionicons/icons';
+import { handLeftSharp, home, navigate } from 'ionicons/icons';
 import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
 import { addDataTrxType } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
 import { Network } from '@capacitor/network';
 
+
 // Define the data structure for the card
-interface CardData {
+interface cardDash {
   title: string;
   value: string | number;
   icon: string;
@@ -82,18 +83,18 @@ interface DataFormTrx {
   type: string;
   lkf_id?: string;
   status: number;
-  jde_operator: string;
+  jde_operator: string; // Required
   fuelman_id: string;
   dip_start: number;
   dip_end: number;
   sonding_start: number;
   sonding_end: number;
   reference: number;
-  start: string;
-  end: string;
+  start: string; // Required
+  end: string; // Required
   created_at: string | number | Date;
-
 }
+
 
 const DashboardFuelMan: React.FC = () => {
   const [fullname, setFullname] = useState('');
@@ -104,7 +105,7 @@ const DashboardFuelMan: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [lkfId, setLkfId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+  
   const [jde, setJde] = useState<string>('');
   const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
   const [jdeOptions, setJdeOptions] = useState<
@@ -118,7 +119,7 @@ const DashboardFuelMan: React.FC = () => {
   const [transfer, setOpTransfer] = useState<string | null>(null)
   const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
   const [totalPengeluaran, setTotalPengeluaran] = useState(0);
- 
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [pendingStatus, setPendingStatus] = useState(true);
  
   const [result, setResult] = useState<number | null>(null);
@@ -137,46 +138,36 @@ const DashboardFuelMan: React.FC = () => {
 
 
   const [dataHome, setDataHome] = useState<any[]>([
-    { title: 'Shift', value: 'No Data', icon: 'shift.svg' },
-      { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
-      { title: 'Opening Dip', value: 'No Data', icon: 'openingdeep.svg' },
-      { title: 'Receipt', value: 'No Data', icon: 'receipt.svg' },
-      { title: 'Stock On Hand', value: 'No Data', icon: 'stock.svg' },
-      { title: 'QTY Issued', value: 'No Data', icon: 'issued.svg' },
-      { title: 'Balance', value: 'No Data', icon: 'balance.svg' },
-      { title: 'Closing Dip', value: 'No Data', icon: 'close.svg' },
-      { title: 'Flow Meter Awal', value: 'No Data', icon: 'flwawal.svg' },
-      { title: 'Flow Meter Akhir', value: 'No Data', icon: 'flwakhir.svg' },
-      { title: 'Total Flow Meter', value: 'No Data', icon: 'total.svg' },
-      { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
-
+  
 
   ]);
 
   const [totalIssued, setTotalIssued] = useState<number | null>(null); // State to store total_issued
 
-  const [cardData, setCardData] = useState<CardData[]>([
-
+  const [cardDash, setcardDash] = useState<cardDash[]>([
+  
   ]);
 
- 
-  
 
   useEffect(() => {
-    const handleOnlineStatus = () => {
-      setIsOnline(navigator.onLine);
-    };
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
 
- 
-   
-    window.addEventListener('online', handleOnlineStatus);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
 
+    // Cek data di local storage saat komponen di-mount
+    const cachedData = localStorage.getItem('cardDash');
+    if (cachedData) {
+        setDataHome(JSON.parse(cachedData));
+    }
+
+    // Cleanup event listeners
     return () => {
-      window.removeEventListener('online', handleOnlineStatus);
-     
-      
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+}, []);
 
   useEffect(() => {
     // Function to format date as "Tanggal : 25 Januari 2025"
@@ -257,6 +248,7 @@ const DashboardFuelMan: React.FC = () => {
   }, []);
 
 
+  
   const handleLogout = () => {
     route.push('/closing-data');
   };
@@ -310,8 +302,35 @@ const DashboardFuelMan: React.FC = () => {
 
 
 
+  
+
+  useEffect(() => {
+    const loadUnitData = async () => {
+      const cachedUnitData = await getDataFromStorage('allUnit');
+      if (cachedUnitData) {
+        setUnitOptions(cachedUnitData);
+      } else {
+        const units = await fetchUnitData();
+        setUnitOptions(units);
+
+      }
+    };
+
+    loadUnitData();
+  }, []);
+
+  const updateAllData = async () => {
+    const units = await fetchUnitData();
+  }
+
+
+  const TambahData = async () => {
+    route.push("/transaction");
+  };
+
+
+  
   const handleRefresh = async () => {
-    const response = await getHomeTable(lkfId);
     if (lkfId) {
       setLoading(true); // Start loading state
       try {
@@ -327,8 +346,8 @@ const DashboardFuelMan: React.FC = () => {
 
           // Then, add the new data
           for (const item of newData) {
-            const dataPost = {
-              date: "",
+            const dataPost: DataFormTrx = {
+              date: new Date().toISOString(),
               from_data_id: item.from_data_id,
               no_unit: item.no_unit,
               model_unit: item.model_unit,
@@ -343,15 +362,24 @@ const DashboardFuelMan: React.FC = () => {
               name_operator: item.name_operator,
               fbr: item.fbr,
               lkf_id: item.lkf_id ?? "",
-              signature: item.signature ?? "",
+              signature: item.signature ?? null,
               type: item.type ?? "",
               foto: item.foto ?? "",
               fuelman_id: item.fuelman_id,
-              jde_operator: item.fuelman_id,
-              start: item.start,
-              end: item.end,
               status: item.status ?? 1,
+              jde_operator: item.jde_operator, 
+              dip_start: 0, // Replace with actual value
+              dip_end: 0, // Replace with actual value
+              sonding_start: 0, // Replace with actual value
+              sonding_end: 0, // Replace with actual value
+              reference: 0, // Replace with actual value
+              start: item.start, // Ensure this is defined
+              end: item.end, // Ensure this is defined
+              created_at: new Date().toISOString(),
+              liters: 0,
+              cm: 0
             };
+            
 
             await addDataTrxType(dataPost);
           }
@@ -378,33 +406,6 @@ const DashboardFuelMan: React.FC = () => {
     updateCard()
     
   };
-
-
-  useEffect(() => {
-    const loadUnitData = async () => {
-      const cachedUnitData = await getDataFromStorage('allUnit');
-      if (cachedUnitData) {
-        setUnitOptions(cachedUnitData);
-      } else {
-        const units = await fetchUnitData();
-        setUnitOptions(units);
-
-      }
-    };
-
-    loadUnitData();
-  }, []);
-
-  const updateAllData = async () => {
-    const units = await fetchUnitData();
-  }
-
-  const updateCard = async () => {
-    localStorage.removeItem('cardData')
-    const cards = await fetchCardData(lkfId);
-    console.log("", cardData)
-
-  }
   const IssuedTotal = async () => {
     try {
       const fetchedResult = await getCalculationIssued(lkfId);
@@ -421,91 +422,113 @@ const DashboardFuelMan: React.FC = () => {
   }, [lkfId]);
  
 
-  const fetchCardData = async (lkfId: string) => {
-    try {
-    
-      const cachedData = localStorage.getItem('cardData');
-  
-      if (cachedData) {
-        console.log("Using cached data");
-        const preparedData = JSON.parse(cachedData);
-        setDataHome(preparedData);
-      } else {
-        console.log("Fetching data for LKF ID:", lkfId);
-        const dataHome = await getHomeByIdLkf(lkfId);
-        console.log("Full Content Cards:", dataHome); // Log the full API response
-  
-        // Check if the data is valid and has content
-        if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
-          const item = dataHome.data[0]; // Get the first item from the data array
-  
-          // Calculate stock on hand and other values
-          const openingDip = item.total_opening || 0;
-          const received = item.total_receive || 0;
-          const receivedKpc = item.total_receive_kpc || 0;
-          const issued = item.total_issued || 0;
-          const transfer = item.total_transfer || 0;
-          const stockOnHand = openingDip + received + receivedKpc - issued - transfer;
-  
-          // Fetch the total quantity issued using the provided lkfId
-          const fetchedResult = await getCalculationIssued(lkfId);
-          console.log("Fetched total quantity issued:", fetchedResult); // Log fetched result
-  
-          // Check if fetchedResult is defined
-          if (fetchedResult === undefined) {
-            console.warn("Fetched result is undefined, using default value of 0");
-          }
-  
-          setTotalQuantityIssued(fetchedResult ?? 0); // Update state with fetched total issued
-  
-          // Update state with the fetched data
-          setOpShift(item.shift);
-          setOpDip(openingDip);
-          setOpStation(item.station);
-          setOpReceipt(received);
-          setTotalIssued(issued);
-          setOpTransfer(transfer);
-          setOpReceiveKpc(receivedKpc);
-  
-          // Prepare data for rendering
-          const preparedData = [
-            { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
-            { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
-            { title: 'Opening Dip', value: openingDip, icon: 'openingdeep.svg' },
-            { title: 'Receipt', value: received, icon: 'receipt.svg' },
-            { title: 'Stock On Hand', value: stockOnHand || 'No Data', icon: 'stock.svg' },
-            { title: 'QTY Issued', value: fetchedResult ?? 0, icon: 'issued.svg' }, // Use fetchedResult here
-            { title: 'Balance', value: stockOnHand || 0 , icon: 'balance.svg' },
-            { title: 'Closing Dip', value: openingDip || 0 , icon: 'close.svg' },
-            { title: 'Flow Meter Awal', value: item.flow_meter_start || 0, icon: 'flwawal.svg' },
-            { title: 'Flow Meter Akhir', value: (item.flow_meter_start + issued) || 0 , icon: 'flwakhir.svg' },
-            { title: 'Total Flow Meter', value: issued || 0, icon: 'total.svg' },
-            { title: 'Variance', value: item.totalVariance || 0, icon: 'variance.svg' }
-          ];
-  
-          setDataHome(preparedData);
-  
-          // Optionally cache the prepared data
-          localStorage.setItem('cardData', JSON.stringify(preparedData));
-  
-        } else {
-          console.error("No data found or invalid format:", dataHome);
-          setDataHome([]); // Clear data if empty or invalid format
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching card data:", error);
-      setDataHome([]); // Clear data in case of error
+  useEffect(() => {
+    const cachedData = localStorage.getItem('cardDash');
+    if (cachedData) {
+        setDataHome(JSON.parse(cachedData));
     }
-  };
+}, []);
+
+const updateCard = async () => {
+  localStorage.removeItem('cardDash')
+  const cards = await fetchcardDash(lkfId);
+  
+}
+const fetchcardDash = async (lkfId: string) => {
+  try {
+    console.log("Fetching data for LKF ID:", lkfId);
+
+    // Cek apakah ada data di local storage
+    const cachedData = localStorage.getItem('cardDash');
+    if (cachedData) {
+      console.log("Using cached data");
+      const preparedData = JSON.parse(cachedData);
+      setDataHome(preparedData); // Set state dengan cached data
+      return; // Keluar lebih awal jika data sudah ada di cache
+    }
+
+    // Cek status online
+    if (!navigator.onLine) {
+      console.warn("Offline: Using cached data only");
+      return; // Jika offline dan tidak ada data di cache, keluar
+    }
+
+    // Jika tidak ada data di cache, ambil dari API
+    const dataHome = await getHomeByIdLkf(lkfId);
+    console.log("Full Content Cards:", dataHome); // Log respons penuh dari API
+
+    // Validasi respons
+    if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
+      const item = dataHome.data[0];
+
+      // Hitung stok yang tersedia dan nilai lainnya
+      const openingDip = item.total_opening || 0;
+      const received = item.total_receive || 0;
+      const receivedKpc = item.total_receive_kpc || 0;
+      const issued = item.total_issued || 0;
+      const transfer = item.total_transfer || 0;
+      const stockOnHand = openingDip + received + receivedKpc - issued - transfer;
+
+      // Ambil total quantity issued
+      const fetchedResult = await getCalculationIssued(lkfId);
+      console.log("Fetched total quantity issued:", fetchedResult); // Log hasil yang diambil
+
+      // Update state dengan data yang diambil
+      setTotalQuantityIssued(fetchedResult ?? 0);
+      setOpShift(item.shift);
+      setOpDip(openingDip);
+      setOpStation(item.station);
+      setOpReceipt(received);
+      setTotalIssued(issued);
+      setOpTransfer(transfer);
+      setOpReceiveKpc(receivedKpc);
+
+      // Siapkan data untuk dirender
+      const preparedData = [
+        { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
+        { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
+        { title: 'Opening Dip', value: openingDip, icon: 'openingdeep.svg' },
+        { title: 'Receipt', value: received, icon: 'receipt.svg' },
+        { title: 'Stock On Hand', value: stockOnHand || 'No Data', icon: 'stock.svg' },
+        { title: 'QTY Issued', value: fetchedResult ?? 0, icon: 'issued.svg' },
+        { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
+        { title: 'Closing Dip', value: openingDip || 0, icon: 'close.svg' },
+        { title: 'Flow Meter Awal', value: item.flow_meter_start || 0, icon: 'flwawal.svg' },
+        { title: 'Flow Meter Akhir', value: (item.flow_meter_start + issued) || 0, icon: 'flwakhir.svg' },
+        { title: 'Total Flow Meter', value: issued || 0, icon: 'total.svg' },
+        { title: 'Variance', value: item.totalVariance || 0, icon: 'variance.svg' },
+      ];
+
+      setDataHome(preparedData);
+      localStorage.setItem('cardDash', JSON.stringify(preparedData)); // Cache data yang sudah disiapkan
+
+    } else {
+      console.error("No valid data found:", dataHome);
+      setDataHome([]); // Kosongkan data jika tidak ada atau format tidak valid
+    }
+  } catch (error) {
+    console.error("Error fetching card data:", error);
+    setDataHome([]); // Kosongkan data jika terjadi kesalahan
+  }
+};
+
   
   
   useEffect(() => {
     if (lkfId) {
-      fetchCardData(lkfId);
+      fetchcardDash(lkfId);
     }
   }, [lkfId]);
+  
 
+  const isOffline = !navigator.onLine; // Check if the user is offline
+
+  // Retrieve cached data from local storage if offline
+  const cachedData = localStorage.getItem('cardDash');
+  const displayData = isOffline && cachedData ? JSON.parse(cachedData) : dataHome;
+  
+
+ 
   return (
     <IonPage>
       <IonContent>
@@ -542,7 +565,7 @@ const DashboardFuelMan: React.FC = () => {
 
         <div className='content'>
           <div className='btn-start'>
-            <IonButton color="primary" onClick={handleRefresh}>
+            <IonButton color="primary" onClick={handleRefresh} >
               <IonImg src='refresh.svg' alt="Refresh" />
               Refresh
             </IonButton>
@@ -570,7 +593,7 @@ const DashboardFuelMan: React.FC = () => {
         </div>
         <IonGrid >
           <IonRow >
-            {/* {cardData.map((card, index) => (
+            {/* {cardDash.map((card, index) => (
               <IonCol size="4" key={index}>
                 <IonCard style={{height:"90px"}} >
                   <IonCardHeader>
@@ -658,13 +681,14 @@ const DashboardFuelMan: React.FC = () => {
               </p>
             </IonRow>
           </IonRow>
+       
           <IonButton
-            style={{ padding: "15px", marginTop: "-40px" }}
-            className='check-button'
-            onClick={() => route.push('/transaction')}>
-            <IonImg src='plus.svg' />
-            <span style={{ marginLeft: "10px" }}>Tambah Data</span>
-          </IonButton>
+          style={{ padding: "15px", marginTop: "-40px" }}
+          className='check-button'
+          onClick={TambahData}>
+          <IonImg src='plus.svg' />
+          <span style={{ marginLeft: "10px" }}>Tambah Data</span>
+        </IonButton>
           <TableData setPendingStatus={setPendingStatus} />
         </IonGrid>
 
