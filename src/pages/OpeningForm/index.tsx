@@ -20,6 +20,7 @@ import {
   IonCard,
   IonRefresher,
   IonRefresherContent,
+  IonToast,
 } from "@ionic/react";
 
 import "./style.css";
@@ -32,7 +33,7 @@ import { DataLkf } from "../../models/db";
 import { getAllSonding } from "../../hooks/getAllSonding";
 import { getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
 import { getStationData} from "../../hooks/getDataTrxStation";
-import { saveDataToStorage, getDataFromStorage, fetchShiftData } from "../../services/dataService";
+import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
 import { chevronDownCircleOutline } from 'ionicons/icons';
 
@@ -86,6 +87,13 @@ const OpeningForm: React.FC = () => {
 const [prevHmAwal, setPrevHmAwal] = useState<number | undefined>(undefined);
 const input1Ref = useRef<HTMLIonInputElement>(null);
 const input2Ref = useRef<HTMLIonInputElement>(null);
+const [showToast, setShowToast] = useState(false);
+const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+
+const [jdeOptions, setJdeOptions] = useState<
+{ JDE: string; fullname: string }[]
+>([]);
 
   useEffect(() => {
     const determineShift = () => {
@@ -105,6 +113,18 @@ const input2Ref = useRef<HTMLIonInputElement>(null);
 
     determineShift();
   }, [])
+
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
 
 
 
@@ -182,7 +202,7 @@ const input2Ref = useRef<HTMLIonInputElement>(null);
     debouncedUpdate(openingSonding, station);
   }, [openingSonding, station, debouncedUpdate]);
 
-  
+
 
 
   // useEffect(() => {
@@ -244,6 +264,10 @@ useEffect(() => {
 }, []);
 
   const handlePost = async () => {
+    if (!isOnline) {
+      setShowToast(true);
+      return;
+    }
     if (
       !date ||
       !shiftSelected ||
@@ -397,6 +421,24 @@ useEffect(() => {
     userData(); // Call the async function
   }, []);
 
+
+  useEffect(() => {
+    const userData = async () => {
+      const data = await getDataFromStorage('loginData');
+      if (data) {
+        const parsedData = data; // Assuming data is already an object.
+        console.log('Parsed User Data:', parsedData); // Verify data structure
+        setFuelmanID(parsedData.jde);
+        setStation(parsedData.station);
+        setSite(parsedData.site);
+      } else {
+        console.error('No user data found in storage');
+      }
+    };
+  
+    userData(); // Call the async function
+  }, []);
+
   // const getLastLkfData = () => {
   //   const lastLkfData = localStorage.getItem('lastLkfDataStation');
   
@@ -485,6 +527,17 @@ const fetchData = async () => {
   }
 };
 
+ 
+useEffect(() => {
+  fetchData(); // Load data when the component mounts
+
+  const intervalId = setInterval(() => {
+    fetchData(); // Refresh data every 5 seconds
+  }, 3000);
+
+
+}, []);
+
 
 const doRefresh = async (event: CustomEvent) => {
   await fetchData();
@@ -538,6 +591,7 @@ useEffect(() => {
 
 
 
+
 const handleFlowMeterAwalChange = (e: CustomEvent) => {
   const value = Number(e.detail.value);
   if (prevFlowMeterAwal !== undefined && value < prevFlowMeterAwal) {
@@ -547,6 +601,11 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
   }
   setFlowMeterAwal(value);
 };
+
+
+
+
+
 
   return (
     <IonPage>
@@ -695,11 +754,31 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
             )}
           </div>
           <IonRow className="padding-content btn-start">
-            <IonButton className="check-button" onClick={handlePost}>
-              Mulai Kerja
-            </IonButton>
+     <IonButton 
+        className="check-button" 
+        onClick={handlePost} 
+        disabled={!isOnline}
+      >
+        Mulai Kerja
+      </IonButton>
+     
+     
+      <IonToast
+        isOpen={showToast}
+        onDidDismiss={() => setShowToast(false)}
+        message="Anda sedang offline. Silakan cek koneksi internet Anda."
+        duration={2000}
+      />
           </IonRow>
+          <IonRow>
+      {!isOnline && (
+        <IonLabel color="danger" style={{ marginTop: '10px'}}>
+          <span style={{marginLeft:"15px", fontWeight:"600"}}> Device offline , periksa koneksi tablet </span>
+        </IonLabel>
+      )}
+      </IonRow>
         </div>
+     
       </IonContent>
     </IonPage>
   );

@@ -244,6 +244,8 @@ const [endTime, setEndTime] = useState<string | undefined>(undefined);
 
 
 
+
+
 const [stock, setStock] = useState<number>(0);
   useEffect(() => {
     const handleOnline = () => {
@@ -393,11 +395,7 @@ const [stock, setStock] = useState<number>(0);
   }
 
 
-  const updateCard = async () => {
 
-    
-
-  }
 
 
   
@@ -477,6 +475,7 @@ const [stock, setStock] = useState<number>(0);
       if (isOnline) {
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost); 
+        updateCard()
         const responseStatus = response.status;
   
         if (response.ok) {
@@ -628,6 +627,12 @@ const [stock, setStock] = useState<number>(0);
     return hmkmTRX !== undefined && hmLast !== undefined && hmLast > hmkmTRX;
   };
 
+
+  const updateCard = async () => {
+    localStorage.removeItem('cardDash')
+    const cards = await getHomeByIdLkf(lkfId);
+    
+  }
   
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
@@ -755,46 +760,7 @@ const [stock, setStock] = useState<number>(0);
     setFilteredUnits(filtered);
   };
 
-  const handleUnitChange = (
-    newValue: SingleValue<{ value: string; label: string }>, 
-    actionMeta: ActionMeta<{ value: string; label: string }>
-  ) => {
-    if (newValue) {
-      const unitValue = newValue.value; 
-      setSelectedUnit(unitValue); // Set unit yang dipilih
-  
-      // Mencari opsi unit yang dipilih dari unitOptions
-      const selectedUnitOption = unitOptions.find(
-        (unit) => unit.unit_no === unitValue
-      );
-  
-      // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
-      if (selectedUnitOption) {
-        setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
-        setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
-        
-        // Set nilai hm_km berdasarkan data unit yang dipilih
-        setHmkmValue(selectedUnitOption.hm_km);
-         setHmKmLast(selectedUnitOption.hm_last);
-         // Perbarui nilai hm_km
-        setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
-  
-  
-        // Tentukan batas kouta baru berdasarkan nilai unit
-        const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-        setKoutaLimit(newKoutaLimit); // Set batas kouta
-  
-        // Set showError berdasarkan jenis unit dan batas kouta
-        setShowError(
-          unitValue.startsWith("LV") || 
-          (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-        );
-      } else {
-        // Secara opsional, tangani kasus ketika unit yang dipilih tidak ada
-        console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
-      }
-    }
-  };
+ 
   
   
 
@@ -1020,7 +986,87 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
   return ""; 
 };
 
+const handleUnitChange = (
+  newValue: SingleValue<{ value: string; label: string }>, 
+  actionMeta: ActionMeta<{ value: string; label: string }>
+) => {
+  if (newValue) {
+    const unitValue = newValue.value; 
+    setSelectedUnit(unitValue); // Set unit yang dipilih
 
+    // Mencari opsi unit yang dipilih dari unitOptions
+    const selectedUnitOption = unitOptions.find(
+      (unit) => unit.unit_no === unitValue
+    );
+
+    // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
+    if (selectedUnitOption) {
+      setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
+      setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
+      setHmkmValue(selectedUnitOption.hm_km);
+      setHmKmLast(selectedUnitOption.hm_last);
+      setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
+
+      // Tentukan batas kouta baru berdasarkan nilai unit
+      const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+      setKoutaLimit(newKoutaLimit); // Set batas kouta
+
+      // Set showError berdasarkan jenis unit dan batas kouta
+      setShowError(
+        unitValue.startsWith("LV") || 
+        (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+      );
+    } else {
+      console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
+    }
+  }
+};
+
+const filteredUnitOptions = (selectedType && 
+  (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer')) 
+? unitOptions.filter(unit => unit.unit_no.startsWith("FT") || unit.unit_no.startsWith("TK"))
+: unitOptions;
+
+// const handleUnitChange = (
+//   newValue: SingleValue<{ value: string; label: string }>, 
+//   actionMeta: ActionMeta<{ value: string; label: string }>
+// ) => {
+//   if (newValue) {
+//     const unitValue = newValue.value; 
+//     setSelectedUnit(unitValue); // Set unit yang dipilih
+
+//     // Mencari opsi unit yang dipilih dari unitOptions
+//     const selectedUnitOption = unitOptions.find(
+//       (unit) => unit.unit_no === unitValue
+//     );
+
+//     // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
+//     if (selectedUnitOption) {
+//       setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
+//       setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
+      
+//       // Set nilai hm_km berdasarkan data unit yang dipilih
+//       setHmkmValue(selectedUnitOption.hm_km);
+//        setHmKmLast(selectedUnitOption.hm_last);
+//        // Perbarui nilai hm_km
+//       setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
+
+
+//       // Tentukan batas kouta baru berdasarkan nilai unit
+//       const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+//       setKoutaLimit(newKoutaLimit); // Set batas kouta
+
+//       // Set showError berdasarkan jenis unit dan batas kouta
+//       setShowError(
+//         unitValue.startsWith("LV") || 
+//         (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+//       );
+//     } else {
+//       // Secara opsional, tangani kasus ketika unit yang dipilih tidak ada
+//       console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
+//     }
+//   }
+// };
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -1052,49 +1098,47 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>
-      
               <IonCol>
-                <IonLabel className="label-input">
-                  Select Unit <span style={{ color: "red" }}>*</span>
-                </IonLabel>
-                <Select
-                  className="select-custom"
-                  styles={{
-                    container: (provided) => ({
-                      ...provided,
-                      marginTop: "10px",
-                      backgroundColor: "white",
-                      zIndex: 10,
-                      height: "56px",
-                    }),
-                    control: (provided) => ({
-                      ...provided,
-                      height: "56px",
-                      minHeight: "56px",
-                    }),
-                    valueContainer: (provided) => ({
-                      ...provided,
-                      padding: "0 6px",
-                    }),
-                    singleValue: (provided) => ({
-                      ...provided,
-                      lineHeight: "56px",
-                    }),
-                  }}
-                  value={
-                    selectedUnit
-                      ? { value: selectedUnit, label: selectedUnit }
-                      : null
-                  }
-                  onChange={handleUnitChange}
-                  options={unitOptions.map((unit) => ({
-                    value: unit.unit_no || '',
-                    label: unit.unit_no || '',
-                  }))}
-                  // placeholder="Select Unit"
-                  isSearchable={true}
-                />
-              </IonCol>
+            <IonLabel className="label-input">
+              Select Unit <span style={{ color: "red" }}>*</span>
+            </IonLabel>
+            <Select
+              className="select-custom"
+              styles={{
+                container: (provided) => ({
+                  ...provided,
+                  marginTop: "10px",
+                  backgroundColor: "white",
+                  zIndex: 10,
+                  height: "56px",
+                }),
+                control: (provided) => ({
+                  ...provided,
+                  height: "56px",
+                  minHeight: "56px",
+                }),
+                valueContainer: (provided) => ({
+                  ...provided,
+                  padding: "0 6px",
+                }),
+                singleValue: (provided) => ({
+                  ...provided,
+                  lineHeight: "56px",
+                }),
+              }}
+              value={
+                selectedUnit
+                  ? { value: selectedUnit, label: selectedUnit }
+                  : null
+              }
+              onChange={handleUnitChange}
+              options={filteredUnitOptions.map((unit) => ({
+                value: unit.unit_no || '',
+                label: unit.unit_no || '',
+              }))}
+              isSearchable={true}
+            />
+          </IonCol>
                 <IonCol>
                   <IonLabel>
                     Model <span style={{ color: "red" }}>*</span>
@@ -1203,16 +1247,6 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
                   )}
                 </IonCol>
               </IonRow>
-              {/* <div style={{ marginLeft: "15px" }}>
-                                {showError && koutaLimit !== undefined && koutaLimit < 20 && (
-                                    <div style={{ color: "red" }}>
-                                        <div>* Kouta pengisian budget sudah melebihi 20 L / Hari</div>
-                                        <div>* Hm/Km tidak boleh kurang dari Hm/Km sebelumnya : 10290</div>
-                                        <div>* Unit tersebut sudah melakukan pengisian sebanyak 20 L dari batas maksimal 20 L. Silahkan hubungi admin jika ingin melakukan pengisian </div>
-                                    </div>
-                                )}
-            </div> */}
-
               <IonRow>
                 <IonCol>
                   <IonLabel>

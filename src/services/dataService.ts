@@ -245,3 +245,5 @@ export const fetchStationOnTrans = async (lkf_id: string): Promise<any> => {
 
 
 
+
+export { getOperator };

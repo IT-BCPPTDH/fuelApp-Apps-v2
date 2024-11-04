@@ -12,6 +12,8 @@ import {
   useIonRouter,
   IonLabel,
   IonTitle,
+  IonLoading,
+  IonAlert,
 } from "@ionic/react";
 import Cookies from "js-cookie";
 import { postAuthLogin } from "../../hooks/useAuth";
@@ -20,10 +22,12 @@ import {
   fetchStationData,
   saveDataToStorage,
   getDataFromStorage,
+  fetchOperatorData,
 } from "../../services/dataService";
 import Select from "react-select";
 import AsyncSelect from 'react-select/async';
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
+import { getOperator } from "../../hooks/getAllOperator";
 
 // Define props interface
 interface LoginProps {
@@ -35,15 +39,19 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [stationData, setStationData] = useState<{ value: string; label: string; site: string; fuel_station_type: string }[]>([]);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
   const [showError, setShowError] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(false);
+  
   const [alreadyLoggedIn, setAlreadyLoggedIn] = useState<boolean>(false);
   const router = useIonRouter();
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showAlert, setShowAlert] = useState<boolean>(false);
 
   const [jdeOptions, setJdeOptions] = useState<
   { JDE: string; fullname: string }[]
 >([]);
 
   const loadStationData = useCallback(async () => {
+  
     try {
       setLoading(true);
       const cachedData = await getDataFromStorage('stationData');
@@ -66,40 +74,17 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       setLoading(false);
     }
   }, []);
-
-
-
-
+ 
   useEffect(() => {
-    const fetchJdeOptions = async () => {
-      const storedJdeOptions = await getDataFromStorage("allOperator");
+    loadStationData(); // Load data when the component mounts
 
-      if (storedJdeOptions) {
-        // If you are certain the data is in the correct format
-        if (Array.isArray(storedJdeOptions)) {
-          setJdeOptions(storedJdeOptions);
-        } else {
-          console.log("Data FuelMan");
-        }
-      } else {
-        console.log("No JDE options found in storage.");
-      }
-    };
+    const intervalId = setInterval(() => {
+      loadStationData(); // Refresh data every 5 seconds
+    }, 3000);
 
-    fetchJdeOptions();
-  }, []);
-
-
-
-  useEffect(() => {
-    loadStationData();
-    // Check if the user is already logged in
-    const token = Cookies.get("session_token");
-    if (token) {
-      setAlreadyLoggedIn(true);
-    }
+    return () => clearInterval(intervalId); // Clear interval on component unmount
   }, [loadStationData]);
-
+  
   const handleLogin = async () => {
     setLoading(true);
     if (!jde || !selectedUnit) {
@@ -138,11 +123,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         };
         
         saveDataToStorage("loginData", loginData);
-
+       
         // Notify the App component about the login success
         onLoginSuccess();
 
         // Navigate to the opening page
+        setShowAlert(true);
         router.push("/opening");
       } else {
         console.error("Unexpected response:", response);
@@ -155,6 +141,38 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       setLoading(false);
     }
   };
+  
+
+  const loadOperator = async () => {
+    try {
+      // First, check local storage for cached operator data
+      const cachedData = await getDataFromStorage('allOperator');
+      if (cachedData && Array.isArray(cachedData)) {
+        console.log("Loaded operator data from local storage:", cachedData);
+        setJdeOptions(cachedData); // Use the cached data
+      } else {
+        // If no cached data, fetch from the API
+        const fetchedJdeOptions = await fetchOperatorData();
+        if (fetchedJdeOptions.length > 0) {
+          console.log("Fetched operator data and saved to local storage:", fetchedJdeOptions);
+          setJdeOptions(fetchedJdeOptions); // Update state with fetched data
+        } else {
+          console.error("No valid operator data fetched");
+        }
+      }
+    } catch (error) {
+      console.error("Error loading operator data:", error);
+    }
+  };
+  
+  // Call loadOperator in a useEffect
+  useEffect(() => {
+    loadOperator(); // Fetch operator data when the component mounts
+  }, []);
+  
+  
+  
+  
 
   return (
     <IonPage>
@@ -180,6 +198,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     <IonCol size="12">
                       <IonLabel>Select Station</IonLabel>
                       <div style={{ marginTop: "10px" }}>
+                      <IonLoading isOpen={loading} message={"Loading..."} />
                         <Select
                           className="select-custom"
                           styles={{
@@ -244,6 +263,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             </IonGrid>
           </IonCard>
         </div>
+        <IonAlert
+          isOpen={showAlert}
+          onDidDismiss={() => setShowAlert(false)}
+          header={'Login Sukses'}
+          message={'Anda berhasil login!'}
+          buttons={['OK']}
+        />
       </IonContent>
     </IonPage>
   );

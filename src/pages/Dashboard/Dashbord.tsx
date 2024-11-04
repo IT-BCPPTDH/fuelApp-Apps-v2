@@ -120,9 +120,12 @@ const DashboardFuelMan: React.FC = () => {
   const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
   const [totalPengeluaran, setTotalPengeluaran] = useState(0);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+  
   const [pendingStatus, setPendingStatus] = useState(true);
- 
+  const [closeShift, setCloseShift] = useState<any[]>([]); // Initialize as an array
+  const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [result, setResult] = useState<number | null>(null);
+  const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
   const [unitOptions, setUnitOptions] = useState<
     {
       hm_km: SetStateAction<number | null>;
@@ -136,7 +139,7 @@ const DashboardFuelMan: React.FC = () => {
   >([]);
   const [totalQuantityIssued, setTotalQuantityIssued] = useState<number>(0);
 
-
+  const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(undefined);
   const [dataHome, setDataHome] = useState<any[]>([
   
 
@@ -149,24 +152,37 @@ const DashboardFuelMan: React.FC = () => {
   ]);
 
 
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+//   useEffect(() => {
+//     const handleOnline = () => setIsOnline(true);
+//     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+//     window.addEventListener('online', handleOnline);
+//     window.addEventListener('offline', handleOffline);
 
-    // Cek data di local storage saat komponen di-mount
-    const cachedData = localStorage.getItem('cardDash');
-    if (cachedData) {
-        setDataHome(JSON.parse(cachedData));
-    }
+//     // Cek data di local storage saat komponen di-mount
+//     const cachedData = localStorage.getItem('cardDash');
+//     if (cachedData) {
+//         setDataHome(JSON.parse(cachedData));
+//     }
 
-    // Cleanup event listeners
-    return () => {
-        window.removeEventListener('online', handleOnline);
-        window.removeEventListener('offline', handleOffline);
-    };
+//     // Cleanup event listeners
+//     return () => {
+//         window.removeEventListener('online', handleOnline);
+//         window.removeEventListener('offline', handleOffline);
+//     };
+// }, []);
+
+useEffect(() => {
+  const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+  const updateOflineStatus = () => setIsOnline(navigator.onLine);
+
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+
+  return () => {
+    window.removeEventListener('online', updateOnlineStatus);
+    window.removeEventListener('offline', updateOnlineStatus);
+  };
 }, []);
 
   useEffect(() => {
@@ -434,6 +450,38 @@ const updateCard = async () => {
   const cards = await fetchcardDash(lkfId);
   
 }
+
+const fetchData = async () => {
+  setLoading(true);
+  try {
+    const cachedShiftData = await getDataFromStorage('shiftCloseData');
+    if (cachedShiftData && cachedShiftData.length > 0) {
+      setCloseShift(cachedShiftData);
+      const latestShiftData = cachedShiftData[cachedShiftData.length - 1]; 
+      if (latestShiftData.closing_sonding !== undefined) {
+        setOpeningSonding(latestShiftData.closing_sonding); 
+      }
+      if (latestShiftData.flow_meter_end !== undefined) {
+        setFlowMeterAwal(latestShiftData.flow_meter_end); 
+      }
+      if (latestShiftData.opening_dip !== undefined) {
+        setOpeningDip(latestShiftData.opening_dip); 
+      }
+    
+    } else {
+      console.error("No cached shift data found");
+    }
+  } catch (error) {
+    console.error("Error fetching shift data:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchData(); // Load data when the component mounts
+}, []);
+
 const fetchcardDash = async (lkfId: string) => {
   try {
     console.log("Fetching data for LKF ID:", lkfId);
@@ -552,7 +600,7 @@ const fetchcardDash = async (lkfId: string) => {
                     width: '12px',
                     height: '12px',
                     borderRadius: '50%',
-                    backgroundColor: isOnline ? '#73A33F' : 'green',
+                    backgroundColor: isOnline ? '#73A33F' : 'red',
                     marginRight: '5px',
 
                   }}
