@@ -81,6 +81,9 @@ interface DataFormTrx {
   lkf_id?: string;
   status: number;
   fuelman_id: string;
+  jde_operator:string;
+  start:string;
+  end:string;
 
   
 }

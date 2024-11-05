@@ -72,17 +72,17 @@ const ReviewData: React.FC = () => {
 
 
     useEffect(() => {
-        const getCardData = () => {
+        const getcardDash = () => {
             try {
-                const cachedData = localStorage.getItem('cardData');
+                const cachedData = localStorage.getItem('cardDash');
                 if (cachedData) {
-                    const cardData = JSON.parse(cachedData);
+                    const cardDash = JSON.parse(cachedData);
 
-                    const totalIsssued = cardData.find((item: { title: string; }) => item.title === "QTY Issued");
+                    const totalIsssued = cardDash.find((item: { title: string; }) => item.title === "QTY Issued");
 
-                    const closeData = cardData.find((item: { title: string; }) => item.title === "Stock On Hand");
-                    const flowMeterAwal = cardData.find((item: { title: string; }) => item.title === "Flow Meter Awal");
-                    const totalMeter = cardData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
+                    const closeData = cardDash.find((item: { title: string; }) => item.title === "Stock On Hand");
+                    const flowMeterAwal = cardDash.find((item: { title: string; }) => item.title === "Flow Meter Awal");
+                    const totalMeter = cardDash.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
 
                     
 
@@ -102,11 +102,11 @@ const ReviewData: React.FC = () => {
                     }
                 }
             } catch (error) {
-                console.error('Error retrieving cardData from localStorage:', error);
+                console.error('Error retrieving cardDash from localStorage:', error);
             }
         };
 
-        getCardData();
+        getcardDash();
     }, []);
 
 
@@ -133,7 +133,7 @@ const ReviewData: React.FC = () => {
     
             // Remove cookies after successful logout
             Cookies.remove('isLoggedIn');
-    
+            Cookies.remove('session_token');
             // Clear specific shift data from local storage
             const shiftData = localStorage.getItem('shiftData');
             if (shiftData) {
@@ -159,7 +159,7 @@ const ReviewData: React.FC = () => {
             localStorage.removeItem('lastDipLiter');
             localStorage.removeItem('lastFlowMeter');
             localStorage.removeItem('CapacitorStorage.shiftCloseData');
-            localStorage.removeItem('cardData');
+            localStorage.removeItem('cardDash');
             localStorage.removeItem('shiftData');
             localStorage.removeItem('latestLkfData');
 
@@ -212,7 +212,7 @@ const ReviewData: React.FC = () => {
                             <IonLabel className='font-review'>Start Meter : {flowMeterAwal}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Total Meter : {totalDataFlowMeter}</IonLabel>
+                            <IonLabel className='font-review'>Total Meter : {totalIssued}</IonLabel>
                         </IonItem>
                         <IonItem>
                             <IonLabel className='font-review'>Daily Variance :</IonLabel>

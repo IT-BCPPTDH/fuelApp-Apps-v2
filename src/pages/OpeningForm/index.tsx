@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useCallback } from "react";
+import React, { useEffect, useState,useCallback, useRef } from "react";
 import {
   IonButton,
   IonCol,
@@ -20,6 +20,7 @@ import {
   IonCard,
   IonRefresher,
   IonRefresherContent,
+  IonToast,
 } from "@ionic/react";
 
 import "./style.css";
@@ -32,7 +33,7 @@ import { DataLkf } from "../../models/db";
 import { getAllSonding } from "../../hooks/getAllSonding";
 import { getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
 import { getStationData} from "../../hooks/getDataTrxStation";
-import { saveDataToStorage, getDataFromStorage, fetchShiftData } from "../../services/dataService";
+import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
 import { chevronDownCircleOutline } from 'ionicons/icons';
 
@@ -71,7 +72,7 @@ const OpeningForm: React.FC = () => {
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
   const [date, setDate] = useState<string>(new Date().toISOString());
- 
+  const [hmAkhir, setHmAkhir] = useState<number | undefined>(undefined);
 
   const [stationOptions, setStationOptions] = useState<string[]>([]);
 
@@ -82,6 +83,17 @@ const OpeningForm: React.FC = () => {
   const [presentToast] = useIonToast();
 
  const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
+
+const [prevHmAwal, setPrevHmAwal] = useState<number | undefined>(undefined);
+const input1Ref = useRef<HTMLIonInputElement>(null);
+const input2Ref = useRef<HTMLIonInputElement>(null);
+const [showToast, setShowToast] = useState(false);
+const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+
+const [jdeOptions, setJdeOptions] = useState<
+{ JDE: string; fullname: string }[]
+>([]);
 
   useEffect(() => {
     const determineShift = () => {
@@ -101,6 +113,18 @@ const OpeningForm: React.FC = () => {
 
     determineShift();
   }, [])
+
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
 
 
 
@@ -178,7 +202,7 @@ const OpeningForm: React.FC = () => {
     debouncedUpdate(openingSonding, station);
   }, [openingSonding, station, debouncedUpdate]);
 
-  
+
 
 
   // useEffect(() => {
@@ -240,10 +264,14 @@ useEffect(() => {
 }, []);
 
   const handlePost = async () => {
+    if (!isOnline) {
+      setShowToast(true);
+      return;
+    }
     if (
       !date ||
       !shiftSelected ||
-      hmAwal === undefined ||
+      hmAkhir === undefined ||
       openingDip === undefined ||
       openingSonding === undefined ||
       flowMeterAwal === undefined ||
@@ -259,7 +287,7 @@ useEffect(() => {
     const dataPost: DataLkf = {
       date: new Date(date).toISOString(),
       shift: shiftSelected.name,
-      hm_start: hmAwal,
+      hm_start: hmAkhir,
       opening_dip: openingDip,
       opening_sonding: openingSonding,
       flow_meter_start: flowMeterAwal,
@@ -393,6 +421,24 @@ useEffect(() => {
     userData(); // Call the async function
   }, []);
 
+
+  useEffect(() => {
+    const userData = async () => {
+      const data = await getDataFromStorage('loginData');
+      if (data) {
+        const parsedData = data; // Assuming data is already an object.
+        console.log('Parsed User Data:', parsedData); // Verify data structure
+        setFuelmanID(parsedData.jde);
+        setStation(parsedData.station);
+        setSite(parsedData.site);
+      } else {
+        console.error('No user data found in storage');
+      }
+    };
+  
+    userData(); // Call the async function
+  }, []);
+
   // const getLastLkfData = () => {
   //   const lastLkfData = localStorage.getItem('lastLkfDataStation');
   
@@ -465,6 +511,12 @@ const fetchData = async () => {
       if (latestShiftData.opening_dip !== undefined) {
         setOpeningDip(latestShiftData.opening_dip); 
       }
+      if (latestShiftData.hm_end !== undefined) {
+        setHmAkhir(latestShiftData.hm_end);
+        setPrevHmAwal(latestShiftData.hm_end);  // Set HM Awal
+      }
+      
+
     } else {
       console.error("No cached shift data found");
     }
@@ -474,6 +526,17 @@ const fetchData = async () => {
     setLoading(false);
   }
 };
+
+ 
+useEffect(() => {
+  fetchData(); // Load data when the component mounts
+
+  const intervalId = setInterval(() => {
+    fetchData(); // Refresh data every 5 seconds
+  }, 10000);
+
+
+}, []);
 
 
 const doRefresh = async (event: CustomEvent) => {
@@ -505,7 +568,8 @@ useEffect(() => {
           const filteredShiftClose = shiftClose.map(data => ({
             closing_sonding: data.closing_sonding,
             closing_dip: data.closing_dip,
-            flow_meter_en: data.flow_meter_end
+            flow_meter_en: data.flow_meter_end,
+            hm_end: data. hm_end
           })).filter(data => data.closing_sonding !== undefined && data.closing_dip !== undefined && data.flow_meter_en !== undefined);
 
           // Log the filtered data for debugging
@@ -523,6 +587,22 @@ useEffect(() => {
 
   loadShiftClose(); 
 }, []); 
+
+
+
+
+
+const handleFlowMeterAwalChange = (e: CustomEvent) => {
+  const value = Number(e.detail.value);
+  if (prevFlowMeterAwal !== undefined && value < prevFlowMeterAwal) {
+    setShowError(true);
+  } else {
+    setShowError(false);
+  }
+  setFlowMeterAwal(value);
+};
+
+
 
 
 
@@ -633,57 +713,74 @@ useEffect(() => {
               className={`custom-input`}
               type="number"
               value={flowMeterAwal}
+             
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
-                setFlowMeterAwal(value);
-                if (prevFlowMeterAwal !== undefined && value < prevFlowMeterAwal) {
-                  setShowError(true);
-                } else {
-                  setShowError(false);
-                }
+                handleFlowMeterAwalChange(e); 
               }}
             />
-            {showError && (
-              <p style={{ color: "red" }}>
-                {flowMeterAwal === undefined
-                  ? '* Field harus diisi'
-                  : (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal)
-                    ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
-                    : ''
-                }
-              </p>
-            )}
+           {showError && (
+            <p style={{ color: "red" }}>
+              {flowMeterAwal === undefined
+                ? '* Field harus diisi'
+                : (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal)
+                  ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
+                  : ''
+              }
+            </p>
+          )}
           </div>
           <div className="padding-content">
             <IonLabel>
               HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
             </IonLabel>
             <IonInput
-              className={`custom-input ${showError && (hmAwal === undefined || (station !== "FT" && hmAwal === 0)) ? "input-error" : ""}`}
-              type="number"
-              placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
-              value={hmAwal}
-              onIonInput={(e) => {
-                const value = Number(e.detail.value);
-                if (station !== "FT" && value === 0) {
-                  setHmAwal(undefined);
-                  setShowError(true);
-                } else {
-                  setHmAwal(value);
-                  setShowError(false);
-                }
-              }}
-            />
-            {showError && hmAwal === undefined && (
+                      className={`custom-input ${showError && (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0)) ? "input-error" : ""}`}
+                      type="number"
+                      placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
+                      value={hmAkhir !== undefined ? hmAkhir : ''} // Ensure value is a string for editable input
+                      onIonChange={(e) => {
+                        const value = Number(e.detail.value);
+                        if (station !== "FT" && value === 0) {
+                          setHmAkhir(undefined);
+                          setShowError(true);
+                        } else {
+                          setHmAkhir(value);
+                          setShowError(false);
+                        }
+                      }}
+                    />
+
+            {showError && hmAkhir === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
           <IonRow className="padding-content btn-start">
-            <IonButton className="check-button" onClick={handlePost}>
-              Mulai Kerja
-            </IonButton>
+     <IonButton 
+        className="check-button" 
+        onClick={handlePost} 
+        disabled={!isOnline}
+      >
+        Mulai Kerja
+      </IonButton>
+     
+     
+      <IonToast
+        isOpen={showToast}
+        onDidDismiss={() => setShowToast(false)}
+        message="Anda sedang offline. Silakan cek koneksi internet Anda."
+        duration={2000}
+      />
           </IonRow>
+          <IonRow>
+      {!isOnline && (
+        <IonLabel color="danger" style={{ marginTop: '10px'}}>
+          <span style={{marginLeft:"15px", fontWeight:"600"}}> Device offline , periksa koneksi tablet </span>
+        </IonLabel>
+      )}
+      </IonRow>
         </div>
+     
       </IonContent>
     </IonPage>
   );

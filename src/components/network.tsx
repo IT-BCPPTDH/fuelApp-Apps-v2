@@ -1,48 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { Network, NetworkStatus as CapacitorNetworkStatus } from '@capacitor/network';
 
+const NetworkStatus = () => {
+  const [isOnline, setIsOnline] = useState(false);
 
-const NetworkStatus: React.FC = () => {
-    const [networkStatus, setNetworkStatus] = useState<CapacitorNetworkStatus | null>(null);
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+  
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+  
+    // Initial check
+    updateOnlineStatus();
 
-    useEffect(() => {
-        const logCurrentNetworkStatus = async () => {
-            const status = await Network.getStatus();
-            setNetworkStatus(status);
-            console.log('Network status:', status);
-        };
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
 
-        // Initial check for network status
-        logCurrentNetworkStatus();
-
-        // Listener for network status changes
-        const unsubscribe = Network.addListener('networkStatusChange', (status: CapacitorNetworkStatus) => {
-            console.log('Network status changed', status);
-            setNetworkStatus(status);
-        });
-
-        return () => {
-            // Clean up the listener on component unmount
-        };
-    }, []);
-
-    return (
-      
-            <>
-             {networkStatus ? (
-                    <div>
-                        <p>{networkStatus.connected ? 'Online' : 'Offline'}</p>
-                        
-                    </div>
-                ) : (
-                    <p>Loading network status...</p>
-                )}
-            </>
-         
-               
-           
-       
-    );
+  return (
+    <div style={{ color: isOnline ? 'green' : 'red', fontSize: '15px', marginTop:"0px" }}>
+      <p>{isOnline ? 'Online' : 'Offline'}</p>
+    </div>
+  );
 };
 
 export default NetworkStatus;

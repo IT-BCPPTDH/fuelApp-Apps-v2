@@ -11,13 +11,17 @@ import {
   IonSearchbar,
   IonIcon,
   IonToast
+ 
+  
 } from "@ionic/react";
+import { useIonToast } from '@ionic/react';
+
 import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
 import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
 import { postBulkData } from '../hooks/bulkInsert';
 import { checkmarkCircleOutline } from 'ionicons/icons';
 import { updateDataInTrx } from '../utils/update';
-import { getHomeTable } from '../hooks/getHome';
+import { getHomeByIdLkf, getHomeTable } from '../hooks/getHome';
 
 interface TableDataItem {
   hm_km: any;
@@ -36,7 +40,14 @@ interface TableDataItem {
   status: number;
 }
 
-const TableData: React.FC = () => {
+
+interface TableDataProps {
+  setPendingStatus: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+
+const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
+
   const itemsPerPage = 3;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,6 +58,15 @@ const TableData: React.FC = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [lkfId, setLkfId] = useState<string>('');
+  const [presentToast] = useIonToast();
+
+
+  useEffect(() => {
+    // Check if there are any pending items
+    const hasPendingData = data.some(item => item.status === 0); // Assuming status 0 means pending
+    setPendingStatus(hasPendingData);
+  }, [data, setPendingStatus]);
+  
 
   useEffect(() => {
     const fetchLkfId = async () => {
@@ -101,14 +121,29 @@ const TableData: React.FC = () => {
     setData(mappedData);
   } catch (error) {
     console.error("Failed to fetch data:", error);
-    setError("Failed to fetch data");
+    
+
+    
+    setShowToast(true);
+    
   } finally {
     setLoading(false);
   }
 };
+
 const handleBulkInsert = async () => {
+
   if (!navigator.onLine) {
-    console.log("Currently offline. Data will be sent when network is available.");
+    await presentToast({
+      
+      message: "Perangakat offline !! , Mohon pastikan terkoneksi dengan jaringan ",
+      duration: 2000,
+      position: 'bottom',
+      color: 'danger',
+    });
+
+   
+
     return;
   }
 
@@ -166,17 +201,37 @@ const handleBulkInsert = async () => {
 
     const totalInserted = bulkData.length;
     const successMessage = `Successfully saved ${totalInserted} items to the server.`;
-    setToastMessage(successMessage);
-    setShowToast(true);
+    await presentToast({
+      message: successMessage,
+      duration: 2000,
+      position: 'top',
+    });
     setError(null);
+
   } catch (error) {
     console.error("Error during bulk insert:", error);
     setError("Failed to save data to server");
-    setToastMessage("Failed to save data to server.");
-    setShowToast(true);
+    await presentToast({
+      message: "Failed to save data to server.",
+      duration: 2000,
+      position: 'bottom',
+    });
   }
 };
 
+
+useEffect(() => {
+  const handleOnline = () => {
+    console.log("Network is back online, syncing data...");
+    handleBulkInsert();
+  };
+
+  window.addEventListener('online', handleOnline);
+
+  return () => {
+    window.removeEventListener('online', handleOnline);
+  };
+}, [data, nomorLKF]);
 
   const filteredData = (data || []).filter(item =>
     item.unit_no.toLowerCase().includes(searchQuery.toLowerCase())
@@ -216,6 +271,9 @@ const handleBulkInsert = async () => {
     return status === 1 ? 'Sent' : 'Pending';
   };
 
+  const totalQtyIssued = filteredData.reduce((total, item) => total + item.qty_issued, 0);
+
+
   return (
     <div>
       <IonRow style={{ marginTop: "-20px" }} className='padding-content'>
@@ -223,6 +281,7 @@ const handleBulkInsert = async () => {
           <div style={{ fontSize: "20px", fontWeight: "600", color: "#222428" }}>LKF:</div>
           <span style={{ fontSize: "20px", color: "#222428" }}>{nomorLKF || 'Loading...'}</span>
         </IonCol>
+        
         <IonCol>
           <IonSearchbar 
             placeholder="Search Unit" 
@@ -276,6 +335,7 @@ const handleBulkInsert = async () => {
         isOpen={showToast}
         onDidDismiss={() => setShowToast(false)}
         message={toastMessage}
+      
         duration={2000}
         position="top"
       />

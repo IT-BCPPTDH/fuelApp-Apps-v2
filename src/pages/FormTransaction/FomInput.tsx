@@ -54,7 +54,9 @@ import Select, { ActionMeta, SingleValue } from "react-select";
 import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getUnitQuotaActive } from "../../hooks/getQoutaUnit";
-
+import { getHomeByIdLkf, getHomeTable} from "../../hooks/getHome";
+import { deleteAllDataTransaksi } from "../../utils/delete";
+import { getCalculationIssued } from "../../utils/getData";
 
 interface Typetrx {
   id: number;
@@ -80,6 +82,26 @@ interface UnitQuota {
   isActive?: boolean;
 }
 
+
+interface TableDataItem {
+  hm_km: any;
+  from_data_id: number;
+  unit_no: string;
+  model_unit: string;
+  owner: string;
+  fbr_historis: string;
+  jenis_trx: string;
+  qty_issued: number;
+  fm_awal: number;
+  fm_akhir: number;
+  hm_last: number;
+  jde_operator: string;
+  name_operator: string;
+
+  status: number;
+}
+
+
 const typeTrx: Typetrx[] = [
   { id: 1, name: "Issued" },
   { id: 2, name: "Transfer" },
@@ -100,7 +122,7 @@ const FormTRX: React.FC = () => {
 
   const [signature, setSignature] = useState<File | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
-
+  const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
   const [model, setModel] = useState<string>("");
   const [owner, setOwner] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
@@ -124,9 +146,7 @@ const FormTRX: React.FC = () => {
   const [flowMeterAkhir, setFlowMeterAkhir] = useState<number | undefined>(
     undefined
   );
-  const [startTime, setStartTime] = useState<string | undefined>(undefined);
-  const [endTime, setEndTime] = useState<string | undefined>(undefined);
-  const [lkf_id, setLkfId] = useState<number | undefined>(undefined);
+  
   const [stockData, setStockData] = useState<number | undefined>(undefined);
   const [signatureBase64, setSignatureBase64] = useState<string | undefined>(
     undefined
@@ -159,7 +179,7 @@ const FormTRX: React.FC = () => {
   const [modalMessage, setModalMessage] = useState("");
 
 
-  const [status, setStatus] = useState<number>(0); // Default to 0
+  const [status, setStatus] = useState<number>(1); // Default to 0
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
 
   const [quotaMessage, setQuotaMessage] = useState("");
@@ -193,7 +213,7 @@ const FormTRX: React.FC = () => {
   const [hmkmValue, setHmkmValue] = useState<number | null>(null);
   const [hmkmLast, setHmKmLast] = useState<number | null>(null);
  
- 
+  const [lkfId, setLkfId] = useState<string>('');
   const [qtyValue, setQtyValue] = useState<number | null>(null);
  
   const [hmKm, setHmKm] = useState<string>("");
@@ -205,7 +225,28 @@ const FormTRX: React.FC = () => {
   const [isActive, setIsActive] = useState(false);
   const [quotaData, setQuotaData] = useState(null);
   const [currentUnitQuota, setCurrentUnitQuota] = useState<UnitQuota | null>(null);
+  const [totalQuantityIssued, setTotalQuantityIssued] = useState<number>(0);
+  const [opDip, setOpDip] = useState<number | null>(null)
+  const [shift, setOpShift] = useState<string | null>(null)
+  const [station, setOpStation] = useState<string | null>(null)
+  const [receipt, setOpReceipt] = useState<number | null>(null)
+  const [transfer, setOpTransfer] = useState<string | null>(null)
+  const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
+  const [totalIssued, setTotalIssued] = useState<number | null>(null);
 
+  const [showErrorIsi, setShowErrorIsi] = useState<boolean>(false);
+
+  const [isiTime, setIsiTime] = useState<string | undefined>(undefined);
+const [selesaiTime, setSelesaiTime] = useState<string | undefined>(undefined);
+
+const [startTime, setStartTime] = useState<string | undefined>(undefined);
+const [endTime, setEndTime] = useState<string | undefined>(undefined);
+
+
+
+
+
+const [stock, setStock] = useState<number>(0);
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -235,19 +276,7 @@ const FormTRX: React.FC = () => {
   //   }
   // }, []);
 
-  useEffect(() => {
-    const userData = localStorage.getItem("cardData");
-    console.log("dataUse", userData);
 
-    if (userData) {
-      const parsedData = JSON.parse(userData);
-      // Mencari item dengan title "Flow Meter Awal"
-      const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Awal");
-      if (flowMeterItem) {
-        setFlowMeterAwal(flowMeterItem.value); 
-      }
-    }
-  }, [])
 
 
   useEffect(() => {
@@ -311,6 +340,8 @@ const FormTRX: React.FC = () => {
     fetchStationData();
   }, []);
 
+
+
   const handleRadioChange = (event: CustomEvent) => {
     const selectedValue = event.detail.value as Typetrx;
     setSelectedType(selectedValue);
@@ -356,11 +387,35 @@ const FormTRX: React.FC = () => {
     route.push("/dashboard");
   };
 
-  // Ensure quantity is initialized and handle potential undefined
+ 
+
+
+  const updateAllData = async () => {
+    const units = await fetchUnitData();
+  }
+
+
+
+
+
+  
+
+
+  const getdata = async() => {
+   
+    const cars = await getHomeByIdLkf(lkfId);
+   console.log("Data_apa",cars)
+ 
+  };
+
+  useEffect(()=>{
+    getdata()
+  })
+
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Initial Status:", status);
-
+  
     // Validate form fields
     if (
       !selectedType ||
@@ -368,27 +423,28 @@ const FormTRX: React.FC = () => {
       !operatorOptions ||
       quantity === null || 
       fuelman_id === null || 
-      quantity === null ||
       fbr === null ||
       flowMeterAwal === null ||
       flowMeterAkhir === null ||
       !startTime ||
       !endTime
     ) {
-    
       setShowError(true);
-      setemployeeError(true)
-    
+      setemployeeError(true);
       return;
     }
+  
 
-    const flow_end: number = Number(calculateFlowEnd()) || 0;
+    const typeTrxValue = typeTrx[0];
+    const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
 
+
+ 
     // Prepare form data
     const fromDataId = Date.now().toString();
     const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
-    const lkf_id = await getLatestLkfId();
-
+    const lkf_id = await getLatestLkfId(); 
+  
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -397,8 +453,8 @@ const FormTRX: React.FC = () => {
       date_trx: new Date().toISOString(),
       hm_last: Number(hmLast) || 0,
       hm_km: Number(hmkmTRX) || 0,
-      qty_last: Number(quantity) || 0, // Ensure quantity is a number
-      qty: Number(quantity) || 0, // Ensure quantity is a number
+      qty_last: Number(quantity) || 0,
+      qty: Number(quantity) || 0,
       flow_start: Number(flowMeterAwal) || 0,
       flow_end: flow_end,
       name_operator: fullName!,
@@ -408,45 +464,66 @@ const FormTRX: React.FC = () => {
       type: selectedType?.name ?? "",
       foto: photoPreview ?? "",
       fuelman_id: fuelman_id!,
-      status: status ?? 0,
-      date: ""
+      jde_operator: fuelman_id!,
+      status: status ?? 1,
+      date: "",
+      start: startTime,
+      end: endTime,
     };
-
+  
     try {
-      // Handle saving and posting based on status
-      if (status === 0) {
-        console.log("Saving data as draft (offline)...");
-        await insertNewData(dataPost);
-        setModalMessage("Data saved as draft");
-
-      } else if (status === 1 && isOnline) {
-        console.log("Posting data to backend...");
+      if (isOnline) {
         const response = await postTransaksi(dataPost);
-        // await insertNewData(dataPost);
-        if (response.ok && (response.status === 200 || response.status === 201)) {
-          // Update local storage quota
+       
+        updateCard()
+        const responseStatus = response.status;
+  
+        if (response.ok) {
+          // Update status based on response
+          dataPost.status = responseStatus === 200 ? 1 : 0;
+        // Save to IndexedDB
+        await insertNewData(dataPost); 
           if (quantity) {
             updateLocalStorageQuota(selectedUnit, quantity);
           }
           setModalMessage("Transaction posted successfully and saved locally");
         } else {
-          setModalMessage("Failed to post transaction. Please try again.");
+          // If posting fails, still save locally
+          await insertNewData(dataPost);
+          setModalMessage("Failed to post transaction. Saved locally instead.");
           setErrorModalOpen(true);
         }
+      } else {
+        // If offline, just insert into IndexedDB
+        await insertNewData(dataPost);
+        setModalMessage("Transaction saved locally. Will be sent when online.");
       }
+  
+      // Fetch the updated data to display in the table
+      // const updatedData = await getHomeByIdLkf(lkf_id);
+      // if (updatedData && updatedData.data) {
+      //   setData(updatedData.data); // Update the table with the latest data
+      // }
+  
+      // Update cardData in local storage
+      // const cardData = await getCardData(); 
+      // const updatedCardData = {
+      //   // ...cardData,
+      //   lastTransaction: dataPost, 
+      // };
+      // localStorage.setItem('cardData', JSON.stringify(updatedCardData));
 
+      getdata()
       // Navigate to the dashboard
-      setSuccessModalOpen(true);
       route.push("/dashboard");
-
+  
     } catch (error) {
       console.error("Error occurred while posting data:", error);
       setModalMessage("Error occurred while posting data: " + error);
       setErrorModalOpen(true);
     }
   };
-
-
+  
   const updateLocalStorageQuota = async (unitNo: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
     if (unitQuota) {
@@ -475,7 +552,7 @@ const FormTRX: React.FC = () => {
         if (currentUnitQuota) {
           setUnitQuota(currentUnitQuota.quota);
           setUsedQuota(currentUnitQuota.used);
-          setRemainingQuota(currentUnitQuota.quota - currentUnitQuota.used); // Calculate remaining quota
+          setRemainingQuota(currentUnitQuota.quota - currentUnitQuota.used); 
         } else {
           setUnitQuota(0);
           setUsedQuota(0);
@@ -502,18 +579,6 @@ const FormTRX: React.FC = () => {
     setSignatureBase64(newSignature);
     // Directly set the signature state
     console.log("Updated Signature:", newSignature);
-  };
-
-  const calculateFlowEnd = (): string | number => {
-    if (flowMeterAwal !== undefined && quantity !== undefined) {
-      const totaFlowEnd = flowMeterAwal + quantity;
-      if (totaFlowEnd !== 0) {
-        return totaFlowEnd;
-      } else {
-        return "N/A"; 
-      }
-    }
-    return ""; 
   };
 
 
@@ -557,47 +622,33 @@ const FormTRX: React.FC = () => {
     console.log("operatorOptions updated:", operatorOptions);
   }, [operatorOptions]);
 
-  const handleHmkmUnitChange = (e: CustomEvent) => {
-    const value = Number(e.detail.value);
-    if (hmLast !== undefined && value < hmLast) {
-      setShowError(true);
-    } else {
-      setShowError(false);
-    }
-    setHmkmValue(value);
-  };
-
-  const handleHmLastChange = (e: CustomEvent) => {
-    const newValue = Number(e.detail.value);
-    if (hmLast !== undefined && newValue < hmLast) {
-      setShowError(true);
-    } else {
-      setShowError(false);
-    }
-    setHmLast(newValue);
-  };
+ 
 
   const isSaveButtonDisabled = () => {
     return hmkmTRX !== undefined && hmLast !== undefined && hmLast > hmkmTRX;
   };
 
+
+  const updateCard = async () => {
+    localStorage.removeItem('cardDash')
+    const cards = await getHomeByIdLkf(lkfId);
+    
+  }
   
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
     if (e.nativeEvent.key === "Enter") {
-      e.preventDefault();
-  
-      
+    
       const currentHmLast = hmkmValue ?? 0; 
       const lastHmKm = hmkmTRX ?? 0; 
   
-   
-      if (currentHmLast < lastHmKm) {
+      console.log("Current HM Last:", currentHmLast);
+      console.log("Last HM Km:", lastHmKm);
+  
+      if (currentHmLast > lastHmKm) {
         setShowError(true); 
       } else {
         setShowError(false); 
-  
-        
         if (input1Ref.current) {
           input2Ref.current?.setFocus();
         }
@@ -606,6 +657,9 @@ const FormTRX: React.FC = () => {
   };
   
 
+
+ 
+  
 
  
 
@@ -707,83 +761,13 @@ const FormTRX: React.FC = () => {
     setFilteredUnits(filtered);
   };
 
-  const handleUnitChange = (
-    newValue: SingleValue<{ value: string; label: string }>, 
-    actionMeta: ActionMeta<{ value: string; label: string }>
-  ) => {
-    if (newValue) {
-      const unitValue = newValue.value; 
-      setSelectedUnit(unitValue); // Set unit yang dipilih
-  
-      // Mencari opsi unit yang dipilih dari unitOptions
-      const selectedUnitOption = unitOptions.find(
-        (unit) => unit.unit_no === unitValue
-      );
-  
-      // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
-      if (selectedUnitOption) {
-        setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
-        setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
-        
-        // Set nilai hm_km berdasarkan data unit yang dipilih
-        setHmkmValue(selectedUnitOption.hm_km);
-         setHmKmLast(selectedUnitOption.hm_last);
-         // Perbarui nilai hm_km
-        setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
-  
-  
-        // Tentukan batas kouta baru berdasarkan nilai unit
-        const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-        setKoutaLimit(newKoutaLimit); // Set batas kouta
-  
-        // Set showError berdasarkan jenis unit dan batas kouta
-        setShowError(
-          unitValue.startsWith("LV") || 
-          (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-        );
-      } else {
-        // Secara opsional, tangani kasus ketika unit yang dipilih tidak ada
-        console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
-      }
-    }
-  };
-  
-  
-  const handleQuantityChange = (e: any) => {
-    const inputQuantity = Number(e.detail.value); // Ambil nilai input dan ubah menjadi angka
-  
-    // Pastikan input adalah angka yang valid
-    if (isNaN(inputQuantity) || inputQuantity <= 0) {
-      setQuantityError("Qty Issued harus lebih besar dari 0"); // Set pesan error jika qty tidak valid
-      setIsError(true); // Tandai bahwa ada error
-      setQuantity(undefined); // Reset jumlah jika tidak valid
-      return;
-    }
-  
-    // Validasi untuk unit yang dimulai dengan LV atau HLV
-    if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-      if (inputQuantity > remainingQuota) {
-        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!"); // Set pesan error jika qty melebihi sisa kouta
-        setIsError(true); // Tandai bahwa ada error
-      } else {
-        setQuantityError(""); // Kosongkan pesan error jika qty valid
-        setIsError(false); // Tidak ada error
-      }
-    } else {
-      // Kosongkan error untuk unit lainnya
-      setQuantityError(""); // Kosongkan pesan error
-      setIsError(false); // Tidak ada error
-    }
-  
-    // Perbarui state jumlah setelah validasi
-    setQuantity(inputQuantity); // Set jumlah yang valid
-  };
-  
  
-
-
   
   
+
+
+
+
   // Display the FBR value in the input field
   useEffect(() => {
     const fetchUnitData = async () => {
@@ -793,6 +777,8 @@ const FormTRX: React.FC = () => {
       setError(null);
       try {
         const response = await getPrevUnitTrx(selectedUnit);
+        console.log("Data",response)
+        localStorage.setItem('allUnitDataHMKM', JSON.stringify(response));
   
         if (response.status === '200' && response.data.length > 0) {
           const latestUnitData = response.data
@@ -822,6 +808,8 @@ const FormTRX: React.FC = () => {
   
     fetchUnitData();
   }, [selectedUnit]);
+
+  
   
   useEffect(() => {
     console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue });
@@ -877,32 +865,33 @@ const FormTRX: React.FC = () => {
                 }
 
                 if (foundUnitQuota) {
-                    setCurrentUnitQuota(foundUnitQuota);
-                    const totalQuota = foundUnitQuota.quota;
-                    const usedQuota = foundUnitQuota.used || 0;
-                    const additionalQouta = foundUnitQuota.additional || 0;
-
-                    if (foundUnitQuota.isActive) {
-                        setUnitQuota(totalQuota);
-                        const remainingQuota = totalQuota + additionalQouta - usedQuota ; // Use remainingQuota here
-                        setRemainingQuota(remainingQuota);
-                        setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remainingQuota} Liter`);
-                    } else {
-                        setUnitQuota(0);
-                        setRemainingQuota(0);
-                        setQuotaMessage("Pembatasan kuota dinonaktifkan.");
-                    }
-
-                    const issuedAmount = foundUnitQuota.issued || 0;
-                    if (issuedAmount > (foundUnitQuota.isActive ? remainingQuota : 0)) { // Update to use remainingQuota
-                        setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
-                    }
-                } else {
-                    setUnitQuota(0);
-                    setRemainingQuota(0);
-                    setQuotaMessage("");
-                    console.log(`No quota found for unit: ${selectedUnit}`);
-                }
+                  setCurrentUnitQuota(foundUnitQuota);
+                  const totalQuota = foundUnitQuota.quota;
+                  const usedQuota = foundUnitQuota.used || 0;
+                  const additionalQuota = foundUnitQuota.additional || 0;
+              
+                  if (foundUnitQuota.isActive) {
+                      setUnitQuota(totalQuota);
+                      const remainingQuota = totalQuota + additionalQuota - usedQuota; 
+                      setRemainingQuota(remainingQuota);
+                      setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remainingQuota} Liter`);
+              
+                      const issuedAmount = foundUnitQuota.issued || 0;
+                      // Check if the issued amount exceeds the remaining quota
+                      if (issuedAmount > remainingQuota) {
+                          setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
+                      }
+                  } else {
+                      setUnitQuota(0);
+                      setRemainingQuota(0);
+                      setQuotaMessage("Pembatasan kuota dinonaktifkan.");
+                  }
+              } else {
+                  setUnitQuota(0);
+                  setRemainingQuota(0);
+                  setQuotaMessage("");
+                  console.log(`No quota found for unit: ${selectedUnit}`);
+              }
             } else {
                 console.error('No quota data found for the specified date');
             }
@@ -915,8 +904,170 @@ const FormTRX: React.FC = () => {
 }, [selectedUnit]);
 
 
+const handleEndTimeChange = (e: CustomEvent) => {
+  const newEndTime = e.detail.value as string;
+  setEndTime(newEndTime);
+
+  // Cek apakah endTime lebih kecil dari startTime
+  if (startTime && newEndTime < startTime) {
+    setShowError(true);
+  } else {
+    setShowError(false);
+  }
+};
 
 
+useEffect(() => {
+  const userData = localStorage.getItem("cardDash");
+  console.log("dataUse", userData);
+
+  if (userData) {
+    const parsedData = JSON.parse(userData);
+    // Mencari item dengan title "Flow Meter Awal"
+    const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
+    const flowStockItem= parsedData.find((item: { title: string; }) => item.title === "Stock On Hand");
+    console.log("flow akhir",flowMeterItem)
+    console.log("stock ni",flowStockItem)
+
+    if (flowMeterItem) {
+      setFlowMeterAwal(flowMeterItem.value); 
+    }
+    if (flowStockItem) {
+      setStock(flowStockItem.value); 
+    }
+  }
+}, [])
+
+const handleQuantityChange = (e: any) => {
+  const inputQuantity = Number(e.detail.value); // Mengambil nilai dari input
+
+  // Pastikan input adalah angka yang valid
+  if (isNaN(inputQuantity) || inputQuantity <= 0) {
+      setQuantityError("Qty Issued harus lebih besar dari 0");
+      setIsError(true);
+      return; // Keluar jika tidak valid
+  }
+
+  // Validasi untuk unit yang dimulai dengan LV atau HLV
+  if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
+      if (inputQuantity > remainingQuota) {
+          setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+          setIsError(true);
+          return; // Keluar jika melebihi sisa kouta
+      }
+  } else {
+      // Cek Qty Issued tidak boleh lebih besar dari Stock On Hand
+      if (inputQuantity > stock) {
+          setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
+          setIsError(true);
+          return; // Keluar jika melebihi Stock On Hand
+      }
+  }
+
+  // Jika semua validasi berhasil, perbarui state
+  setQuantity(inputQuantity); // Set jumlah yang valid
+  setQuantityError(""); // Kosongkan pesan error
+  setIsError(false); // Tidak ada error
+};
+
+
+
+const calculateFlowEnd = (typeTrx: string): string | number => {
+  if (flowMeterAwal !== undefined && quantity !== undefined) {
+    
+    // Jika tipe transaksi adalah Receipt atau Receipt KPC
+    if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
+      return flowMeterAwal !== 0 ? flowMeterAwal : "N/A";
+    } else {
+      // Jika tipeTrx bukan receipt atau receipt KPC, lakukan perhitungan
+      const totaFlowEnd = flowMeterAwal + quantity;
+      return totaFlowEnd !== 0 ? totaFlowEnd : "N/A"; 
+    }
+  }
+  return ""; 
+};
+
+const handleUnitChange = (
+  newValue: SingleValue<{ value: string; label: string }>, 
+  actionMeta: ActionMeta<{ value: string; label: string }>
+) => {
+  if (newValue) {
+    const unitValue = newValue.value; 
+    setSelectedUnit(unitValue); // Set unit yang dipilih
+
+    // Mencari opsi unit yang dipilih dari unitOptions
+    const selectedUnitOption = unitOptions.find(
+      (unit) => unit.unit_no === unitValue
+    );
+
+    // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
+    if (selectedUnitOption) {
+      setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
+      setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
+      setHmkmValue(selectedUnitOption.hm_km);
+      setHmKmLast(selectedUnitOption.hm_last);
+      setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
+
+      // Tentukan batas kouta baru berdasarkan nilai unit
+      const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+      setKoutaLimit(newKoutaLimit); // Set batas kouta
+
+      // Set showError berdasarkan jenis unit dan batas kouta
+      setShowError(
+        unitValue.startsWith("LV") || 
+        (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+      );
+    } else {
+      console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
+    }
+  }
+};
+
+const filteredUnitOptions = (selectedType && 
+  (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer')) 
+? unitOptions.filter(unit => unit.unit_no.startsWith("FT") || unit.unit_no.startsWith("TK"))
+: unitOptions;
+
+// const handleUnitChange = (
+//   newValue: SingleValue<{ value: string; label: string }>, 
+//   actionMeta: ActionMeta<{ value: string; label: string }>
+// ) => {
+//   if (newValue) {
+//     const unitValue = newValue.value; 
+//     setSelectedUnit(unitValue); // Set unit yang dipilih
+
+//     // Mencari opsi unit yang dipilih dari unitOptions
+//     const selectedUnitOption = unitOptions.find(
+//       (unit) => unit.unit_no === unitValue
+//     );
+
+//     // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
+//     if (selectedUnitOption) {
+//       setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
+//       setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
+      
+//       // Set nilai hm_km berdasarkan data unit yang dipilih
+//       setHmkmValue(selectedUnitOption.hm_km);
+//        setHmKmLast(selectedUnitOption.hm_last);
+//        // Perbarui nilai hm_km
+//       setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
+
+
+//       // Tentukan batas kouta baru berdasarkan nilai unit
+//       const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+//       setKoutaLimit(newKoutaLimit); // Set batas kouta
+
+//       // Set showError berdasarkan jenis unit dan batas kouta
+//       setShowError(
+//         unitValue.startsWith("LV") || 
+//         (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+//       );
+//     } else {
+//       // Secara opsional, tangani kasus ketika unit yang dipilih tidak ada
+//       console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
+//     }
+//   }
+// };
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -948,49 +1099,47 @@ const FormTRX: React.FC = () => {
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>
-      
               <IonCol>
-                <IonLabel className="label-input">
-                  Select Unit <span style={{ color: "red" }}>*</span>
-                </IonLabel>
-                <Select
-                  className="select-custom"
-                  styles={{
-                    container: (provided) => ({
-                      ...provided,
-                      marginTop: "10px",
-                      backgroundColor: "white",
-                      zIndex: 10,
-                      height: "56px",
-                    }),
-                    control: (provided) => ({
-                      ...provided,
-                      height: "56px",
-                      minHeight: "56px",
-                    }),
-                    valueContainer: (provided) => ({
-                      ...provided,
-                      padding: "0 6px",
-                    }),
-                    singleValue: (provided) => ({
-                      ...provided,
-                      lineHeight: "56px",
-                    }),
-                  }}
-                  value={
-                    selectedUnit
-                      ? { value: selectedUnit, label: selectedUnit }
-                      : null
-                  }
-                  onChange={handleUnitChange}
-                  options={unitOptions.map((unit) => ({
-                    value: unit.unit_no || '',
-                    label: unit.unit_no || '',
-                  }))}
-                  // placeholder="Select Unit"
-                  isSearchable={true}
-                />
-              </IonCol>
+            <IonLabel className="label-input">
+              Select Unit <span style={{ color: "red" }}>*</span>
+            </IonLabel>
+            <Select
+              className="select-custom"
+              styles={{
+                container: (provided) => ({
+                  ...provided,
+                  marginTop: "10px",
+                  backgroundColor: "white",
+                  zIndex: 10,
+                  height: "56px",
+                }),
+                control: (provided) => ({
+                  ...provided,
+                  height: "56px",
+                  minHeight: "56px",
+                }),
+                valueContainer: (provided) => ({
+                  ...provided,
+                  padding: "0 6px",
+                }),
+                singleValue: (provided) => ({
+                  ...provided,
+                  lineHeight: "56px",
+                }),
+              }}
+              value={
+                selectedUnit
+                  ? { value: selectedUnit, label: selectedUnit }
+                  : null
+              }
+              onChange={handleUnitChange}
+              options={filteredUnitOptions.map((unit) => ({
+                value: unit.unit_no || '',
+                label: unit.unit_no || '',
+              }))}
+              isSearchable={true}
+            />
+          </IonCol>
                 <IonCol>
                   <IonLabel>
                     Model <span style={{ color: "red" }}>*</span>
@@ -1047,7 +1196,6 @@ const FormTRX: React.FC = () => {
                             </IonItem>
                           ))}
                         </IonRadioGroup>
-
                         {showError && selectedType === undefined && (
                           <p style={{ color: "red" }}>* Pilih salah satu tipe</p>
                         )}
@@ -1072,12 +1220,12 @@ const FormTRX: React.FC = () => {
                      }
                      disabled={isFormDisabled}
 
-                    // onIonChange={(e) => sethmkmTrx(Number(e.detail.value))}
+                    onIonChange={(e) => setHmkmValue(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
                    {showError && hmkmValue === undefined && (
                         <p style={{ color: "red" }}>* Field harus diisi</p>
-                      )}
+                   )}
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1088,8 +1236,6 @@ const FormTRX: React.FC = () => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    
-                    
                     onIonChange={(e) => setHmLast(Number(e.detail.value))}
                     
                     onKeyDown={handleKeyDown}
@@ -1102,27 +1248,17 @@ const FormTRX: React.FC = () => {
                   )}
                 </IonCol>
               </IonRow>
-              {/* <div style={{ marginLeft: "15px" }}>
-                                {showError && koutaLimit !== undefined && koutaLimit < 20 && (
-                                    <div style={{ color: "red" }}>
-                                        <div>* Kouta pengisian budget sudah melebihi 20 L / Hari</div>
-                                        <div>* Hm/Km tidak boleh kurang dari Hm/Km sebelumnya : 10290</div>
-                                        <div>* Unit tersebut sudah melakukan pengisian sebanyak 20 L dari batas maksimal 20 L. Silahkan hubungi admin jika ingin melakukan pengisian </div>
-                                    </div>
-                                )}
-            </div> */}
-
               <IonRow>
                 <IonCol>
                   <IonLabel>
-                    Qty Issued / Receive / Transfer{" "}
+                    Qty Issued / Receipt/ Transfer{" "}
                     <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonInput
                     className="custom-input"
                     ref={input2Ref}
                     type="number"
-                    placeholder="Qty Issued / Receive / Transfer"
+                    placeholder="Qty Issued / Receipt/ Transfer"
                     onIonChange={handleQuantityChange}
                     value={quantity}
 
@@ -1138,7 +1274,7 @@ const FormTRX: React.FC = () => {
 
      
                   {showError && (!quantity || quantity === undefined) && (
-                    <p style={{ color: "red" }}>* Tipe Trasaksi harus di pilih</p>
+                    <p style={{ color: "red" }}>* Tipe transaksi  harus dipilih</p>
                   )}
 
                 </IonCol>
@@ -1180,7 +1316,7 @@ const FormTRX: React.FC = () => {
                   <IonInput
                     className="custom-input"
                     type="number"
-                    value={flowMeterAwal?.toString() || ""}
+                    value={flowMeterAwal }
                     placeholder="Input Flow meter awal"
                     disabled={isFormDisabled}
                   />
@@ -1196,15 +1332,16 @@ const FormTRX: React.FC = () => {
                     }}
                     labelPlacement="stacked"
                     onIonChange={(e) =>
-                      setFlowMeterAkhir(Number(e.detail.value))
+                        setFlowMeterAkhir(Number(e.detail.value))
                     }
                     value={
-                      typeof calculateFlowEnd() === "number"
-                        ? calculateFlowEnd()
-                        : ""
+                      typeof calculateFlowEnd(selectedType?.name || "") === "number" 
+                          ? calculateFlowEnd(selectedType?.name || "")
+                          : ""
                     }
                     placeholder=""
                   />
+                  
                 </IonCol>
               </IonRow>
               <IonRow>
@@ -1285,14 +1422,16 @@ const FormTRX: React.FC = () => {
                   <IonInput
                     className="custom-input"
                     type="time"
-                    onIonChange={(e) => setStartTime(e.detail.value as string)}
+                    onIonChange={(e) => {
+                      setStartTime(e.detail.value as string);
+                      setShowError(false); // Reset error saat mulai diubah
+                    }}
                     disabled={isFormDisabled}
                     value={startTime}
                   />
-                   {showError && startTime === undefined && (
-                        <p style={{ color: "red" }}>* Jam mulai pengisian harus input</p>
-                      )}
-                      
+                  {showError && startTime === undefined && (
+                    <p style={{ color: "red" }}>* Jam mulai pengisian harus input</p>
+                  )}
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1301,13 +1440,16 @@ const FormTRX: React.FC = () => {
                   <IonInput
                     className="custom-input"
                     type="time"
-                    onIonChange={(e) => setEndTime(e.detail.value as string)}
+                    onIonChange={handleEndTimeChange} // Menggunakan fungsi yang sudah dibuat
                     disabled={isFormDisabled}
                     value={endTime}
                   />
-                   {showError && endTime === undefined && (
-                        <p style={{ color: "red" }}>* Jam mulai selesai harus input</p>
-                      )}
+                  {showError && endTime === undefined && (
+                    <p style={{ color: "red" }}>* Jam selesai pengisian harus input</p>
+                  )}
+                  {showError && startTime && endTime && endTime < startTime && (
+                    <p style={{ color: "red" }}>* Jam selesai tidak boleh lebih kecil dari jam mulai</p>
+                  )}
                 </IonCol>
               </IonRow>
               <IonRow>
