@@ -74,16 +74,20 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       setLoading(false);
     }
   }, []);
- 
+
   useEffect(() => {
-    loadStationData(); // Load data when the component mounts
+    loadStationData(); // Load data pertama kali
+  
+    // Panggil fetchData kedua kali setelah 2 detik (2000ms)
+    const timeoutId = setTimeout(() => {
+      loadStationData(); // Load data kedua kali
+    }, 2000); // 2000ms = 2 detik
+  
+    // Bersihkan timeout jika komponen di-unmount
+    return () => clearTimeout(timeoutId);
+  }, []);
+  
 
-    const intervalId = setInterval(() => {
-      loadStationData(); // Refresh data every 5 seconds
-    }, 3000);
-
-    return () => clearInterval(intervalId); // Clear interval on component unmount
-  }, [loadStationData]);
   
   const handleLogin = async () => {
     setLoading(true);

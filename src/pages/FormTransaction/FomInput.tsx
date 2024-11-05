@@ -474,7 +474,7 @@ const [stock, setStock] = useState<number>(0);
     try {
       if (isOnline) {
         const response = await postTransaksi(dataPost);
-        await insertNewData(dataPost); 
+       
         updateCard()
         const responseStatus = response.status;
   
@@ -482,6 +482,7 @@ const [stock, setStock] = useState<number>(0);
           // Update status based on response
           dataPost.status = responseStatus === 200 ? 1 : 0;
         // Save to IndexedDB
+        await insertNewData(dataPost); 
           if (quantity) {
             updateLocalStorageQuota(selectedUnit, quantity);
           }

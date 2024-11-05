@@ -533,7 +533,7 @@ useEffect(() => {
 
   const intervalId = setInterval(() => {
     fetchData(); // Refresh data every 5 seconds
-  }, 3000);
+  }, 10000);
 
 
 }, []);
@@ -713,9 +713,10 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               className={`custom-input`}
               type="number"
               value={flowMeterAwal}
+             
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
-                handleFlowMeterAwalChange(e); // Call the handler here
+                handleFlowMeterAwalChange(e); 
               }}
             />
            {showError && (
@@ -734,21 +735,22 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
             </IonLabel>
             <IonInput
-              className={`custom-input ${showError && (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0)) ? "input-error" : ""}`}
-              type="number"
-              placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
-              value={hmAkhir}
-              onIonInput={(e) => {
-                const value = Number(e.detail.value);
-                if (station !== "FT" && value === 0) {
-                  setHmAkhir(undefined);
-                  setShowError(true);
-                } else {
-                  setHmAkhir(value); // Make sure to set HM Awal based on user input
-                  setShowError(false);
-                }
-              }}
-/>
+                      className={`custom-input ${showError && (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0)) ? "input-error" : ""}`}
+                      type="number"
+                      placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
+                      value={hmAkhir !== undefined ? hmAkhir : ''} // Ensure value is a string for editable input
+                      onIonChange={(e) => {
+                        const value = Number(e.detail.value);
+                        if (station !== "FT" && value === 0) {
+                          setHmAkhir(undefined);
+                          setShowError(true);
+                        } else {
+                          setHmAkhir(value);
+                          setShowError(false);
+                        }
+                      }}
+                    />
+
             {showError && hmAkhir === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
