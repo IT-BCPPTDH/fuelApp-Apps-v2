@@ -176,6 +176,7 @@ const FormClosing: React.FC = () => {
         setClosingSonding(value);
         setShowClosingSondingError(false); 
     };
+    
     const handleSubmit = async () => {
 
         if (closingSonding === undefined) {

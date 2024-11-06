@@ -49,11 +49,11 @@ import {
   getLatestHmLast,
 } from "../../utils/getData";
 import DynamicAlert from "../../components/Alert";
-import { fetchOperatorData, fetchQuotaData, fetchUnitData, fetchUnitLastTrx, getDataFromStorage } from "../../services/dataService";
+import { fetchOperatorData, fetchQuotaData, fetchUnitData, fetchUnitLastTrx, getDataFromStorage, removeDataFromStorage } from "../../services/dataService";
 import Select, { ActionMeta, SingleValue } from "react-select";
 import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
-import { getUnitQuotaActive } from "../../hooks/getQoutaUnit";
+import { getAllQuota, getUnitQuotaActive } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable} from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
@@ -205,8 +205,8 @@ const FormTRX: React.FC = () => {
     { JDE: string; fullname: string }[]
   >([]);
 
-  const [showPopover, setShowPopover] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+
+
   const [filteredUnits, setFilteredUnits] = useState(unitOptions);
 
   const [selectedUnit, setSelectedUnit] = useState<string>("");
@@ -467,8 +467,9 @@ const [stock, setStock] = useState<number>(0);
         // If online, try to post the transaction to the server
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost);
-        updateCard()
+        updateCard();
         getTable();
+        // updatedKuota()
         const responseStatus = response.status;
   
         if (responseStatus === 200) {
@@ -547,15 +548,14 @@ const [stock, setStock] = useState<number>(0);
 
   const handleSignatureConfirm = (newSignature: string) => {
     setSignatureBase64(newSignature);
-    // Directly set the signature state
     console.log("Updated Signature:", newSignature);
   };
 
 
 
-  useEffect(() => {
-    console.log("unitOptions updated:", unitOptions);
-  }, [unitOptions]);
+  // useEffect(() => {
+  //   console.log("unitOptions updated:", unitOptions);
+  // }, [unitOptions]);
 
 
   useEffect(() => {
@@ -605,6 +605,14 @@ const [stock, setStock] = useState<number>(0);
   }
   
 
+  const updatedKuota = async (date:String) => {
+    removeDataFromStorage('unitQuota')
+    const cards = await getAllQuota(date);
+    console.log("QQQ",cards)
+  }
+
+
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
     if (e.nativeEvent.key === "Enter") {
 
@@ -627,9 +635,9 @@ const [stock, setStock] = useState<number>(0);
 
 
 
-  useEffect(() => {
-    console.log("unitOptions updated:", unitOptions);
-  }, [unitOptions]);
+  // useEffect(() => {
+  
+  // }, [unitOptions]);
 
   function setBase64(value: SetStateAction<string | undefined>): void {
     throw new Error("Function not implemented.");
@@ -716,16 +724,6 @@ const [stock, setStock] = useState<number>(0);
     }
   };
   
-  const handleSearchChange = (e: CustomEvent) => {
-    const query = e.detail.value.toLowerCase();
-    setSearchQuery(query);
-    const filtered = unitOptions.filter((unit) =>
-      unit.unit_no.toLowerCase().includes(query)
-    );
-    setFilteredUnits(filtered);
-  };
-
- 
   // Display the FBR value in the input field
   useEffect(() => {
     const fetchUnitData = async () => {
@@ -735,8 +733,7 @@ const [stock, setStock] = useState<number>(0);
       setError(null);
       try {
         const response = await getPrevUnitTrx(selectedUnit);
-        console.log("Data",response)
-        localStorage.setItem('allUnitDataHMKM', JSON.stringify(response));
+  
   
         if (response.status === '200' && response.data.length > 0) {
           const latestUnitData = response.data
@@ -745,7 +742,7 @@ const [stock, setStock] = useState<number>(0);
             const hmKmValue = Number(latestUnitData.hm_km) || 0; 
             const hmKmLastValue = Number(latestUnitData.hm_km) || 0;
             setHmkmValue(hmKmValue);
-            setHmKmLast(hmKmLastValue);
+            setHmKmLast( hmKmLastValue);
             setModel(latestUnitData.model_unit);
             setOwner(latestUnitData.owner);
             setQtyValue(Number(latestUnitData.qty) || 0); 
@@ -768,9 +765,6 @@ const [stock, setStock] = useState<number>(0);
   }, [selectedUnit]);
 
   
-  
- 
-
   useEffect(() => {
     const loadUnitDataQuota = async () => {
         const today = new Date();
@@ -795,33 +789,39 @@ const [stock, setStock] = useState<number>(0);
                 }
 
                 if (foundUnitQuota) {
-                  setCurrentUnitQuota(foundUnitQuota);
-                  const totalQuota = foundUnitQuota.quota;
-                  const usedQuota = foundUnitQuota.used || 0;
-                  const additionalQuota = foundUnitQuota.additional || 0;
-              
-                  if (foundUnitQuota.isActive) {
-                      setUnitQuota(totalQuota);
-                      const remainingQuota = totalQuota + additionalQuota - usedQuota; 
-                      setRemainingQuota(remainingQuota);
-                      setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remainingQuota} Liter`);
-              
-                      const issuedAmount = foundUnitQuota.issued || 0;
-                      // Check if the issued amount exceeds the remaining quota
-                      if (issuedAmount > remainingQuota) {
-                          setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
-                      }
-                  } else {
-                      setUnitQuota(0);
-                      setRemainingQuota(0);
-                      setQuotaMessage("Pembatasan kuota dinonaktifkan.");
-                  }
-              } else {
-                  setUnitQuota(0);
-                  setRemainingQuota(0);
-                  setQuotaMessage("");
-                  console.log(`No quota found for unit: ${selectedUnit}`);
-              }
+                    setCurrentUnitQuota(foundUnitQuota);
+                    const totalQuota = foundUnitQuota.quota;
+                    const usedQuota = foundUnitQuota.used || 0;
+                    const additionalQuota = foundUnitQuota.additional || 0;
+                    const remainingQuota = totalQuota + additionalQuota - usedQuota;
+
+                    if (foundUnitQuota.isActive) {
+                        setUnitQuota(totalQuota);
+                        setRemainingQuota(remainingQuota);
+
+                        // Set quota message based on remainingQuota
+                        if (remainingQuota > 0) {
+                            setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remainingQuota} Liter`);
+                        } else {
+                            setQuotaMessage(`Sisa Kouta ${selectedUnit}: 0 Liter`);
+                        }
+
+                        const issuedAmount = foundUnitQuota.issued || 0;
+                        // Check if the issued amount exceeds remaining quota
+                        if (issuedAmount > remainingQuota) {
+                            setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
+                        }
+                    } else {
+                        setUnitQuota(0);
+                        setRemainingQuota(0);
+                        setQuotaMessage("Pembatasan Kuota Dinonaktifkan.");
+                    }
+                } else {
+                    setUnitQuota(0);
+                    setRemainingQuota(0);
+                    setQuotaMessage(`Pembatasan kuota dinonaktifkan : ${selectedUnit}`);
+                    
+                }
             } else {
                 console.error('No quota data found for the specified date');
             }
@@ -1003,13 +1003,15 @@ useEffect(() => {
 
             </IonRow>
           )}
-         {currentUnitQuota?.isActive && remainingQuota > 0 && (
+         {currentUnitQuota?.isActive && (
             <IonRow>
                 <IonCol>
-                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "500px" }}>
                         <IonLabel style={{ display: "flex" }}>
                             <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                            <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
+                            <IonTitle style={{ color: quotaMessage.includes("0 Liter") ? "red" : "inherit" }}>
+                              {quotaMessage}
+                            </IonTitle>
                         </IonLabel>
                     </IonItemDivider>
                 </IonCol>
