@@ -43,7 +43,9 @@ const App: React.FC = () => {
  if (isLoggedIn === null) {
         return <div>Loading...</div>; 
     }
+    console.log(isLoggedIn)
     return (
+
         <IonApp>
             
             <IonReactRouter>

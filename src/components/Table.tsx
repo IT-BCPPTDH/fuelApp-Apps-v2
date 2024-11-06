@@ -48,7 +48,7 @@ interface TableDataProps {
 
 const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
 
-  const itemsPerPage = 3;
+  const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [nomorLKF, setNomorLKF] = useState<string | undefined>(undefined);
@@ -87,49 +87,48 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
   }, []);
 
   const fetchData = async (lkfId: string) => {
-  setLoading(true);
-  try {
-    const rawData = await getAllDataTrx(lkfId);
-    console.log("Raw data fetched:", rawData); // Log the response
-
-    // Adjust this check based on the actual API response structure
-    const dataArray = rawData || []; // Default to empty array if data not found
-
-    // Check if dataArray is an array
-    if (!Array.isArray(dataArray)) {
-      console.error("Received data is not an array:", dataArray);
-      throw new TypeError("Expected dataArray to be an array");
+    setLoading(true);
+    try {
+      const rawData = await getAllDataTrx(lkfId);
+      console.log("Raw data fetched:", rawData); // Log the response
+  
+      // Ensure we are working with an array
+      const dataArray = rawData || []; // Default to an empty array if no data is found
+  
+      // Check if dataArray is an array
+      if (!Array.isArray(dataArray)) {
+        console.error("Received data is not an array:", dataArray);
+        throw new TypeError("Expected dataArray to be an array");
+      }
+  
+      // Map the fetched data to table data structure
+      const mappedData: TableDataItem[] = dataArray.map((item: any) => ({
+        from_data_id: item.from_data_id ?? 0,
+        unit_no: item.no_unit || '',
+        model_unit: item.model_unit || '',
+        owner: item.owner || '',
+        fbr_historis: item.fbr ?? '',
+        jenis_trx: item.type || '',
+        qty_issued: item.qty ?? 0,
+        fm_awal: item.flow_start ?? 0,
+        fm_akhir: item.flow_end ?? 0,
+        hm_last: item.hm_last,
+        hm_km: item.hm_km,
+        jde_operator: item.fuelman_id || '',
+        name_operator: item.name_operator || item.name__operator || '',
+        // Adjusting the status mapping to handle different status codes
+        status: item.status === 1 || item.status === '1' ? 1 : 0, // Ensure it maps 1 as 'sent'
+      }));
+  
+      setData(mappedData); // Update table data with the mapped status
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      setShowToast(true); // Show a toast message in case of an error
+    } finally {
+      setLoading(false);
     }
-
-    const mappedData: TableDataItem[] = dataArray.map((item: any) => ({
-      from_data_id: item.from_data_id ?? 0,
-      unit_no: item.no_unit || '',
-      model_unit: item.model_unit || '',
-      owner: item.owner || '',
-      fbr_historis: item.fbr ?? '',
-      jenis_trx: item.type || '',
-      qty_issued: item.qty ?? 0,
-      fm_awal: item.flow_start ?? 0,
-      fm_akhir: item.flow_end ?? 0,
-      hm_last: item.hm_last,
-      hm_km: item.hm_km,
-      jde_operator: item.fuelman_id || '',
-      name_operator: item.name_operator || item.name__operator || '',
-      status: item.status === 1 ? 1 : 0,
-    }));
-
-    setData(mappedData);
-  } catch (error) {
-    console.error("Failed to fetch data:", error);
-    
-
-    
-    setShowToast(true);
-    
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+  
 
 const handleBulkInsert = async () => {
 

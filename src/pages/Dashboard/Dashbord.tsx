@@ -448,7 +448,6 @@ useEffect(() => {
 const updateCard = async () => {
   localStorage.removeItem('cardDash')
   const cards = await fetchcardDash(lkfId);
-  
 }
 
 const fetchData = async () => {
@@ -477,39 +476,31 @@ const fetchData = async () => {
     setLoading(false);
   }
 };
-
 useEffect(() => {
-  fetchData(); // Load data when the component mounts
+  fetchData(); 
 }, []);
 
 const fetchcardDash = async (lkfId: string) => {
   try {
     console.log("Fetching data for LKF ID:", lkfId);
-
-    // Cek apakah ada data di local storage
     const cachedData = localStorage.getItem('cardDash');
     if (cachedData) {
       console.log("Using cached data");
       const preparedData = JSON.parse(cachedData);
-      setDataHome(preparedData); // Set state dengan cached data
-      return; // Keluar lebih awal jika data sudah ada di cache
+      setDataHome(preparedData); 
+      return; 
     }
 
     // Cek status online
     if (!navigator.onLine) {
       console.warn("Offline: Using cached data only");
-      return; // Jika offline dan tidak ada data di cache, keluar
+      return; 
     }
 
-    // Jika tidak ada data di cache, ambil dari API
     const dataHome = await getHomeByIdLkf(lkfId);
-    console.log("Full Content Cards:", dataHome); // Log respons penuh dari API
-
-    // Validasi respons
+    console.log("Full Content Cards:", dataHome); 
     if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
       const item = dataHome.data[0];
-
-      // Hitung stok yang tersedia dan nilai lainnya
       const openingDip = item.total_opening || 0;
       const received = item.total_receive || 0;
       const receivedKpc = item.total_receive_kpc || 0;

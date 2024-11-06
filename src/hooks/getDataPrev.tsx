@@ -4,7 +4,6 @@ import { ResponseError } from "../helper/responseError";
 const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export async function getPrevUnitTrx(no_unit: string) {
-    // Use template literal to correctly include the no_unit in the URL
     const url = `${VITE_BACKEND_URL}/api/operator/get-data/${no_unit}`;
     try {
         const response = await CapacitorHttp.get({

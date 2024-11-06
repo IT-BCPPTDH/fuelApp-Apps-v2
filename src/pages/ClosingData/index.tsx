@@ -62,7 +62,8 @@ const FormClosing: React.FC = () => {
     const [closeData, setCloseData] = useState<number | undefined>(undefined);
     const [closeShift, setCloseShift] = useState<any[]>([]);
     const [isCloseShiftDisabled, setIsCloseShiftDisabled] = useState(true);
-  
+    const [showClosingSondingError, setShowClosingSondingError] = useState<boolean>(false);
+
     
     useEffect(() => {
         const fetchLatestLkfId = async () => {
@@ -169,9 +170,19 @@ const FormClosing: React.FC = () => {
         setSignatureBase64(newSignature);
     };
 
+
+    const handleClosingSondingChange = (e: CustomEvent) => {
+        const value = Number(e.detail.value);
+        setClosingSonding(value);
+        setShowClosingSondingError(false); 
+    };
     const handleSubmit = async () => {
-        // Ensure closeData is set to the closingDip value if it is 0
-        const calculatedCloseData = calculateCloseData(); // assuming this is your formula to get close data
+
+        if (closingSonding === undefined) {
+            setShowClosingSondingError(true); 
+        }
+    
+        const calculatedCloseData = calculateCloseData(); 
     
         // Check if calculatedCloseData is 0 and set it to the input closingDip if true
         const finalCloseData = calculatedCloseData === 0 ? closingDip : calculatedCloseData;
@@ -192,14 +203,14 @@ const FormClosing: React.FC = () => {
             receipt: receipt,
             stockOnHand: stockOnHand,
             lkf_id: latestLkfId || '',
-            opening_dip: openingDip || 0,
             opening_sonding: 0,
             flow_meter_end: flowMeteAkhir || 0,
             closing_sonding: closingSonding || 0,
             closing_dip: closingDip || 0,
             close_data: finalCloseData || 0, // Use the final close data here
             variant: variant || 0,
-            flow_meter_start: 0
+            flow_meter_start: 0,
+            opening_dip: 0
         };
     
         try {
@@ -228,11 +239,11 @@ const FormClosing: React.FC = () => {
     };
     
 
-    const handleClosingSondingChange = (e: CustomEvent) => {
-        const value = Number(e.detail.value);
-        console.log('Handle Closing Sonding Change:', value);
-        setClosingSonding(value);
-    };
+    // const handleClosingSondingChange = (e: CustomEvent) => {
+    //     const value = Number(e.detail.value);
+    //     console.log('Handle Closing Sonding Change:', value);
+    //     setClosingSonding(value);
+    // };
 
 
 
@@ -248,6 +259,11 @@ const FormClosing: React.FC = () => {
             setPreviousHmEnd(hmEndInput); // Update previous value
             setIsCloseShiftDisabled(false); // Enable the button
         }
+    };
+
+
+    const handleChange = (e: CustomEvent) => {
+        const hmCloseInput = Number(e.detail.value);
     };
 
     
@@ -356,11 +372,19 @@ const FormClosing: React.FC = () => {
 
                                 </IonCol>
                                 <IonCol>
-                                    <IonLabel>Close Sonding (Cm) *</IonLabel>
-                                    <IonInput type="number" onIonChange={handleClosingSondingChange} value={closingSonding}></IonInput>
-                                </IonCol>
-                                <IonCol>
-                                    <IonLabel>Close Dip (Liters) *</IonLabel>
+                                            <IonLabel>Close Sonding (Cm) *</IonLabel>
+                                            <IonInput
+                                                type="number"
+                                                onIonChange={handleClosingSondingChange}
+                                                value={closingSonding || 0}
+                                                className={showClosingSondingError ? 'input-error' : ''}
+                                            ></IonInput>
+                                            {showClosingSondingError && (
+                                                <p style={{ color: 'red' }}>Close Sonding is required.</p>
+                                            )}
+                                        </IonCol>
+                                                        <IonCol>
+                                                            <IonLabel>Close Dip (Liters) *</IonLabel>
                                     <IonInput
                                         style={{background:"#cfcfcf"}}
                                         className="custom-input"
@@ -461,3 +485,7 @@ const FormClosing: React.FC = () => {
 };
 
 export default FormClosing;
+
+function setShowClosingSondingError(arg0: boolean) {
+    throw new Error('Function not implemented.');
+}

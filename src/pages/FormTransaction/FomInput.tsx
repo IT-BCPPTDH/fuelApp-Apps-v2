@@ -57,6 +57,7 @@ import { getUnitQuotaActive } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable} from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
+import CameraInput from "../../components/takeFoto";
 
 interface Typetrx {
   id: number;
@@ -212,7 +213,7 @@ const FormTRX: React.FC = () => {
 
   const [hmkmValue, setHmkmValue] = useState<number | null>(null);
   const [hmkmLast, setHmKmLast] = useState<number | null>(null);
- 
+  const [fbrResult, setFbrResult] = useState<number>(0);
   const [lkfId, setLkfId] = useState<string>('');
   const [qtyValue, setQtyValue] = useState<number | null>(null);
  
@@ -221,7 +222,7 @@ const FormTRX: React.FC = () => {
   // const [noUnit, setNoUnit] = useState<string>(''); // Nilai no_unit yang ingin dipanggil
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [fbrResult, setFbrResult] = useState<number>(0);
+  
   const [isActive, setIsActive] = useState(false);
   const [quotaData, setQuotaData] = useState(null);
   const [currentUnitQuota, setCurrentUnitQuota] = useState<UnitQuota | null>(null);
@@ -390,28 +391,21 @@ const [stock, setStock] = useState<number>(0);
  
 
 
-  const updateAllData = async () => {
-    const units = await fetchUnitData();
-  }
 
 
-
-
-
-  
-
-
-  const getdata = async() => {
-   
-    const cars = await getHomeByIdLkf(lkfId);
-   console.log("Data_apa",cars)
- 
+  const getTable = async() => {
+    try {
+      await getHomeTable(lkfId);
+    } catch (error) {
+      
+    }
   };
 
   useEffect(()=>{
-    getdata()
+    getTable()
   })
 
+ 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Initial Status:", status);
@@ -421,8 +415,8 @@ const [stock, setStock] = useState<number>(0);
       !selectedType ||
       !selectedUnit ||
       !operatorOptions ||
-      quantity === null || 
-      fuelman_id === null || 
+      quantity === null ||
+      fuelman_id === null ||
       fbr === null ||
       flowMeterAwal === null ||
       flowMeterAkhir === null ||
@@ -434,16 +428,13 @@ const [stock, setStock] = useState<number>(0);
       return;
     }
   
-
     const typeTrxValue = typeTrx[0];
     const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
-
-
- 
+  
     // Prepare form data
     const fromDataId = Date.now().toString();
     const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
-    const lkf_id = await getLatestLkfId(); 
+    const lkf_id = await getLatestLkfId();
   
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
@@ -451,8 +442,8 @@ const [stock, setStock] = useState<number>(0);
       model_unit: model!,
       owner: owner!,
       date_trx: new Date().toISOString(),
-      hm_last: Number(hmLast) || 0,
-      hm_km: Number(hmkmTRX) || 0,
+      hm_last: Number(hmkmLast),
+      hm_km: Number(hmkmValue),
       qty_last: Number(quantity) || 0,
       qty: Number(quantity) || 0,
       flow_start: Number(flowMeterAwal) || 0,
@@ -465,7 +456,7 @@ const [stock, setStock] = useState<number>(0);
       foto: photoPreview ?? "",
       fuelman_id: fuelman_id!,
       jde_operator: fuelman_id!,
-      status: status ?? 1,
+      status: status ?? 0, // Default to 0 (pending) if status is undefined
       date: "",
       start: startTime,
       end: endTime,
@@ -473,50 +464,29 @@ const [stock, setStock] = useState<number>(0);
   
     try {
       if (isOnline) {
+        // If online, try to post the transaction to the server
         const response = await postTransaksi(dataPost);
-       
+        await insertNewData(dataPost);
         updateCard()
+        getTable();
         const responseStatus = response.status;
   
-        if (response.ok) {
-          // Update status based on response
-          dataPost.status = responseStatus === 200 ? 1 : 0;
-        // Save to IndexedDB
-        await insertNewData(dataPost); 
+        if (responseStatus === 200) {
+          // If the response is successful (200), set status to "sent" (1)
+          dataPost.status = 1;
+          await insertNewData(dataPost); // Save the transaction locally
+          alert("Transaksi Succes dikirim ke server");
           if (quantity) {
-            updateLocalStorageQuota(selectedUnit, quantity);
+            updateLocalStorageQuota(selectedUnit, quantity); // Update quota if necessary
           }
-          setModalMessage("Transaction posted successfully and saved locally");
-        } else {
-          // If posting fails, still save locally
-          await insertNewData(dataPost);
-          setModalMessage("Failed to post transaction. Saved locally instead.");
-          setErrorModalOpen(true);
-        }
+        } 
       } else {
-        // If offline, just insert into IndexedDB
-        await insertNewData(dataPost);
-        setModalMessage("Transaction saved locally. Will be sent when online.");
+     
+        dataPost.status = 0; 
+        await insertNewData(dataPost); 
+        alert("Trasaksi tersimpan pada local");
       }
-  
-      // Fetch the updated data to display in the table
-      // const updatedData = await getHomeByIdLkf(lkf_id);
-      // if (updatedData && updatedData.data) {
-      //   setData(updatedData.data); // Update the table with the latest data
-      // }
-  
-      // Update cardData in local storage
-      // const cardData = await getCardData(); 
-      // const updatedCardData = {
-      //   // ...cardData,
-      //   lastTransaction: dataPost, 
-      // };
-      // localStorage.setItem('cardData', JSON.stringify(updatedCardData));
-
-      getdata()
-      // Navigate to the dashboard
       route.push("/dashboard");
-  
     } catch (error) {
       console.error("Error occurred while posting data:", error);
       setModalMessage("Error occurred while posting data: " + error);
@@ -632,20 +602,18 @@ const [stock, setStock] = useState<number>(0);
   const updateCard = async () => {
     localStorage.removeItem('cardDash')
     const cards = await getHomeByIdLkf(lkfId);
-    
   }
   
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
     if (e.nativeEvent.key === "Enter") {
-    
+
+      const lastHmKm =  hmkmLast ?? 0; 
       const currentHmLast = hmkmValue ?? 0; 
-      const lastHmKm = hmkmTRX ?? 0; 
+      console.log("Last HM Km:", hmkmValue);
+      console.log("Currentt:", hmkmTRX);
   
-      console.log("Current HM Last:", currentHmLast);
-      console.log("Last HM Km:", lastHmKm);
-  
-      if (currentHmLast > lastHmKm) {
+      if (currentHmLast < lastHmKm) {
         setShowError(true); 
       } else {
         setShowError(false); 
@@ -655,13 +623,9 @@ const [stock, setStock] = useState<number>(0);
       }
     }
   };
-  
 
 
- 
-  
 
- 
 
   useEffect(() => {
     console.log("unitOptions updated:", unitOptions);
@@ -762,12 +726,6 @@ const [stock, setStock] = useState<number>(0);
   };
 
  
-  
-  
-
-
-
-
   // Display the FBR value in the input field
   useEffect(() => {
     const fetchUnitData = async () => {
@@ -785,7 +743,7 @@ const [stock, setStock] = useState<number>(0);
             .sort((a: { date_trx: string | number | Date; }, b: { date_trx: string | number | Date; }) => new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime())[0];
           if (latestUnitData) {
             const hmKmValue = Number(latestUnitData.hm_km) || 0; 
-            const hmKmLastValue = Number(latestUnitData.hm_last) || 0;
+            const hmKmLastValue = Number(latestUnitData.hm_km) || 0;
             setHmkmValue(hmKmValue);
             setHmKmLast(hmKmLastValue);
             setModel(latestUnitData.model_unit);
@@ -811,35 +769,7 @@ const [stock, setStock] = useState<number>(0);
 
   
   
-  useEffect(() => {
-    console.log('useEffect triggered with values:', { hmkmValue, hmLast, qtyValue });
-
-    const calculateFBR = (): number => {
-        if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyValue === 'number') {
-            const difference = hmLast - hmkmValue;
-            console.log('Difference (hmLast - hmkm):', difference);
-
-            if (qtyValue === 0) {
-                console.log('qtyValue cannot be zero');
-                return 0;
-            }
-
-            if (difference > 0) {
-                const result = difference / qtyValue;
-                console.log('Calculated FBR:', result);
-                return parseFloat(result.toFixed(2));
-            } else {
-                console.log('Difference is not positive');
-            }
-        } else {
-            console.log('Invalid input types:', { hmkmValue, hmLast, qtyValue });
-        }
-        return 0;
-    };
-
-    setFbrResult(calculateFBR());
-}, [hmkmValue, hmLast, qtyValue]);
-
+ 
 
   useEffect(() => {
     const loadUnitDataQuota = async () => {
@@ -915,6 +845,8 @@ const handleEndTimeChange = (e: CustomEvent) => {
     setShowError(false);
   }
 };
+
+
 
 
 useEffect(() => {
@@ -1028,46 +960,33 @@ const filteredUnitOptions = (selectedType &&
 ? unitOptions.filter(unit => unit.unit_no.startsWith("FT") || unit.unit_no.startsWith("TK"))
 : unitOptions;
 
-// const handleUnitChange = (
-//   newValue: SingleValue<{ value: string; label: string }>, 
-//   actionMeta: ActionMeta<{ value: string; label: string }>
-// ) => {
-//   if (newValue) {
-//     const unitValue = newValue.value; 
-//     setSelectedUnit(unitValue); // Set unit yang dipilih
+useEffect(() => {
+  console.log('useEffect triggered with values:', { hmkmValue, hmkmLast, qtyValue });
+  const calculateFBR = (): number => {
+      if (typeof hmkmValue === 'number' && typeof  hmkmLast === 'number' && typeof qtyValue === 'number') {
+          const difference =  hmkmValue  - hmkmLast ;
+          console.log('Difference (hmLast - hmkm):', difference);
 
-//     // Mencari opsi unit yang dipilih dari unitOptions
-//     const selectedUnitOption = unitOptions.find(
-//       (unit) => unit.unit_no === unitValue
-//     );
+          if (qtyValue === 0) {
+              console.log('qtyValue cannot be zero');
+              return 0;
+          }
 
-//     // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
-//     if (selectedUnitOption) {
-//       setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
-//       setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
-      
-//       // Set nilai hm_km berdasarkan data unit yang dipilih
-//       setHmkmValue(selectedUnitOption.hm_km);
-//        setHmKmLast(selectedUnitOption.hm_last);
-//        // Perbarui nilai hm_km
-//       setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
+          if (difference > 0) {
+              const result = difference / qtyValue;
+              console.log('Calculated FBR:', result);
+              return parseFloat(result.toFixed(2));
+          } else {
+              console.log('Difference is not positive');
+          }
+      } else {
+          console.log('Invalid input types:', { hmkmValue,  hmkmLast, qtyValue });
+      }
+      return 0;
+  };
 
-
-//       // Tentukan batas kouta baru berdasarkan nilai unit
-//       const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-//       setKoutaLimit(newKoutaLimit); // Set batas kouta
-
-//       // Set showError berdasarkan jenis unit dan batas kouta
-//       setShowError(
-//         unitValue.startsWith("LV") || 
-//         (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-//       );
-//     } else {
-//       // Secara opsional, tangani kasus ketika unit yang dipilih tidak ada
-//       console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
-//     }
-//   }
-// };
+  setFbrResult(calculateFBR());
+}, [hmkmValue, hmLast, qtyValue]);
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -1098,6 +1017,38 @@ const filteredUnitOptions = (selectedType &&
         )}
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
+              <IonRow>
+              <IonCol size="8"
+                    >
+                      <div>
+                        <IonLabel style={{fontWeigt:"Bold" , fontSize:"24px"}}>
+                          Pilih Transaksi
+                          <span style={{ color: "red" }}> *</span>
+                        </IonLabel>
+                        <IonRadioGroup
+                        style={{
+                          backgroundColor: showError && selectedType === undefined ? "rgba(255, 0, 0, 0.1)" : "transparent", // Apply red background if error
+                          padding: "10px", // Ensure the block has padding for visibility
+                          borderRadius: "5px",
+                         
+                        }}
+                          className="radio-display"
+                          value={selectedType}
+                          onIonChange={handleRadioChange}
+                          compareWith={compareWith}
+                        >
+                          {typeTrx.map((type) => (
+                            <IonItem  style={{fontWeigt:"500px", fontSize:"20px"}} key={type.id} className="item-no-border" >
+                              <IonRadio labelPlacement="end"  value={type}>{type.name}</IonRadio>
+                            </IonItem>
+                          ))}
+                        </IonRadioGroup>
+                        {showError && selectedType === undefined && (
+                          <p style={{ color: "red" }}>* Pilih salah satu tipe</p>
+                        )}
+                      </div>
+                    </IonCol>
+              </IonRow>
               <IonRow>
               <IonCol>
             <IonLabel className="label-input">
@@ -1173,35 +1124,7 @@ const filteredUnitOptions = (selectedType &&
                         disabled={isFormDisabled}
                       /></div>
                   </IonCol>
-                    <IonCol size="8"
-                    >
-                      <div>
-                        <IonLabel>
-                          Type Transaksi Issued <span style={{ color: "red" }}>*</span>
-                        </IonLabel>
-                        <IonRadioGroup
-                        style={{
-                          backgroundColor: showError && selectedType === undefined ? "rgba(255, 0, 0, 0.1)" : "transparent", // Apply red background if error
-                          padding: "10px", // Ensure the block has padding for visibility
-                          borderRadius: "5px", // Add border-radius for rounded corners
-                        }}
-                          className="radio-display"
-                          value={selectedType}
-                          onIonChange={handleRadioChange}
-                          compareWith={compareWith}
-                        >
-                          {typeTrx.map((type) => (
-                            <IonItem key={type.id} className="item-no-border">
-                              <IonRadio value={type}>{type.name}</IonRadio>
-                            </IonItem>
-                          ))}
-                        </IonRadioGroup>
-                        {showError && selectedType === undefined && (
-                          <p style={{ color: "red" }}>* Pilih salah satu tipe</p>
-                        )}
-                      </div>
-                    </IonCol>
-
+                   
                 </IonRow>
               </IonGrid>
               <IonRow>
@@ -1215,15 +1138,13 @@ const filteredUnitOptions = (selectedType &&
                     className="custom-input"
                     type="number"
                     placeholder="Input HM/KM Unit"
-                    value={hmkmValue|| ""
-                    
+                    value={hmkmLast|| ""
                      }
                      disabled={isFormDisabled}
-
-                    onIonChange={(e) => setHmkmValue(Number(e.detail.value))}
+                     onIonChange={(e) => setHmkmValue(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
-                   {showError && hmkmValue === undefined && (
+                   {showError && hmkmLast === undefined && (
                         <p style={{ color: "red" }}>* Field harus diisi</p>
                    )}
                 </IonCol>
@@ -1236,11 +1157,10 @@ const filteredUnitOptions = (selectedType &&
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    onIonChange={(e) => setHmLast(Number(e.detail.value))}
                     
+                    onIonChange={(e) => setHmkmValue(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
-
                   {showError && (
                     <div style={{ color: "red" }}>
                       HM/KM Unit Tidak Boleh Kecil Dari HM/KM Terakhir Transaksi
@@ -1282,30 +1202,17 @@ const filteredUnitOptions = (selectedType &&
                   <IonLabel>
                     FBR Historis <span style={{ color: "red" }}>*</span>
                   </IonLabel>
-
                   <IonInput
-                    style={{ background: "#E8E8E8" }}
-                    className="custom-input"
-                    type="text"
-                    value={fbrResult} // Display FBR result
-                    readonly
-                    disabled={isFormDisabled}
-                  />
+                      style={{ background: "#E8E8E8" }}
+                      className="custom-input"
+                      type="number"
+                      placeholder="Input FBR"
+                      disabled={isFormDisabled}
+                      readonly
+                      value={fbrResult} // Gunakan hasil perhitungan dari state
+                    />
 
-                  {/* <IonInput
-                   style={{ background: "#E8E8E8" }}
-                    className="custom-input"
-                    type="number"
-                    placeholder="Input FBR"
-                    disabled={isFormDisabled}
-                    readonly
-                    
-                    // onIonChange={(e) => setFbr(Number(e.detail.value))}
-                    value={
-                      typeof calculateFBR() === "number" ? calculateFBR() : ""
-                    }
-                  // disabled
-                  /> */}
+                 
                 </IonCol>
               </IonRow>
               <IonRow>
@@ -1454,35 +1361,7 @@ const filteredUnitOptions = (selectedType &&
               </IonRow>
               <IonRow>
                 <IonCol>
-                  <IonCard style={{ height: "160px" }}>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      id="photoInput"
-                      style={{ display: "none" }}
-                      onChange={handlePhotoChange}
-                    />
-                    <IonButton
-                      size="small"
-                      onClick={() =>
-                        document.getElementById("photoInput")?.click()
-                      }
-                      disabled={isFormDisabled}
-                    >
-                      <IonIcon slot="start" icon={cameraOutline} />
-                      Ambil Foto *
-                    </IonButton>
-                    {photoPreview && (
-                      <IonCard style={{ marginTop: "10px", padding: "10px" }}>
-                        <IonLabel>Preview:</IonLabel>
-                        <IonImg
-                          src={photoPreview}
-                          alt="Photo Preview"
-                          style={{ maxWidth: "100%", maxHeight: "200px" }}
-                        />
-                      </IonCard>
-                    )}
-                  </IonCard>
+                  <CameraInput/>
                 </IonCol>
                 <IonCol>
                   <IonCard style={{ height: "160px" }}>
