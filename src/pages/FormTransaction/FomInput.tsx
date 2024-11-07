@@ -612,32 +612,63 @@ const [stock, setStock] = useState<number>(0);
   }
 
 
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
-    if (e.nativeEvent.key === "Enter") {
-
-      const lastHmKm =  hmkmLast ?? 0; 
-      const currentHmLast = hmkmValue ?? 0; 
-      console.log("Last HM Km:", hmkmValue);
-      console.log("Currentt:", hmkmTRX);
+  // const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
+  //   if (e.nativeEvent.key === "Enter") {
   
-      if (currentHmLast < lastHmKm) {
-        setShowError(true); 
-      } else {
-        setShowError(false); 
-        if (input1Ref.current) {
-          input2Ref.current?.setFocus();
-        }
-      }
-    }
-  };
+  //     const lastHmKm = hmkmLast ?? 0; 
+  //     const currentHmValue = hmkmValue ?? 0;
+  //     const difference = lastHmKm - currentHmValue ;
+  //     console.log("Difference (hmkmValue - hmkmLast):", difference);
 
+  //     if (difference < 0) {
+  //       setShowError(true);  
+  //       console.log("Error: Difference is negative");
+  //     } else {
+  //       setShowError(false); // Clear error if difference is positive or zero
+  
+  //       if (input1Ref.current) {
+  //         input2Ref.current?.setFocus();
+  //       }
+  //     }
+  //   }
+  // };
+  
 
 
 
   // useEffect(() => {
   
   // }, [unitOptions]);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
+    if (e.nativeEvent.key === "Enter") {
+      e.preventDefault();
+
+      // Check which input is focused and move to the next one
+      if (input1Ref.current) {
+        input2Ref.current?.setFocus();
+      }
+    }
+  };
+
+  const handleHmkmUnitChange = (e: CustomEvent) => {
+    const value = Number(e.detail.value);
+    if (hmkmLast !== null && value < hmkmLast) {
+      setShowError(true);
+    } else {
+      setShowError(false);
+    }
+    setHmkmValue(value);
+  };
+
+  const handleHmLastChange = (e: CustomEvent) => {
+    const newValue = Number(e.detail.value);
+    if (hmkmLast !== null && newValue < hmkmLast) {
+      setShowError(true);
+    } else {
+      setShowError(false);
+    }
+    setHmLast(newValue);
+  };
 
   function setBase64(value: SetStateAction<string | undefined>): void {
     throw new Error("Function not implemented.");
@@ -674,25 +705,25 @@ const [stock, setStock] = useState<number>(0);
 
 
   // hilangkkan parsenya jika ngambil dari localsorage
-  useEffect(() => {
-    const fetchJdeOptions = async () => {
-      const storedJdeOptions = await getDataFromStorage("allOperator");
-      console.log("Stored JDE Options:", storedJdeOptions);
+  // useEffect(() => {
+  //   const fetchJdeOptions = async () => {
+  //     const storedJdeOptions = await getDataFromStorage("allOperator");
+  //     console.log("Stored JDE Options:", storedJdeOptions);
 
-      if (storedJdeOptions) {
-        // If you are certain the data is in the correct format
-        if (Array.isArray(storedJdeOptions)) {
-          setJdeOptions(storedJdeOptions);
-        } else {
-          console.log("Stored JDE Options is not a valid array.");
-        }
-      } else {
-        console.log("No JDE options found in storage.");
-      }
-    };
+  //     if (storedJdeOptions) {
+  //       // If you are certain the data is in the correct format
+  //       if (Array.isArray(storedJdeOptions)) {
+  //         setJdeOptions(storedJdeOptions);
+  //       } else {
+  //         console.log("Stored JDE Options is not a valid array.");
+  //       }
+  //     } else {
+  //       console.log("No JDE options found in storage.");
+  //     }
+  //   };
 
-    fetchJdeOptions();
-  }, []);
+  //   fetchJdeOptions();
+  // }, []);
 
 
   
@@ -733,8 +764,6 @@ const [stock, setStock] = useState<number>(0);
       setError(null);
       try {
         const response = await getPrevUnitTrx(selectedUnit);
-  
-  
         if (response.status === '200' && response.data.length > 0) {
           const latestUnitData = response.data
             .sort((a: { date_trx: string | number | Date; }, b: { date_trx: string | number | Date; }) => new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime())[0];
@@ -743,10 +772,10 @@ const [stock, setStock] = useState<number>(0);
             const hmKmLastValue = Number(latestUnitData.hm_km) || 0;
             setHmkmValue(hmKmValue);
             setHmKmLast( hmKmLastValue);
-            setModel(latestUnitData.model_unit);
-            setOwner(latestUnitData.owner);
+            // setModel(latestUnitData.model_unit);
+            // setOwner(latestUnitData.owner);
             setQtyValue(Number(latestUnitData.qty) || 0); 
-            localStorage.setItem('latestUnitDataHMKM', JSON.stringify(latestUnitData));
+            // localStorage.setItem('latestUnitDataHMKM', JSON.stringify(latestUnitData));
           } else {
             setError('No data found');
           }
@@ -809,7 +838,7 @@ const [stock, setStock] = useState<number>(0);
                         const issuedAmount = foundUnitQuota.issued || 0;
                         // Check if the issued amount exceeds remaining quota
                         if (issuedAmount > remainingQuota) {
-                            setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
+                            setQuotaMessage(`Error: Issue Melebihi Kouta${selectedUnit}`);
                         }
                     } else {
                         setUnitQuota(0);
@@ -1009,7 +1038,7 @@ useEffect(() => {
                     <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "500px" }}>
                         <IonLabel style={{ display: "flex" }}>
                             <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                            <IonTitle style={{ color: quotaMessage.includes("0 Liter") ? "red" : "inherit" }}>
+                            <IonTitle style={{ color: quotaMessage.includes("0 Liter") ? "red" : "green" }}>
                               {quotaMessage}
                             </IonTitle>
                         </IonLabel>
@@ -1143,7 +1172,7 @@ useEffect(() => {
                     value={hmkmLast|| ""
                      }
                      disabled={isFormDisabled}
-                     onIonChange={(e) => setHmkmValue(Number(e.detail.value))}
+                     onIonChange={(e) => setHmKmLast(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
                    {showError && hmkmLast === undefined && (
@@ -1159,8 +1188,8 @@ useEffect(() => {
                     className="custom-input"
                     type="number"
                     placeholder="Input HM Terakhir"
-                    
-                    onIonChange={(e) => setHmkmValue(Number(e.detail.value))}
+                    onIonChange={handleHmkmUnitChange}
+                    // onIonChange={(e) => setHmkmValue(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
                   {showError && (
