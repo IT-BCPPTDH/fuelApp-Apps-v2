@@ -967,8 +967,147 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
   return ""; 
 };
 
+const handleUnitChange = async (
+  newValue: SingleValue<{ value: string; label: string }>, 
+  actionMeta: ActionMeta<{ value: string; label: string }>
+) => {
+  if (newValue) {
+    const unitValue = newValue.value; 
+    setSelectedUnit(unitValue); // Set the selected unit
+
+    if (navigator.onLine) {
+      // Online: Use data from unitOptions
+      const selectedUnitOption = unitOptions.find(
+        (unit) => unit.unit_no === unitValue
+      );
+
+      if (selectedUnitOption) {
+        // Save the selected unit option for offline use
+        setModel(selectedUnitOption.brand); 
+        setOwner(selectedUnitOption.owner); 
+        setHmkmValue(selectedUnitOption.hm_km);
+        setHmKmLast(selectedUnitOption.hm_last);
+        setQtyValue(selectedUnitOption.qty); 
+
+        const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+        setKoutaLimit(newKoutaLimit); 
+
+        setShowError(
+          unitValue.startsWith("LV") || 
+          (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+        );
+      } else {
+        console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
+      }
+    } else {
+      // Offline: Retrieve data from IndexedDB
+      const { hm_last,qty_last } = await fetchLatestHmLast(unitValue);
+
+      if (hm_last !== undefined) {
+        // If data found, update hm_last
+        setHmKmLast(hm_last);
+        console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
+      } else {
+        // If data is not found or not valid, empty hm_last
+        setHmKmLast(null); // Set hm_last to null if not found or invalid
+        console.log("No valid 'hm_last' data found or data is invalid for this unit.");
+      }
+
+      // Use qty_last for FBR calculation or other purposes
+      if (qty_last !== undefined) {
+        setQtyValue(qty_last); 
+      }
+
+      // Set model and owner based on the unit from IndexedDB or fallback to defaults
+      const selectedUnitOption = unitOptions.find(
+        (unit) => unit.unit_no === unitValue
+      );
+
+      if (selectedUnitOption) {
+        setModel(selectedUnitOption.brand || "Offline Model");
+        setOwner(selectedUnitOption.owner || "Offline Owner");
+      } else {
+        // Fallback if unit option is not found
+        setModel("Offline Model");
+        setOwner("Offline Owner");
+      }
+
+      setKoutaLimit(0); 
+      setShowError(false);
+    }
+  }
+};
 
 
+// const handleUnitChange = async (
+//   newValue: SingleValue<{ value: string; label: string }>, 
+//   actionMeta: ActionMeta<{ value: string; label: string }>
+// ) => {
+//   if (newValue) {
+//     const unitValue = newValue.value; 
+//     setSelectedUnit(unitValue); // Set the selected unit
+
+//     if (navigator.onLine) {
+//       // Online: Use data from unitOptions
+//       const selectedUnitOption = unitOptions.find(
+//         (unit) => unit.unit_no === unitValue
+//       );
+
+//       if (selectedUnitOption) {
+//         // Save the selected unit option for offline use
+//         setModel(selectedUnitOption.brand); 
+//         setOwner(selectedUnitOption.owner); 
+//         setHmkmValue(selectedUnitOption.hm_km);
+//         setHmKmLast(selectedUnitOption.hm_last);
+//         setQtyValue(selectedUnitOption.qty); 
+
+//         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+//         setKoutaLimit(newKoutaLimit); 
+
+//         setShowError(
+//           unitValue.startsWith("LV") || 
+//           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+//         );
+//       } else {
+//         console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
+//       }
+//     } else {
+//       // Offline: Retrieve data from IndexedDB
+//       const { hm_last, model_unit, owner, qty_last } = await fetchLatestHmLast(unitValue);
+
+//       if (hm_last !== undefined) {
+//         setHmKmLast(hm_last);
+//         console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
+//       } else {
+//         console.log("No valid 'hm_last' data found in IndexedDB or an error occurred.");
+//       }
+
+//       // Use qty_last for FBR calculation or other purposes
+//       if (qty_last !== undefined) {
+//         // Example: Set qty value or perform calculation here
+//         setQtyValue(qty_last); // Or any other logic related to qty_last
+//       }
+
+//       // Use saved selectedUnitOption data for model and owner when offline
+//       const selectedUnitOption = unitOptions.find(
+//         (unit) => unit.unit_no === unitValue
+//       );
+
+//       if (selectedUnitOption) {
+//         // Set model and owner from the previously selected unit option
+//         setModel(selectedUnitOption.brand || "Offline Model");
+//         setOwner(selectedUnitOption.owner || "Offline Owner");
+//       } else {
+//         // Fallback to default if unit option is not found
+//         setModel("Offline Model");
+//         setOwner("Offline Owner");
+//       }
+
+//       setKoutaLimit(0); 
+//       setShowError(false);
+//     }
+//   }
+// };
 
 // const handleUnitChange = async (
 //   newValue: SingleValue<{ value: string; label: string }>, 
@@ -1071,61 +1210,61 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
 //     }
 //   }
 // };
-const handleUnitChange = async (
-  newValue: SingleValue<{ value: string; label: string }>, 
-  actionMeta: ActionMeta<{ value: string; label: string }>
-) => {
-  if (newValue) {
-    const unitValue = newValue.value; 
-    setSelectedUnit(unitValue); // Set the selected unit
+// const handleUnitChange = async (
+//   newValue: SingleValue<{ value: string; label: string }>, 
+//   actionMeta: ActionMeta<{ value: string; label: string }>
+// ) => {
+//   if (newValue) {
+//     const unitValue = newValue.value; 
+//     setSelectedUnit(unitValue); // Set the selected unit
 
-    if (navigator.onLine) {
-      const selectedUnitOption = unitOptions.find(
-        (unit) => unit.unit_no === unitValue
-      );
+//     if (navigator.onLine) {
+//       const selectedUnitOption = unitOptions.find(
+//         (unit) => unit.unit_no === unitValue
+//       );
 
-      if (selectedUnitOption) {
-        setModel(selectedUnitOption.brand); 
-        setOwner(selectedUnitOption.owner); 
-        setHmkmValue(selectedUnitOption.hm_km);
-        setHmKmLast(selectedUnitOption.hm_last);
-        setQtyValue(selectedUnitOption.qty); 
+//       if (selectedUnitOption) {
+//         setModel(selectedUnitOption.brand); 
+//         setOwner(selectedUnitOption.owner); 
+//         setHmkmValue(selectedUnitOption.hm_km);
+//         setHmKmLast(selectedUnitOption.hm_last);
+//         setQtyValue(selectedUnitOption.qty); 
 
-        const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-        setKoutaLimit(newKoutaLimit); 
+//         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+//         setKoutaLimit(newKoutaLimit); 
 
-        setShowError(
-          unitValue.startsWith("LV") || 
-          (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-        );
-      } else {
-        console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
-      }
-    } else {
-      // Offline: Retrieve data from IndexedDB
-      const { hm_last, model_unit, owner, qty_last } = await fetchLatestHmLast(unitValue);
+//         setShowError(
+//           unitValue.startsWith("LV") || 
+//           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+//         );
+//       } else {
+//         console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
+//       }
+//     } else {
+//       // Offline: Retrieve data from IndexedDB
+//       const { hm_last, model_unit, owner, qty_last } = await fetchLatestHmLast(unitValue);
 
-      if (hm_last !== undefined) {
-        setHmKmLast(hm_last);
-        console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
-      } else {
-        console.log("No valid 'hm_last' data found in IndexedDB or an error occurred.");
-      }
+//       if (hm_last !== undefined) {
+//         setHmKmLast(hm_last);
+//         console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
+//       } else {
+//         console.log("No valid 'hm_last' data found in IndexedDB or an error occurred.");
+//       }
 
-      // Use qty_last for FBR calculation or other purposes
-      if (qty_last !== undefined) {
-        // Example: Set qty value or perform calculation here
-        setQtyValue(qty_last); // Or any other logic related to qty_last
-      }
+//       // Use qty_last for FBR calculation or other purposes
+//       if (qty_last !== undefined) {
+//         // Example: Set qty value or perform calculation here
+//         setQtyValue(qty_last); // Or any other logic related to qty_last
+//       }
 
-      // Set model and owner from offline data
-      setModel(model_unit || "Offline Model");
-      setOwner(owner || "Offline Owner");
-      setKoutaLimit(0); 
-      setShowError(false);
-    }
-  }
-};
+//       // Set model and owner from offline data
+//       setModel(model_unit || "Offline Model");
+//       setOwner(owner || "Offline Owner");
+//       setKoutaLimit(0); 
+//       setShowError(false);
+//     }
+//   }
+// };
 
 const filteredUnitOptions = (selectedType && 
   (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer')) 
