@@ -36,6 +36,7 @@ import { getStationData} from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
 import { chevronDownCircleOutline } from 'ionicons/icons';
+import { getAllQuota, getUnitQuotaActive } from "../../hooks/getQoutaUnit";
 
 interface Shift {
   id: number;
@@ -360,6 +361,8 @@ useEffect(() => {
     setOpeningSonding(value);
   };
 
+
+
   useEffect(() => {
     const checkAndSendOfflineData = async () => {
       if (navigator.onLine) {
@@ -403,7 +406,11 @@ useEffect(() => {
   // // Panggil fungsi untuk mengambil data
   // fetchLatestLkfData();
 
-  
+ 
+
+
+
+
   useEffect(() => {
     const userData = async () => {
       const data = await getDataFromStorage('loginData');
@@ -667,8 +674,10 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
               type="number"
               value={openingSonding}
+              onIonChange={handleOpeningSondingChange}
+
              
-              onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
+              // onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
             />
             {showError && openingSonding === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>

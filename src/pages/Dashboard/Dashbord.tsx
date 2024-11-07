@@ -507,6 +507,7 @@ const fetchcardDash = async (lkfId: string) => {
       const issued = item.total_issued || 0;
       const transfer = item.total_transfer || 0;
       const stockOnHand = openingDip + received + receivedKpc - issued - transfer;
+      const totalReceive = received + receiveKpc
 
       // Ambil total quantity issued
       const fetchedResult = await getCalculationIssued(lkfId);
@@ -527,7 +528,7 @@ const fetchcardDash = async (lkfId: string) => {
         { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
         { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
         { title: 'Opening Dip', value: openingDip, icon: 'openingdeep.svg' },
-        { title: 'Receipt', value: received, icon: 'receipt.svg' },
+        { title: 'Receipt', value: totalReceive, icon: 'receipt.svg' },
         { title: 'Stock On Hand', value: stockOnHand || 'No Data', icon: 'stock.svg' },
         { title: 'QTY Issued', value: fetchedResult ?? 0, icon: 'issued.svg' },
         { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },

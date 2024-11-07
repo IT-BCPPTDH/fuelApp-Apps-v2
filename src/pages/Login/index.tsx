@@ -23,6 +23,7 @@ import {
   saveDataToStorage,
   getDataFromStorage,
   fetchOperatorData,
+  fetchQuotaData,
 } from "../../services/dataService";
 import Select from "react-select";
 import AsyncSelect from 'react-select/async';
@@ -45,7 +46,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAlert, setShowAlert] = useState<boolean>(false);
-
+  const [qouta, setQouta] = useState()
   const [jdeOptions, setJdeOptions] = useState<
   { JDE: string; fullname: string }[]
 >([]);
@@ -174,9 +175,35 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     loadOperator(); // Fetch operator data when the component mounts
   }, []);
   
-  
-  
-  
+  useEffect(() => {
+    const loadUnitDataQuota = async () => {
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        try {
+            const quotaData = await fetchQuotaData(formattedDate);
+            console.log('Fetched Qouta Login ', quotaData);
+
+            if (quotaData && Array.isArray(quotaData)) {
+                let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
+
+                if (!foundUnitQuota) {
+                    const yesterday = new Date(today);
+                    yesterday.setDate(today.getDate() - 1);
+                    const formattedYesterday = yesterday.toISOString().split('T')[0];
+                    const previousQuotaData = await fetchQuotaData(formattedYesterday);
+                    console.log('Fetched previous quota data:', previousQuotaData);
+                    foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
+                }
+            } else {
+                console.error('No quota data found for the specified date');
+            }
+        } catch (error) {
+            console.error('Error fetching quota data:', error);
+        }
+    };
+
+    loadUnitDataQuota();
+}, []);
 
   return (
     <IonPage>
@@ -280,3 +307,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 };
 
 export default Login;
+function loadQuota() {
+  throw new Error("Function not implemented.");
+}
+

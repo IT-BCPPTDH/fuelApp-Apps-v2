@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Key, SetStateAction, useRef } from "react";
+import React, { useState, useEffect, Key, SetStateAction, useRef, useCallback } from "react";
 import {
   IonContent,
   IonHeader,
@@ -46,7 +46,7 @@ import { convertToBase64 } from "../../utils/base64";
 import {
   getFbrByUnit,
   getLatestLkfId,
-  getLatestHmLast,
+  fetchLatestHmLast
 } from "../../utils/getData";
 import DynamicAlert from "../../components/Alert";
 import { fetchOperatorData, fetchQuotaData, fetchUnitData, fetchUnitLastTrx, getDataFromStorage, removeDataFromStorage } from "../../services/dataService";
@@ -58,6 +58,7 @@ import { getHomeByIdLkf, getHomeTable} from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
 import CameraInput from "../../components/takeFoto";
+import { saveDataToStorage } from "../../services/dataService";
 
 interface Typetrx {
   id: number;
@@ -188,7 +189,7 @@ const FormTRX: React.FC = () => {
   const [unitQuota, setUnitQuota] = useState(0);
   const [usedQuota, setUsedQuota] = useState(0);
   const [remainingQuota, setRemainingQuota] = useState(0);
-  const [quantity, setQuantity] =useState<number | undefined>(undefined); 
+  const [quantity, setQuantity] =useState<number | null>(0); 
   const [quantityError, setQuantityError] = useState("");
   const [employeeError, setemployeeError] = useState<boolean>(false);
   const [unitQouta, setUnitQouta] = useState(0);
@@ -204,6 +205,11 @@ const FormTRX: React.FC = () => {
   const [operatorOptions, setOperatorOptions] = useState<
     { JDE: string; fullname: string }[]
   >([]);
+
+
+  const [selecTUnit, setSelectUnit] = useState<
+  { JDE: string; fullname: string }[]
+>([]);
 
 
 
@@ -244,6 +250,8 @@ const [startTime, setStartTime] = useState<string | undefined>(undefined);
 const [endTime, setEndTime] = useState<string | undefined>(undefined);
 
 
+const [qoutaData, setquotaData] = useState<number | null>(null);
+
 
 
 
@@ -268,14 +276,35 @@ const [stock, setStock] = useState<number>(0);
     };
   }, []);
 
-  // useEffect(() => {
-  //   const userData = localStorage.getItem("cardData");
-  //   console.log("dataUse",userData)
-  //   if (userData) {
-  //     const parsedData = JSON.parse(userData);
-  //     setFlowMeterAwal(parsedData.title);
-  //   }
-  // }, []);
+
+
+  const loadDataQouta= useCallback(async (date:string) => {
+  
+    try {
+      setLoading(true);
+      const cachedData = await getDataFromStorage('unitQuota');
+      console.log("data Ofline ==",cachedData )
+      if (cachedData) {
+        setquotaData(cachedData);
+      } else {
+        // const stations = await fetchQuotaData(date);
+        // const formattedStations = stations.map((station) => ({
+        //   value: station.fuel_station_name,
+        //   label: station.fuel_station_name,
+        //   site: station.site,
+        //   fuel_station_type: station.fuel_station_type,
+        // }));
+        // setquotaData(formattedStations);
+      }
+    } catch (err) {
+      console.error('Error loading station data:', err);
+    } finally {
+      setLoading(false);
+      loadDataQouta(date)
+    }
+   
+  }, []);
+  
 
 
 
@@ -388,10 +417,6 @@ const [stock, setStock] = useState<number>(0);
     route.push("/dashboard");
   };
 
- 
-
-
-
 
   const getTable = async() => {
     try {
@@ -407,10 +432,15 @@ const [stock, setStock] = useState<number>(0);
 
  
   const handlePost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Initial Status:", status);
-  
-    // Validate form fields
+   
+    const validQuantity = quantity ?? 0; 
+    // Validate the quantity
+    if (isNaN(validQuantity) || validQuantity <= 0) {
+      setQuantityError("Qty Issued harus lebih besar dari 0");
+      setIsError(true);
+      return; // Stop the save action if quantity is invalid
+    }
+    // Validate all form fields
     if (
       !selectedType ||
       !selectedUnit ||
@@ -444,9 +474,9 @@ const [stock, setStock] = useState<number>(0);
       date_trx: new Date().toISOString(),
       hm_last: Number(hmkmLast),
       hm_km: Number(hmkmValue),
-      qty_last: Number(quantity) || 0,
-      qty: Number(quantity) || 0,
-      flow_start: Number(flowMeterAwal) || 0,
+      qty_last: quantity ?? 0, // Default to 0 if quantity is undefined
+      qty: quantity ?? 0,
+      flow_start: Number(flowMeterAwal),
       flow_end: flow_end,
       name_operator: fullName!,
       fbr: fbrResult,
@@ -470,6 +500,7 @@ const [stock, setStock] = useState<number>(0);
         updateCard();
         getTable();
         // updatedKuota()
+  
         const responseStatus = response.status;
   
         if (responseStatus === 200) {
@@ -477,16 +508,18 @@ const [stock, setStock] = useState<number>(0);
           dataPost.status = 1;
           await insertNewData(dataPost); // Save the transaction locally
           alert("Transaksi Succes dikirim ke server");
-          if (quantity) {
+          if (quantity > 0) {
             updateLocalStorageQuota(selectedUnit, quantity); // Update quota if necessary
           }
-        } 
+        }
       } else {
-     
-        dataPost.status = 0; 
-        await insertNewData(dataPost); 
+        // If offline, save data locally
+        dataPost.status = 0;
+        await insertNewData(dataPost);
         alert("Trasaksi tersimpan pada local");
       }
+  
+      // After successful operation, navigate to the dashboard
       route.push("/dashboard");
     } catch (error) {
       console.error("Error occurred while posting data:", error);
@@ -512,10 +545,12 @@ const [stock, setStock] = useState<number>(0);
       localStorage.setItem("unitQouta", JSON.stringify(updatedData));
     }
   };
+
   
   useEffect(() => {
     const fetchData = async () => {
       const unitQuota = await getDataFromStorage("unitQouta");
+      console.log("!!!!!!!!!", unitQouta)
       if (unitQuota) {
         const parsedData = JSON.parse(unitQuota);
         const currentUnitQuota = parsedData.find((unit: { unitNo: string | undefined; }) => unit.unitNo === selectedUnit);
@@ -551,13 +586,6 @@ const [stock, setStock] = useState<number>(0);
     console.log("Updated Signature:", newSignature);
   };
 
-
-
-  // useEffect(() => {
-  //   console.log("unitOptions updated:", unitOptions);
-  // }, [unitOptions]);
-
-
   useEffect(() => {
     const loadUnitData = async () => {
       const cachedUnitData = await getDataFromStorage('allUnit');
@@ -592,11 +620,25 @@ const [stock, setStock] = useState<number>(0);
     console.log("operatorOptions updated:", operatorOptions);
   }, [operatorOptions]);
 
- 
 
-  const isSaveButtonDisabled = () => {
-    return hmkmTRX !== undefined && hmLast !== undefined && hmLast > hmkmTRX;
-  };
+  useEffect(() => {
+    const loadQoutaData = async () => {
+      const cachedData = await getDataFromStorage('unitQouta');
+      if (cachedData) {
+        setQuotaData(cachedData);
+      } else {
+      }
+    };
+
+    loadQoutaData();
+  }, []);
+
+  useEffect(() => {
+    console.log("Qouta  updated:", );
+  }, [qoutaData]);
+
+
+ 
 
 
   const updateCard = async () => {
@@ -611,34 +653,6 @@ const [stock, setStock] = useState<number>(0);
     console.log("QQQ",cards)
   }
 
-
-  // const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
-  //   if (e.nativeEvent.key === "Enter") {
-  
-  //     const lastHmKm = hmkmLast ?? 0; 
-  //     const currentHmValue = hmkmValue ?? 0;
-  //     const difference = lastHmKm - currentHmValue ;
-  //     console.log("Difference (hmkmValue - hmkmLast):", difference);
-
-  //     if (difference < 0) {
-  //       setShowError(true);  
-  //       console.log("Error: Difference is negative");
-  //     } else {
-  //       setShowError(false); // Clear error if difference is positive or zero
-  
-  //       if (input1Ref.current) {
-  //         input2Ref.current?.setFocus();
-  //       }
-  //     }
-  //   }
-  // };
-  
-
-
-
-  // useEffect(() => {
-  
-  // }, [unitOptions]);
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
     if (e.nativeEvent.key === "Enter") {
       e.preventDefault();
@@ -702,32 +716,6 @@ const [stock, setStock] = useState<number>(0);
     fetchJdeOptions();
   }, []);
   
-
-
-  // hilangkkan parsenya jika ngambil dari localsorage
-  // useEffect(() => {
-  //   const fetchJdeOptions = async () => {
-  //     const storedJdeOptions = await getDataFromStorage("allOperator");
-  //     console.log("Stored JDE Options:", storedJdeOptions);
-
-  //     if (storedJdeOptions) {
-  //       // If you are certain the data is in the correct format
-  //       if (Array.isArray(storedJdeOptions)) {
-  //         setJdeOptions(storedJdeOptions);
-  //       } else {
-  //         console.log("Stored JDE Options is not a valid array.");
-  //       }
-  //     } else {
-  //       console.log("No JDE options found in storage.");
-  //     }
-  //   };
-
-  //   fetchJdeOptions();
-  // }, []);
-
-
-  
-
   const handleChangeEmployeeId = (
     newValue: SingleValue<{ value: string; label: string }>,
     actionMeta: ActionMeta<{ value: string; label: string }>
@@ -755,7 +743,7 @@ const [stock, setStock] = useState<number>(0);
     }
   };
   
-  // Display the FBR value in the input field
+
   useEffect(() => {
     const fetchUnitData = async () => {
       if (!selectedUnit) return;
@@ -794,73 +782,95 @@ const [stock, setStock] = useState<number>(0);
   }, [selectedUnit]);
 
   
-  useEffect(() => {
-    const loadUnitDataQuota = async () => {
-        const today = new Date();
-        const formattedDate = today.toISOString().split('T')[0];
+  const loadUnitDataQuota = async () => {
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
 
-        try {
-            const quotaData = await fetchQuotaData(formattedDate);
-            console.log('Fetched quota data:', quotaData);
+    try {
+        // Coba untuk mendapatkan data quota yang disimpan di local storage
+        const cachedData = await getDataFromStorage('unitQuota');
+        let quotaData = cachedData;
 
+        if (!quotaData) {
+            // Jika tidak ada data cached, ambil dari server
+            quotaData = await fetchQuotaData(formattedDate);
             if (quotaData && Array.isArray(quotaData)) {
-                let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
+                // Simpan data yang diambil ke local storage untuk digunakan offline
+                await saveDataToStorage('unitQuota', quotaData);
+            }
+        }
 
-                if (!foundUnitQuota) {
-                    const yesterday = new Date(today);
-                    yesterday.setDate(today.getDate() - 1);
-                    const formattedYesterday = yesterday.toISOString().split('T')[0];
+        if (quotaData && Array.isArray(quotaData)) {
+            let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
 
-                    const previousQuotaData = await fetchQuotaData(formattedYesterday);
-                    console.log('Fetched previous quota data:', previousQuotaData);
+            if (!foundUnitQuota) {
+                const yesterday = new Date(today);
+                yesterday.setDate(today.getDate() - 1);
+                const formattedYesterday = yesterday.toISOString().split('T')[0];
 
-                    foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
-                }
+                const previousQuotaData = await fetchQuotaData(formattedYesterday);
+                foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
+            }
 
-                if (foundUnitQuota) {
-                    setCurrentUnitQuota(foundUnitQuota);
-                    const totalQuota = foundUnitQuota.quota;
-                    const usedQuota = foundUnitQuota.used || 0;
-                    const additionalQuota = foundUnitQuota.additional || 0;
-                    const remainingQuota = totalQuota + additionalQuota - usedQuota;
+            if (foundUnitQuota) {
+                setCurrentUnitQuota(foundUnitQuota);
+                const totalQuota = foundUnitQuota.quota;
+                const usedQuota = foundUnitQuota.used || 0;
+                const additionalQuota = foundUnitQuota.additional || 0;
+                const remainingQuota = totalQuota + additionalQuota - usedQuota;
 
-                    if (foundUnitQuota.isActive) {
-                        setUnitQuota(totalQuota);
-                        setRemainingQuota(remainingQuota);
+                if (foundUnitQuota.isActive) {
+                    setUnitQuota(totalQuota);
+                    setRemainingQuota(remainingQuota);
 
-                        // Set quota message based on remainingQuota
-                        if (remainingQuota > 0) {
-                            setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remainingQuota} Liter`);
-                        } else {
-                            setQuotaMessage(`Sisa Kouta ${selectedUnit}: 0 Liter`);
-                        }
-
-                        const issuedAmount = foundUnitQuota.issued || 0;
-                        // Check if the issued amount exceeds remaining quota
-                        if (issuedAmount > remainingQuota) {
-                            setQuotaMessage(`Error: Issue Melebihi Kouta${selectedUnit}`);
-                        }
+                    if (remainingQuota > 0) {
+                        setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
                     } else {
-                        setUnitQuota(0);
-                        setRemainingQuota(0);
-                        setQuotaMessage("Pembatasan Kuota Dinonaktifkan.");
+                        setQuotaMessage(`Sisa Kuota ${selectedUnit}: 0 Liter`);
+                    }
+
+                    const issuedAmount = foundUnitQuota.issued || 0;
+                    if (issuedAmount > remainingQuota) {
+                        setQuotaMessage(`Error: Issue Melebihi Kouta ${selectedUnit}`);
                     }
                 } else {
                     setUnitQuota(0);
                     setRemainingQuota(0);
-                    setQuotaMessage(`Pembatasan kuota dinonaktifkan : ${selectedUnit}`);
-                    
+                    setQuotaMessage("Pembatasan Kuota Dinonaktifkan.");
                 }
             } else {
-                console.error('No quota data found for the specified date');
+                setUnitQuota(0);
+                setRemainingQuota(0);
+                setQuotaMessage(`Pembatasan kuota dinonaktifkan : ${selectedUnit}`);
             }
-        } catch (error) {
-            console.error('Error fetching quota data:', error);
+        } else {
+            console.error('No quota data found for the specified date');
         }
-    };
+    } catch (error) {
+        console.error('Error fetching quota data:', error);
+    }
+};
 
+useEffect(() => {
     loadUnitDataQuota();
 }, [selectedUnit]);
+
+
+useEffect(() => {
+  const loadQoutaData = async () => {
+    const cachedData = await getDataFromStorage('unitQouta');
+    if (cachedData) {
+      setQuotaData(cachedData);
+    } else {
+    }
+  };
+
+  loadQoutaData();
+}, []);
+
+useEffect(() => {
+  console.log("Qouta  updated:", );
+}, [qoutaData]);
 
 
 const handleEndTimeChange = (e: CustomEvent) => {
@@ -874,9 +884,6 @@ const handleEndTimeChange = (e: CustomEvent) => {
     setShowError(false);
   }
 };
-
-
-
 
 useEffect(() => {
   const userData = localStorage.getItem("cardDash");
@@ -899,30 +906,43 @@ useEffect(() => {
   }
 }, [])
 
-const handleQuantityChange = (e: any) => {
-  const inputQuantity = Number(e.detail.value); // Mengambil nilai dari input
 
-  // Pastikan input adalah angka yang valid
+const handleQuantityChange = (e: any) => {
+  const inputQuantity = Number(e.detail.value);
+
+  // Validate if quantity is greater than 0 for all transaction types
   if (isNaN(inputQuantity) || inputQuantity <= 0) {
-      setQuantityError("Qty Issued harus lebih besar dari 0");
-      setIsError(true);
-      return; // Keluar jika tidak valid
+    setQuantityError("Qty Issued harus lebih besar dari 0");
+    setIsError(true);
+    return; // Keluar jika tidak valid
   }
 
-  // Validasi untuk unit yang dimulai dengan LV atau HLV
-  if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-      if (inputQuantity > remainingQuota) {
-          setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
-          setIsError(true);
-          return; // Keluar jika melebihi sisa kouta
-      }
+  const isReceiptTransaction = typeTrx.some(
+    (trx) => trx.name === "Receipt" || trx.name === "Receipt KPC" || trx.name === "Transfer"
+  );
+
+  if (isReceiptTransaction) {
+    // Jika jenis transaksi adalah 'receipt' atau 'receipt kpc', atur jumlah tanpa validasi sisa kouta atau stock
+    setQuantity(inputQuantity);
+    setQuantityError(""); // Kosongkan pesan error
+    setIsError(false); // Tidak ada error
+    return;
+  }
+
+  // Validasi untuk unit yang dimulai dengan LV atau HLV jika jenis transaksi adalah issued atau transfer
+  if (typeof selectedUnit === "string" && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
+    if (inputQuantity > remainingQuota) {
+      setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+      setIsError(true);
+      return; // Keluar jika melebihi sisa kouta
+    }
   } else {
-      // Cek Qty Issued tidak boleh lebih besar dari Stock On Hand
-      if (inputQuantity > stock) {
-          setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
-          setIsError(true);
-          return; // Keluar jika melebihi Stock On Hand
-      }
+    // Cek Qty Issued tidak boleh lebih besar dari Stock On Hand
+    if (inputQuantity > stock) {
+      setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
+      setIsError(true);
+      return; // Keluar jika melebihi Stock On Hand
+    }
   }
 
   // Jika semua validasi berhasil, perbarui state
@@ -930,7 +950,6 @@ const handleQuantityChange = (e: any) => {
   setQuantityError(""); // Kosongkan pesan error
   setIsError(false); // Tidak ada error
 };
-
 
 
 const calculateFlowEnd = (typeTrx: string): string | number => {
@@ -941,45 +960,169 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
       return flowMeterAwal !== 0 ? flowMeterAwal : "N/A";
     } else {
       // Jika tipeTrx bukan receipt atau receipt KPC, lakukan perhitungan
-      const totaFlowEnd = flowMeterAwal + quantity;
-      return totaFlowEnd !== 0 ? totaFlowEnd : "N/A"; 
+      const totalFlowEnd = flowMeterAwal + (quantity ?? 0); 
+      return  totalFlowEnd !== 0 ?  totalFlowEnd  : "N/A"; 
     }
   }
   return ""; 
 };
 
-const handleUnitChange = (
+
+
+
+// const handleUnitChange = async (
+//   newValue: SingleValue<{ value: string; label: string }>, 
+//   actionMeta: ActionMeta<{ value: string; label: string }>
+// ) => {
+//   if (newValue) {
+//     const unitValue = newValue.value; 
+//     setSelectedUnit(unitValue); 
+
+//     if (navigator.onLine) {
+//       const selectedUnitOption = unitOptions.find(
+//         (unit) => unit.unit_no === unitValue
+//       );
+
+//       if (selectedUnitOption) {
+//         setModel(selectedUnitOption.brand); 
+//         setOwner(selectedUnitOption.owner); 
+//         setHmkmValue(selectedUnitOption.hm_km);
+//         setHmKmLast(selectedUnitOption.hm_last);
+//         setQtyValue(selectedUnitOption.qty); 
+
+//         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+//         setKoutaLimit(newKoutaLimit); 
+
+//         setShowError(
+//           unitValue.startsWith("LV") || 
+//           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+//         );
+//       } else {
+//         console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
+//       }
+//     } else {
+//       // Offline: Retrieve data from IndexedDB
+//       const { hm_last, model_unit, owner, qty_last} = await fetchLatestHmLast(unitValue);
+
+//       if (hm_last !== undefined) {
+//         setHmKmLast(hm_last);
+//         console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
+//       } else {
+//         console.log("No valid 'hm_last' data found in IndexedDB or an error occurred.");
+//       }
+
+//       // Set model and owner from offline data
+//       setModel(model_unit || "Offline Model");
+//       setOwner(owner || "Offline Owner");
+     
+//       setKoutaLimit(0); 
+//       setShowError(false);
+//     }
+//   }
+// };
+
+
+// const fetchLatestHmLast = async (selectedUnit: string) => {
+//   const hmLastValue = await getLatestHmLast(selectedUnit);
+
+//   if (hmLastValue !== undefined) {
+//     console.log("Latest 'hm_last' value:", hmLastValue);
+//     // Proceed with using hmLastValue as needed
+//   } else {
+//     console.log("No valid 'hm_last' data found or an error occurred.");
+//   }
+// };
+
+// // Call the function with the desired unit
+// fetchLatestHmLast("EX6008");
+
+// const handleUnitChange = (
+//   newValue: SingleValue<{ value: string; label: string }>, 
+//   actionMeta: ActionMeta<{ value: string; label: string }>
+// ) => {
+//   if (newValue) {
+//     const unitValue = newValue.value; 
+//     setSelectedUnit(unitValue); // Set unit yang dipilih
+
+//     // Mencari opsi unit yang dipilih dari unitOptions
+//     const selectedUnitOption = unitOptions.find(
+//       (unit) => unit.unit_no === unitValue
+//     );
+
+//     // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
+//     if (selectedUnitOption) {
+//       setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
+//       setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
+//       setHmkmValue(selectedUnitOption.hm_km);
+//       setHmKmLast(selectedUnitOption.hm_last);
+//       setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
+
+//       // Tentukan batas kouta baru berdasarkan nilai unit
+//       const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+//       setKoutaLimit(newKoutaLimit); // Set batas kouta
+
+//       // Set showError berdasarkan jenis unit dan batas kouta
+//       setShowError(
+//         unitValue.startsWith("LV") || 
+//         (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+//       );
+//     } else {
+//       console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
+//     }
+//   }
+// };
+const handleUnitChange = async (
   newValue: SingleValue<{ value: string; label: string }>, 
   actionMeta: ActionMeta<{ value: string; label: string }>
 ) => {
   if (newValue) {
     const unitValue = newValue.value; 
-    setSelectedUnit(unitValue); // Set unit yang dipilih
+    setSelectedUnit(unitValue); // Set the selected unit
 
-    // Mencari opsi unit yang dipilih dari unitOptions
-    const selectedUnitOption = unitOptions.find(
-      (unit) => unit.unit_no === unitValue
-    );
-
-    // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
-    if (selectedUnitOption) {
-      setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
-      setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
-      setHmkmValue(selectedUnitOption.hm_km);
-      setHmKmLast(selectedUnitOption.hm_last);
-      setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
-
-      // Tentukan batas kouta baru berdasarkan nilai unit
-      const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-      setKoutaLimit(newKoutaLimit); // Set batas kouta
-
-      // Set showError berdasarkan jenis unit dan batas kouta
-      setShowError(
-        unitValue.startsWith("LV") || 
-        (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+    if (navigator.onLine) {
+      const selectedUnitOption = unitOptions.find(
+        (unit) => unit.unit_no === unitValue
       );
+
+      if (selectedUnitOption) {
+        setModel(selectedUnitOption.brand); 
+        setOwner(selectedUnitOption.owner); 
+        setHmkmValue(selectedUnitOption.hm_km);
+        setHmKmLast(selectedUnitOption.hm_last);
+        setQtyValue(selectedUnitOption.qty); 
+
+        const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+        setKoutaLimit(newKoutaLimit); 
+
+        setShowError(
+          unitValue.startsWith("LV") || 
+          (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+        );
+      } else {
+        console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
+      }
     } else {
-      console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
+      // Offline: Retrieve data from IndexedDB
+      const { hm_last, model_unit, owner, qty_last } = await fetchLatestHmLast(unitValue);
+
+      if (hm_last !== undefined) {
+        setHmKmLast(hm_last);
+        console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
+      } else {
+        console.log("No valid 'hm_last' data found in IndexedDB or an error occurred.");
+      }
+
+      // Use qty_last for FBR calculation or other purposes
+      if (qty_last !== undefined) {
+        // Example: Set qty value or perform calculation here
+        setQtyValue(qty_last); // Or any other logic related to qty_last
+      }
+
+      // Set model and owner from offline data
+      setModel(model_unit || "Offline Model");
+      setOwner(owner || "Offline Owner");
+      setKoutaLimit(0); 
+      setShowError(false);
     }
   }
 };
@@ -1224,9 +1367,9 @@ useEffect(() => {
                   )}
 
      
-                  {showError && (!quantity || quantity === undefined) && (
-                    <p style={{ color: "red" }}>* Tipe transaksi  harus dipilih</p>
-                  )}
+                    {showError && quantity === undefined && (
+                        <p style={{ color: "red" }}>* Field harus diisi</p>
+                   )}
 
                 </IonCol>
                 <IonCol>
@@ -1437,7 +1580,7 @@ useEffect(() => {
                 <IonButton
                   onClick={(e) => handlePost(e)}
                   className={`check-button ${isOnline ? "button-save-data" : "button-save-draft"}`}
-                  disabled={isSaveButtonDisabled() || isError} // Disable if there's an error
+                  disabled={showError}
                 >
                   <IonIcon slot="start" icon={saveOutline} />
                   {isOnline ? "Simpan Data" : "Simpan Data Ke Draft"}
