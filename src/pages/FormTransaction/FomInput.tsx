@@ -782,78 +782,8 @@ const [stock, setStock] = useState<number>(0);
   }, [selectedUnit]);
 
   
-  const loadUnitDataQuota = async () => {
-    const today = new Date();
-    const formattedDate = today.toISOString().split('T')[0];
 
-    try {
-        // Coba untuk mendapatkan data quota yang disimpan di local storage
-        const cachedData = await getDataFromStorage('unitQuota');
-        let quotaData = cachedData;
 
-        if (!quotaData) {
-            // Jika tidak ada data cached, ambil dari server
-            quotaData = await fetchQuotaData(formattedDate);
-            if (quotaData && Array.isArray(quotaData)) {
-                // Simpan data yang diambil ke local storage untuk digunakan offline
-                await saveDataToStorage('unitQuota', quotaData);
-            }
-        }
-
-        if (quotaData && Array.isArray(quotaData)) {
-            let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
-
-            if (!foundUnitQuota) {
-                const yesterday = new Date(today);
-                yesterday.setDate(today.getDate() - 1);
-                const formattedYesterday = yesterday.toISOString().split('T')[0];
-
-                const previousQuotaData = await fetchQuotaData(formattedYesterday);
-                foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
-            }
-
-            if (foundUnitQuota) {
-                setCurrentUnitQuota(foundUnitQuota);
-                const totalQuota = foundUnitQuota.quota;
-                const usedQuota = foundUnitQuota.used || 0;
-                const additionalQuota = foundUnitQuota.additional || 0;
-                const remainingQuota = totalQuota + additionalQuota - usedQuota;
-
-                if (foundUnitQuota.isActive) {
-                    setUnitQuota(totalQuota);
-                    setRemainingQuota(remainingQuota);
-
-                    if (remainingQuota > 0) {
-                        setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
-                    } else {
-                        setQuotaMessage(`Sisa Kuota ${selectedUnit}: 0 Liter`);
-                    }
-
-                    const issuedAmount = foundUnitQuota.issued || 0;
-                    if (issuedAmount > remainingQuota) {
-                        setQuotaMessage(`Error: Issue Melebihi Kouta ${selectedUnit}`);
-                    }
-                } else {
-                    setUnitQuota(0);
-                    setRemainingQuota(0);
-                    setQuotaMessage("Pembatasan Kuota Dinonaktifkan.");
-                }
-            } else {
-                setUnitQuota(0);
-                setRemainingQuota(0);
-                setQuotaMessage(`Pembatasan kuota dinonaktifkan : ${selectedUnit}`);
-            }
-        } else {
-            console.error('No quota data found for the specified date');
-        }
-    } catch (error) {
-        console.error('Error fetching quota data:', error);
-    }
-};
-
-useEffect(() => {
-    loadUnitDataQuota();
-}, [selectedUnit]);
 
 
 useEffect(() => {
@@ -950,6 +880,67 @@ const handleQuantityChange = (e: any) => {
   setQuantityError(""); // Kosongkan pesan error
   setIsError(false); // Tidak ada error
 };
+
+
+
+useEffect(() => {
+  const loadUnitDataQuota = async () => {
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+
+    try {
+      let quotaData = await fetchQuotaData(formattedDate);
+
+      if (!quotaData || !Array.isArray(quotaData)) {
+        // If fetching quota data fails, try loading from local storage
+        console.warn('Fetching online quota data failed. Attempting to load from local storage.');
+        quotaData = await getDataFromStorage('unitQuota'); // adjust key as needed
+      }
+
+      if (quotaData && Array.isArray(quotaData)) {
+        let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
+
+        if (!foundUnitQuota) {
+          // Check previous day quota data if today's data not found
+          const yesterday = new Date(today);
+          yesterday.setDate(today.getDate() - 1);
+          const formattedYesterday = yesterday.toISOString().split('T')[0];
+          const previousQuotaData = await fetchQuotaData(formattedYesterday);
+
+          foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
+        }
+
+        if (foundUnitQuota) {
+          setCurrentUnitQuota(foundUnitQuota);
+          const totalQuota = foundUnitQuota.quota || 0;
+          const usedQuota = foundUnitQuota.used || 0;
+          const remaining = totalQuota - usedQuota;
+
+          if (foundUnitQuota.isActive) {
+            setUnitQuota(totalQuota);
+            setRemainingQuota(remaining);
+            setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remaining} Liter`);
+          } else {
+            setUnitQuota(0);
+            setRemainingQuota(0);
+            setQuotaMessage("Pembatasan kuota dinonaktifkan.");
+          }
+        } else {
+          // No quota found case
+          setUnitQuota(0);
+          setRemainingQuota(0);
+          setQuotaMessage("");
+        }
+      } else {
+        console.error('No quota data available for the specified date.');
+      }
+    } catch (error) {
+      console.error('Error fetching quota data:', error);
+    }
+  };
+
+  loadUnitDataQuota();
+}, [selectedUnit]);
 
 
 const calculateFlowEnd = (typeTrx: string): string | number => {
