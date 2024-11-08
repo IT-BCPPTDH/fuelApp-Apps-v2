@@ -840,177 +840,37 @@ useEffect(() => {
 const handleQuantityChange = (e: any) => {
   const inputQuantity = Number(e.detail.value);
 
-  // Validate if quantity is greater than 0 for all transaction types
+  // Ensure the input is valid and greater than 0
   if (isNaN(inputQuantity) || inputQuantity <= 0) {
-    setQuantityError("Qty Issued harus lebih besar dari 0");
-    setIsError(true);
-    return; // Keluar jika tidak valid
+      setQuantityError("Qty Issued harus lebih besar dari 0");
+      setIsError(true);
+      return;
+  }
+
+  // Directly use the remaining quota from the state
+  if (inputQuantity > remainingQuota) {
+      setQuantityError(`Qty Issued tidak boleh lebih besar dari sisa kuota (${remainingQuota})`);
+      setIsError(true);
+      return;
   }
 
   const isReceiptTransaction = typeTrx.some(
-    (trx) => trx.name === "Receipt" || trx.name === "Receipt KPC" || trx.name === "Transfer"
+      (trx) => trx.name === "Receipt" || trx.name === "Receipt KPC" || trx.name === "Transfer"
   );
 
   if (isReceiptTransaction) {
-    // Jika jenis transaksi adalah 'receipt' atau 'receipt kpc', atur jumlah tanpa validasi sisa kouta atau stock
-    setQuantity(inputQuantity);
-    setQuantityError(""); // Kosongkan pesan error
-    setIsError(false); // Tidak ada error
-    return;
+      setQuantity(inputQuantity);
+      setQuantityError(""); 
+      setIsError(false); 
+      return;
   }
 
-  // Validasi untuk unit yang dimulai dengan LV atau HLV jika jenis transaksi adalah issued atau transfer
-  if (typeof selectedUnit === "string" && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-    if (inputQuantity > remainingQuota) {
-      setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
-      setIsError(true);
-      return; // Keluar jika melebihi sisa kouta
-    }
-  } else {
-    // Cek Qty Issued tidak boleh lebih besar dari Stock On Hand
-    if (inputQuantity > stock) {
-      setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
-      setIsError(true);
-      return; // Keluar jika melebihi Stock On Hand
-    }
-  }
-
-  // Jika semua validasi berhasil, perbarui state
-  setQuantity(inputQuantity); // Set jumlah yang valid
-  setQuantityError(""); // Kosongkan pesan error
-  setIsError(false); // Tidak ada error
+  setQuantity(inputQuantity);
+  setQuantityError("");
+  setIsError(false);
 };
 
 
-
-// useEffect(() => {
-//   const loadUnitDataQuota = async () => {
-//     const today = new Date();
-//     const formattedDate = today.toISOString().split('T')[0];
-
-//     try {
-//       let quotaData = await fetchQuotaData(formattedDate);
-
-//       if (!quotaData || !Array.isArray(quotaData)) {
-//         // If fetching quota data fails, try loading from local storage
-//         console.warn('Fetching online quota data failed. Attempting to load from local storage.');
-//         quotaData = await getDataFromStorage('unitQuota');
-//         console.log("data Offline kouta",qoutaData) // adjust key as needed
-//       }
-
-//       if (quotaData && Array.isArray(quotaData)) {
-//         let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
-
-//         if (!foundUnitQuota) {
-//           // Check previous day quota data if today's data not found
-//           const yesterday = new Date(today);
-//           yesterday.setDate(today.getDate() - 1);
-//           const formattedYesterday = yesterday.toISOString().split('T')[0];
-//           const previousQuotaData = await fetchQuotaData(formattedYesterday);
-
-//           foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
-//         }
-
-//         if (foundUnitQuota) {
-//           setCurrentUnitQuota(foundUnitQuota);
-//           const totalQuota = foundUnitQuota.quota || 0;
-//           const usedQuota = foundUnitQuota.used || 0;
-//           const remaining = totalQuota - usedQuota;
-
-//           if (foundUnitQuota.isActive) {
-//             setUnitQuota(totalQuota);
-//             setRemainingQuota(remaining);
-//             setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remaining} Liter`);
-//           } else {
-//             setUnitQuota(0);
-//             setRemainingQuota(0);
-//             setQuotaMessage("Pembatasan kuota dinonaktifkan.");
-//           }
-//         } else {
-//           // No quota found case
-//           setUnitQuota(0);
-//           setRemainingQuota(0);
-//           setQuotaMessage("");
-//         }
-//       } else {
-//         console.error('No quota data available for the specified date.');
-//       }
-//     } catch (error) {
-//       console.error('Error fetching quota data:', error);
-//     }
-//   };
-
-//   loadUnitDataQuota();
-// }, [selectedUnit]);
-
-//   const loadUnitDataQuota = async () => {
-//     const today = new Date();
-//     const formattedDate = today.toISOString().split('T')[0];
-
-//     try {
-//         // Coba untuk mendapatkan data quota yang disimpan di local storage
-//         const cachedData = await getDataFromStorage('unitQuota');
-//         let quotaData = cachedData;
-
-//         if (!quotaData) {
-//             // Jika tidak ada data cached, ambil dari server
-//             quotaData = await fetchQuotaData(formattedDate);
-//             if (quotaData && Array.isArray(quotaData)) {
-//                 // Simpan data yang diambil ke local storage untuk digunakan offline
-//                 await saveDataToStorage('unitQuota', quotaData);
-//             }
-//         }
-
-//         if (quotaData && Array.isArray(quotaData)) {
-//             let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
-
-//             if (!foundUnitQuota) {
-//                 const yesterday = new Date(today);
-//                 yesterday.setDate(today.getDate() - 1);
-//                 const formattedYesterday = yesterday.toISOString().split('T')[0];
-
-//                 const previousQuotaData = await fetchQuotaData(formattedYesterday);
-//                 foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
-//             }
-
-//             if (foundUnitQuota) {
-//                 setCurrentUnitQuota(foundUnitQuota);
-//                 const totalQuota = foundUnitQuota.quota;
-//                 const usedQuota = foundUnitQuota.used || 0;
-//                 const additionalQuota = foundUnitQuota.additional || 0;
-//                 const remainingQuota = totalQuota + additionalQuota - usedQuota;
-
-//                 if (foundUnitQuota.isActive) {
-//                     setUnitQuota(totalQuota);
-//                     setRemainingQuota(remainingQuota);
-
-//                     if (remainingQuota > 0) {
-//                         setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
-//                     } else {
-//                         setQuotaMessage(`Sisa Kuota ${selectedUnit}: 0 Liter`);
-//                     }
-
-//                     const issuedAmount = foundUnitQuota.issued || 0;
-//                     if (issuedAmount > remainingQuota) {
-//                         setQuotaMessage(`Error: Issue Melebihi Kouta ${selectedUnit}`);
-//                     }
-//                 } else {
-//                     setUnitQuota(0);
-//                     setRemainingQuota(0);
-//                     setQuotaMessage("Pembatasan Kuota Dinonaktifkan.");
-//                 }
-//             } else {
-//                 setUnitQuota(0);
-//                 setRemainingQuota(0);
-//                 setQuotaMessage(`Pembatasan kuota dinonaktifkan : ${selectedUnit}`);
-//             }
-//         } else {
-//             console.error('No quota data found for the specified date');
-//         }
-//     } catch (error) {
-//         console.error('Error fetching quota data:', error);
-//     }
-// };
 
 
 
@@ -1917,10 +1777,10 @@ useEffect(() => {
                   <IonIcon slot="start" icon={closeCircleOutline} />
                   Tutup Form
                 </IonButton>
-                <IonButton
+                <IonButton disabled={isError}
                   onClick={(e) => handlePost(e)}
                   className={`check-button ${isOnline ? "button-save-data" : "button-save-draft"}`}
-                  disabled={showError}
+                  
                 >
                   <IonIcon slot="start" icon={saveOutline} />
                   {isOnline ? "Simpan Data" : "Simpan Data Ke Draft"}
