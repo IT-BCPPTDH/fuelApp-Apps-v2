@@ -943,6 +943,79 @@ const handleQuantityChange = (e: any) => {
 //   loadUnitDataQuota();
 // }, [selectedUnit]);
 
+//   const loadUnitDataQuota = async () => {
+//     const today = new Date();
+//     const formattedDate = today.toISOString().split('T')[0];
+
+//     try {
+//         // Coba untuk mendapatkan data quota yang disimpan di local storage
+//         const cachedData = await getDataFromStorage('unitQuota');
+//         let quotaData = cachedData;
+
+//         if (!quotaData) {
+//             // Jika tidak ada data cached, ambil dari server
+//             quotaData = await fetchQuotaData(formattedDate);
+//             if (quotaData && Array.isArray(quotaData)) {
+//                 // Simpan data yang diambil ke local storage untuk digunakan offline
+//                 await saveDataToStorage('unitQuota', quotaData);
+//             }
+//         }
+
+//         if (quotaData && Array.isArray(quotaData)) {
+//             let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
+
+//             if (!foundUnitQuota) {
+//                 const yesterday = new Date(today);
+//                 yesterday.setDate(today.getDate() - 1);
+//                 const formattedYesterday = yesterday.toISOString().split('T')[0];
+
+//                 const previousQuotaData = await fetchQuotaData(formattedYesterday);
+//                 foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
+//             }
+
+//             if (foundUnitQuota) {
+//                 setCurrentUnitQuota(foundUnitQuota);
+//                 const totalQuota = foundUnitQuota.quota;
+//                 const usedQuota = foundUnitQuota.used || 0;
+//                 const additionalQuota = foundUnitQuota.additional || 0;
+//                 const remainingQuota = totalQuota + additionalQuota - usedQuota;
+
+//                 if (foundUnitQuota.isActive) {
+//                     setUnitQuota(totalQuota);
+//                     setRemainingQuota(remainingQuota);
+
+//                     if (remainingQuota > 0) {
+//                         setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
+//                     } else {
+//                         setQuotaMessage(`Sisa Kuota ${selectedUnit}: 0 Liter`);
+//                     }
+
+//                     const issuedAmount = foundUnitQuota.issued || 0;
+//                     if (issuedAmount > remainingQuota) {
+//                         setQuotaMessage(`Error: Issue Melebihi Kouta ${selectedUnit}`);
+//                     }
+//                 } else {
+//                     setUnitQuota(0);
+//                     setRemainingQuota(0);
+//                     setQuotaMessage("Pembatasan Kuota Dinonaktifkan.");
+//                 }
+//             } else {
+//                 setUnitQuota(0);
+//                 setRemainingQuota(0);
+//                 setQuotaMessage(`Pembatasan kuota dinonaktifkan : ${selectedUnit}`);
+//             }
+//         } else {
+//             console.error('No quota data found for the specified date');
+//         }
+//     } catch (error) {
+//         console.error('Error fetching quota data:', error);
+//     }
+// };
+
+
+
+
+
 useEffect(() => {
   const loadUnitDataQuota = async () => {
     const today = new Date();
@@ -1026,122 +1099,6 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
 
 
 
-
-
-// useEffect(() => {
-//   const loadUnitDataQuota = async () => {
-//     const today = new Date();
-//     const formattedDate = today.toISOString().split('T')[0];
-
-//     try {
-//       let quotaData = await fetchQuotaData(formattedDate);
-
-//       if (!quotaData || !Array.isArray(quotaData)) {
-//         // If fetching quota data fails, try loading from local storage
-//         console.warn('Fetching online quota data failed. Attempting to load from local storage.');
-//         quotaData = await getDataFromStorage('unitQuota'); // adjust key as needed
-//       }
-
-//       if (quotaData && Array.isArray(quotaData)) {
-//         let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
-
-//         if (!foundUnitQuota) {
-//           // Check previous day quota data if today's data not found
-//           const yesterday = new Date(today);
-//           yesterday.setDate(today.getDate() - 1);
-//           const formattedYesterday = yesterday.toISOString().split('T')[0];
-//           const previousQuotaData = await fetchQuotaData(formattedYesterday);
-
-//           foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
-//         }
-
-//         if (foundUnitQuota) {
-//           setCurrentUnitQuota(foundUnitQuota);
-//           const totalQuota = foundUnitQuota.quota || 0;
-//           const usedQuota = foundUnitQuota.used || 0;
-//           const remaining = totalQuota - usedQuota;
-
-//           if (foundUnitQuota.isActive) {
-//             setUnitQuota(totalQuota);
-//             setRemainingQuota(remaining);
-//             setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remaining} Liter`);
-//           } else {
-//             setUnitQuota(0);
-//             setRemainingQuota(0);
-//             setQuotaMessage("Pembatasan kuota dinonaktifkan.");
-//           }
-//         } else {
-//           // No quota found case
-//           setUnitQuota(0);
-//           setRemainingQuota(0);
-//           setQuotaMessage("");
-//         }
-//       } else {
-//         console.error('No quota data available for the specified date.');
-//       }
-//     } catch (error) {
-//       console.error('Error fetching quota data:', error);
-//     }
-//   };
-
-//   loadUnitDataQuota();
-// }, [selectedUnit]);
-
-
-useEffect(() => {
-  const loadUnitDataQuota = async () => {
-    const today = new Date().toISOString().split('T')[0];
-
-    try {
-      if (navigator.onLine) {
-        // Online: Fetch quota data from API or server
-        const quotaData = await fetchQuotaData(today);
-        processQuotaData(quotaData);
-      } else {
-        // Offline: Retrieve quota data from local storage or IndexedDB
-        const offlineQuotaLimit = await getDataFromStorage('unitQuota');
-        
-        if (offlineQuotaLimit && offlineQuotaLimit[selectedUnit]) {
-          const foundUnitQuota = offlineQuotaLimit[selectedUnit];
-          processQuotaData([foundUnitQuota]);
-        } else {
-          console.warn("No offline quota data found for the selected unit.");
-          setQuotaMessage("Offline quota data unavailable");
-          setCurrentUnitQuota(null);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading quota data:", error);
-    }
-  };
-
-  const processQuotaData = (quotaData: any[]) => {
-    if (quotaData && Array.isArray(quotaData)) {
-      const foundUnitQuota = quotaData.find(unit => unit.unitNo === selectedUnit);
-
-      if (foundUnitQuota) {
-        setCurrentUnitQuota(foundUnitQuota);
-        const totalQuota = foundUnitQuota.quota;
-        const usedQuota = foundUnitQuota.used || 0;
-        const remainingQuota = totalQuota - usedQuota;
-
-        if (foundUnitQuota.isActive) {
-          setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
-          setRemainingQuota(remainingQuota);
-        } else {
-          setQuotaMessage("Quota restriction is inactive.");
-        }
-      } else {
-        setQuotaMessage("No quota data found for this unit.");
-      }
-    }
-  };
-
-  loadUnitDataQuota();
-}, [selectedUnit]);
-
-
-
 const handleUnitChange = async (
   newValue: SingleValue<{ value: string; label: string }>, 
   actionMeta: ActionMeta<{ value: string; label: string }>
@@ -1202,22 +1159,7 @@ const handleUnitChange = async (
         setModel("Offline Model");
         setOwner("Offline Owner");
       }
-      const offlineQuotaLimit = await getDataFromStorage('unitQuota');
-      console.log("Offline quota data retrieved:", offlineQuotaLimit);
-      
-      if (offlineQuotaLimit) {
-        console.log("Selected unit value:", unitValue);
-        const unitQuota = offlineQuotaLimit[unitValue]?.quota || 0;
-        console.log("Quota for selected unit (offline):", unitQuota);
-      
-        const newKoutaLimit = (unitValue.startsWith("LV") || unitValue.startsWith("HLV")) ? unitQuota : 0;
-        console.log("New kouta limit set:", newKoutaLimit);
-        
-        setKoutaLimit(newKoutaLimit); 
-        setShowError(false);
-      } else {
-        console.warn("No offline quota data found for the selected unit.");
-      }
+     
     }
   }
 };
