@@ -266,8 +266,13 @@ useEffect(() => {
 
   
   const handleLogout = () => {
-    route.push('/closing-data');
-  };
+    if (isOnline) {
+        route.push('/closing-data');
+    } else {
+        alert("You are offline. Please connect to the internet to log out.");
+    }
+};
+
 
   useEffect(() => {
     const fetchJdeOptions = async () => {
@@ -540,11 +545,11 @@ const fetchcardDash = async (lkfId: string) => {
       ];
 
       setDataHome(preparedData);
-      localStorage.setItem('cardDash', JSON.stringify(preparedData)); // Cache data yang sudah disiapkan
+      localStorage.setItem('cardDash', JSON.stringify(preparedData)); 
 
     } else {
       console.error("No valid data found:", dataHome);
-      setDataHome([]); // Kosongkan data jika tidak ada atau format tidak valid
+      setDataHome([]); 
     }
   } catch (error) {
     console.error("Error fetching card data:", error);
@@ -613,9 +618,15 @@ const fetchcardDash = async (lkfId: string) => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Update Data
             </IonButton> */}
-             <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout} disabled={pendingStatus}>
-              Close LKF & Logout
+             <IonButton
+                color="warning"
+                style={{ marginLeft: "10px" }}
+                onClick={handleLogout}
+                disabled={pendingStatus || !isOnline}  // Combine both conditions to disable button if either is true
+              >
+                Close LKF & Logout
             </IonButton>
+
           </div>
         </div>
 

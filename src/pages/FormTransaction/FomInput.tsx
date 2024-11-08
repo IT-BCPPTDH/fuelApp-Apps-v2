@@ -859,13 +859,13 @@ const handleQuantityChange = (e: any) => {
   );
 
   if (isReceiptTransaction) {
-      setQuantity(inputQuantity);
+      setQuantity(0);
       setQuantityError(""); 
       setIsError(false); 
       return;
   }
 
-  setQuantity(inputQuantity);
+  setQuantity(0);
   setQuantityError("");
   setIsError(false);
 };
