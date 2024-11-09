@@ -59,6 +59,7 @@ import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
 import CameraInput from "../../components/takeFoto";
 import { saveDataToStorage } from "../../services/dataService";
+import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 
 interface Typetrx {
   id: number;
@@ -136,7 +137,8 @@ const FormTRX: React.FC = () => {
        id: string;
        unit_no: string;
         brand: string;
-         owner: string 
+         owner: string;
+         model:string
 }[]
   >([]);
 
@@ -212,7 +214,7 @@ const FormTRX: React.FC = () => {
 >([]);
 
 
-
+const [transaksiData, setTransaksiData] = useState<any>(null); 
   const [filteredUnits, setFilteredUnits] = useState(unitOptions);
 
   const [selectedUnit, setSelectedUnit] = useState<string>("");
@@ -499,7 +501,9 @@ const [stock, setStock] = useState<number>(0);
         await insertNewData(dataPost);
         updateCard();
         getTable();
+        
         // updatedKuota()
+        
   
         const responseStatus = response.status;
   
@@ -528,6 +532,9 @@ const [stock, setStock] = useState<number>(0);
     }
   };
   
+
+
+
   const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
     if (unitQuota) {
@@ -666,7 +673,7 @@ const [stock, setStock] = useState<number>(0);
 
   const handleHmkmUnitChange = (e: CustomEvent) => {
     const value = Number(e.detail.value);
-    if (hmkmLast !== null && value < hmkmLast) {
+    if (hmkmValue !== null && value < hmkmValue) {
       setShowError(true);
     } else {
       setShowError(false);
@@ -674,6 +681,8 @@ const [stock, setStock] = useState<number>(0);
     setHmkmValue(value);
   };
 
+
+  
   const handleHmLastChange = (e: CustomEvent) => {
     const newValue = Number(e.detail.value);
     if (hmkmLast !== null && newValue < hmkmLast) {
@@ -760,8 +769,8 @@ const [stock, setStock] = useState<number>(0);
             const hmKmLastValue = Number(latestUnitData.hm_km) || 0;
             setHmkmValue(hmKmValue);
             setHmKmLast( hmKmLastValue);
-            // setModel(latestUnitData.model_unit);
-            // setOwner(latestUnitData.owner);
+            setModel(latestUnitData.model_unit);
+            setOwner(latestUnitData.owner);
             setQtyValue(Number(latestUnitData.qty) || 0); 
             // localStorage.setItem('latestUnitDataHMKM', JSON.stringify(latestUnitData));
           } else {
@@ -933,52 +942,113 @@ useEffect(() => {
 
 
 
+// const handleQuantityChange = (e: any) => {
+//   const inputQuantity = Number(e.detail.value);
+
+//   // Validate if quantity is a valid number and greater than 0
+//   if (isNaN(inputQuantity) || inputQuantity <= 0) {
+//       setQuantityError("Qty Issued harus lebih besar dari 0");
+//       setIsError(true);
+//       return;
+//   }
+
+//   // Check if the transaction type is 'receipt' or 'receipt kpc', set the quantity without further validation
+//   const isReceiptTransaction = typeTrx.some(
+//       (trx) => ["Receipt", "Receipt KPC", "Transfer"].includes(trx.name)
+//   );
+//   if (isReceiptTransaction) {
+//       setQuantity(inputQuantity);
+//       setQuantityError(""); // Clear error message
+//       setIsError(false);
+//       return;
+//   }
+
+//   // Validate for units starting with LV or HLV
+//   if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
+//       console.log("Debug - Remaining Quota:", remainingQuota);  // Debug log for remainingQuota
+
+//       // Ensure remainingQuota is a valid number
+//       if (typeof remainingQuota !== 'number' || isNaN(remainingQuota) || remainingQuota <= 0) {
+//           setQuantityError("Sisa kouta tidak valid.");
+//           setIsError(true);
+//           return;
+//       }
+
+//       console.log("Debug - Input Quantity:", inputQuantity); // Debug log for inputQuantity
+
+//       if (inputQuantity > remainingQuota) {
+//           setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+//           setIsError(true);
+//           return;
+//       }
+//   } else {
+//       // Validate that Qty Issued does not exceed Stock On Hand for other units
+//       if (inputQuantity > stock) {
+//           setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
+//           setIsError(true);
+//           return;
+//       }
+//   }
+
+//   // If all validations pass, update the state
+//   setQuantity(inputQuantity);
+//   setQuantityError("");
+//   setIsError(false);
+// };
+
+
 const handleQuantityChange = (e: any) => {
-  const inputQuantity = Number(e.detail.value);
+  const inputQuantity = Number(e.detail.value); // Ensure input is a number
 
   // Validate if quantity is a valid number and greater than 0
   if (isNaN(inputQuantity) || inputQuantity <= 0) {
-      setQuantityError("Qty Issued harus lebih besar dari 0");
-      setIsError(true);
-      return;
+    setQuantityError("Qty Issued harus lebih besar dari 0");
+    setIsError(true);
+    return;
   }
 
   // Check if the transaction type is 'receipt' or 'receipt kpc', set the quantity without further validation
   const isReceiptTransaction = typeTrx.some(
-      (trx) => ["Receipt", "Receipt KPC", "Transfer"].includes(trx.name)
+    (trx) => ["Receipt", "Receipt KPC", "Transfer"].includes(trx.name)
   );
   if (isReceiptTransaction) {
-      setQuantity(inputQuantity);
-      setQuantityError(""); // Clear error message
-      setIsError(false);
-      return;
+    setQuantity(inputQuantity);
+    setQuantityError(""); // Clear error message
+    setIsError(false);
+    return;
   }
 
   // Validate for units starting with LV or HLV
   if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-      console.log("Debug - Remaining Quota:", remainingQuota);  // Debug log for remainingQuota
+    console.log("Debug - Selected Unit:", selectedUnit);  // Debug log for selectedUnit
+    console.log("Debug - Remaining Quota:", remainingQuota);  // Debug log for remainingQuota
 
-      // Ensure remainingQuota is a valid number
-      if (typeof remainingQuota !== 'number' || isNaN(remainingQuota) || remainingQuota <= 0) {
-          setQuantityError("Sisa kouta tidak valid.");
-          setIsError(true);
-          return;
-      }
+    // Ensure remainingQuota is a valid number
+    if (isNaN(remainingQuota) || remainingQuota <= 0) {
+      console.error("Remaining Quota is invalid or zero.");
+      setQuantityError("Sisa kouta tidak valid.");
+      setIsError(true);
+      return;
+    }
 
-      console.log("Debug - Input Quantity:", inputQuantity); // Debug log for inputQuantity
+    console.log("Debug - Input Quantity:", inputQuantity); // Debug log for inputQuantity
 
-      if (inputQuantity > remainingQuota) {
-          setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
-          setIsError(true);
-          return;
-      }
+    // Check if inputQuantity is greater than remainingQuota
+    if (inputQuantity > remainingQuota) {
+      console.log("Debug - Validation Failed: Quantity is greater than remainingQuota");
+      setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+      setIsError(true);
+      return;
+    }
   } else {
-      // Validate that Qty Issued does not exceed Stock On Hand for other units
-      if (inputQuantity > stock) {
-          setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
-          setIsError(true);
-          return;
-      }
+    // Validate that Qty Issued does not exceed Stock On Hand for other units
+    console.log("Debug - Stock On Hand:", stock); // Debug log for stock value
+
+    if (inputQuantity > stock) {
+      setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
+      setIsError(true);
+      return;
+    }
   }
 
   // If all validations pass, update the state
@@ -986,6 +1056,8 @@ const handleQuantityChange = (e: any) => {
   setQuantityError("");
   setIsError(false);
 };
+
+
 
 
 useEffect(() => {
@@ -1152,7 +1224,7 @@ useEffect(() => {
 
   const calculateFBR = (): number => {
       if (typeof hmkmValue === 'number' && typeof hmkmLast === 'number' && typeof qtyValue === 'number') {
-          const difference =  hmkmValue - hmkmLast ;
+          const difference =   hmkmLast - hmkmValue  ;
           console.log('Difference (hmLast - hmkm):', difference);
 
           if (qtyValue === 0) {
@@ -1293,36 +1365,282 @@ const filteredUnitOptions = (selectedType &&
 //     }
 //   }
 // };
+// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
+//   if (newValue) {
+//     const unitValue = newValue.value;
+//     setSelectedUnit(unitValue); // Set the selected unit
+
+//     if (navigator.onLine) {
+//       // Online: Use data from unitOptions
+//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
+//       if (selectedUnitOption) {
+//         setHmKmLast(selectedUnitOption.hm_km);
+//         setQtyValue(selectedUnitOption.qty); // Assuming qty is part of the unitOptions
+//       }
+//     } else {
+//       // Offline: Retrieve data from IndexedDB
+//       const { hm_km, qty_last } = await fetchLatestHmLast(unitValue);
+//       console.log("dataoflie",hmkmLast)
+      
+//       if (hm_km !== undefined) {
+//         setHmLast(hm_km);
+//       }
+
+//       // If qty_last is null or undefined, set it to a default value (0)
+//       if (qty_last !== undefined) {
+//         setQtyValue(qty_last);
+      
+//       } else {
+//         console.log("qty_last not found in IndexedDB, setting default value to 0");
+//         setQtyValue(0); // Fallback value if qty_last is not found
+//       }
+//     }
+//   }
+// };
+
+// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
+//   if (newValue) {
+//     const unitValue = newValue.value;
+//     setSelectedUnit(unitValue); // Set the selected unit
+
+//     if (navigator.onLine) {
+//       // Online: Use data from unitOptions
+//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
+//       if (selectedUnitOption) {
+//         setHmKmLast(selectedUnitOption.hm_km);
+//         setQtyValue(selectedUnitOption.qty); // Assuming qty is part of the unitOptions
+//         setModel(selectedUnitOption.model_unit);  // Set model
+//         setOwner(selectedUnitOption.owner);  // Set owner
+//       }
+//     } else {
+//       // Offline: Retrieve data from IndexedDB
+//       const { hm_km, qty_last, model_unit, owner } = await fetchLatestHmLast(unitValue);
+      
+//       if (hm_km !== undefined) {
+//         setHmKmLast(hm_km);
+//       }
+      
+//       if (qty_last !== undefined) {
+//         setQtyValue(qty_last);
+//       } else {
+//         console.log("qty_last not found in IndexedDB, setting default value to 0");
+//         setQtyValue(0); // Fallback value if qty_last is not found
+//       }
+
+//       // Set model and owner when offline
+//       if (model !== undefined) {
+//         setModel(model);
+//       }
+//       if (owner !== undefined) {
+//         setOwner(owner);
+//       }
+//     }
+//   }
+// };
+// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
+//   if (newValue) {
+//     const unitValue = newValue.value;
+//     setSelectedUnit(unitValue); // Set the selected unit
+
+//     if (navigator.onLine) {
+//       // Online: Use data from unitOptions
+//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
+//       if (selectedUnitOption) {
+//         setHmKmLast(selectedUnitOption.hm_km);
+//         setQtyValue(selectedUnitOption.qty); // Assuming qty is part of the unitOptions
+//         setModel(selectedUnitOption.model_unit);  // Set model
+//         setOwner(selectedUnitOption.owner);  // Set owner
+//       }
+//     } else {
+//       // Offline: Retrieve data from localStorage's transaksiData
+//       const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
+//       console.log("Stored transaksiData:", storedTransaksiData); // Log data structure for debugging
+      
+//       if (storedTransaksiData?.data?.length > 0) {
+//         const matchingTransaction = storedTransaksiData.data.find(
+//           (          item: { no_unit: string; }) => item.no_unit === unitValue
+//         );
+        
+//         console.log("Matching transaction:", matchingTransaction); // Log to check match
+        
+//         if (matchingTransaction) {
+//           // Set hm_km, qty_last, model_unit, and owner from local storage data
+//           setHmKmLast(matchingTransaction.hm_last);
+//           setQtyValue(matchingTransaction.qty_last ?? 0); // Fallback to 0 if qty_last is missing
+//           setModel(matchingTransaction.model_unit ?? ''); // Fallback to empty string if model_unit is missing
+//           setOwner(matchingTransaction.owner ?? ''); // Fallback to empty string if owner is missing
+//         } else {
+//           console.log("No matching transaction found for unit:", unitValue);
+//           setHmKmLast(null);
+//           setQtyValue(0);
+//           setModel('');
+//           setOwner('');
+//         }
+//       } else {
+//         console.log("No data in transaksiData array.");
+//         setHmKmLast(null);
+//         setQtyValue(0);
+//         setModel('');
+//         setOwner('');
+//       }
+//     }
+//   }
+// };
+
+
+// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
+//   if (newValue) {
+//     const unitValue = newValue.value;
+//     setSelectedUnit(unitValue); // Set the selected unit
+
+//     if (navigator.onLine) {
+//       // Online: Use data from unitOptions
+//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
+//       if (selectedUnitOption) {
+//         setHmKmLast(selectedUnitOption.hm_km); // Set hm_last when online
+//         setQtyValue(selectedUnitOption.qty); // Assuming qty is part of the unitOptions
+//         setModel(selectedUnitOption.model_unit);  // Set model
+//         setOwner(selectedUnitOption.owner);  // Set owner
+//       }
+//     } else {
+//       // Offline: Retrieve data from localStorage's transaksiData
+//       const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
+//       console.log("Stored transaksiData:", storedTransaksiData); // Log data structure for debugging
+      
+//       if (storedTransaksiData?.data?.length > 0) {
+//         const matchingTransaction = storedTransaksiData.data.find(
+//           (          item: { no_unit: string; }) => item.no_unit === unitValue
+//         );
+        
+//         console.log("Matching transaction:", matchingTransaction); // Log to check match
+        
+//         if (matchingTransaction) {
+//           // Set hm_last, qty_last, model_unit, and owner from local storage data
+//           setHmKmLast(matchingTransaction.hm_km); // Use hm_last instead of hm_km
+//           setQtyValue(matchingTransaction.qty_last ?? 0); // Fallback to 0 if qty_last is missing
+//           setModel(matchingTransaction.model_unit ?? ''); // Fallback to empty string if model_unit is missing
+//           setOwner(matchingTransaction.owner ?? ''); // Fallback to empty string if owner is missing
+//         } else {
+//           console.log("No matching transaction found for unit:", unitValue);
+//           setHmKmLast(null);
+//           setQtyValue(0);
+//           setModel('');
+//           setOwner('');
+//         }
+//       } else {
+//         console.log("No data in transaksiData array.");
+//         setHmKmLast(null);
+//         setQtyValue(0);
+//         setModel('');
+//         setOwner('');
+//       }
+//     }
+//   }
+// };
+
+// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
+//   if (newValue) {
+//     const unitValue = newValue.value;
+//     setSelectedUnit(unitValue);
+
+//     if (navigator.onLine) {
+//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
+//       if (selectedUnitOption) {
+//         setHmKmLast(selectedUnitOption.hm_km);
+//         setQtyValue(selectedUnitOption.qty);
+//         setModel(selectedUnitOption.model|| '');  // Log missing model_unit
+//         setOwner(selectedUnitOption.owner || '');
+//       }
+//     } else {
+//       const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
+//       console.log("Stored transaksiData:", storedTransaksiData);
+
+//       if (storedTransaksiData?.data?.length > 0) {
+//         const matchingTransaction = storedTransaksiData.data.find(
+//           (item: { no_unit: string; }) => item.no_unit === unitValue
+//         );
+
+//         if (matchingTransaction) {
+//           console.log("Matching transaction found:", matchingTransaction);
+//           setHmKmLast(matchingTransaction.hm_km || null);
+//           setQtyValue(matchingTransaction.qty_last ?? 0);
+//           setModel(matchingTransaction.model || ''); // Check if model_unit is missing
+//           setOwner(matchingTransaction.owner || '');
+//         } else {
+//           console.log("No matching transaction found for unit:", unitValue);
+//           setDefaults();
+//         }
+//       } else {
+//         console.log("No data in transaksiData array.");
+//         setDefaults();
+//       }
+//     }
+//   }
+// };
+
+
 const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
   if (newValue) {
     const unitValue = newValue.value;
-    setSelectedUnit(unitValue); // Set the selected unit
+    setSelectedUnit(unitValue);
+    
+    console.log("Unit Value Selected:", unitValue); // Debugging log
 
     if (navigator.onLine) {
-      // Online: Use data from unitOptions
+      // Online mode
+      console.log("You are online");  // Debugging log
       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
+      
       if (selectedUnitOption) {
+        console.log("Selected Unit Option (Online):", selectedUnitOption); // Debugging log
         setHmKmLast(selectedUnitOption.hm_km);
-        setQtyValue(selectedUnitOption.qty); // Assuming qty is part of the unitOptions
+        setQtyValue(selectedUnitOption.qty);
+        setModel(selectedUnitOption.brand); 
+        setOwner(selectedUnitOption.owner); 
+      } else {
+        console.log("No matching unit found in unitOptions for unit:", unitValue);
       }
     } else {
-      // Offline: Retrieve data from IndexedDB
-      const { hm_last, qty_last } = await fetchLatestHmLast(unitValue);
-      
-      if (hm_last !== undefined) {
-        setHmKmLast(hm_last);
-      }
+      // Offline mode
+      console.log("You are offline");  // Debugging log
+      const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
+      console.log("Stored transaksiData (Offline):", storedTransaksiData); // Debugging log
 
-      // If qty_last is null or undefined, set it to a default value (0)
-      if (qty_last !== undefined) {
-        setQtyValue(qty_last);
+      if (storedTransaksiData?.data?.length > 0) {
+        const matchingTransaction = storedTransaksiData.data.find(
+          (item: { no_unit: string; }) => item.no_unit === unitValue
+        );
+
+        if (matchingTransaction) {
+          console.log("Matching transaction found (Offline):", matchingTransaction); // Debugging log
+          setHmKmLast(matchingTransaction.hm_km || null);
+          setQtyValue(matchingTransaction.qty_last ?? 0);
+          setModel(matchingTransaction.model || '');  // Ensure model is being set
+          setOwner(matchingTransaction.owner || '');
+        } else {
+          console.log("No matching transaction found for unit:", unitValue);
+          setDefaults(); // Call defaults if no match
+        }
       } else {
-        console.log("qty_last not found in IndexedDB, setting default value to 0");
-        setQtyValue(0); // Fallback value if qty_last is not found
+        console.log("No data in transaksiData array.");
+        setDefaults(); // Call defaults if no data
       }
     }
   }
 };
+
+// Helper function to set default values
+const setDefaults = () => {
+  setHmKmLast(null);
+  setQtyValue(0);
+ 
+};
+
+
+
+useEffect(() => {
+  console.log("Updated hmkmLast value:", hmkmLast);
+}, [hmkmLast]);
 
 // FBR Calculation function
 const calculateFBR = (): number => {
@@ -1508,16 +1826,16 @@ useEffect(() => {
                     <span style={{ color: "red" }}>*</span>
                   </IonLabel>
                   <IonInput
-                    style={{ background: "#E8E8E8" }}
-                    className="custom-input"
-                    type="number"
-                    placeholder="Input HM/KM Unit"
-                    value={hmkmValue|| ""
-                     }
-                     disabled={isFormDisabled}
-                     onIonChange={(e) => setHmKmLast(Number(e.detail.value))}
-                    onKeyDown={handleKeyDown}
-                  />
+                        style={{ background: "#E8E8E8" }}
+                        className="custom-input"
+                        type="number"
+                        placeholder="Input HM/KM Unit"
+                        value={hmkmLast !== null ? hmkmLast : hmLast} // fallback to hmkmLast when hmkmValue is null
+                        disabled={isFormDisabled}
+                        onIonChange={(e) => setHmKmLast(Number(e.detail.value))}
+                        onKeyDown={handleKeyDown}
+                      />
+
                    {showError && hmkmLast === undefined && (
                         <p style={{ color: "red" }}>* Field harus diisi</p>
                    )}
@@ -1535,6 +1853,7 @@ useEffect(() => {
                     // onIonChange={(e) => setHmkmValue(Number(e.detail.value))}
                     onKeyDown={handleKeyDown}
                   />
+                  
                   {showError && (
                     <div style={{ color: "red" }}>
                       HM/KM Unit Tidak Boleh Kecil Dari HM/KM Terakhir Transaksi
@@ -1543,54 +1862,50 @@ useEffect(() => {
                 </IonCol>
               </IonRow>
               <IonRow>
-                <IonCol>
-                  <IonLabel>
-                    Qty Issued / Receipt/ Transfer{" "}
-                    <span style={{ color: "red" }}>*</span>
-                  </IonLabel>
-                  <IonInput
-                    className="custom-input"
-                    ref={input2Ref}
-                    type="number"
-                    placeholder="Qty Issued / Receipt/ Transfer"
-                    onIonChange={handleQuantityChange}
-                    value={quantity}
+  <IonCol>
+    <IonLabel>
+      Qty Issued / Receipt/ Transfer{" "}
+      <span style={{ color: "red" }}>*</span>
+    </IonLabel>
+    <IonInput
+      className="custom-input"
+      ref={input2Ref}
+      type="number"
+      placeholder="Qty Issued / Receipt/ Transfer"
+      onIonChange={handleQuantityChange}
+      value={quantity}
+      disabled={isFormDisabled}
+    />
 
-                    disabled={isFormDisabled}
-                  />
+    {/* Display error if the field is empty or if quantity is invalid */}
+    {quantityError && (
+      <div style={{ color: "red", marginTop: "5px" }}>
+        {quantityError}
+      </div>
+    )}
 
-                  {/* Display error if the field is empty */}
-                  {quantityError && (
-                    <div style={{ color: "red", marginTop: "5px" }}>
-                      {quantityError}
-                    </div>
-                  )}
+    {/* Additional error check when quantity is undefined */}
+    {showError && quantity === undefined && (
+      <p style={{ color: "red" }}>* Field harus diisi</p>
+    )}
+  </IonCol>
+  
+  <IonCol>
+    <IonLabel>
+      FBR Historis <span style={{ color: "red" }}>*</span>
+    </IonLabel>
+    <IonInput
+      style={{ background: "#E8E8E8" }}
+      className="custom-input"
+      type="number"
+      placeholder="Input FBR"
+      disabled={isFormDisabled}
+      readonly
+      value={fbrResult} // Gunakan hasil perhitungan dari state
+    />
+  </IonCol>
+</IonRow>
 
-                    {quantityError && <p style={{ color: 'red' }}>{quantityError}</p>}  
-
-     
-                    {showError && quantity === undefined && (
-                        <p style={{ color: "red" }}>* Field harus diisi</p>
-                   )}
-
-                </IonCol>
-                <IonCol>
-                  <IonLabel>
-                    FBR Historis <span style={{ color: "red" }}>*</span>
-                  </IonLabel>
-                  <IonInput
-                      style={{ background: "#E8E8E8" }}
-                      className="custom-input"
-                      type="number"
-                      placeholder="Input FBR"
-                      disabled={isFormDisabled}
-                      readonly
-                      value={fbrResult} // Gunakan hasil perhitungan dari state
-                    />
-
-                 
-                </IonCol>
-              </IonRow>
               <IonRow>
                 <IonCol>
                   <IonLabel>

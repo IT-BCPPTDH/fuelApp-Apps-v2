@@ -99,23 +99,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
     return () => clearTimeout(timeoutId);
   }, []);
   
-  useEffect(() => {
-    const fetchTransaksiData = async () => {
-      try {
-        const data = await getTrasaksiSemua(); // Call your function here
-        setTransaksiData(data); 
-        console.log(data)// Set the data to state
-      } catch (error) {
-        if (error instanceof Error) {
-         
-        } else {
-        
-        }
-      }
-    };
 
-    fetchTransaksiData(); // Call the async function within useEffect
-  }, []);
   
   const handleLogin = async () => {
     setLoading(true);
@@ -233,16 +217,38 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 }, []);
 
 
+const dataTrasaksi = async () => {
+  try {
+     
+      const transaksiData = await getTrasaksiSemua();
+      console.log("dta aja", transaksiData)
+
+      // Check if data is available before storing it
+      if (transaksiData && Array.isArray(transaksiData) && transaksiData.length > 0) {
+          // Save the data to localStorage as a string
+          localStorage.setItem('transaksiData', JSON.stringify(transaksiData));
+          console.log('Transaksi data has been saved to localStorage');
+      } else {
+          console.warn('No transaksi data to save.');
+      }
+  } catch (error) {
+      console.error('Error fetching and saving transaksi data:', error);
+  }
+};
 
 
 
+useEffect(()=>{
+  dataTrasaksi();
+
+})
 
 const loadTrxLast = async () => {
   try {
     // First, check local storage for cached operator data
     const cachedData = await getDataFromStorage('oneMounth');
     if (cachedData && Array.isArray(cachedData)) {
-      console.log("Loaded operat:", cachedData);
+      console.log("Loaded data terakhir:", cachedData);
       setDtTrx(cachedData); // Use the cached data
     } else {
       // If no cached data, fetch from the API
@@ -263,6 +269,8 @@ const loadTrxLast = async () => {
 useEffect(() => {
   loadTrxLast(); 
 }, []);
+
+
 
   return (
     <IonPage>

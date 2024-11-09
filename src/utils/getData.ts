@@ -321,7 +321,7 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 
 
 
-export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_last?: number, model_unit?: string, owner?: string, qty_last?: number }> => {
+export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_km?: number, model_unit?: string, owner?: string, qty_last?: number }> => {
   try {
     // Fetch the latest entry from the database
     const latestEntry = await db.dataTransaksi.where('no_unit').equals(selectedUnit).last();
@@ -331,10 +331,10 @@ export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_last
 
     if (latestEntry) {
       return {
-        hm_last: latestEntry.hm_last,       // Existing field
+        hm_km: latestEntry.hm_km,       // Existing field
         model_unit: latestEntry.model_unit, // Existing field
         owner: latestEntry.owner,          // Existing field
-        qty_last: latestEntry.qty          // New field for qty_last
+        qty_last: latestEntry.qty_last          // New field for qty_last
       };
     } else {
       console.warn("No valid 'hm_last' data found in the dataTransaksi collection.");

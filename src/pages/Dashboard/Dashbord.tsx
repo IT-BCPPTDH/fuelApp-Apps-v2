@@ -32,6 +32,7 @@ import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
 import { addDataTrxType } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
 import { Network } from '@capacitor/network';
+import { getTrasaksiSemua } from '../../hooks/getAllTransaksi';
 
 
 // Define the data structure for the card
@@ -425,6 +426,7 @@ useEffect(() => {
     }
     updateAllData()
     updateCard()
+  
     
   };
   const IssuedTotal = async () => {
@@ -454,6 +456,20 @@ const updateCard = async () => {
   localStorage.removeItem('cardDash')
   const cards = await fetchcardDash(lkfId);
 }
+
+// const updateDataTrx = async () => {
+//   localStorage.removeItem('transaksiData')
+//   const datanya = await  getTrasaksiSemua();
+//   console.log("Oke",datanya)
+// }
+
+
+
+
+
+// useEffect(()=>{
+//   updateDataTrx
+// })
 
 const fetchData = async () => {
   setLoading(true);
