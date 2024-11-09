@@ -4,8 +4,12 @@ import { ResponseError } from "../helper/responseError";
 const BELinkMaster = import.meta.env.VITE_BACKEND_URL;
 
 export async function getTrasaksiSemua() {
-    // const url = `${BELinkMaster}/api/quota-usage/get-active/${date}`;
-    const url = `${ BELinkMaster}/api/operator/get-data-prev/:2024-11-09`;
+    // Get the current date in YYYY-MM-DD format
+    const today = new Date();
+    const currentDate = today.toISOString().split('T')[0];
+
+    // Construct the URL with the current date
+    const url = `${BELinkMaster}/api/operator/get-data-prev/${currentDate}`;
 
     try {
         const response = await CapacitorHttp.get({
@@ -21,7 +25,7 @@ export async function getTrasaksiSemua() {
 
         const data = response.data;
 
-        console.log('Successfully Transaksi data:', data);
+        console.log('Successfully fetched transaksi data:', data);
 
         return data;
     } catch (error: unknown) {

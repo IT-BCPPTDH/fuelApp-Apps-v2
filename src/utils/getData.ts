@@ -295,14 +295,43 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 // // };
 // Update fetchLatestHmLast to return an object with hm_last, model, and owner
 // Update fetchLatestHmLast to return an object with hm_last, model, owner, and qty_last
+// export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_km?: number, model_unit?: string, owner?: string, qty_last?: number }> => {
+//   try {
+//     // Fetch the latest entry from the database
+//     const latestEntry = await db.dataTransaksi.where('no_unit').equals(selectedUnit).last();
+    
+//     if (latestEntry) {
+//       return {
+//         hm_km: latestEntry.hm_km,       // Existing field
+//         model_unit: latestEntry.model_unit, // Existing field
+//         owner: latestEntry.owner,          // Existing field
+//         qty_last: latestEntry.qty          // New field for qty_last
+//       };
+//     } else {
+//       console.warn("No valid 'hm_last' data found in the dataTransaksi collection.");
+//       return {};
+//     }
+//   } catch (error) {
+//     // Log any errors that occur during data retrieval
+//     console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
+//     return {};
+//   }
+// };
+
+
+
+
 export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_last?: number, model_unit?: string, owner?: string, qty_last?: number }> => {
   try {
     // Fetch the latest entry from the database
     const latestEntry = await db.dataTransaksi.where('no_unit').equals(selectedUnit).last();
-    
+
+    console.log("Fetching latest entry for unit:", selectedUnit);
+    console.log("Latest entry found:", latestEntry);
+
     if (latestEntry) {
       return {
-        hm_last: latestEntry.hm_km,       // Existing field
+        hm_last: latestEntry.hm_last,       // Existing field
         model_unit: latestEntry.model_unit, // Existing field
         owner: latestEntry.owner,          // Existing field
         qty_last: latestEntry.qty          // New field for qty_last
@@ -317,8 +346,6 @@ export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_last
     return {};
   }
 };
-
-
 
 
 

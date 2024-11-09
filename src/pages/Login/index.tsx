@@ -52,7 +52,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   { hm_km: string; no_unit: string }[]
 >([]);
 
-
+const [transaksiData, setTransaksiData] = useState<any>(null); 
   const [qouta, setQouta] = useState()
   const [jdeOptions, setJdeOptions] = useState<
   { JDE: string; fullname: string }[]
@@ -83,6 +83,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
   }, []);
 
+
+
+  
+
   useEffect(() => {
     loadStationData(); // Load data pertama kali
   
@@ -95,7 +99,23 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     return () => clearTimeout(timeoutId);
   }, []);
   
+  useEffect(() => {
+    const fetchTransaksiData = async () => {
+      try {
+        const data = await getTrasaksiSemua(); // Call your function here
+        setTransaksiData(data); 
+        console.log(data)// Set the data to state
+      } catch (error) {
+        if (error instanceof Error) {
+         
+        } else {
+        
+        }
+      }
+    };
 
+    fetchTransaksiData(); // Call the async function within useEffect
+  }, []);
   
   const handleLogin = async () => {
     setLoading(true);
@@ -346,7 +366,5 @@ useEffect(() => {
 };
 
 export default Login;
-function loadQuota() {
-  throw new Error("Function not implemented.");
-}
+
 
