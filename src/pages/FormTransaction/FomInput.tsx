@@ -53,7 +53,7 @@ import { fetchOperatorData, fetchQuotaData, fetchUnitData, fetchUnitLastTrx, get
 import Select, { ActionMeta, SingleValue } from "react-select";
 import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
-import { getAllQuota, getUnitQuotaActive } from "../../hooks/getQoutaUnit";
+import { getAllQuota } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable} from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
@@ -73,11 +73,12 @@ interface UnitData {
   unit_no: string;
   model: string;
   owner: string;
-  hm_km: number; // Adjust the type as necessary
+  hm_km: number; 
+  // Adjust the type as necessary
 }
 
 interface UnitQuota {
-  unitNo: string;
+  unit_no: string;
   quota: number;
   used?: number;
   issued?: number;
@@ -130,6 +131,8 @@ const FormTRX: React.FC = () => {
   const [fullName, setFullName] = useState<string>("");
   const [unitOptions, setUnitOptions] = useState<
     {
+      used: any;
+      quota: any;
       hm_km: SetStateAction<number | null>;
       qty: SetStateAction<number | null>;
       hm_last: SetStateAction<number | null>;
@@ -183,6 +186,8 @@ const FormTRX: React.FC = () => {
 
   const [status, setStatus] = useState<number>(1); // Default to 0
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+
+
 
   const [quotaMessage, setQuotaMessage] = useState("");
 
@@ -249,12 +254,6 @@ const [selesaiTime, setSelesaiTime] = useState<string | undefined>(undefined);
 const [startTime, setStartTime] = useState<string | undefined>(undefined);
 const [endTime, setEndTime] = useState<string | undefined>(undefined);
 
-
-const [qoutaData, setquotaData] = useState<number | null>(null);
-
-
-
-
 const [stock, setStock] = useState<number>(0);
   useEffect(() => {
     const handleOnline = () => {
@@ -278,33 +277,6 @@ const [stock, setStock] = useState<number>(0);
 
 
 
-  const loadDataQouta= useCallback(async (date:string) => {
-  
-    try {
-      setLoading(true);
-      const cachedData = await getDataFromStorage('unitQuota');
-      console.log("data Ofline ==",cachedData )
-      if (cachedData) {
-        setquotaData(cachedData);
-      } else {
-        const stations = await fetchQuotaData(date);
-        const formattedStations = stations.map((station) => ({
-          value: station.fuel_station_name,
-          label: station.fuel_station_name,
-          site: station.site,
-          fuel_station_type: station.fuel_station_type,
-        }));
-        // setquotaData(formattedStations);
-      }
-    } catch (err) {
-      console.error('Error loading station data:', err);
-    } finally {
-      setLoading(false);
-      loadDataQouta(date)
-    }
-   
-  }, []);
-  
 
 
 
@@ -528,12 +500,12 @@ const [stock, setStock] = useState<number>(0);
     }
   };
   
-  const updateLocalStorageQuota = async (unitNo: string, issuedQuantity: number) => {
+  const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
     if (unitQuota) {
       const parsedData = JSON.parse(unitQuota);
-      const updatedData = parsedData.map((unit: { unitNo: string; quota: number; used: number; }) => {
-        if (unit.unitNo === unitNo) {
+      const updatedData = parsedData.map((unit: { unit_no: string; quota: number; used: number; }) => {
+        if (unit.unit_no === unit_no) {
           return {
             ...unit,
             used: unit.used + issuedQuantity, // Update the used quantity
@@ -553,7 +525,7 @@ const [stock, setStock] = useState<number>(0);
       console.log("!!!!!!!!!", unitQouta)
       if (unitQuota) {
         const parsedData = JSON.parse(unitQuota);
-        const currentUnitQuota = parsedData.find((unit: { unitNo: string | undefined; }) => unit.unitNo === selectedUnit);
+        const currentUnitQuota = parsedData.find((unit: { unit_no: string | undefined; }) => unit.unit_no === selectedUnit);
   
         if (currentUnitQuota) {
           setUnitQuota(currentUnitQuota.quota);
@@ -620,25 +592,6 @@ const [stock, setStock] = useState<number>(0);
     console.log("operatorOptions updated:", operatorOptions);
   }, [operatorOptions]);
 
-
-  useEffect(() => {
-    const loadQoutaData = async () => {
-      const cachedData = await getDataFromStorage('unitQouta');
-      if (cachedData) {
-        setQuotaData(cachedData);
-      } else {
-      }
-    };
-
-    loadQoutaData();
-  }, []);
-
-  useEffect(() => {
-    console.log("Qouta  updated:", );
-  }, [qoutaData]);
-
-
- 
 
 
   const updateCard = async () => {
@@ -786,23 +739,6 @@ const [stock, setStock] = useState<number>(0);
 
 
 
-useEffect(() => {
-  const loadQoutaData = async () => {
-    const cachedData = await getDataFromStorage('unitQouta');
-    if (cachedData) {
-      setQuotaData(cachedData);
-    } else {
-    }
-  };
-
-  loadQoutaData();
-}, []);
-
-useEffect(() => {
-  console.log("Qouta  updated:", );
-}, [qoutaData]);
-
-
 const handleEndTimeChange = (e: CustomEvent) => {
   const newEndTime = e.detail.value as string;
   setEndTime(newEndTime);
@@ -838,37 +774,62 @@ useEffect(() => {
 
 
 const handleQuantityChange = (e: any) => {
-  const inputQuantity = Number(e.detail.value);
+    const inputQuantity = Number(e.detail.value);
 
-  // Ensure the input is valid and greater than 0
-  if (isNaN(inputQuantity) || inputQuantity <= 0) {
-      setQuantityError("Qty Issued harus lebih besar dari 0");
-      setIsError(true);
-      return;
-  }
+    // Validate if quantity is a valid number and greater than 0
+    if (isNaN(inputQuantity) || inputQuantity <= 0) {
+        setQuantityError("Qty Issued harus lebih besar dari 0");
+        setIsError(true);
+        return; // Exit if quantity is invalid
+    }
 
-  // Directly use the remaining quota from the state
-  if (inputQuantity > remainingQuota) {
-      setQuantityError(`Qty Issued tidak boleh lebih besar dari sisa kuota (${remainingQuota})`);
-      setIsError(true);
-      return;
-  }
+    const isReceiptTransaction = typeTrx.some(
+        (trx) => trx.name === "Receipt" || trx.name === "Receipt KPC" || trx.name === "Transfer"
+    );
 
-  const isReceiptTransaction = typeTrx.some(
-      (trx) => trx.name === "Receipt" || trx.name === "Receipt KPC" || trx.name === "Transfer"
-  );
+    if (isReceiptTransaction) {
+        // If the transaction type is 'receipt' or 'receipt kpc', set the quantity without further validation
+        setQuantity(inputQuantity);
+        setQuantityError(""); // Clear error message
+        setIsError(false); // No error
+        return;
+    }
 
-  if (isReceiptTransaction) {
-      setQuantity(0);
-      setQuantityError(""); 
-      setIsError(false); 
-      return;
-  }
+    // Validate for units starting with LV or HLV
+    if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
+        // Log the value of remainingQuota for debugging
+        console.log("Debug - Remaining Quota:", remainingQuota);  // <-- This is the debug log
 
-  setQuantity(0);
-  setQuantityError("");
-  setIsError(false);
+        // Ensure remainingQuota is a valid number
+        if (typeof remainingQuota !== 'number' || isNaN(remainingQuota) || remainingQuota <= 0) {
+            setQuantityError("Sisa kouta tidak valid.");
+            setIsError(true);
+            return; // Exit if remainingQuota is invalid
+        }
+
+        // Log the inputQuantity for comparison
+        console.log("Debug - Input Quantity:", inputQuantity); // <-- This is to check the entered quantity
+
+        if (inputQuantity > remainingQuota) {
+            setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+            setIsError(true);
+            return; // Exit if input quantity exceeds remaining quota
+        }
+    } else {
+        // Validate that Qty Issued does not exceed Stock On Hand
+        if (inputQuantity > stock) {
+            setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
+            setIsError(true);
+            return; // Exit if input quantity exceeds Stock On Hand
+        }
+    }
+
+    // If all validations pass, update the state
+    setQuantity(inputQuantity); // Set the valid quantity
+    setQuantityError(""); // Clear error message
+    setIsError(false); // No error
 };
+
 
 
 
@@ -893,10 +854,11 @@ useEffect(() => {
       if (!quotaData || !Array.isArray(quotaData)) {
         console.warn('Online quota data unavailable or failed. Attempting offline data.');
         quotaData = await getDataFromStorage('unitQuota');
+        console.log(quotaData)
       }
 
       if (quotaData && Array.isArray(quotaData)) {
-        let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
+        let foundUnitQuota = quotaData.find((unit) => unit.unit_no === selectedUnit);
 
         if (!foundUnitQuota && navigator.onLine) {
           // Check previous day's data if today’s quota is missing and online
@@ -905,7 +867,7 @@ useEffect(() => {
           const formattedYesterday = yesterday.toISOString().split('T')[0];
           const previousQuotaData = await fetchQuotaData(formattedYesterday);
 
-          foundUnitQuota = previousQuotaData?.find((unit) => unit.unitNo === selectedUnit);
+          foundUnitQuota = previousQuotaData?.find((unit) => unit.unit_no === selectedUnit);
         }
 
         if (foundUnitQuota) {
@@ -918,6 +880,7 @@ useEffect(() => {
             setUnitQuota(totalQuota);
             setRemainingQuota(remaining);
             setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remaining} Liter`);
+            console.log("ini remaining",remaining)
           } else {
             setUnitQuota(0);
             setRemainingQuota(0);
@@ -958,7 +921,6 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
 
 
 
-
 const handleUnitChange = async (
   newValue: SingleValue<{ value: string; label: string }>, 
   actionMeta: ActionMeta<{ value: string; label: string }>
@@ -970,7 +932,7 @@ const handleUnitChange = async (
     if (navigator.onLine) {
       // Online: Use data from unitOptions
       const selectedUnitOption = unitOptions.find(
-        (unit) => unit.unit_no === unitValue
+        (unit) => unit.unit_no === unitValue || unit.unit_no === unitValue
       );
 
       if (selectedUnitOption) {
@@ -981,12 +943,16 @@ const handleUnitChange = async (
         setHmKmLast(selectedUnitOption.hm_last);
         setQtyValue(selectedUnitOption.qty); 
 
-        const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+        // Calculate remaining quota
+        const remainingQuota = selectedUnitOption.quota - selectedUnitOption.used;
+        setRemainingQuota(remainingQuota); 
+
+        const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? remainingQuota : 0;
         setKoutaLimit(newKoutaLimit); 
 
         setShowError(
           unitValue.startsWith("LV") || 
-          (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+          (unitValue.startsWith("HLV") && newKoutaLimit < remainingQuota)
         );
       } else {
         console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
@@ -996,368 +962,50 @@ const handleUnitChange = async (
       const { hm_last, qty_last } = await fetchLatestHmLast(unitValue);
 
       if (hm_last !== undefined) {
+        // If data found, update hm_last
         setHmKmLast(hm_last);
         console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
       } else {
-        setHmKmLast(null);
+        // If data is not found or not valid, empty hm_last
+        setHmKmLast(null); // Set hm_last to null if not found or invalid
         console.log("No valid 'hm_last' data found or data is invalid for this unit.");
       }
 
+      // Use qty_last for FBR calculation or other purposes
       if (qty_last !== undefined) {
         setQtyValue(qty_last); 
       }
 
       // Set model and owner based on the unit from IndexedDB or fallback to defaults
       const selectedUnitOption = unitOptions.find(
-        (unit) => unit.unit_no === unitValue
+        (unit) => unit.unit_no === unitValue || unit.unit_no === unitValue
       );
 
       if (selectedUnitOption) {
         setModel(selectedUnitOption.brand || "Offline Model");
         setOwner(selectedUnitOption.owner || "Offline Owner");
+
+        // Calculate remaining quota
+        const remainingQuota = selectedUnitOption.quota - selectedUnitOption.used;
+        setRemainingQuota(remainingQuota); // Set the remaining quota for display
       } else {
+        // Fallback if unit option is not found
         setModel("Offline Model");
         setOwner("Offline Owner");
+        setRemainingQuota(0); // Default to 0 if no quota data is available offline
       }
-     
+
+      setKoutaLimit(0); 
+      setShowError(false);
     }
   }
 };
 
-// const handleUnitChange = async (
-//   newValue: SingleValue<{ value: string; label: string }>, 
-//   actionMeta: ActionMeta<{ value: string; label: string }>
-// ) => {
-//   if (newValue) {
-//     const unitValue = newValue.value; 
-//     setSelectedUnit(unitValue); // Set the selected unit
-
-//     if (navigator.onLine) {
-//       // Online: Use data from unitOptions
-//       const selectedUnitOption = unitOptions.find(
-//         (unit) => unit.unit_no === unitValue
-//       );
-
-//       if (selectedUnitOption) {
-//         // Save the selected unit option for offline use
-//         setModel(selectedUnitOption.brand); 
-//         setOwner(selectedUnitOption.owner); 
-//         setHmkmValue(selectedUnitOption.hm_km);
-//         setHmKmLast(selectedUnitOption.hm_last);
-//         setQtyValue(selectedUnitOption.qty); 
-
-//         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-//         setKoutaLimit(newKoutaLimit); 
-
-//         setShowError(
-//           unitValue.startsWith("LV") || 
-//           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-//         );
-//       } else {
-//         console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
-//       }
-//     } else {
-//       // Offline: Retrieve data from IndexedDB
-//       const { hm_last,qty_last } = await fetchLatestHmLast(unitValue);
-
-//       if (hm_last !== undefined) {
-//         // If data found, update hm_last
-//         setHmKmLast(hm_last);
-//         console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
-//       } else {
-//         // If data is not found or not valid, empty hm_last
-//         setHmKmLast(null); // Set hm_last to null if not found or invalid
-//         console.log("No valid 'hm_last' data found or data is invalid for this unit.");
-//       }
-
-//       // Use qty_last for FBR calculation or other purposes
-//       if (qty_last !== undefined) {
-//         setQtyValue(qty_last); 
-//       }
-
-//       // Set model and owner based on the unit from IndexedDB or fallback to defaults
-//       const selectedUnitOption = unitOptions.find(
-//         (unit) => unit.unit_no === unitValue
-//       );
-
-//       if (selectedUnitOption) {
-//         setModel(selectedUnitOption.brand || "Offline Model");
-//         setOwner(selectedUnitOption.owner || "Offline Owner");
-//       } else {
-//         // Fallback if unit option is not found
-//         setModel("Offline Model");
-//         setOwner("Offline Owner");
-//       }
-
-//       setKoutaLimit(0); 
-//       setShowError(false);
-//     }
-//   }
-// };
-
-
-// const handleUnitChange = async (
-//   newValue: SingleValue<{ value: string; label: string }>, 
-//   actionMeta: ActionMeta<{ value: string; label: string }>
-// ) => {
-//   if (newValue) {
-//     const unitValue = newValue.value; 
-//     setSelectedUnit(unitValue); // Set the selected unit
-
-//     if (navigator.onLine) {
-//       // Online: Use data from unitOptions
-//       const selectedUnitOption = unitOptions.find(
-//         (unit) => unit.unit_no === unitValue
-//       );
-
-//       if (selectedUnitOption) {
-//         // Save the selected unit option for offline use
-//         setModel(selectedUnitOption.brand); 
-//         setOwner(selectedUnitOption.owner); 
-//         setHmkmValue(selectedUnitOption.hm_km);
-//         setHmKmLast(selectedUnitOption.hm_last);
-//         setQtyValue(selectedUnitOption.qty); 
-
-//         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-//         setKoutaLimit(newKoutaLimit); 
-
-//         setShowError(
-//           unitValue.startsWith("LV") || 
-//           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-//         );
-//       } else {
-//         console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
-//       }
-//     } else {
-//       // Offline: Retrieve data from IndexedDB
-//       const { hm_last, model_unit, owner, qty_last } = await fetchLatestHmLast(unitValue);
-
-//       if (hm_last !== undefined) {
-//         setHmKmLast(hm_last);
-//         console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
-//       } else {
-//         console.log("No valid 'hm_last' data found in IndexedDB or an error occurred.");
-//       }
-
-//       // Use qty_last for FBR calculation or other purposes
-//       if (qty_last !== undefined) {
-//         // Example: Set qty value or perform calculation here
-//         setQtyValue(qty_last); // Or any other logic related to qty_last
-//       }
-
-//       // Use saved selectedUnitOption data for model and owner when offline
-//       const selectedUnitOption = unitOptions.find(
-//         (unit) => unit.unit_no === unitValue
-//       );
-
-//       if (selectedUnitOption) {
-//         // Set model and owner from the previously selected unit option
-//         setModel(selectedUnitOption.brand || "Offline Model");
-//         setOwner(selectedUnitOption.owner || "Offline Owner");
-//       } else {
-//         // Fallback to default if unit option is not found
-//         setModel("Offline Model");
-//         setOwner("Offline Owner");
-//       }
-
-//       setKoutaLimit(0); 
-//       setShowError(false);
-//     }
-//   }
-// };
-
-// const handleUnitChange = async (
-//   newValue: SingleValue<{ value: string; label: string }>, 
-//   actionMeta: ActionMeta<{ value: string; label: string }>
-// ) => {
-//   if (newValue) {
-//     const unitValue = newValue.value; 
-//     setSelectedUnit(unitValue); 
-
-//     if (navigator.onLine) {
-//       const selectedUnitOption = unitOptions.find(
-//         (unit) => unit.unit_no === unitValue
-//       );
-
-//       if (selectedUnitOption) {
-//         setModel(selectedUnitOption.brand); 
-//         setOwner(selectedUnitOption.owner); 
-//         setHmkmValue(selectedUnitOption.hm_km);
-//         setHmKmLast(selectedUnitOption.hm_last);
-//         setQtyValue(selectedUnitOption.qty); 
-
-//         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-//         setKoutaLimit(newKoutaLimit); 
-
-//         setShowError(
-//           unitValue.startsWith("LV") || 
-//           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-//         );
-//       } else {
-//         console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
-//       }
-//     } else {
-//       // Offline: Retrieve data from IndexedDB
-//       const { hm_last, model_unit, owner, qty_last} = await fetchLatestHmLast(unitValue);
-
-//       if (hm_last !== undefined) {
-//         setHmKmLast(hm_last);
-//         console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
-//       } else {
-//         console.log("No valid 'hm_last' data found in IndexedDB or an error occurred.");
-//       }
-
-//       // Set model and owner from offline data
-//       setModel(model_unit || "Offline Model");
-//       setOwner(owner || "Offline Owner");
-     
-//       setKoutaLimit(0); 
-//       setShowError(false);
-//     }
-//   }
-// };
-
-
-// const fetchLatestHmLast = async (selectedUnit: string) => {
-//   const hmLastValue = await getLatestHmLast(selectedUnit);
-
-//   if (hmLastValue !== undefined) {
-//     console.log("Latest 'hm_last' value:", hmLastValue);
-//     // Proceed with using hmLastValue as needed
-//   } else {
-//     console.log("No valid 'hm_last' data found or an error occurred.");
-//   }
-// };
-
-// // Call the function with the desired unit
-// fetchLatestHmLast("EX6008");
-
-// const handleUnitChange = (
-//   newValue: SingleValue<{ value: string; label: string }>, 
-//   actionMeta: ActionMeta<{ value: string; label: string }>
-// ) => {
-//   if (newValue) {
-//     const unitValue = newValue.value; 
-//     setSelectedUnit(unitValue); // Set unit yang dipilih
-
-//     // Mencari opsi unit yang dipilih dari unitOptions
-//     const selectedUnitOption = unitOptions.find(
-//       (unit) => unit.unit_no === unitValue
-//     );
-
-//     // Jika opsi unit yang dipilih ada, perbarui model, pemilik, dan hm_km
-//     if (selectedUnitOption) {
-//       setModel(selectedUnitOption.brand); // Set model berdasarkan unit yang dipilih
-//       setOwner(selectedUnitOption.owner); // Set pemilik berdasarkan unit yang dipilih
-//       setHmkmValue(selectedUnitOption.hm_km);
-//       setHmKmLast(selectedUnitOption.hm_last);
-//       setQtyValue(selectedUnitOption.qty); // Perbarui nilai hm_km
-
-//       // Tentukan batas kouta baru berdasarkan nilai unit
-//       const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-//       setKoutaLimit(newKoutaLimit); // Set batas kouta
-
-//       // Set showError berdasarkan jenis unit dan batas kouta
-//       setShowError(
-//         unitValue.startsWith("LV") || 
-//         (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-//       );
-//     } else {
-//       console.warn(`Unit dengan nilai ${unitValue} tidak ditemukan di unitOptions.`);
-//     }
-//   }
-// };
-// const handleUnitChange = async (
-//   newValue: SingleValue<{ value: string; label: string }>, 
-//   actionMeta: ActionMeta<{ value: string; label: string }>
-// ) => {
-//   if (newValue) {
-//     const unitValue = newValue.value; 
-//     setSelectedUnit(unitValue); // Set the selected unit
-
-//     if (navigator.onLine) {
-//       const selectedUnitOption = unitOptions.find(
-//         (unit) => unit.unit_no === unitValue
-//       );
-
-//       if (selectedUnitOption) {
-//         setModel(selectedUnitOption.brand); 
-//         setOwner(selectedUnitOption.owner); 
-//         setHmkmValue(selectedUnitOption.hm_km);
-//         setHmKmLast(selectedUnitOption.hm_last);
-//         setQtyValue(selectedUnitOption.qty); 
-
-//         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-//         setKoutaLimit(newKoutaLimit); 
-
-//         setShowError(
-//           unitValue.startsWith("LV") || 
-//           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-//         );
-//       } else {
-//         console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
-//       }
-//     } else {
-//       // Offline: Retrieve data from IndexedDB
-//       const { hm_last, model_unit, owner, qty_last } = await fetchLatestHmLast(unitValue);
-
-//       if (hm_last !== undefined) {
-//         setHmKmLast(hm_last);
-//         console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
-//       } else {
-//         console.log("No valid 'hm_last' data found in IndexedDB or an error occurred.");
-//       }
-
-//       // Use qty_last for FBR calculation or other purposes
-//       if (qty_last !== undefined) {
-//         // Example: Set qty value or perform calculation here
-//         setQtyValue(qty_last); // Or any other logic related to qty_last
-//       }
-
-//       // Set model and owner from offline data
-//       setModel(model_unit || "Offline Model");
-//       setOwner(owner || "Offline Owner");
-//       setKoutaLimit(0); 
-//       setShowError(false);
-//     }
-//   }
-// };
 
 const filteredUnitOptions = (selectedType && 
   (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer')) 
 ? unitOptions.filter(unit => unit.unit_no.startsWith("FT") || unit.unit_no.startsWith("TK"))
 : unitOptions;
-
-useEffect(() => {
-  console.log('useEffect triggered with values:', { hmkmValue, hmkmLast, qtyValue });
-  const calculateFBR = (): number => {
-      if (typeof hmkmValue === 'number' && typeof  hmkmLast === 'number' && typeof qtyValue === 'number') {
-          const difference =  hmkmValue  - hmkmLast ;
-          console.log('Difference (hmLast - hmkm):', difference);
-
-          if (qtyValue === 0) {
-              console.log('qtyValue cannot be zero');
-              return 0;
-          }
-
-          if (difference > 0) {
-              const result = difference / qtyValue;
-              console.log('Calculated FBR:', result);
-              return parseFloat(result.toFixed(2));
-          } else {
-              console.log('Difference is not positive');
-          }
-      } else {
-          console.log('Invalid input types:', { hmkmValue,  hmkmLast, qtyValue });
-      }
-      return 0;
-  };
-
-  setFbrResult(calculateFBR());
-}, [hmkmValue, hmLast, qtyValue]);
-
-
-
 
   return (
     <IonPage>
@@ -1375,20 +1023,26 @@ useEffect(() => {
 
             </IonRow>
           )}
-         {currentUnitQuota?.isActive && (
-            <IonRow>
-                <IonCol>
-                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "500px" }}>
-                        <IonLabel style={{ display: "flex" }}>
-                            <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                            <IonTitle style={{ color: quotaMessage.includes("0 Liter") ? "red" : "green" }}>
-                              {quotaMessage}
-                            </IonTitle>
-                        </IonLabel>
-                    </IonItemDivider>
-                </IonCol>
-            </IonRow>
-        )}
+       {currentUnitQuota?.isActive && (
+  <>
+    {console.log("Current Unit Quota:", currentUnitQuota)}
+    {console.log("Quota Message:", quotaMessage)}
+
+    <IonRow>
+      <IonCol>
+        <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "500px" }}>
+          <IonLabel style={{ display: "flex" }}>
+            <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
+            <IonTitle style={{ color: quotaMessage.includes("0 Liter") ? "red" : "green" }}>
+              sisi  {quotaMessage}
+            </IonTitle>
+          </IonLabel>
+        </IonItemDivider>
+      </IonCol>
+    </IonRow>
+  </>
+)}
+
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>
@@ -1777,10 +1431,10 @@ useEffect(() => {
                   <IonIcon slot="start" icon={closeCircleOutline} />
                   Tutup Form
                 </IonButton>
-                <IonButton disabled={isError}
+                <IonButton
                   onClick={(e) => handlePost(e)}
                   className={`check-button ${isOnline ? "button-save-data" : "button-save-draft"}`}
-                  
+                  disabled={showError}
                 >
                   <IonIcon slot="start" icon={saveOutline} />
                   {isOnline ? "Simpan Data" : "Simpan Data Ke Draft"}

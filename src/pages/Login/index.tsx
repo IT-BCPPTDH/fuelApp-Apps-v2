@@ -24,11 +24,13 @@ import {
   getDataFromStorage,
   fetchOperatorData,
   fetchQuotaData,
+  fetchUnitLastTrx,
 } from "../../services/dataService";
 import Select from "react-select";
 import AsyncSelect from 'react-select/async';
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getOperator } from "../../hooks/getAllOperator";
+import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 
 // Define props interface
 interface LoginProps {
@@ -46,6 +48,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAlert, setShowAlert] = useState<boolean>(false);
+  const [dtTrx, setDtTrx] = useState<
+  { hm_km: string; no_unit: string }[]
+>([]);
+
+
   const [qouta, setQouta] = useState()
   const [jdeOptions, setJdeOptions] = useState<
   { JDE: string; fullname: string }[]
@@ -153,7 +160,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       // First, check local storage for cached operator data
       const cachedData = await getDataFromStorage('allOperator');
       if (cachedData && Array.isArray(cachedData)) {
-        console.log("Loaded operator data from local storage:", cachedData);
+        // console.log("Loaded operator data from local storage:", cachedData);
         setJdeOptions(cachedData); // Use the cached data
       } else {
         // If no cached data, fetch from the API
@@ -184,7 +191,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             console.log('Fetched Qouta Login ', quotaData);
 
             if (quotaData && Array.isArray(quotaData)) {
-                let foundUnitQuota = quotaData.find((unit) => unit.unitNo === selectedUnit);
+                let foundUnitQuota = quotaData.find((unit) => unit.no_unit === selectedUnit);
 
                 if (!foundUnitQuota) {
                     const yesterday = new Date(today);
@@ -192,7 +199,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     const formattedYesterday = yesterday.toISOString().split('T')[0];
                     const previousQuotaData = await fetchQuotaData(formattedYesterday);
                     console.log('Fetched previous quota data:', previousQuotaData);
-                    foundUnitQuota = previousQuotaData.find((unit) => unit.unitNo === selectedUnit);
+                    foundUnitQuota = previousQuotaData.find((unit) => unit.no_unit === selectedUnit);
                 }
             } else {
                 console.error('No quota data found for the specified date');
@@ -203,6 +210,38 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     };
 
     loadUnitDataQuota();
+}, []);
+
+
+
+
+
+
+const loadTrxLast = async () => {
+  try {
+    // First, check local storage for cached operator data
+    const cachedData = await getDataFromStorage('oneMounth');
+    if (cachedData && Array.isArray(cachedData)) {
+      console.log("Loaded operat:", cachedData);
+      setDtTrx(cachedData); // Use the cached data
+    } else {
+      // If no cached data, fetch from the API
+      const fetchedJdeOptions = await fetchUnitLastTrx(selectedUnit);
+      if (fetchedJdeOptions.length > 0) {
+        console.log("Fetched operator data and saved to local storage:", fetchedJdeOptions);
+        setDtTrx(fetchedJdeOptions); // Update state with fetched data
+      } else {
+        console.error("No valid operator data fetched");
+      }
+    }
+  } catch (error) {
+    console.error("Error loading operator data:", error);
+  }
+};
+
+
+useEffect(() => {
+  loadTrxLast(); 
 }, []);
 
   return (

@@ -1,11 +1,11 @@
 import { CapacitorHttp } from '@capacitor/core';
 import { ResponseError } from "../helper/responseError";
 
-const BE_USER = import.meta.env.VITE_BE_USER_URL;
+const BELinkMaster = import.meta.env.VITE_BACKEND_URL;
 
-export async function getOperator() {
-    // const url = `${BE_USER}/master/operator`;
-    const url = `${BE_USER}/api-user/get-user-fuel`;
+export async function getTrasaksiSemua() {
+    // const url = `${BELinkMaster}/api/quota-usage/get-active/${date}`;
+    const url = `${ BELinkMaster}/api/operator/get-data-prev/:2024-11-09`;
 
     try {
         const response = await CapacitorHttp.get({
@@ -16,12 +16,12 @@ export async function getOperator() {
         });
 
         if (response.status !== 200) {
-            throw new ResponseError(`Failed to fetch operator data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
+            throw new ResponseError(`Failed to fetch data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
         }
 
         const data = response.data;
 
-        // console.log('Successfully fetched operator data:', data);
+        console.log('Successfully Transaksi data:', data);
 
         return data;
     } catch (error: unknown) {
@@ -29,10 +29,16 @@ export async function getOperator() {
             throw error;
         } else if (error instanceof Error) {
             console.error('An unexpected error occurred:', error.message);
-            throw new Error('An unexpected error occurred while fetching operator data.');
+            throw new Error('An unexpected error occurred while fetching quota data.');
         } else {
             console.error('Unknown error occurred');
-            throw new Error('An unknown error occurred while fetching operator data.');
+            throw new Error('An unknown error occurred while fetching quota data.');
         }
     }
 }
+
+
+
+
+
+
