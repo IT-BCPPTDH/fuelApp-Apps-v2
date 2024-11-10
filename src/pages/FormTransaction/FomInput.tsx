@@ -420,18 +420,7 @@ const [stock, setStock] = useState<number>(0);
   };
 
 
-  const getTable = async() => {
-    try {
-      await getHomeTable(lkfId);
-    } catch (error) {
-      
-    }
-  };
-
-  useEffect(()=>{
-    getTable()
-  })
-
+ 
  
   const handlePost = async (e: React.FormEvent) => {
    
@@ -500,8 +489,6 @@ const [stock, setStock] = useState<number>(0);
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost);
         updateCard();
-        getTable();
-        
         // updatedKuota()
         
   
@@ -565,7 +552,7 @@ const [stock, setStock] = useState<number>(0);
         if (currentUnitQuota) {
           setUnitQuota(currentUnitQuota.quota);
           setUsedQuota(currentUnitQuota.used);
-          setRemainingQuota(currentUnitQuota.quota - currentUnitQuota.used); 
+          setRemainingQuota(parseInt(currentUnitQuota.quota) - parseInt(currentUnitQuota.used)); 
         } else {
           setUnitQuota(0);
           setUsedQuota(0);
@@ -832,21 +819,21 @@ const [stock, setStock] = useState<number>(0);
 
 
 
-useEffect(() => {
-  const loadQoutaData = async () => {
-    const cachedData = await getDataFromStorage('unitQouta');
-    if (cachedData) {
-      setQuotaData(cachedData);
-    } else {
-    }
-  };
+// useEffect(() => {
+//   const loadQoutaData = async () => {
+//     const cachedData = await getDataFromStorage('unitQouta');
+//     if (cachedData) {
+//       setQuotaData(cachedData);
+//     } else {
+//     }
+//   };
 
-  loadQoutaData();
-}, []);
+//   loadQoutaData();
+// }, []);
 
-useEffect(() => {
-  console.log("Qouta  updated:", );
-}, [qoutaData]);
+// useEffect(() => {
+//   console.log("Qouta  updated:", );
+// }, [qoutaData]);
 
 
 const handleEndTimeChange = (e: CustomEvent) => {
@@ -882,182 +869,120 @@ useEffect(() => {
   }
 }, [])
 
-
-// const handleQuantityChange = (e: any) => {
-//     const inputQuantity = Number(e.detail.value);
-
-//     // Validate if quantity is a valid number and greater than 0
-//     if (isNaN(inputQuantity) || inputQuantity <= 0) {
-//         setQuantityError("Qty Issued harus lebih besar dari 0");
-//         setIsError(true);
-//         return; // Exit if quantity is invalid
-//     }
-
-//     const isReceiptTransaction = typeTrx.some(
-//         (trx) => trx.name === "Receipt" || trx.name === "Receipt KPC" || trx.name === "Transfer"
-//     );
-
-//     if (isReceiptTransaction) {
-//         // If the transaction type is 'receipt' or 'receipt kpc', set the quantity without further validation
-//         setQuantity(inputQuantity);
-//         setQuantityError(""); // Clear error message
-//         setIsError(false); // No error
-//         return;
-//     }
-
-//     // Validate for units starting with LV or HLV
-//     if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-//         // Log the value of remainingQuota for debugging
-//         console.log("Debug - Remaining Quota:", remainingQuota);  // <-- This is the debug log
-
-//         // Ensure remainingQuota is a valid number
-//         if (typeof remainingQuota !== 'number' || isNaN(remainingQuota) || remainingQuota <= 0) {
-//             setQuantityError("Sisa kouta tidak valid.");
-//             setIsError(true);
-//             return; // Exit if remainingQuota is invalid
-//         }
-
-//         // Log the inputQuantity for comparison
-//         console.log("Debug - Input Quantity:", inputQuantity); // <-- This is to check the entered quantity
-
-//         if (inputQuantity > remainingQuota) {
-//             setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
-//             setIsError(true);
-//             return; // Exit if input quantity exceeds remaining quota
-//         }
-//     } else {
-//         // Validate that Qty Issued does not exceed Stock On Hand
-//         if (inputQuantity > stock) {
-//             setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
-//             setIsError(true);
-//             return; // Exit if input quantity exceeds Stock On Hand
-//         }
-//     }
-
-//     // If all validations pass, update the state
-//     setQuantity(inputQuantity); // Set the valid quantity
-//     setQuantityError(""); // Clear error message
-//     setIsError(false); // No error
-// };
-
-
-
-// const handleQuantityChange = (e: any) => {
-//   const inputQuantity = Number(e.detail.value);
-
-//   // Validate if quantity is a valid number and greater than 0
-//   if (isNaN(inputQuantity) || inputQuantity <= 0) {
-//       setQuantityError("Qty Issued harus lebih besar dari 0");
-//       setIsError(true);
-//       return;
-//   }
-
-//   // Check if the transaction type is 'receipt' or 'receipt kpc', set the quantity without further validation
-//   const isReceiptTransaction = typeTrx.some(
-//       (trx) => ["Receipt", "Receipt KPC", "Transfer"].includes(trx.name)
-//   );
-//   if (isReceiptTransaction) {
-//       setQuantity(inputQuantity);
-//       setQuantityError(""); // Clear error message
-//       setIsError(false);
-//       return;
-//   }
-
-//   // Validate for units starting with LV or HLV
-//   if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-//       console.log("Debug - Remaining Quota:", remainingQuota);  // Debug log for remainingQuota
-
-//       // Ensure remainingQuota is a valid number
-//       if (typeof remainingQuota !== 'number' || isNaN(remainingQuota) || remainingQuota <= 0) {
-//           setQuantityError("Sisa kouta tidak valid.");
-//           setIsError(true);
-//           return;
-//       }
-
-//       console.log("Debug - Input Quantity:", inputQuantity); // Debug log for inputQuantity
-
-//       if (inputQuantity > remainingQuota) {
-//           setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
-//           setIsError(true);
-//           return;
-//       }
-//   } else {
-//       // Validate that Qty Issued does not exceed Stock On Hand for other units
-//       if (inputQuantity > stock) {
-//           setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
-//           setIsError(true);
-//           return;
-//       }
-//   }
-
-//   // If all validations pass, update the state
-//   setQuantity(inputQuantity);
-//   setQuantityError("");
-//   setIsError(false);
-// };
-
-
 const handleQuantityChange = (e: any) => {
-  const inputQuantity = Number(e.detail.value); // Ensure input is a number
+  const inputQuantity = Number(e.detail.value);
+  
+  // Validasi jika jenis transaksi adalah "Issued"
+  const isIssuedTransaction = typeTrx.some((trx) => trx.name === "Issued");
 
-  // Validate if quantity is a valid number and greater than 0
-  if (isNaN(inputQuantity) || inputQuantity <= 0) {
-    setQuantityError("Qty Issued harus lebih besar dari 0");
-    setIsError(true);
-    return;
-  }
-
-  // Check if the transaction type is 'receipt' or 'receipt kpc', set the quantity without further validation
-  const isReceiptTransaction = typeTrx.some(
-    (trx) => ["Receipt", "Receipt KPC", "Transfer"].includes(trx.name)
-  );
-  if (isReceiptTransaction) {
-    setQuantity(inputQuantity);
-    setQuantityError(""); // Clear error message
-    setIsError(false);
-    return;
-  }
-
-  // Validate for units starting with LV or HLV
-  if (typeof selectedUnit === 'string' && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-    console.log("Debug - Selected Unit:", selectedUnit);  // Debug log for selectedUnit
-    console.log("Debug - Remaining Quota:", remainingQuota);  // Debug log for remainingQuota
-
-    // Ensure remainingQuota is a valid number
-    if (isNaN(remainingQuota) || remainingQuota <= 0) {
-      console.error("Remaining Quota is invalid or zero.");
-      setQuantityError("Sisa kouta tidak valid.");
+  // Cek apakah transaksi adalah Issued
+  if (isIssuedTransaction) {
+    if (isNaN(inputQuantity) || inputQuantity <= 0) {
+      setQuantityError("Qty Issued harus lebih besar dari 0");
       setIsError(true);
       return;
     }
 
-    console.log("Debug - Input Quantity:", inputQuantity); // Debug log for inputQuantity
+    // Ambil remainingQuota, pastikan data tersedia baik saat online maupun offline
+    const quota = remainingQuota || 0; // Default ke 0 jika remainingQuota tidak ada
 
-    // Check if inputQuantity is greater than remainingQuota
-    if (inputQuantity > remainingQuota) {
-      console.log("Debug - Validation Failed: Quantity is greater than remainingQuota");
-      setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
-      setIsError(true);
-      return;
-    }
-  } else {
-    // Validate that Qty Issued does not exceed Stock On Hand for other units
-    console.log("Debug - Stock On Hand:", stock); // Debug log for stock value
-
-    if (inputQuantity > stock) {
+    if (typeof selectedUnit === "string" && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
+      // Cek apakah input quantity lebih besar dari remainingQuota
+      if (inputQuantity > quota) {
+        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+        setIsError(true);
+        return;
+      }
+    } else if (inputQuantity > stock) {
+      // Cek apakah input quantity lebih besar dari stock
       setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
       setIsError(true);
       return;
     }
+  } else {
+    console.log("Transaction type is not 'Issued'. No validation needed.");
   }
 
-  // If all validations pass, update the state
-  setQuantity(inputQuantity);
-  setQuantityError("");
-  setIsError(false);
+  // Jika semua validasi berhasil
+  setQuantity(inputQuantity); // Set jumlah yang valid
+  setQuantityError(""); // Kosongkan pesan error
+  setIsError(false); // Tidak ada error
 };
 
 
+
+useEffect(() => {
+  if (isError) {
+    console.log("Error occurred:", quantityError);
+  }
+}, [isError, quantityError]);
+
+// useEffect(() => {
+//   const loadUnitDataQuota = async () => {
+//     const today = new Date();
+//     const formattedDate = today.toISOString().split('T')[0];
+
+//     try {
+//       let quotaData;
+
+//       if (navigator.onLine) {
+//         // Attempt to fetch online data
+//         quotaData = await fetchQuotaData(formattedDate);
+//       }
+
+//       // If quotaData is undefined or not an array, attempt to retrieve from local storage
+//       if (!quotaData || !Array.isArray(quotaData)) {
+//         console.warn('Online quota data unavailable or failed. Attempting offline data.');
+//         quotaData = await getDataFromStorage('unitQuota');
+//       }
+
+//       if (quotaData && Array.isArray(quotaData)) {
+//         let foundUnitQuota = quotaData.find((unit) => unit.unit_no === selectedUnit);
+
+//         if (!foundUnitQuota && navigator.onLine) {
+//           // Check previous day's data if today’s quota is missing and online
+//           const yesterday = new Date(today);
+//           yesterday.setDate(today.getDate() - 1);
+//           const formattedYesterday = yesterday.toISOString().split('T')[0];
+//           const previousQuotaData = await fetchQuotaData(formattedYesterday);
+//           foundUnitQuota = previousQuotaData?.find((unit) => unit.unit_no === selectedUnit);
+//         }
+
+//         console.log('Found Unit Quota:', foundUnitQuota); // Debugging log
+
+//         if (foundUnitQuota?.is_active) {
+//           setCurrentUnitQuota(foundUnitQuota);
+
+//           const totalQuota = Number(foundUnitQuota.quota); // Convert to number
+//           const usedQuota = Number(foundUnitQuota.used);   // Convert to number
+//           const remainingQuota = totalQuota - usedQuota;
+
+//           if (foundUnitQuota) {
+//             setUnitQuota(totalQuota);
+//             setRemainingQuota(remainingQuota);
+//             setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
+//           } else {
+//             setUnitQuota(0);
+//             setRemainingQuota(0);
+//             setQuotaMessage("Pembatasan kuota dinonaktifkan.");
+//           }
+//         } else {
+//           setUnitQuota(0);
+//           setRemainingQuota(0);
+//           setQuotaMessage("No quota found for the selected unit.");
+//         }
+//       } else {
+//         setQuotaMessage("Offline quota data unavailable.");
+//         console.error('No quota data available for the specified date or unit.');
+//       }
+//     } catch (error) {
+//       console.error('Error fetching or loading quota data:', error);
+//       setQuotaMessage("Error loading quota data.");
+//     }
+//   };
+
+//   loadUnitDataQuota();
+// }, [selectedUnit]);
 
 
 useEffect(() => {
@@ -1094,14 +1019,15 @@ useEffect(() => {
 
         if (foundUnitQuota?.is_active) {
           setCurrentUnitQuota(foundUnitQuota);
-          const totalQuota = foundUnitQuota.quota || 0;
-          const usedQuota = foundUnitQuota.used || 0;
-          const remaining = totalQuota - usedQuota;
-
+        
+          const totalQuota = foundUnitQuota.quota || 0; // Ensure quota has a default of 0 if undefined
+          const usedQuota = foundUnitQuota.used || 0;   // Ensure used quota has a default of 0 if undefine
+          const remaining = totalQuota - usedQuota;        // Calculate remaining quota based on quota - qtyLast
+        
           if (foundUnitQuota) {
             setUnitQuota(totalQuota);
             setRemainingQuota(remaining);
-            setQuotaMessage(`Sisa Kouta ${selectedUnit}: ${remaining} Liter`);
+            setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remaining} Liter`);
           } else {
             setUnitQuota(0);
             setRemainingQuota(0);
@@ -1296,289 +1222,6 @@ const filteredUnitOptions = (selectedType &&
 : unitOptions;
 
 
-// const handleUnitChange = async (
-//   newValue: SingleValue<{ value: string; label: string }>, 
-//   actionMeta: ActionMeta<{ value: string; label: string }>
-// ) => {
-//   if (newValue) {
-//     const unitValue = newValue.value; 
-//     setSelectedUnit(unitValue); // Set the selected unit
-
-//     if (navigator.onLine) {
-//       // Online: Use data from unitOptions
-//       const selectedUnitOption = unitOptions.find(
-//         (unit) => unit.unit_no === unitValue
-//       );
-
-//       if (selectedUnitOption) {
-//         // Save the selected unit option for offline use
-//         setModel(selectedUnitOption.brand); 
-//         setOwner(selectedUnitOption.owner); 
-//         setHmkmValue(selectedUnitOption.hm_km);
-//         setHmKmLast(selectedUnitOption.hm_last);
-//         setQtyValue(selectedUnitOption.qty); 
-
-//         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
-//         setKoutaLimit(newKoutaLimit); 
-
-//         setShowError(
-//           unitValue.startsWith("LV") || 
-//           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-//         );
-//       } else {
-//         console.warn(`Unit with value ${unitValue} not found in unitOptions.`);
-//       }
-//     } else {
-//       // Offline: Retrieve data from IndexedDB
-//       const { hm_last, model_unit, owner, qty_last } = await fetchLatestHmLast(unitValue);
-
-//       if (hm_last !== undefined) {
-//         setHmKmLast(hm_last);
-//         console.log("Offline: Using latest 'hm_last' value from IndexedDB:", hm_last);
-//       } else {
-//         console.log("No valid 'hm_last' data found in IndexedDB or an error occurred.");
-//       }
-
-//       // Use qty_last for FBR calculation or other purposes
-//       if (qty_last !== undefined) {
-//         // Example: Set qty value or perform calculation here
-//         setQtyValue(qty_last); // Or any other logic related to qty_last
-//       }
-
-//       // Use saved selectedUnitOption data for model and owner when offline
-//       const selectedUnitOption = unitOptions.find(
-//         (unit) => unit.unit_no === unitValue
-//       );
-
-//       if (selectedUnitOption) {
-//         // Set model and owner from the previously selected unit option
-//         setModel(selectedUnitOption.brand );
-//         setOwner(selectedUnitOption.owner );
-//       } else {
-//         // Fallback to default if unit option is not found
-//         setModel("Offline Model");
-//         setOwner("Offline Owner");
-//       }
-
-//       setKoutaLimit(0); 
-//       setShowError(false);
-//     }
-//   }
-// };
-// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
-//   if (newValue) {
-//     const unitValue = newValue.value;
-//     setSelectedUnit(unitValue); // Set the selected unit
-
-//     if (navigator.onLine) {
-//       // Online: Use data from unitOptions
-//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
-//       if (selectedUnitOption) {
-//         setHmKmLast(selectedUnitOption.hm_km);
-//         setQtyValue(selectedUnitOption.qty); // Assuming qty is part of the unitOptions
-//       }
-//     } else {
-//       // Offline: Retrieve data from IndexedDB
-//       const { hm_km, qty_last } = await fetchLatestHmLast(unitValue);
-//       console.log("dataoflie",hmkmLast)
-      
-//       if (hm_km !== undefined) {
-//         setHmLast(hm_km);
-//       }
-
-//       // If qty_last is null or undefined, set it to a default value (0)
-//       if (qty_last !== undefined) {
-//         setQtyValue(qty_last);
-      
-//       } else {
-//         console.log("qty_last not found in IndexedDB, setting default value to 0");
-//         setQtyValue(0); // Fallback value if qty_last is not found
-//       }
-//     }
-//   }
-// };
-
-// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
-//   if (newValue) {
-//     const unitValue = newValue.value;
-//     setSelectedUnit(unitValue); // Set the selected unit
-
-//     if (navigator.onLine) {
-//       // Online: Use data from unitOptions
-//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
-//       if (selectedUnitOption) {
-//         setHmKmLast(selectedUnitOption.hm_km);
-//         setQtyValue(selectedUnitOption.qty); // Assuming qty is part of the unitOptions
-//         setModel(selectedUnitOption.model_unit);  // Set model
-//         setOwner(selectedUnitOption.owner);  // Set owner
-//       }
-//     } else {
-//       // Offline: Retrieve data from IndexedDB
-//       const { hm_km, qty_last, model_unit, owner } = await fetchLatestHmLast(unitValue);
-      
-//       if (hm_km !== undefined) {
-//         setHmKmLast(hm_km);
-//       }
-      
-//       if (qty_last !== undefined) {
-//         setQtyValue(qty_last);
-//       } else {
-//         console.log("qty_last not found in IndexedDB, setting default value to 0");
-//         setQtyValue(0); // Fallback value if qty_last is not found
-//       }
-
-//       // Set model and owner when offline
-//       if (model !== undefined) {
-//         setModel(model);
-//       }
-//       if (owner !== undefined) {
-//         setOwner(owner);
-//       }
-//     }
-//   }
-// };
-// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
-//   if (newValue) {
-//     const unitValue = newValue.value;
-//     setSelectedUnit(unitValue); // Set the selected unit
-
-//     if (navigator.onLine) {
-//       // Online: Use data from unitOptions
-//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
-//       if (selectedUnitOption) {
-//         setHmKmLast(selectedUnitOption.hm_km);
-//         setQtyValue(selectedUnitOption.qty); // Assuming qty is part of the unitOptions
-//         setModel(selectedUnitOption.model_unit);  // Set model
-//         setOwner(selectedUnitOption.owner);  // Set owner
-//       }
-//     } else {
-//       // Offline: Retrieve data from localStorage's transaksiData
-//       const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
-//       console.log("Stored transaksiData:", storedTransaksiData); // Log data structure for debugging
-      
-//       if (storedTransaksiData?.data?.length > 0) {
-//         const matchingTransaction = storedTransaksiData.data.find(
-//           (          item: { no_unit: string; }) => item.no_unit === unitValue
-//         );
-        
-//         console.log("Matching transaction:", matchingTransaction); // Log to check match
-        
-//         if (matchingTransaction) {
-//           // Set hm_km, qty_last, model_unit, and owner from local storage data
-//           setHmKmLast(matchingTransaction.hm_last);
-//           setQtyValue(matchingTransaction.qty_last ?? 0); // Fallback to 0 if qty_last is missing
-//           setModel(matchingTransaction.model_unit ?? ''); // Fallback to empty string if model_unit is missing
-//           setOwner(matchingTransaction.owner ?? ''); // Fallback to empty string if owner is missing
-//         } else {
-//           console.log("No matching transaction found for unit:", unitValue);
-//           setHmKmLast(null);
-//           setQtyValue(0);
-//           setModel('');
-//           setOwner('');
-//         }
-//       } else {
-//         console.log("No data in transaksiData array.");
-//         setHmKmLast(null);
-//         setQtyValue(0);
-//         setModel('');
-//         setOwner('');
-//       }
-//     }
-//   }
-// };
-
-
-// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
-//   if (newValue) {
-//     const unitValue = newValue.value;
-//     setSelectedUnit(unitValue); // Set the selected unit
-
-//     if (navigator.onLine) {
-//       // Online: Use data from unitOptions
-//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
-//       if (selectedUnitOption) {
-//         setHmKmLast(selectedUnitOption.hm_km); // Set hm_last when online
-//         setQtyValue(selectedUnitOption.qty); // Assuming qty is part of the unitOptions
-//         setModel(selectedUnitOption.model_unit);  // Set model
-//         setOwner(selectedUnitOption.owner);  // Set owner
-//       }
-//     } else {
-//       // Offline: Retrieve data from localStorage's transaksiData
-//       const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
-//       console.log("Stored transaksiData:", storedTransaksiData); // Log data structure for debugging
-      
-//       if (storedTransaksiData?.data?.length > 0) {
-//         const matchingTransaction = storedTransaksiData.data.find(
-//           (          item: { no_unit: string; }) => item.no_unit === unitValue
-//         );
-        
-//         console.log("Matching transaction:", matchingTransaction); // Log to check match
-        
-//         if (matchingTransaction) {
-//           // Set hm_last, qty_last, model_unit, and owner from local storage data
-//           setHmKmLast(matchingTransaction.hm_km); // Use hm_last instead of hm_km
-//           setQtyValue(matchingTransaction.qty_last ?? 0); // Fallback to 0 if qty_last is missing
-//           setModel(matchingTransaction.model_unit ?? ''); // Fallback to empty string if model_unit is missing
-//           setOwner(matchingTransaction.owner ?? ''); // Fallback to empty string if owner is missing
-//         } else {
-//           console.log("No matching transaction found for unit:", unitValue);
-//           setHmKmLast(null);
-//           setQtyValue(0);
-//           setModel('');
-//           setOwner('');
-//         }
-//       } else {
-//         console.log("No data in transaksiData array.");
-//         setHmKmLast(null);
-//         setQtyValue(0);
-//         setModel('');
-//         setOwner('');
-//       }
-//     }
-//   }
-// };
-
-// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
-//   if (newValue) {
-//     const unitValue = newValue.value;
-//     setSelectedUnit(unitValue);
-
-//     if (navigator.onLine) {
-//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
-//       if (selectedUnitOption) {
-//         setHmKmLast(selectedUnitOption.hm_km);
-//         setQtyValue(selectedUnitOption.qty);
-//         setModel(selectedUnitOption.model|| '');  // Log missing model_unit
-//         setOwner(selectedUnitOption.owner || '');
-//       }
-//     } else {
-//       const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
-//       console.log("Stored transaksiData:", storedTransaksiData);
-
-//       if (storedTransaksiData?.data?.length > 0) {
-//         const matchingTransaction = storedTransaksiData.data.find(
-//           (item: { no_unit: string; }) => item.no_unit === unitValue
-//         );
-
-//         if (matchingTransaction) {
-//           console.log("Matching transaction found:", matchingTransaction);
-//           setHmKmLast(matchingTransaction.hm_km || null);
-//           setQtyValue(matchingTransaction.qty_last ?? 0);
-//           setModel(matchingTransaction.model || ''); // Check if model_unit is missing
-//           setOwner(matchingTransaction.owner || '');
-//         } else {
-//           console.log("No matching transaction found for unit:", unitValue);
-//           setDefaults();
-//         }
-//       } else {
-//         console.log("No data in transaksiData array.");
-//         setDefaults();
-//       }
-//     }
-//   }
-// };
-
-
 const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
   if (newValue) {
     const unitValue = newValue.value;
@@ -1586,14 +1229,32 @@ const handleUnitChange = async (newValue: SingleValue<{ value: string; label: st
     
     console.log("Unit Value Selected:", unitValue); // Debugging log
 
+    // Load offline data from local storage
+    const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
+    console.log("Stored transaksiData:", storedTransaksiData);
+
+    // Get latest transaction for unitValue from transaksiData based on updated_at
+    let hmKmValue = null;
+    if (storedTransaksiData?.data?.length > 0) {
+      const matchingTransactions = storedTransaksiData.data
+        .filter((item: { no_unit: string; updated_at: string }) => item.no_unit === unitValue)
+        .sort((a: { updated_at: string | number | Date; }, b: { updated_at: string | number | Date; }) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      
+      if (matchingTransactions.length > 0) {
+        hmKmValue = matchingTransactions[0].hm_km || null;
+        console.log("hm_km from offline data:", hmKmValue);
+      }
+    }
+  
+
     if (navigator.onLine) {
       // Online mode
-      console.log("You are online");  // Debugging log
+      console.log("You are online"); 
       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
       
       if (selectedUnitOption) {
-        console.log("Selected Unit Option (Online):", selectedUnitOption); // Debugging log
-        setHmKmLast(selectedUnitOption.hm_km);
+        console.log("Selected Unit Option (Online):", selectedUnitOption); 
+        setHmKmLast(hmKmValue);  
         setQtyValue(selectedUnitOption.qty);
         setModel(selectedUnitOption.brand); 
         setOwner(selectedUnitOption.owner); 
@@ -1602,32 +1263,18 @@ const handleUnitChange = async (newValue: SingleValue<{ value: string; label: st
       }
     } else {
       // Offline mode
-      console.log("You are offline");  // Debugging log
-      const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
-      console.log("Stored transaksiData (Offline):", storedTransaksiData); // Debugging log
-
-      if (storedTransaksiData?.data?.length > 0) {
-        const matchingTransaction = storedTransaksiData.data.find(
-          (item: { no_unit: string; }) => item.no_unit === unitValue
-        );
-
-        if (matchingTransaction) {
-          console.log("Matching transaction found (Offline):", matchingTransaction); // Debugging log
-          setHmKmLast(matchingTransaction.hm_km || null);
-          setQtyValue(matchingTransaction.qty_last ?? 0);
-          setModel(matchingTransaction.model || '');  // Ensure model is being set
-          setOwner(matchingTransaction.owner || '');
-        } else {
-          console.log("No matching transaction found for unit:", unitValue);
-          setDefaults(); // Call defaults if no match
-        }
+      console.log("You are offline");  
+      if (hmKmValue !== null) {
+        setHmKmLast(hmKmValue); 
       } else {
-        console.log("No data in transaksiData array.");
-        setDefaults(); // Call defaults if no data
+        console.log("No matching transaction found for unit:", unitValue);
+        setDefaults();  // Set default values if no matching data
       }
     }
   }
 };
+
+
 
 // Helper function to set default values
 const setDefaults = () => {
@@ -1693,15 +1340,13 @@ useEffect(() => {
 
             </IonRow>
           )}
-         {currentUnitQuota?.is_active&& (
+          {currentUnitQuota?.is_active && remainingQuota > 0 && (
             <IonRow>
                 <IonCol>
-                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "500px" }}>
+                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
                         <IonLabel style={{ display: "flex" }}>
                             <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                            <IonTitle style={{ color: quotaMessage.includes("0 Liter") ? "red" : "green" }}>
-                              {quotaMessage}
-                            </IonTitle>
+                            <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
                         </IonLabel>
                     </IonItemDivider>
                 </IonCol>

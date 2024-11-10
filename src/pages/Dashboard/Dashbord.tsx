@@ -32,7 +32,6 @@ import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
 import { addDataTrxType } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
 import { Network } from '@capacitor/network';
-import { getTrasaksiSemua } from '../../hooks/getAllTransaksi';
 
 
 // Define the data structure for the card
@@ -267,13 +266,8 @@ useEffect(() => {
 
   
   const handleLogout = () => {
-    if (isOnline) {
-        route.push('/closing-data');
-    } else {
-        alert("You are offline. Please connect to the internet to log out.");
-    }
-};
-
+    route.push('/closing-data');
+  };
 
   useEffect(() => {
     const fetchJdeOptions = async () => {
@@ -426,7 +420,6 @@ useEffect(() => {
     }
     updateAllData()
     updateCard()
-  
     
   };
   const IssuedTotal = async () => {
@@ -456,20 +449,6 @@ const updateCard = async () => {
   localStorage.removeItem('cardDash')
   const cards = await fetchcardDash(lkfId);
 }
-
-// const updateDataTrx = async () => {
-//   localStorage.removeItem('transaksiData')
-//   const datanya = await  getTrasaksiSemua();
-//   console.log("Oke",datanya)
-// }
-
-
-
-
-
-// useEffect(()=>{
-//   updateDataTrx
-// })
 
 const fetchData = async () => {
   setLoading(true);
@@ -561,11 +540,11 @@ const fetchcardDash = async (lkfId: string) => {
       ];
 
       setDataHome(preparedData);
-      localStorage.setItem('cardDash', JSON.stringify(preparedData)); 
+      localStorage.setItem('cardDash', JSON.stringify(preparedData)); // Cache data yang sudah disiapkan
 
     } else {
       console.error("No valid data found:", dataHome);
-      setDataHome([]); 
+      setDataHome([]); // Kosongkan data jika tidak ada atau format tidak valid
     }
   } catch (error) {
     console.error("Error fetching card data:", error);
@@ -634,15 +613,9 @@ const fetchcardDash = async (lkfId: string) => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Update Data
             </IonButton> */}
-             <IonButton
-                color="warning"
-                style={{ marginLeft: "10px" }}
-                onClick={handleLogout}
-                disabled={pendingStatus || !isOnline}  // Combine both conditions to disable button if either is true
-              >
-                Close LKF & Logout
+             <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout} disabled={pendingStatus}>
+              Close LKF & Logout
             </IonButton>
-
           </div>
         </div>
 

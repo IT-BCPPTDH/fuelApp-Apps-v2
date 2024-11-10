@@ -4,6 +4,8 @@ export async function getTrasaksiSemua() {
     const today = new Date();
     const currentDate = today.toISOString().split('T')[0];  
     const url = `${VITE_BACKEND_URL}/api/operator/get-data-prev/${currentDate}`;
+    // const url = `${VITE_BACKEND_URL}/api/operator/get-data-prevAll`;
+
 
     console.log("Backend URL:", url);  // Log URL for debugging
 
