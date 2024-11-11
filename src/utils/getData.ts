@@ -349,6 +349,8 @@ export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_km?:
 
 
 
+
+
 export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {
   try {
     const latestEntry = await db.closeTrx.orderBy('id').reverse().limit(1).toArray();

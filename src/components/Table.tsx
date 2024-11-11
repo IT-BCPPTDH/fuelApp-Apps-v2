@@ -166,7 +166,7 @@ const handleBulkInsert = async () => {
     owner: item.owner,
     date_trx: new Date().toISOString(),
     hm_last: item.hm_km,
-    hm_km: item.hm_last,
+    hm_km: item.hm_km,
     qty_last: item.qty_issued,
     qty: item.qty_issued,
     flow_start: item.fm_awal,
