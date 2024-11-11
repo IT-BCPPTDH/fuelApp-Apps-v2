@@ -552,7 +552,7 @@ const [stock, setStock] = useState<number>(0);
         if (currentUnitQuota) {
           setUnitQuota(currentUnitQuota.quota);
           setUsedQuota(currentUnitQuota.used);
-          setRemainingQuota(parseInt(currentUnitQuota.quota) - parseInt(currentUnitQuota.used)); 
+
         } else {
           setUnitQuota(0);
           setUsedQuota(0);
@@ -917,73 +917,6 @@ useEffect(() => {
   }
 }, [isError, quantityError]);
 
-// useEffect(() => {
-//   const loadUnitDataQuota = async () => {
-//     const today = new Date();
-//     const formattedDate = today.toISOString().split('T')[0];
-
-//     try {
-//       let quotaData;
-
-//       if (navigator.onLine) {
-//         // Attempt to fetch online data
-//         quotaData = await fetchQuotaData(formattedDate);
-//       }
-
-//       // If quotaData is undefined or not an array, attempt to retrieve from local storage
-//       if (!quotaData || !Array.isArray(quotaData)) {
-//         console.warn('Online quota data unavailable or failed. Attempting offline data.');
-//         quotaData = await getDataFromStorage('unitQuota');
-//       }
-
-//       if (quotaData && Array.isArray(quotaData)) {
-//         let foundUnitQuota = quotaData.find((unit) => unit.unit_no === selectedUnit);
-
-//         if (!foundUnitQuota && navigator.onLine) {
-//           // Check previous day's data if today’s quota is missing and online
-//           const yesterday = new Date(today);
-//           yesterday.setDate(today.getDate() - 1);
-//           const formattedYesterday = yesterday.toISOString().split('T')[0];
-//           const previousQuotaData = await fetchQuotaData(formattedYesterday);
-//           foundUnitQuota = previousQuotaData?.find((unit) => unit.unit_no === selectedUnit);
-//         }
-
-//         console.log('Found Unit Quota:', foundUnitQuota); // Debugging log
-
-//         if (foundUnitQuota?.is_active) {
-//           setCurrentUnitQuota(foundUnitQuota);
-
-//           const totalQuota = Number(foundUnitQuota.quota); // Convert to number
-//           const usedQuota = Number(foundUnitQuota.used);   // Convert to number
-//           const remainingQuota = totalQuota - usedQuota;
-
-//           if (foundUnitQuota) {
-//             setUnitQuota(totalQuota);
-//             setRemainingQuota(remainingQuota);
-//             setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
-//           } else {
-//             setUnitQuota(0);
-//             setRemainingQuota(0);
-//             setQuotaMessage("Pembatasan kuota dinonaktifkan.");
-//           }
-//         } else {
-//           setUnitQuota(0);
-//           setRemainingQuota(0);
-//           setQuotaMessage("No quota found for the selected unit.");
-//         }
-//       } else {
-//         setQuotaMessage("Offline quota data unavailable.");
-//         console.error('No quota data available for the specified date or unit.');
-//       }
-//     } catch (error) {
-//       console.error('Error fetching or loading quota data:', error);
-//       setQuotaMessage("Error loading quota data.");
-//     }
-//   };
-
-//   loadUnitDataQuota();
-// }, [selectedUnit]);
-
 
 useEffect(() => {
   const loadUnitDataQuota = async () => {
@@ -994,7 +927,6 @@ useEffect(() => {
       let quotaData;
 
       if (navigator.onLine) {
-        // Attempt to fetch online data
         quotaData = await fetchQuotaData(formattedDate);
       }
 
@@ -1013,30 +945,25 @@ useEffect(() => {
           yesterday.setDate(today.getDate() - 1);
           const formattedYesterday = yesterday.toISOString().split('T')[0];
           const previousQuotaData = await fetchQuotaData(formattedYesterday);
-
           foundUnitQuota = previousQuotaData?.find((unit) => unit.unit_no === selectedUnit);
         }
 
+        console.log('Found Unit Quota:', foundUnitQuota); // Debugging log
+
         if (foundUnitQuota?.is_active) {
           setCurrentUnitQuota(foundUnitQuota);
-        
-          const totalQuota = foundUnitQuota.quota || 0; // Ensure quota has a default of 0 if undefined
-          const usedQuota = foundUnitQuota.used || 0;   // Ensure used quota has a default of 0 if undefine
-          const remaining = totalQuota - usedQuota;        // Calculate remaining quota based on quota - qtyLast
-        
-          if (foundUnitQuota) {
-            setUnitQuota(totalQuota);
-            setRemainingQuota(remaining);
-            setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remaining} Liter`);
-          } else {
-            setUnitQuota(0);
-            setRemainingQuota(0);
-            setQuotaMessage("Pembatasan kuota dinonaktifkan.");
-          }
+
+          const totalQuota = Number(foundUnitQuota.quota) || 0; // Default to 0 if undefined
+          const usedQuota = Number(foundUnitQuota.used) || 0;   // Default to 0 if undefined
+          const remainingQuota = totalQuota - usedQuota;
+
+          setUnitQuota(totalQuota);
+          setRemainingQuota(remainingQuota);
+          setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
         } else {
           setUnitQuota(0);
           setRemainingQuota(0);
-          setQuotaMessage("No quota found for the selected unit.");
+          setQuotaMessage(`Sisa Kuota ${selectedUnit}: 0 Liter`);
         }
       } else {
         setQuotaMessage("Offline quota data unavailable.");
@@ -1050,6 +977,71 @@ useEffect(() => {
 
   loadUnitDataQuota();
 }, [selectedUnit]);
+
+
+
+// useEffect(() => {
+//   const loadUnitDataQuota = async () => {
+//     const today = new Date();
+//     const formattedDate = today.toISOString().split('T')[0];
+
+//     // Calculate yesterday's date
+//     const yesterday = new Date(today);
+//     yesterday.setDate(today.getDate() - 1);
+//     const formattedYesterday = yesterday.toISOString().split('T')[0];
+
+//     try {
+//       let quotaData;
+
+//       if (navigator.onLine) {
+//         // Attempt to fetch online data for today
+//         quotaData = await fetchQuotaData(formattedDate);
+//       }
+
+//       // If quotaData is undefined or not an array, attempt to retrieve from local storage
+//       if (!quotaData || !Array.isArray(quotaData)) {
+//         console.warn('Online quota data unavailable or failed. Attempting offline data.');
+//         quotaData = await getDataFromStorage('unitQuota');
+//       }
+
+//       if (quotaData && Array.isArray(quotaData)) {
+//         let foundUnitQuota = quotaData.find((unit) => unit.unit_no === selectedUnit);
+
+//         if (!foundUnitQuota && navigator.onLine) {
+//           // Check previous day's data if today’s quota is missing and online
+//           const previousQuotaData = await fetchQuotaData(formattedYesterday);
+//           foundUnitQuota = previousQuotaData?.find((unit) => unit.unit_no === selectedUnit);
+//         }
+
+//         console.log('Found Unit Quota:', foundUnitQuota); // Debugging log
+
+//         if (foundUnitQuota?.is_active) {
+//           setCurrentUnitQuota(foundUnitQuota);
+
+//           const totalQuota = Number(foundUnitQuota.quota);
+//           const usedQuota = Number(foundUnitQuota.used);
+//           const remainingQuota = totalQuota - usedQuota;
+
+//           setUnitQuota(totalQuota);
+//           setRemainingQuota(remainingQuota);
+//           setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
+//         } else {
+//           setUnitQuota(0);
+//           setRemainingQuota(0);
+//           setQuotaMessage("No quota found for the selected unit.");
+//         }
+//       } else {
+//         setQuotaMessage("Offline quota data unavailable.");
+//         console.error('No quota data available for the specified date or unit.');
+//       }
+//     } catch (error) {
+//       console.error('Error fetching or loading quota data:', error);
+//       setQuotaMessage("Error loading quota data.");
+//     }
+//   };
+
+//   loadUnitDataQuota();
+// }, [selectedUnit]);
 
 const calculateFlowEnd = (typeTrx: string): string | number => {
   if (flowMeterAwal !== undefined && quantity !== undefined) {
@@ -1222,6 +1214,68 @@ const filteredUnitOptions = (selectedType &&
 : unitOptions;
 
 
+// const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
+//   if (newValue) {
+//     const unitValue = newValue.value;
+//     setSelectedUnit(unitValue);
+    
+//     console.log("Unit Value Selected:", unitValue); // Debugging log
+
+//     // Load offline data from local storage
+//     const storedTransaksiData = JSON.parse(localStorage.getItem('transaksiData') || '{}');
+//     console.log("Stored transaksiData:", storedTransaksiData);
+
+//     // Get latest transaction for unitValue from transaksiData based on updated_at
+//     let hmKmValue = null;
+//     if (storedTransaksiData?.data?.length > 0) {
+//       const matchingTransactions = storedTransaksiData.data
+//         .filter((item: { no_unit: string; updated_at: string }) => item.no_unit === unitValue)
+//         .sort((a: { updated_at: string | number | Date; }, b: { updated_at: string | number | Date; }) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+      
+//       if (matchingTransactions.length > 0) {
+//         hmKmValue = matchingTransactions[0].hm_km || null;
+//         console.log("hm_km from offline data:", hmKmValue);
+//       }
+//     }
+  
+
+//     if (navigator.onLine) {
+//       // Online mode
+//       console.log("You are online"); 
+//       const selectedUnitOption = unitOptions.find(unit => unit.unit_no === unitValue);
+      
+//       if (selectedUnitOption) {
+//         console.log("Selected Unit Option (Online):", selectedUnitOption); 
+//         setHmKmLast(hmKmValue);  
+//         setQtyValue(selectedUnitOption.qty);
+//         setModel(selectedUnitOption.model); 
+//         setOwner(selectedUnitOption.owner); 
+//       } else {
+//         console.log("No matching unit found in unitOptions for unit:", unitValue);
+//       }
+//     } else {
+//       // Offline mode
+//       console.log("You are offline");  
+//       if (hmKmValue !== null) {
+        
+//         setHmKmLast(hmKmValue); 
+//       } else {
+//         console.log("No matching transaction found for unit:", unitValue);
+//         setDefaults();  // Set default values if no matching data
+//       }
+//     }
+//   }
+// };
+
+
+
+// Helper function to set default values
+const setDefaults = () => {
+  setHmKmLast(null);
+  setQtyValue(0);
+ 
+};
+
 const handleUnitChange = async (newValue: SingleValue<{ value: string; label: string }>) => {
   if (newValue) {
     const unitValue = newValue.value;
@@ -1235,14 +1289,22 @@ const handleUnitChange = async (newValue: SingleValue<{ value: string; label: st
 
     // Get latest transaction for unitValue from transaksiData based on updated_at
     let hmKmValue = null;
+    let modelValue = null;
+    let ownerValue = null;
     if (storedTransaksiData?.data?.length > 0) {
       const matchingTransactions = storedTransaksiData.data
         .filter((item: { no_unit: string; updated_at: string }) => item.no_unit === unitValue)
         .sort((a: { updated_at: string | number | Date; }, b: { updated_at: string | number | Date; }) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
       
       if (matchingTransactions.length > 0) {
-        hmKmValue = matchingTransactions[0].hm_km || null;
+        const latestTransaction = matchingTransactions[0];
+        hmKmValue = latestTransaction.hm_km || null;
+        modelValue = latestTransaction.model || null;  // Assuming model is available in the transaction
+        ownerValue = latestTransaction.owner || null;  // Assuming owner is available in the transaction
+
         console.log("hm_km from offline data:", hmKmValue);
+        console.log("Model from offline data:", modelValue);
+        console.log("Owner from offline data:", ownerValue);
       }
     }
   
@@ -1256,7 +1318,7 @@ const handleUnitChange = async (newValue: SingleValue<{ value: string; label: st
         console.log("Selected Unit Option (Online):", selectedUnitOption); 
         setHmKmLast(hmKmValue);  
         setQtyValue(selectedUnitOption.qty);
-        setModel(selectedUnitOption.brand); 
+        setModel(selectedUnitOption.model); 
         setOwner(selectedUnitOption.owner); 
       } else {
         console.log("No matching unit found in unitOptions for unit:", unitValue);
@@ -1265,7 +1327,12 @@ const handleUnitChange = async (newValue: SingleValue<{ value: string; label: st
       // Offline mode
       console.log("You are offline");  
       if (hmKmValue !== null) {
-        setHmKmLast(hmKmValue); 
+        setHmKmLast(hmkmLast); 
+        
+      }
+      if (modelValue && ownerValue) {
+        setModel(modelValue); 
+        setOwner(ownerValue); 
       } else {
         console.log("No matching transaction found for unit:", unitValue);
         setDefaults();  // Set default values if no matching data
@@ -1273,17 +1340,6 @@ const handleUnitChange = async (newValue: SingleValue<{ value: string; label: st
     }
   }
 };
-
-
-
-// Helper function to set default values
-const setDefaults = () => {
-  setHmKmLast(null);
-  setQtyValue(0);
- 
-};
-
-
 
 useEffect(() => {
   console.log("Updated hmkmLast value:", hmkmLast);
@@ -1318,12 +1374,6 @@ useEffect(() => {
   setFbrResult(calculateFBR());
 }, [hmkmValue, hmkmLast, qtyValue]);
 
-
-// Update FBR result
-useEffect(() => {
-  setFbrResult(calculateFBR());
-}, [hmkmValue, hmkmLast, qtyValue]);
-
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -1336,7 +1386,7 @@ useEffect(() => {
       <IonContent>
         <div style={{ marginTop: "20px", padding: "15px" }}>
           {(selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
-            <IonRow>
+            <IonRow> 
 
             </IonRow>
           )}
@@ -1475,7 +1525,7 @@ useEffect(() => {
                         className="custom-input"
                         type="number"
                         placeholder="Input HM/KM Unit"
-                        value={hmkmLast !== null ? hmkmLast : hmLast} // fallback to hmkmLast when hmkmValue is null
+                        value={hmkmValue !== null ? hmkmLast : hmLast} // fallback to hmkmLast when hmkmValue is null
                         disabled={isFormDisabled}
                         onIonChange={(e) => setHmKmLast(Number(e.detail.value))}
                         onKeyDown={handleKeyDown}
