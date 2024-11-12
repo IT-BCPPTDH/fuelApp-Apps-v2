@@ -34,9 +34,12 @@ export const saveDataToStorage = async (key: string, data: any): Promise<void> =
 export const getDataFromStorage = async (key: string): Promise<any | null> => {
   try {
     const result = await Preferences.get({ key });
-    return result.value ? JSON.parse(result.value) : null;
+   
+    const res=  result.value ? JSON.parse(result.value) : null;
+
+    return res 
   } catch (error) {
-    console.error(`Failed to get ${key} from storage`, error);
+   
     return null;
   }
 };
@@ -105,6 +108,7 @@ export const fetchUnitData = async (): Promise<any[]> => {
 export const fetchQuotaData = async (date: string): Promise<any[]> => {
   try {
     const response = await getAllQuota(date); 
+  
     if (response.status === '200' && Array.isArray(response.data)) {
       await saveDataToStorage('unitQuota', response.data);
       return response.data;

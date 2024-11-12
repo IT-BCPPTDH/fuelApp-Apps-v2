@@ -21,7 +21,7 @@ export async function getOperator() {
 
         const data = response.data;
 
-        console.log('Successfully fetched operator data:', data);
+        // console.log('Successfully fetched operator data:', data);
 
         return data;
     } catch (error: unknown) {

@@ -36,6 +36,7 @@ import { getStationData} from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
 import { chevronDownCircleOutline } from 'ionicons/icons';
+import { getAllQuota, getUnitQuotaActive } from "../../hooks/getQoutaUnit";
 
 interface Shift {
   id: number;
@@ -360,6 +361,8 @@ useEffect(() => {
     setOpeningSonding(value);
   };
 
+
+
   useEffect(() => {
     const checkAndSendOfflineData = async () => {
       if (navigator.onLine) {
@@ -403,7 +406,11 @@ useEffect(() => {
   // // Panggil fungsi untuk mengambil data
   // fetchLatestLkfData();
 
-  
+ 
+
+
+
+
   useEffect(() => {
     const userData = async () => {
       const data = await getDataFromStorage('loginData');
@@ -508,8 +515,8 @@ const fetchData = async () => {
       if (latestShiftData.flow_meter_end !== undefined) {
         setFlowMeterAwal(latestShiftData.flow_meter_end); 
       }
-      if (latestShiftData.opening_dip !== undefined) {
-        setOpeningDip(latestShiftData.opening_dip); 
+      if (latestShiftData.closing_dip !== undefined) {
+        setOpeningDip(latestShiftData.closing_dip); 
       }
       if (latestShiftData.hm_end !== undefined) {
         setHmAkhir(latestShiftData.hm_end);
@@ -527,25 +534,19 @@ const fetchData = async () => {
   }
 };
 
- 
 useEffect(() => {
-  fetchData(); // Load data when the component mounts
-
-  const intervalId = setInterval(() => {
-    fetchData(); // Refresh data every 5 seconds
-  }, 10000);
-
+  fetchData(); 
+    const timeoutId = setTimeout(() => {
+      fetchData(); 
+    }, 3000);
+    return () => clearTimeout(timeoutId);
 
 }, []);
-
 
 const doRefresh = async (event: CustomEvent) => {
   await fetchData();
   event.detail.complete(); 
 };
-
-
-
 
 // untuk Menampilkan Data
 useEffect(() => {
@@ -561,7 +562,7 @@ useEffect(() => {
         const stationData = userData.station; 
 
         if (stationData) {
-          const shiftClose = await fetchShiftData(stationData);
+          const shiftClose = await fetchShiftData(stationData); // Pass the selected date to fetch data
           console.log("Fetched Shift Close Data:", shiftClose);
 
           // Filter to only include specific fields
@@ -569,7 +570,7 @@ useEffect(() => {
             closing_sonding: data.closing_sonding,
             closing_dip: data.closing_dip,
             flow_meter_en: data.flow_meter_end,
-            hm_end: data. hm_end
+            hm_end: data.hm_end
           })).filter(data => data.closing_sonding !== undefined && data.closing_dip !== undefined && data.flow_meter_en !== undefined);
 
           // Log the filtered data for debugging
@@ -586,11 +587,7 @@ useEffect(() => {
   };
 
   loadShiftClose(); 
-}, []); 
-
-
-
-
+}, [date]); 
 
 const handleFlowMeterAwalChange = (e: CustomEvent) => {
   const value = Number(e.detail.value);
@@ -601,11 +598,6 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
   }
   setFlowMeterAwal(value);
 };
-
-
-
-
-
 
   return (
     <IonPage>
@@ -682,8 +674,10 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
               type="number"
               value={openingSonding}
-              
-              onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
+              onIonChange={handleOpeningSondingChange}
+
+             
+              // onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
             />
             {showError && openingSonding === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
@@ -698,8 +692,10 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               type="number"
               placeholder="Input opening dip dalam liter"
               value={openingDip}
+              disabled
               readonly={stationOptions.includes(station ||'')}
               onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
+
             />
             {showError && openingDip === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
@@ -713,10 +709,9 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               className={`custom-input`}
               type="number"
               value={flowMeterAwal}
-             
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
-                handleFlowMeterAwalChange(e); 
+                handleFlowMeterAwalChange(e); // Call the handler here
               }}
             />
            {showError && (
@@ -735,22 +730,21 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
             </IonLabel>
             <IonInput
-                      className={`custom-input ${showError && (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0)) ? "input-error" : ""}`}
-                      type="number"
-                      placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
-                      value={hmAkhir !== undefined ? hmAkhir : ''} // Ensure value is a string for editable input
-                      onIonChange={(e) => {
-                        const value = Number(e.detail.value);
-                        if (station !== "FT" && value === 0) {
-                          setHmAkhir(undefined);
-                          setShowError(true);
-                        } else {
-                          setHmAkhir(value);
-                          setShowError(false);
-                        }
-                      }}
-                    />
-
+              className={`custom-input ${showError && (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0)) ? "input-error" : ""}`}
+              type="number"
+              placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
+              value={hmAkhir}
+              onIonInput={(e) => {
+                const value = Number(e.detail.value);
+                if (station !== "FT" && value === 0) {
+                  setHmAkhir(undefined);
+                  setShowError(true);
+                } else {
+                  setHmAkhir(value); // Make sure to set HM Awal based on user input
+                  setShowError(false);
+                }
+              }}
+/>
             {showError && hmAkhir === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}

@@ -8,7 +8,7 @@ import { logoutUser } from '../../hooks/useAuth';
 
 import './style.css';
 import { deleteAllClosingData, deleteAllDataTransaksi } from '../../utils/delete';
-
+import { removeDataFromStorage } from '../../services/dataService';
 
 const ReviewData: React.FC = () => {
     const route = useIonRouter();
@@ -144,7 +144,7 @@ const ReviewData: React.FC = () => {
                     localStorage.setItem('shiftData', JSON.stringify(parsedShiftData));
                 } else {
                     // Completely remove shiftData if no specific field to retain
-                    localStorage.removeItem('shiftData');
+                    removeDataFromStorage('shiftData');
 
                 }
 
@@ -152,15 +152,19 @@ const ReviewData: React.FC = () => {
             }
     
             // Remove unitQouta from localStorage
-            localStorage.removeItem('unitQouta');
+            removeDataFromStorage('unitQouta');
        
-            localStorage.removeItem('lastLkfDataStation');
-            localStorage.removeItem('lastClosingSonding');
-            localStorage.removeItem('lastDipLiter');
-            localStorage.removeItem('lastFlowMeter');
-            localStorage.removeItem('CapacitorStorage.shiftCloseData');
+            removeDataFromStorage('lastLkfDataStation');
+            removeDataFromStorage('lastClosingSonding');
+            removeDataFromStorage('lastDipLiter');
+            removeDataFromStorage('lastFlowMeter');
+            removeDataFromStorage('shiftCloseData');
+            removeDataFromStorage('loginData');
+            removeDataFromStorage('allOperator');
+            removeDataFromStorage('allUnit');
+            removeDataFromStorage('stationData');
+
             localStorage.removeItem('cardDash');
-            localStorage.removeItem('shiftData');
             localStorage.removeItem('latestLkfData');
 
            
@@ -170,7 +174,8 @@ const ReviewData: React.FC = () => {
             await deleteAllClosingData()
             // Redirect to the home page or login page
             // route.push('/')
-            window.location.href = '/';
+            window.location.href='/'
+        
         } catch (error) {
             console.error('Logout failed:', error);
             // Handle logout failure, e.g., show an error message

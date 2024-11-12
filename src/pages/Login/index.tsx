@@ -23,11 +23,15 @@ import {
   saveDataToStorage,
   getDataFromStorage,
   fetchOperatorData,
+  fetchQuotaData,
+  fetchUnitLastTrx,
 } from "../../services/dataService";
 import Select from "react-select";
 import AsyncSelect from 'react-select/async';
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getOperator } from "../../hooks/getAllOperator";
+import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
+
 
 // Define props interface
 interface LoginProps {
@@ -45,7 +49,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAlert, setShowAlert] = useState<boolean>(false);
+  const [dtTrx, setDtTrx] = useState<
+  { hm_km: string; no_unit: string }[]
+>([]);
 
+const [transaksiData, setTransaksiData] = useState<any>(null); 
+  const [qouta, setQouta] = useState()
   const [jdeOptions, setJdeOptions] = useState<
   { JDE: string; fullname: string }[]
 >([]);
@@ -74,6 +83,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       setLoading(false);
     }
   }, []);
+
+
+
+  
 
   useEffect(() => {
     loadStationData(); // Load data pertama kali
@@ -152,7 +165,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       // First, check local storage for cached operator data
       const cachedData = await getDataFromStorage('allOperator');
       if (cachedData && Array.isArray(cachedData)) {
-        console.log("Loaded operator data from local storage:", cachedData);
+        // console.log("Loaded operator data from local storage:", cachedData);
         setJdeOptions(cachedData); // Use the cached data
       } else {
         // If no cached data, fetch from the API
@@ -174,9 +187,95 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     loadOperator(); // Fetch operator data when the component mounts
   }, []);
   
+  useEffect(() => {
+    const loadUnitDataQuota = async () => {
+        const today = new Date();
+        const formattedDate = today.toISOString().split('T')[0];
+        try {
+            const quotaData = await fetchQuotaData(formattedDate);
+            console.log('Fetched Qouta Login ', quotaData);
+
+            if (quotaData && Array.isArray(quotaData)) {
+                let foundUnitQuota = quotaData.find((unit) => unit.no_unit === selectedUnit);
+
+                if (!foundUnitQuota) {
+                    const yesterday = new Date(today);
+                    yesterday.setDate(today.getDate() - 1);
+                    const formattedYesterday = yesterday.toISOString().split('T')[0];
+                    const previousQuotaData = await fetchQuotaData(formattedYesterday);
+                    console.log('Fetched previous quota data:', previousQuotaData);
+                    foundUnitQuota = previousQuotaData.find((unit) => unit.no_unit === selectedUnit);
+                }
+            } else {
+                console.error('No quota data found for the specified date');
+            }
+        } catch (error) {
+            console.error('Error fetching quota data:', error);
+        }
+    };
+
+    loadUnitDataQuota();
+}, []);
+
+
+const dataTrasaksi = async () => {
+  try {
+    // Fetch all transaksi data
+    const transaksiData = await getTrasaksiSemua();
+    console.log("Fetched transaksi data:", transaksiData);
+
+    // Check if data is available before storing it
+    if (transaksiData && Array.isArray(transaksiData) && transaksiData.length > 0) {
+      // Save the data to localStorage as a string
+      localStorage.setItem('transaksiData', JSON.stringify(transaksiData));
+      
   
-  
-  
+      console.log('Transaksi data has been saved to IndexedDB and localStorage.');
+    } else {
+      console.warn('No transaksi data to save.');
+    }
+  } catch (error) {
+    console.error('Error fetching and saving transaksi data:', error);
+  }
+};
+
+useEffect(() => {
+  // Only call dataTrasaksi once when the component mounts
+  dataTrasaksi();
+}, []);  // Empty dependency array ensures it runs only once on mount
+
+
+
+
+
+const loadTrxLast = async () => {
+  try {
+    // First, check local storage for cached operator data
+    const cachedData = await getDataFromStorage('oneMounth');
+    if (cachedData && Array.isArray(cachedData)) {
+      console.log("Loaded data terakhir:", cachedData);
+      setDtTrx(cachedData); // Use the cached data
+    } else {
+      // If no cached data, fetch from the API
+      const fetchedJdeOptions = await fetchUnitLastTrx(selectedUnit);
+      if (fetchedJdeOptions.length > 0) {
+        console.log("Fetched operator data and saved to local storage:", fetchedJdeOptions);
+        setDtTrx(fetchedJdeOptions); // Update state with fetched data
+      } else {
+        console.error("No valid operator data fetched");
+      }
+    }
+  } catch (error) {
+    console.error("Error loading operator data:", error);
+  }
+};
+
+
+useEffect(() => {
+  loadTrxLast(); 
+}, []);
+
+
 
   return (
     <IonPage>
@@ -280,3 +379,5 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 };
 
 export default Login;
+
+
