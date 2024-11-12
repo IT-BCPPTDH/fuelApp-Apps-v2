@@ -596,20 +596,25 @@ const [stock, setStock] = useState<number>(0);
           }
         }
       } else {
-        const unitQuota = await getDataFromStorage('unitQuota') || {};
-        console.log("ini",unitQouta)
-        if (selectedUnit && quantity > 0) {
-          unitQuota[selectedUnit] = (unitQuota[selectedUnit] || 0) - quantity;
-          
-          await saveDataToStorage('unitQuota', unitQuota);
+        const unitQuota =  await getDataFromStorage('unitQuota');
+       
+        
+        for (let index = 0; index < unitQuota.length; index++) {
+
+          const element = unitQuota[index];
+          if(element.unit_no === dataPost.no_unit ){
+              element.used = dataPost.qty
+          }
         }
-  
+        console.log("unit-qouta",unitQuota)
+        
         dataPost.status = 0;
         await insertNewData(dataPost);
         await insertNewDataHistori(dataPost);
+        await saveDataToStorage('unitQuota',unitQuota);
         alert("Trasaksi tersimpan pada local");
       }
-  
+
       route.push("/dashboard");
     } catch (error) {
       console.error("Error occurred while posting data:", error);
@@ -635,37 +640,14 @@ const [stock, setStock] = useState<number>(0);
         }
         return unit;
       });
-  
-     
+      
+    
       await saveDataToStorage("unitQouta", JSON.stringify(updatedData));
     }
   };
   
   
   
-  useEffect(() => {
-    const fetchData = async () => {
-      const unitQuota = await getDataFromStorage("unitQouta");
-      console.log("!!!!!!!!!", unitQouta)
-      if (unitQuota) {
-        const parsedData = JSON.parse(unitQuota);
-        const currentUnitQuota = parsedData.find((unit: { unit_no: string | undefined; }) => unit.unit_no === selectedUnit);
-        if (currentUnitQuota) {
-          setUnitQuota(currentUnitQuota.quota);
-          setUsedQuota(currentUnitQuota.used);
-      
-
-        } else {
-          setUnitQuota(0);
-          setUsedQuota(0);
-          setRemainingQuota(0);
-        }
-      }
-    };
-  
-    fetchData();
-  }, [selectedUnit]);
-
 
 
 
@@ -1634,18 +1616,24 @@ useEffect(() => {
 
             </IonRow>
           )}
-          {currentUnitQuota?.is_active && remainingQuota > 0 && (
-            <IonRow>
-                <IonCol>
-                    <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
-                        <IonLabel style={{ display: "flex" }}>
-                            <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-                            <IonTitle>Sisa Kouta: {remainingQuota} Liter</IonTitle>
-                        </IonLabel>
-                    </IonItemDivider>
-                </IonCol>
-            </IonRow>
-        )}
+       {currentUnitQuota?.is_active && remainingQuota >= 0 && (
+    <IonRow>
+        <IonCol>
+            <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                <IonLabel style={{ display: "flex" }}>
+                    <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
+                    <IonTitle 
+                        style={{ color: remainingQuota === 0 ? 'red' : 'inherit' }}
+                    >
+                        Sisa Kuota: {remainingQuota > 0 ? `${remainingQuota} Liter` : '0 Liter'}
+                    </IonTitle>
+                </IonLabel>
+            </IonItemDivider>
+        </IonCol>
+    </IonRow>
+)}
+
+
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <IonRow>

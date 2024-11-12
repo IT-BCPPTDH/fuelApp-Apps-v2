@@ -34,9 +34,12 @@ export const saveDataToStorage = async (key: string, data: any): Promise<void> =
 export const getDataFromStorage = async (key: string): Promise<any | null> => {
   try {
     const result = await Preferences.get({ key });
-    return result.value ? JSON.parse(result.value) : null;
+   
+    const res=  result.value ? JSON.parse(result.value) : null;
+
+    return res 
   } catch (error) {
-    console.error(`Failed to get ${key} from storage`, error);
+   
     return null;
   }
 };
