@@ -40,7 +40,7 @@ import { postTransaksi } from "../../hooks/postTrx";
 import { DataFormTrx } from "../../models/db";
 import { db } from "../../models/db";
 import { DataDashboard } from "../../models/db";
-import { addDataDashboard, addDataTrxType } from "../../utils/insertData";
+import { addDataDashboard, addDataHistory, addDataTrxType } from "../../utils/insertData";
 import { getUser } from "../../hooks/getAllUser";
 import { convertToBase64 } from "../../utils/base64";
 import {
@@ -224,6 +224,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
   const [hmkmValue, setHmkmValue] = useState<number | null>(null);
   const [hmkmLast, setHmKmLast] = useState<number | null>(null);
   const [fbrResult, setFbrResult] = useState<number>(0);
+  const [fbrResultOf, setFbrResultOf] = useState<number>(0);
   const [lkfId, setLkfId] = useState<string>('');
   const [qtyValue, setQtyValue] = useState<number | null>(null);
  
@@ -426,28 +427,121 @@ const [stock, setStock] = useState<number>(0);
 
  
  
-  const handlePost = async (e: React.FormEvent) => {
+  // const handlePost = async (e: React.FormEvent) => {
    
-    const validQuantity = quantity ?? 0; 
-    // Validate the quantity
+  //   const validQuantity = quantity ?? 0; 
+  //   // Validate the quantity
+  //   if (isNaN(validQuantity) || validQuantity <= 0) {
+  //     setQuantityError("Qty Issued harus lebih besar dari 0");
+  //     setIsError(true);
+  //     return; // Stop the save action if quantity is invalid
+  //   }
+  //   // Validate all form fields
+  //   if (
+  //     !selectedType ||
+  //     !selectedUnit ||
+  //     !operatorOptions ||
+  //     quantity === null ||
+  //     fuelman_id === null ||
+  //     fbr === null ||
+  //     flowMeterAwal === null ||
+  //     flowMeterAkhir === null ||
+  //     !startTime ||
+  //     !endTime
+  //   ) {
+  //     setShowError(true);
+  //     setemployeeError(true);
+  //     return;
+  //   }
+  
+  //   const typeTrxValue = typeTrx[0];
+  //   const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
+  
+  //   // Prepare form data
+  //   const fromDataId = Date.now().toString();
+  //   const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
+  //   const lkf_id = await getLatestLkfId();
+  
+  //   const dataPost: DataFormTrx = {
+  //     from_data_id: fromDataId,
+  //     no_unit: selectedUnit!,
+  //     model_unit: model!,
+  //     owner: owner!,
+  //     date_trx: new Date().toISOString(),
+  //     hm_last: Number(hmkmLast),
+  //     hm_km: Number(hmkmValue),
+  //     qty_last: quantity ?? 0, // Default to 0 if quantity is undefined
+  //     qty: quantity ?? 0,
+  //     flow_start: Number(flowMeterAwal),
+  //     flow_end: flow_end,
+  //     name_operator: fullName!,
+  //     fbr: fbrResult,
+  //     lkf_id: lkf_id ?? "",
+  //     signature: signatureBase64 ?? "",
+  //     type: selectedType?.name ?? "",
+  //     foto: photoPreview ?? "",
+  //     fuelman_id: fuelman_id!,
+  //     jde_operator: fuelman_id!,
+  //     status: status ?? 0, // Default to 0 (pending) if status is undefined
+  //     date: "",
+  //     start: startTime,
+  //     end: endTime,
+  //   };
+  
+  //   try {
+  //     if (isOnline) {
+  //       // If online, try to post the transaction to the server
+  //       const response = await postTransaksi(dataPost);
+  //       await insertNewData(dataPost);
+  //       await insertNewDataHistori(dataPost);
+  //       updateCard();
+  //       // updatedKuota()
+        
+  
+  //       const responseStatus = response.status;
+  
+  //       if (responseStatus === 200) {
+  //         // If the response is successful (200), set status to "sent" (1)
+  //         dataPost.status = 1;
+  //         await insertNewData(dataPost); 
+  //         await insertNewDataHistori(dataPost);// Save the transaction locally
+  //         alert("Transaksi Succes dikirim ke server");
+  //         if (quantity > 0) {
+  //           updateLocalStorageQuota(selectedUnit, quantity); // Update quota if necessary
+  //         }
+  //       }
+  //     } else {
+  //       const unitQouta = getDataFromStorage('unitQouta')
+  //       console.log("test",unitQouta)
+  //       console.log("post", dataPost)
+
+  //       // If offline, save data locally
+  //       dataPost.status = 0;
+  //       await insertNewData(dataPost);
+  //       await insertNewDataHistori(dataPost);
+  //       alert("Trasaksi tersimpan pada local");
+  //     }
+  
+  //     // After successful operation, navigate to the dashboard
+  //     route.push("/dashboard");
+  //   } catch (error) {
+  //     console.error("Error occurred while posting data:", error);
+  //     setModalMessage("Error occurred while posting data: " + error);
+  //     setErrorModalOpen(true);
+  //   }
+  // };
+  
+  const handlePost = async (e: React.FormEvent) => {
+    const validQuantity = quantity ?? 0;
     if (isNaN(validQuantity) || validQuantity <= 0) {
       setQuantityError("Qty Issued harus lebih besar dari 0");
       setIsError(true);
-      return; // Stop the save action if quantity is invalid
+      return;
     }
-    // Validate all form fields
-    if (
-      !selectedType ||
-      !selectedUnit ||
-      !operatorOptions ||
-      quantity === null ||
-      fuelman_id === null ||
-      fbr === null ||
-      flowMeterAwal === null ||
-      flowMeterAkhir === null ||
-      !startTime ||
-      !endTime
-    ) {
+  
+    if (!selectedType || !selectedUnit || !operatorOptions || quantity === null || 
+        fuelman_id === null || fbr === null || flowMeterAwal === null || 
+        flowMeterAkhir === null || !startTime || !endTime) {
       setShowError(true);
       setemployeeError(true);
       return;
@@ -455,8 +549,6 @@ const [stock, setStock] = useState<number>(0);
   
     const typeTrxValue = typeTrx[0];
     const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
-  
-    // Prepare form data
     const fromDataId = Date.now().toString();
     const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
     const lkf_id = await getLatestLkfId();
@@ -469,7 +561,7 @@ const [stock, setStock] = useState<number>(0);
       date_trx: new Date().toISOString(),
       hm_last: Number(hmkmLast),
       hm_km: Number(hmkmValue),
-      qty_last: quantity ?? 0, // Default to 0 if quantity is undefined
+      qty_last: quantity ?? 0,
       qty: quantity ?? 0,
       flow_start: Number(flowMeterAwal),
       flow_end: flow_end,
@@ -481,7 +573,7 @@ const [stock, setStock] = useState<number>(0);
       foto: photoPreview ?? "",
       fuelman_id: fuelman_id!,
       jde_operator: fuelman_id!,
-      status: status ?? 0, // Default to 0 (pending) if status is undefined
+      status: status ?? 0,
       date: "",
       start: startTime,
       end: endTime,
@@ -489,32 +581,35 @@ const [stock, setStock] = useState<number>(0);
   
     try {
       if (isOnline) {
-        // If online, try to post the transaction to the server
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost);
+        await insertNewDataHistori(dataPost);
         updateCard();
-        // updatedKuota()
-        
   
-        const responseStatus = response.status;
-  
-        if (responseStatus === 200) {
-          // If the response is successful (200), set status to "sent" (1)
+        if (response.status === 200) {
           dataPost.status = 1;
-          await insertNewData(dataPost); // Save the transaction locally
+          await insertNewData(dataPost);
+          await insertNewDataHistori(dataPost);
           alert("Transaksi Succes dikirim ke server");
           if (quantity > 0) {
-            updateLocalStorageQuota(selectedUnit, quantity); // Update quota if necessary
+            updateLocalStorageQuota(selectedUnit, quantity);
           }
         }
       } else {
-        // If offline, save data locally
+        const unitQuota = await getDataFromStorage('unitQuota') || {};
+        console.log("ini",unitQouta)
+        if (selectedUnit && quantity > 0) {
+          unitQuota[selectedUnit] = (unitQuota[selectedUnit] || 0) - quantity;
+          
+          await saveDataToStorage('unitQuota', unitQuota);
+        }
+  
         dataPost.status = 0;
         await insertNewData(dataPost);
+        await insertNewDataHistori(dataPost);
         alert("Trasaksi tersimpan pada local");
       }
   
-      // After successful operation, navigate to the dashboard
       route.push("/dashboard");
     } catch (error) {
       console.error("Error occurred while posting data:", error);
@@ -525,25 +620,28 @@ const [stock, setStock] = useState<number>(0);
   
 
 
-
   const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
     if (unitQuota) {
       const parsedData = JSON.parse(unitQuota);
       const updatedData = parsedData.map((unit: { unit_no: string; quota: number; used: number; }) => {
         if (unit.unit_no === unit_no) {
+          const newUsed = unit.used + issuedQuantity;
           return {
             ...unit,
-            used: unit.used + issuedQuantity, // Update the used quantity
-            remaining: unit.quota - (unit.used + issuedQuantity) // Update remaining quota
+            used: newUsed, 
+            remainingQuota: unit.quota - newUsed 
           };
         }
         return unit;
       });
-      localStorage.setItem("unitQouta", JSON.stringify(updatedData));
+  
+     
+      await saveDataToStorage("unitQouta", JSON.stringify(updatedData));
     }
   };
-
+  
+  
   
   useEffect(() => {
     const fetchData = async () => {
@@ -552,10 +650,10 @@ const [stock, setStock] = useState<number>(0);
       if (unitQuota) {
         const parsedData = JSON.parse(unitQuota);
         const currentUnitQuota = parsedData.find((unit: { unit_no: string | undefined; }) => unit.unit_no === selectedUnit);
-  
         if (currentUnitQuota) {
           setUnitQuota(currentUnitQuota.quota);
           setUsedQuota(currentUnitQuota.used);
+      
 
         } else {
           setUnitQuota(0);
@@ -569,9 +667,20 @@ const [stock, setStock] = useState<number>(0);
   }, [selectedUnit]);
 
 
+
+
   const insertNewData = async (data: DataFormTrx) => {
     try {
       await addDataTrxType(data);
+      console.log("Data inserted successfully.");
+    } catch (error) {
+      console.error("Failed to insert new data:", error);
+    }
+  };
+
+  const insertNewDataHistori = async (data: DataFormTrx) => {
+    try {
+      await addDataHistory(data);
       console.log("Data inserted successfully.");
     } catch (error) {
       console.error("Failed to insert new data:", error);
@@ -932,6 +1041,7 @@ useEffect(() => {
             const usedQuota = foundUnitQuota.used || 0;
             const additionalQuota = foundUnitQuota.additional || 0;
             const remainingQuota = totalQuota - usedQuota; 
+            // ÷ jika offline remainingQuota
             if (foundUnitQuota.is_active) {
                 setUnitQuota(totalQuota);
               
@@ -963,6 +1073,11 @@ useEffect(() => {
   loadUnitDataQuota();
 }, [selectedUnit]);
 
+
+
+
+
+
 const calculateFlowEnd = (typeTrx: string): string | number => {
   if (flowMeterAwal !== undefined && quantity !== undefined) {
     
@@ -978,36 +1093,39 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
   return ""; 
 };
 
-// hitung fbr
-// useEffect(() => {
-//   console.log('useEffect triggered with values:', { hmkmValue, hmkmLast, qtyValue });
+// hitung fbr offline
+useEffect(() => {
+  console.log('useEffect Oflline:', { hmkmValue, hmLast, qtyLast });
 
-//   const calculateFBR = (): number => {
-//     if (typeof hmkmValue === 'number' && typeof hmkmLast === 'number' && typeof qtyValue === 'number') {
-//       const difference = hmkmLast - hmkmValue;
-//       console.log('Difference (hmLast - hmkm):', difference);
+  const calculateFBR = (): number => {
+    if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
+      const difference =  hmkmValue  - hmLast ;
+      console.log('Difference  offline (hmLast - hmkm):', difference);
 
-//       if (qtyValue === 0) {
-//         console.log('qtyValue cannot be zero');
-//         return 0;
-//       }
+      if (qtyValue === 0) {
+        console.log('qtyValue cannot be zero');
+        return 0;
+      }
 
-//       if (difference > 0) {
-//         const result = difference / qtyValue;
-//         console.log('Calculated FBR:', result);
-//         return parseFloat(result.toFixed(2));
-//       } else {
-//         console.log('Difference is not positive');
-//       }
-//     } else {
-//       console.log('Invalid input types:', { hmkmValue, hmkmLast, qtyValue });
-//     }
-//     return 0;
-//   };
+      if (difference > 0) {
+        const result = difference / qtyLast; 
+        console.log('Calculated FBR ofline:', result);
+        return parseFloat(result.toFixed(2));
+      } else {
+        console.log('Difference is not positive');
+      }
+    } else {
+      console.log('Invalid input types:', { hmkmValue, hmLast, qtyValue });
+    }
+    return 0;
+  };
 
-//   setFbrResult(calculateFBR());
-// }, [hmkmValue, hmkmLast, qtyValue]);
+  setFbrResultOf(calculateFBR());
 
+}, [hmkmValue, hmLast, qtyLast]);
+
+
+// hitung fbr online
 useEffect(() => {
   console.log('useEffect triggered with values:', { hmkmValue, hmkmLast, qtyValue });
 
@@ -1054,6 +1172,7 @@ useEffect(() => {
   // Proceed with FBR calculation
   setFbrResult(calculateFBR());
 }, [hmkmValue, hmkmLast, qtyValue]);
+
 
 const filteredUnitOptions = (selectedType && 
   (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer')) 
@@ -1732,7 +1851,7 @@ useEffect(() => {
       placeholder="Input FBR"
       disabled={isFormDisabled}
       readonly
-      value={fbrResult} // Gunakan hasil perhitungan dari state
+      value={isOnline ? fbrResult : fbrResultOf} 
     />
   </IonCol>
 </IonRow>

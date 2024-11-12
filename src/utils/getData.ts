@@ -321,10 +321,10 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 
 
 
-export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_km?: number, model_unit?: string, owner?: string, qty_last?: number }> => {
+export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_km?: number, model_unit?: string, owner?: string, qty_last?: number ,  }> => {
   try {
     // Fetch the latest entry from the database
-    const latestEntry = await db.dataTransaksi.where('no_unit').equals(selectedUnit).last();
+    const latestEntry = await db.dataMasterTrasaksi.where('no_unit').equals(selectedUnit).last();
 
     console.log("Fetching latest entry for unit:", selectedUnit);
     console.log("Latest entry found:", latestEntry);

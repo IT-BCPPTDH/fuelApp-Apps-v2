@@ -1,4 +1,4 @@
-import { db, DataLkf, DataDashboard, DataFormTrx, SondingData, DataLkfUpdate } from '../models/db';
+import { db, DataLkf, DataDashboard, DataFormTrx, SondingData, DataLkfUpdate , DataMasterTransaksi} from '../models/db';
 
 // Add data to IndexedDB for drafts
 export const saveDraft = async (data: DataFormTrx) => {
@@ -99,6 +99,15 @@ export async function addDataDashboard(data: DataDashboard) {
 export async function addDataTrxType(data: DataFormTrx) {
   try {
     await db.dataTransaksi.add(data);
+  } catch (error) {
+    console.error("Failed to add data to IndexedDB:", error);
+  }
+}
+
+
+export async function addDataHistory(data: DataFormTrx) {
+  try {
+    await db.dataMasterTrasaksi.add(data);
   } catch (error) {
     console.error("Failed to add data to IndexedDB:", error);
   }

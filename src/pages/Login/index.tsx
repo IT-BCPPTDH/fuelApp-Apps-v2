@@ -32,6 +32,7 @@ import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getOperator } from "../../hooks/getAllOperator";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 
+
 // Define props interface
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -219,29 +220,33 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
 const dataTrasaksi = async () => {
   try {
-     
-      const transaksiData = await getTrasaksiSemua();
-      console.log("dta aja", transaksiData)
+    // Fetch all transaksi data
+    const transaksiData = await getTrasaksiSemua();
+    console.log("Fetched transaksi data:", transaksiData);
 
-      // Check if data is available before storing it
-      if (transaksiData && Array.isArray(transaksiData) && transaksiData.length > 0) {
-          // Save the data to localStorage as a string
-          localStorage.setItem('transaksiData', JSON.stringify(transaksiData));
-          console.log('Transaksi data has been saved to localStorage');
-      } else {
-          console.warn('No transaksi data to save.');
-      }
+    // Check if data is available before storing it
+    if (transaksiData && Array.isArray(transaksiData) && transaksiData.length > 0) {
+      // Save the data to localStorage as a string
+      localStorage.setItem('transaksiData', JSON.stringify(transaksiData));
+      
+  
+      console.log('Transaksi data has been saved to IndexedDB and localStorage.');
+    } else {
+      console.warn('No transaksi data to save.');
+    }
   } catch (error) {
-      console.error('Error fetching and saving transaksi data:', error);
+    console.error('Error fetching and saving transaksi data:', error);
   }
 };
 
-
-
-useEffect(()=>{
+useEffect(() => {
+  // Only call dataTrasaksi once when the component mounts
   dataTrasaksi();
+}, []);  // Empty dependency array ensures it runs only once on mount
 
-})
+
+
+
 
 const loadTrxLast = async () => {
   try {

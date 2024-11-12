@@ -105,6 +105,7 @@ export const fetchUnitData = async (): Promise<any[]> => {
 export const fetchQuotaData = async (date: string): Promise<any[]> => {
   try {
     const response = await getAllQuota(date); 
+  
     if (response.status === '200' && Array.isArray(response.data)) {
       await saveDataToStorage('unitQuota', response.data);
       return response.data;
