@@ -11,13 +11,18 @@ import {
   IonSearchbar,
   IonIcon,
   IonToast
+ 
+  
 } from "@ionic/react";
+import { useIonToast } from '@ionic/react';
+
 import { chevronForwardOutline, chevronBackOutline } from 'ionicons/icons';
 import { getAllDataTrx, getLatestLkfId } from '../utils/getData';
 import { postBulkData } from '../hooks/bulkInsert';
 import { checkmarkCircleOutline } from 'ionicons/icons';
 import { updateDataInTrx } from '../utils/update';
-import { getHomeTable } from '../hooks/getHome';
+import { getHomeByIdLkf, getHomeTable } from '../hooks/getHome';
+import { getDataFromStorage } from '../services/dataService';
 
 interface TableDataItem {
   hm_km: any;
@@ -36,8 +41,14 @@ interface TableDataItem {
   status: number;
 }
 
-const TableData: React.FC = () => {
-  const itemsPerPage = 3;
+
+interface TableDataProps {
+  setPendingStatus: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
+
+  const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [nomorLKF, setNomorLKF] = useState<string | undefined>(undefined);
@@ -47,6 +58,17 @@ const TableData: React.FC = () => {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [lkfId, setLkfId] = useState<string>('');
+  const [presentToast] = useIonToast();
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine); 
+
+
+
+  useEffect(() => {
+    // Check if there are any pending items
+    const hasPendingData = data.some(item => item.status === 0); // Assuming status 0 means pending
+    setPendingStatus(hasPendingData);
+  }, [data, setPendingStatus]);
+  
 
   useEffect(() => {
     const fetchLkfId = async () => {
@@ -67,116 +89,162 @@ const TableData: React.FC = () => {
   }, []);
 
   const fetchData = async (lkfId: string) => {
-  setLoading(true);
-  try {
-    const rawData = await getAllDataTrx(lkfId);
-    console.log("Raw data fetched:", rawData); // Log the response
-
-    // Adjust this check based on the actual API response structure
-    const dataArray = rawData || []; // Default to empty array if data not found
-
-    // Check if dataArray is an array
-    if (!Array.isArray(dataArray)) {
-      console.error("Received data is not an array:", dataArray);
-      throw new TypeError("Expected dataArray to be an array");
+    setLoading(true);
+    try {
+      const rawData = await getAllDataTrx(lkfId);
+      console.log("Raw data fetched:", rawData); // Log the response
+  
+      // Ensure we are working with an array
+      const dataArray = rawData || []; // Default to an empty array if no data is found
+  
+      // Check if dataArray is an array
+      if (!Array.isArray(dataArray)) {
+        console.error("Received data is not an array:", dataArray);
+        throw new TypeError("Expected dataArray to be an array");
+      }
+  
+      // Map the fetched data to table data structure
+      const mappedData: TableDataItem[] = dataArray.map((item: any) => ({
+        from_data_id: item.from_data_id ?? 0,
+        unit_no: item.no_unit || '',
+        model_unit: item.model_unit || '',
+        owner: item.owner || '',
+        fbr_historis: item.fbr ?? '',
+        jenis_trx: item.type || '',
+        qty_issued: item.qty ?? 0,
+        fm_awal: item.flow_start ?? 0,
+        fm_akhir: item.flow_end ?? 0,
+        hm_last: item.hm_last,
+        hm_km: item.hm_km,
+        jde_operator: item.fuelman_id || '',
+        name_operator: item.name_operator || item.name__operator || '',
+        // Adjusting the status mapping to handle different status codes
+        status: item.status === 1 || item.status === '1' ? 1 : 0, // Ensure it maps 1 as 'sent'
+      }));
+  
+      setData(mappedData); // Update table data with the mapped status
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      setShowToast(true); // Show a toast message in case of an error
+    } finally {
+      setLoading(false);
     }
+  };
+  
 
-    const mappedData: TableDataItem[] = dataArray.map((item: any) => ({
-      from_data_id: item.from_data_id ?? 0,
-      unit_no: item.no_unit || '',
-      model_unit: item.model_unit || '',
-      owner: item.owner || '',
-      fbr_historis: item.fbr ?? '',
-      jenis_trx: item.type || '',
-      qty_issued: item.qty ?? 0,
-      fm_awal: item.flow_start ?? 0,
-      fm_akhir: item.flow_end ?? 0,
-      hm_last: item.hm_last,
+
+  const handleBulkInsert = async () => {
+    if (!navigator.onLine) {
+      await presentToast({
+        message: "Perangkat offline! Mohon pastikan terkoneksi dengan jaringan.",
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger',
+      });
+      return;
+    }
+  
+    if (!data || data.length === 0) {
+      setError("No data available for insertion");
+      return;
+    }
+  
+    const loginData = localStorage.getItem('loginData');
+    let createdBy = '';
+  
+    if (loginData) {
+      const parsedData = JSON.parse(loginData);
+      createdBy = parsedData.jde || '';
+    }
+  
+    const bulkData = data.map(item => ({
+      from_data_id: item.from_data_id,
+      no_unit: item.unit_no,
+      model_unit: item.model_unit,
+      owner: item.owner,
+      date_trx: new Date().toISOString(),
+      hm_last: item.hm_km,
       hm_km: item.hm_km,
-      jde_operator: item.fuelman_id || '',
-      name_operator: item.name_operator || item.name__operator || '',
-      status: item.status === 1 ? 1 : 0,
+      qty_last: item.qty_issued,
+      qty: item.qty_issued,
+      flow_start: item.fm_awal,
+      flow_end: item.fm_akhir,
+      name_operator: item.name_operator,
+      fbr: parseFloat(item.fbr_historis),
+      signature: '',
+      photo: '',
+      type: item.jenis_trx,
+      lkf_id: nomorLKF || undefined,
+      jde_operator: item.jde_operator,
+      created_by: createdBy,
+      start: new Date().toISOString(),
+      end: new Date().toISOString(),
     }));
+  
+    try {
+      if (navigator.onLine) {
+        const responses = await postBulkData(bulkData);
+        console.log("Bulk insert responses:", responses);
+        
+        const updatedData = data.map((item) => ({
+          ...item,
+          status: 1,
+        }));
+  
+        await Promise.all(updatedData.map(async (item) => {
+          await updateDataInTrx(item.from_data_id, { status: item.status });
+        }));
+        setData(updatedData);
+        
+      } else {
+        const unitQuota = await getDataFromStorage('unitQuota');
+        
+        for (let index = 0; index < unitQuota.length; index++) {
+          const element = unitQuota[index];
+          if (element.unit_no === bulkData[index].no_unit) {
+            element.used = bulkData[index].qty;
+          }
+        }
+        console.log("Updated unitQuota offline:", unitQuota);
+      }
+  
+      const totalInserted = bulkData.length;
+      const successMessage = `Successfully saved ${totalInserted} items to the server.`;
+      await presentToast({
+        message: successMessage,
+        duration: 2000,
+        position: 'top',
+      });
+      setError(null);
+  
+    } catch (error) {
+      console.error("Error during bulk insert:", error);
+      setError("Failed to save data to server");
+      await presentToast({
+        message: "Failed to save data to server.",
+        duration: 2000,
+        position: 'bottom',
+      });
+    }
+  };
+  
 
-    setData(mappedData);
-  } catch (error) {
-    console.error("Failed to fetch data:", error);
-    setError("Failed to fetch data");
-  } finally {
-    setLoading(false);
-  }
-};
-const handleBulkInsert = async () => {
-  if (!navigator.onLine) {
-    console.log("Currently offline. Data will be sent when network is available.");
-    return;
-  }
 
-  if (!data || data.length === 0) {
-    setError("No data available for insertion");
-    return;
-  }
 
-  const loginData = localStorage.getItem('loginData');
-  let createdBy = '';
 
-  if (loginData) {
-    const parsedData = JSON.parse(loginData);
-    createdBy = parsedData.jde || '';
-  }
 
-  const bulkData = data.map(item => ({
-    from_data_id: item.from_data_id,
-    no_unit: item.unit_no,
-    model_unit: item.model_unit,
-    owner: item.owner,
-    date_trx: new Date().toISOString(),
-    hm_last: item.hm_km,
-    hm_km: item.hm_last,
-    qty_last: item.qty_issued,
-    qty: item.qty_issued,
-    flow_start: item.fm_awal,
-    flow_end: item.fm_akhir,
-    name_operator: item.name_operator,
-    fbr: parseFloat(item.fbr_historis),
-    signature: '',
-    photo: '',
-    type: item.jenis_trx,
-    lkf_id: nomorLKF || undefined,
-    jde_operator: item.jde_operator,
-    created_by: createdBy,
-    start: new Date().toISOString(),
-    end: new Date().toISOString(),
-  }));
+useEffect(() => {
+  const handleOnline = () => {
+    console.log("Network is back online, syncing data...");
+    handleBulkInsert();
+  };
 
-  try {
-    const responses = await postBulkData(bulkData);
-    console.log("Bulk insert responses:", responses);
+  window.addEventListener('online', handleOnline);
 
-    const updatedData = data.map((item) => ({
-      ...item,
-      status: 1,
-    }));
-
-    await Promise.all(updatedData.map(async (item) => {
-      await updateDataInTrx(item.from_data_id, { status: item.status });
-    }));
-
-    setData(updatedData);
-
-    const totalInserted = bulkData.length;
-    const successMessage = `Successfully saved ${totalInserted} items to the server.`;
-    setToastMessage(successMessage);
-    setShowToast(true);
-    setError(null);
-  } catch (error) {
-    console.error("Error during bulk insert:", error);
-    setError("Failed to save data to server");
-    setToastMessage("Failed to save data to server.");
-    setShowToast(true);
-  }
-};
-
+  return () => {
+    window.removeEventListener('online', handleOnline);
+  };
+}, [data, nomorLKF]);
 
   const filteredData = (data || []).filter(item =>
     item.unit_no.toLowerCase().includes(searchQuery.toLowerCase())
@@ -216,6 +284,9 @@ const handleBulkInsert = async () => {
     return status === 1 ? 'Sent' : 'Pending';
   };
 
+  const totalQtyIssued = filteredData.reduce((total, item) => total + item.qty_issued, 0);
+
+
   return (
     <div>
       <IonRow style={{ marginTop: "-20px" }} className='padding-content'>
@@ -223,6 +294,7 @@ const handleBulkInsert = async () => {
           <div style={{ fontSize: "20px", fontWeight: "600", color: "#222428" }}>LKF:</div>
           <span style={{ fontSize: "20px", color: "#222428" }}>{nomorLKF || 'Loading...'}</span>
         </IonCol>
+        
         <IonCol>
           <IonSearchbar 
             placeholder="Search Unit" 
@@ -276,6 +348,7 @@ const handleBulkInsert = async () => {
         isOpen={showToast}
         onDidDismiss={() => setShowToast(false)}
         message={toastMessage}
+      
         duration={2000}
         position="top"
       />

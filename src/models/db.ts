@@ -56,6 +56,38 @@ interface DataLkfUpdate {
   variant:number,
 }
 
+interface DataMasterTransaksi {
+  date: string | number | Date;
+
+  id?: number; // Auto-incremented ID
+  // liters: number;
+  // cm: number;
+  from_data_id: string;
+  no_unit: string;
+  model_unit: string;
+  owner: string;
+  date_trx: string;
+  hm_last: number;
+  hm_km: number;
+  qty_last: number;
+  qty: number;
+  name_operator: string;
+  fbr: number;
+  flow_start: number;
+  flow_end: number ;
+  signature: string | null;
+  foto: string;
+  type: string;
+  lkf_id?: string;
+  status: number;
+  fuelman_id: string;
+  jde_operator:string;
+  start:string;
+  end:string;
+
+  
+}
+
 interface DataFormTrx {
   date: string | number | Date;
 
@@ -81,10 +113,43 @@ interface DataFormTrx {
   lkf_id?: string;
   status: number;
   fuelman_id: string;
+  jde_operator:string;
+  start:string;
+  end:string;
+}
+
+
+interface DataHistoryTrasaksi {
+  date: string | number | Date;
+
+  id?: number; // Auto-incremented ID
+  // liters: number;
+  // cm: number;
+  from_data_id: string;
+  no_unit: string;
+  model_unit: string;
+  owner: string;
+  date_trx: string;
+  hm_last: number;
+  hm_km: number;
+  qty_last: number;
+  qty: number;
+  name_operator: string;
+  fbr: number;
+  flow_start: number;
+  flow_end: number ;
+  signature: string | null;
+  foto: string;
+  type: string;
+  lkf_id?: string;
+  status: number;
+  fuelman_id: string;
+  jde_operator:string;
+  start:string;
+  end:string;
 
   
 }
-
 interface DataDashboard {
   id?: number; // Auto-incremented ID
   shift : string;
@@ -116,20 +181,21 @@ interface SondingData {
 const db = new Dexie('fuelAppDatabase') as Dexie & {
   openingTrx: Dexie.Table<DataLkf, number>;
   dataTransaksi: Dexie.Table<DataFormTrx, number>;
+  dataMasterTrasaksi:Dexie.Table<DataMasterTransaksi, number>;
   cards: Dexie.Table<DataDashboard, number>;
   sondingMaster:Table<SondingData,number>
   closeTrx: Dexie.Table<DataLkfUpdate, number>;
 };
 
-
-// Define the schema
-db.version(8).stores({
+// Define t10e schema
+db.version(10).stores({
   // openingTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
   closeTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
   dataTransaksi: '++id, from_data_id, no_unit, model_unit, owner, date_trx, hm_last, hm_km, qty_last, qty, name_operator, fbr, flow_start, flow_end, signature, foto, type, lkf_id, start_time, end_time, status, jde_operator, fuelman_id, dip_start, dip_end, sonding_start, sonding_end, reference, start, end',
+  dataMasterTrasaksi: '++id, from_data_id, no_unit, model_unit, owner, date_trx, hm_last, hm_km, qty_last, qty, name_operator, fbr, flow_start, flow_end, signature, foto, type, lkf_id, start_time, end_time, status, jde_operator, fuelman_id, dip_start, dip_end, sonding_start, sonding_end, reference, start, end',
   cards: '++id, title, subtitle, icon',
   sondingMaster:'++id, station, cm , liters, site'
 });
 
-export type { DataLkf, DataFormTrx, DataDashboard , SondingData, DataLkfUpdate};
+export type { DataLkf, DataFormTrx, DataDashboard , SondingData, DataLkfUpdate, DataMasterTransaksi};
 export { db };

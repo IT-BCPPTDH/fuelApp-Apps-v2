@@ -1,11 +1,10 @@
 import { CapacitorHttp } from '@capacitor/core';
 import { ResponseError } from "../helper/responseError";
 
-const VITE_BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const BELinkMaster = import.meta.env.VITE_BACKEND_URL;
 
-export async function getPrevUnitTrx(no_unit: string) {
-    // Use template literal to correctly include the no_unit in the URL
-    const url = `${VITE_BACKEND_URL}/api/operator/get-data/${no_unit}`;
+export async function getPrevUnitTrx(unit_no: string) {
+    const url = `${BELinkMaster}/api/operator/get-data/${unit_no}`;
     try {
         const response = await CapacitorHttp.get({
             url,

@@ -35,13 +35,13 @@ const FormClosing: React.FC = () => {
     const [signatureBase64, setSignatureBase64] = useState<string | undefined>(undefined);
     const [latestLkfId, setLatestLkfId] = useState<string | undefined>(undefined);
 
-    const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
+    const [closingSonding, setClosingSonding] = useState<number | null>(null);
     const [station, setStation] = useState<string | undefined>(undefined);
     const [closingDip, setClosingDip] = useState<number | undefined>(undefined);
     const [variant, setVariance] = useState<number | undefined>(undefined);
     const [showError, setShowError] = useState<boolean>(false);
     const [dataUserLog, setDataUserLog] = useState<any | undefined>(undefined);
-    const [flowMeterEnd, setFlowMeterEnd] = useState<number>(0);
+    const [flowMeterEnd, setFlowMeterEnd] = useState<number | undefined>(undefined);
     const [hmEnd, setHmEnd] = useState<number>(0);
     const [stockOnHand, setStockOnHand] = useState<number>(0);
     
@@ -55,17 +55,26 @@ const FormClosing: React.FC = () => {
     const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
     const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
     const [lkfId, setLkfId] = useState<string>('');
-    const [flowMeteAkhir, setFlowMeterAkhir] = useState<number>();
-    const [closeData, setCloseData] = useState<number>();
+    const [flowMeteAkhir, setFlowMeterAkhir] = useState<number>(0);
+
+    const [previousHmEnd, setPreviousHmEnd] = useState(0);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [closeData, setCloseData] = useState<number | undefined>(undefined);
+    const [closeShift, setCloseShift] = useState<any[]>([]);
+    const [isCloseShiftDisabled, setIsCloseShiftDisabled] = useState(true);
+    const [showClosingSondingError, setShowClosingSondingError] = useState<boolean>(false);
+
+    
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
             setLatestLkfId(id);
 
-            const shiftData = localStorage.getItem("cardData");
+            const shiftData = localStorage.getItem("cardDash");
             if (shiftData) {
                 const parsedData = JSON.parse(shiftData);
-                setFlowMeterEnd(parsedData.flow_meter_sta || 0);
+                console.log('Parsed Data from localStorage:', parsedData); 
+                setFlowMeterEnd(parsedData.flow_meter_end || 0);
                 setStockOnHand(parsedData.stockOnHand || 0);
                 setReceiptKPC(parsedData.receiptKPC || 0);
                 setReceipt(parsedData.receipt || 0);
@@ -87,14 +96,14 @@ const FormClosing: React.FC = () => {
 
 
     useEffect(() => {
-        const getCardData = () => {
+        const getcardDash = () => {
             try {
-                const cachedData = localStorage.getItem('cardData');
+                const cachedData = localStorage.getItem('cardDash');
                 if (cachedData) {
-                    const cardData = JSON.parse(cachedData);
+                    const cardDash = JSON.parse(cachedData);
 
-                    const flowMeterEndData = cardData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
-                    const closeData = cardData.find((item: { title: string; }) => item.title === "Stock On Hand");
+                    const flowMeterEndData = cardDash.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
+                    const closeData = cardDash.find((item: { title: string; }) => item.title === "Stock On Hand");
                     if (flowMeterEndData) {
                         setFlowMeterAkhir(Number(flowMeterEndData.value || 0));
                     }
@@ -104,14 +113,14 @@ const FormClosing: React.FC = () => {
                     }
                 }
             } catch (error) {
-                console.error('Error retrieving cardData from localStorage:', error);
+                console.error('Error retrieving cardDash from localStorage:', error);
             }
         };
 
-        getCardData();
+        getcardDash();
     }, []);
     
-   
+
     useEffect(() => {
         const fetchSondingMasterData = async () => {
             try {
@@ -161,7 +170,26 @@ const FormClosing: React.FC = () => {
         setSignatureBase64(newSignature);
     };
 
+
+    const handleClosingSondingChange = (e: CustomEvent) => {
+        const value = e.detail.value;
+    
+        
+        if (value ==="") {
+            setShowClosingSondingError(true); 
+            setClosingSonding(null); 
+        } else {
+            setClosingSonding(Number(value)); 
+            setShowClosingSondingError(false); 
+        }
+    };
+    
+    
     const handleSubmit = async () => {
+        const calculatedCloseData = calculateCloseData(); 
+        // Check if calculatedCloseData is 0 and set it to the input closingDip if true
+        const finalCloseData = calculatedCloseData === 0 ? closingDip : calculatedCloseData;
+    
         const UpdateData: DataLkf = {
             date: new Date().toISOString().split('T')[0],
             shift: '',
@@ -170,8 +198,7 @@ const FormClosing: React.FC = () => {
             jde: '',
             fuelman_id: Cookies.get('fuelman_id') || '',
             station: station || '',
-            flow_meter_start: 0,
-            hm_end: hmEnd,
+            hm_end: hmEnd || 0,
             note: note,
             signature: signatureBase64 || '',
             name: '',
@@ -179,15 +206,16 @@ const FormClosing: React.FC = () => {
             receipt: receipt,
             stockOnHand: stockOnHand,
             lkf_id: latestLkfId || '',
-            opening_dip: openingDip || 0,
             opening_sonding: 0,
-            flow_meter_end: flowMeterEnd,
-            closing_sonding: closingSonding || 0,
+            flow_meter_end: flowMeteAkhir || 0,
+            closing_sonding: closingSonding ?? 0,
             closing_dip: closingDip || 0,
-            close_data: calculateCloseData(),
-            variant: variant|| 0,
+            close_data: finalCloseData || 0, // Use the final close data here
+            variant: variant || 0,
+            flow_meter_start: 0,
+            opening_dip: 0
         };
-
+    
         try {
             const response = await updateData(UpdateData);
             if (response.oke && (response.status === 200 || response.status === 201)) {
@@ -212,20 +240,21 @@ const FormClosing: React.FC = () => {
             setShowError(true);
         }
     };
-
-    const handleClosingSondingChange = (e: CustomEvent) => {
-        const value = Number(e.detail.value);
-        console.log('Handle Closing Sonding Change:', value);
-        setClosingSonding(value);
-    };
-
+    
     const handleHmEndChange = (e: CustomEvent) => {
-        setHmEnd(Number(e.detail.value));
+        const hmEndInput = Number(e.detail.value);
+        
+        if (hmEndInput < previousHmEnd) {
+            setErrorMessage(`Nilai  Hm/Km Akhir tidak boleh lebih kecil dari sebelumnya: ${previousHmEnd}.`);
+            setIsCloseShiftDisabled(true); // Disable the button
+        } else {
+            setErrorMessage('');
+            setHmEnd(hmEndInput);
+            setPreviousHmEnd(hmEndInput); // Update previous value
+            setIsCloseShiftDisabled(false); // Enable the button
+        }
     };
 
-    const handleStockOnHandChange = (e: CustomEvent) => {
-        setStockOnHand(Number(e.detail.value));
-    };
 
     const varianceColor = variant !== undefined && variant < 0 ? 'red' : 'black';
      // Load Sonding Data
@@ -280,6 +309,27 @@ const FormClosing: React.FC = () => {
         e.preventDefault()
         route.push('/dashboard')
     }
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const cachedShiftData = await getDataFromStorage('shiftCloseData');
+                if (cachedShiftData && cachedShiftData.length > 0) {
+                    const latestShiftData = cachedShiftData[cachedShiftData.length - 1];
+                    if (latestShiftData.hm_end !== undefined) {
+                        setHmEnd(latestShiftData.hm_end);
+                        setPreviousHmEnd(latestShiftData.hm_end); 
+                    }
+                } else {
+                    console.error("No cached shift data found");
+                }
+            } catch (error) {
+                console.error("Error fetching shift data:", error);
+            }
+        };
+
+        fetchData();
+    }, []);
+
     return (
         <IonPage>
             <IonHeader translucent={true} className="ion-no-border">
@@ -289,6 +339,7 @@ const FormClosing: React.FC = () => {
             </IonHeader>
 
             <IonContent>
+                
                 <div style={{ marginTop: "20px" }}>
                     <div style={{ marginTop: "30px" }}>
                         <IonGrid>
@@ -298,23 +349,29 @@ const FormClosing: React.FC = () => {
                                     <IonInput
                                         className="custom-input"
                                         type="number"
-                                        name="flowMeterEnd"
                                         value={flowMeteAkhir}
-                                         placeholder="Input Flow Meter"
+                                        disabled
                                         onIonChange={(e) => {
                                             const newValue = Number(e.detail.value);
                                             setFlowMeterAkhir(newValue);
                                         }}
-                                       
                                     />
 
                                 </IonCol>
                                 <IonCol>
-                                    <IonLabel>Close Sonding (Cm) *</IonLabel>
-                                    <IonInput type="number" onIonChange={handleClosingSondingChange} value={closingSonding}></IonInput>
-                                </IonCol>
-                                <IonCol>
-                                    <IonLabel>Close Dip (Liters) *</IonLabel>
+                                            <IonLabel>Close Sonding (Cm) *</IonLabel>
+                                            <IonInput
+                                                    type="number"
+                                                    onIonChange={handleClosingSondingChange}
+                                                    value={closingSonding ?? ""} // Use null if closingSonding is undefined or null
+                                                    className={`custom-input ${showClosingSondingError ? 'input-error' : ''}`} // Conditional class for error
+                                                ></IonInput>
+                                            {showClosingSondingError && (
+                                                <p style={{ color: 'red' }}>Sonding harus diisi</p>
+                                            )}
+                                        </IonCol>
+                                        <IonCol>
+                                        <IonLabel>Close Dip (Liters) *</IonLabel>
                                     <IonInput
                                         style={{background:"#cfcfcf"}}
                                         className="custom-input"
@@ -333,10 +390,10 @@ const FormClosing: React.FC = () => {
                                     <IonInput
                                         className="custom-input"
                                         type="number"
-                                        value={hmEnd}
                                         onIonChange={handleHmEndChange}
                                         placeholder="HM KM Akhir"
                                     />
+                                     {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
                                 </IonCol>
                                 <IonCol>
                                     <IonLabel>Close Data *</IonLabel>
@@ -397,7 +454,7 @@ const FormClosing: React.FC = () => {
                                 <IonButton onClick={handleClose} color="light">
                                     <IonIcon slot="start" icon={closeCircleOutline} />Tutup Form
                                 </IonButton>
-                                <IonButton onClick={handleSubmit} className="check-close">
+                                <IonButton onClick={handleSubmit} className="check-close"  disabled={isCloseShiftDisabled} >
                                     <IonIcon slot="start" icon={saveOutline} />Close Shift & Logout
                                 </IonButton>
                             </div>
