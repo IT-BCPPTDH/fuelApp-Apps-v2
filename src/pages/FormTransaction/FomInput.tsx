@@ -424,113 +424,6 @@ const [stock, setStock] = useState<number>(0);
     route.push("/dashboard");
   };
 
-
- 
- 
-  // const handlePost = async (e: React.FormEvent) => {
-   
-  //   const validQuantity = quantity ?? 0; 
-  //   // Validate the quantity
-  //   if (isNaN(validQuantity) || validQuantity <= 0) {
-  //     setQuantityError("Qty Issued harus lebih besar dari 0");
-  //     setIsError(true);
-  //     return; // Stop the save action if quantity is invalid
-  //   }
-  //   // Validate all form fields
-  //   if (
-  //     !selectedType ||
-  //     !selectedUnit ||
-  //     !operatorOptions ||
-  //     quantity === null ||
-  //     fuelman_id === null ||
-  //     fbr === null ||
-  //     flowMeterAwal === null ||
-  //     flowMeterAkhir === null ||
-  //     !startTime ||
-  //     !endTime
-  //   ) {
-  //     setShowError(true);
-  //     setemployeeError(true);
-  //     return;
-  //   }
-  
-  //   const typeTrxValue = typeTrx[0];
-  //   const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
-  
-  //   // Prepare form data
-  //   const fromDataId = Date.now().toString();
-  //   const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
-  //   const lkf_id = await getLatestLkfId();
-  
-  //   const dataPost: DataFormTrx = {
-  //     from_data_id: fromDataId,
-  //     no_unit: selectedUnit!,
-  //     model_unit: model!,
-  //     owner: owner!,
-  //     date_trx: new Date().toISOString(),
-  //     hm_last: Number(hmkmLast),
-  //     hm_km: Number(hmkmValue),
-  //     qty_last: quantity ?? 0, // Default to 0 if quantity is undefined
-  //     qty: quantity ?? 0,
-  //     flow_start: Number(flowMeterAwal),
-  //     flow_end: flow_end,
-  //     name_operator: fullName!,
-  //     fbr: fbrResult,
-  //     lkf_id: lkf_id ?? "",
-  //     signature: signatureBase64 ?? "",
-  //     type: selectedType?.name ?? "",
-  //     foto: photoPreview ?? "",
-  //     fuelman_id: fuelman_id!,
-  //     jde_operator: fuelman_id!,
-  //     status: status ?? 0, // Default to 0 (pending) if status is undefined
-  //     date: "",
-  //     start: startTime,
-  //     end: endTime,
-  //   };
-  
-  //   try {
-  //     if (isOnline) {
-  //       // If online, try to post the transaction to the server
-  //       const response = await postTransaksi(dataPost);
-  //       await insertNewData(dataPost);
-  //       await insertNewDataHistori(dataPost);
-  //       updateCard();
-  //       // updatedKuota()
-        
-  
-  //       const responseStatus = response.status;
-  
-  //       if (responseStatus === 200) {
-  //         // If the response is successful (200), set status to "sent" (1)
-  //         dataPost.status = 1;
-  //         await insertNewData(dataPost); 
-  //         await insertNewDataHistori(dataPost);// Save the transaction locally
-  //         alert("Transaksi Succes dikirim ke server");
-  //         if (quantity > 0) {
-  //           updateLocalStorageQuota(selectedUnit, quantity); // Update quota if necessary
-  //         }
-  //       }
-  //     } else {
-  //       const unitQouta = getDataFromStorage('unitQouta')
-  //       console.log("test",unitQouta)
-  //       console.log("post", dataPost)
-
-  //       // If offline, save data locally
-  //       dataPost.status = 0;
-  //       await insertNewData(dataPost);
-  //       await insertNewDataHistori(dataPost);
-  //       alert("Trasaksi tersimpan pada local");
-  //     }
-  
-  //     // After successful operation, navigate to the dashboard
-  //     route.push("/dashboard");
-  //   } catch (error) {
-  //     console.error("Error occurred while posting data:", error);
-  //     setModalMessage("Error occurred while posting data: " + error);
-  //     setErrorModalOpen(true);
-  //   }
-  // };
-  
   const handlePost = async (e: React.FormEvent) => {
     const validQuantity = quantity ?? 0;
     if (isNaN(validQuantity) || validQuantity <= 0) {
@@ -598,15 +491,16 @@ const [stock, setStock] = useState<number>(0);
       } else {
         const unitQuota =  await getDataFromStorage('unitQuota');
        
-        
-        for (let index = 0; index < unitQuota.length; index++) {
+        const newQty = dataPost.qty;
 
-          const element = unitQuota[index];
-          if(element.unit_no === dataPost.no_unit ){
-              element.used = dataPost.qty
+          for (let index = 0; index < unitQuota.length; index++) {
+            const element = unitQuota[index];
+          
+            if (element.unit_no === dataPost.no_unit) {
+              // Akumulasi pengurangan qty dari used yang sudah ada
+              element.used = element.used + newQty; // Mengakumulasi nilai used berdasarkan qty yang baru
+            }
           }
-        }
-        console.log("unit-qouta",unitQuota)
         
         dataPost.status = 0;
         await insertNewData(dataPost);
@@ -936,45 +830,47 @@ useEffect(() => {
   }
 }, [])
 
-const handleQuantityChange = (e: any) => {
-  const inputQuantity = Number(e.detail.value);
-  
-  // Validasi jika jenis transaksi adalah "Issued"
-  const isIssuedTransaction = typeTrx.some((trx) => trx.name === "Issued");
 
-  // Cek apakah transaksi adalah Issued
-  if (isIssuedTransaction) {
+
+// fix code
+const handleQuantityChange = (e: any) => {
+const inputQuantity = Number(e.detail.value);
+  const isIssuedOrTransfer = selectedType?.name ===  "Issued" || selectedType?.name === "Transfer";
+
+  if (isIssuedOrTransfer) {
     if (isNaN(inputQuantity) || inputQuantity <= 0) {
-      setQuantityError("Qty Issued harus lebih besar dari 0");
+      setQuantityError("Qty harus lebih besar dari 0");
       setIsError(true);
       return;
     }
 
-    // Ambil remainingQuota, pastikan data tersedia baik saat online maupun offline
-    const quota = remainingQuota || 0; // Default ke 0 jika remainingQuota tidak ada
+    const quota = remainingQuota || 0;
 
     if (typeof selectedUnit === "string" && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-      // Cek apakah input quantity lebih besar dari remainingQuota
       if (inputQuantity > quota) {
-        setQuantityError("Qty Issued tidak boleh lebih besar dari sisa kouta. Mohon hubungi admin agar bisa mengisi kembali !!");
+        setQuantityError("Qty tidak boleh lebih besar dari sisa kouta.");
         setIsError(true);
         return;
       }
     } else if (inputQuantity > stock) {
-      // Cek apakah input quantity lebih besar dari stock
-      setQuantityError("Qty Issued tidak boleh lebih besar dari Stock On Hand.");
+      setQuantityError("Qty tidak boleh lebih besar dari Stock On Hand.");
       setIsError(true);
       return;
     }
   } else {
-    console.log("Transaction type is not 'Issued'. No validation needed.");
+    // Jika transaksi bukan "Issued" atau "Transfer", lewati validasi stok
+    console.log("Jenis transaksi tidak memerlukan validasi stok.");
+    setQuantityError(""); 
+    setIsError(false);
   }
 
-  // Jika semua validasi berhasil
-  setQuantity(inputQuantity); // Set jumlah yang valid
-  setQuantityError(""); // Kosongkan pesan error
-  setIsError(false); // Tidak ada error
+  
+  setQuantity(inputQuantity);
+  setQuantityError("");
+  setIsError(false);
 };
+
+
 
 
 
@@ -1009,7 +905,7 @@ useEffect(() => {
         if (!foundUnitQuota && navigator.onLine) {
           // Check previous day's data if today’s quota is missing and online
           const yesterday = new Date(today);
-          yesterday.setDate(today.getDate() - 1);
+          // yesterday.setDate(today.getDate() - 1);
           const formattedYesterday = yesterday.toISOString().split('T')[0];
           const previousQuotaData = await fetchQuotaData(formattedYesterday);
 
@@ -2058,8 +1954,3 @@ useEffect(() => {
   );
 };
 export default FormTRX;
-
-
-
-
-
