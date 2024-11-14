@@ -979,28 +979,29 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
 };
 
 // hitung fbr offline
+
 useEffect(() => {
-  console.log('useEffect Oflline:', { hmkmValue, hmLast, qtyLast });
+  console.log('useEffect Offline/Online:', { hmkmValue, hmLast, qtyLast });
 
   const calculateFBR = (): number => {
     if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
-      const difference =  hmkmValue  - hmLast ;
-      console.log('Difference  offline (hmLast - hmkm):', difference);
+      const difference = hmkmValue - hmLast;
+      console.log('Difference offline/online (hmkmValue - hmLast):', difference);
 
-      if (qtyValue === 0) {
-        console.log('qtyValue cannot be zero');
+      if (qtyLast === 0) {
+        console.log('qtyLast cannot be zero');
         return 0;
       }
 
       if (difference > 0) {
-        const result = difference / qtyLast; 
-        console.log('Calculated FBR ofline:', result);
+        const result = difference / qtyLast;
+        console.log('Calculated FBR offline/online:', result);
         return parseFloat(result.toFixed(2));
       } else {
         console.log('Difference is not positive');
       }
     } else {
-      console.log('Invalid input types:', { hmkmValue, hmLast, qtyValue });
+      console.log('Invalid input types:', { hmkmValue, hmLast, qtyLast });
     }
     return 0;
   };
@@ -1009,54 +1010,53 @@ useEffect(() => {
 
 }, [hmkmValue, hmLast, qtyLast]);
 
-
 // hitung fbr online
-useEffect(() => {
-  console.log('useEffect triggered with values:', { hmkmValue, hmkmLast, qtyValue });
+// useEffect(() => {
+//   console.log('useEffect triggered with values:', { hmkmValue, hmkmLast, qtyValue });
 
-  const calculateFBR = (): number => {
-    // Check if the necessary values are numbers
-    if (typeof hmkmValue === 'number' && typeof hmkmLast === 'number' && typeof qtyValue === 'number') {
-      const difference = hmkmLast - hmkmValue;
-      console.log('Difference (hmLast - hmkm):', difference);
+//   const calculateFBR = (): number => {
+//     // Check if the necessary values are numbers
+//     if (typeof hmkmValue === 'number' && typeof hmkmLast === 'number' && typeof qtyValue === 'number') {
+//       const difference = hmkmLast - hmkmValue;
+//       console.log('Difference (hmLast - hmkm):', difference);
 
-      if (qtyValue === 0) {
-        console.log('qtyValue cannot be zero');
-        return 0;
-      }
+//       if (qtyValue === 0) {
+//         console.log('qtyValue cannot be zero');
+//         return 0;
+//       }
 
-      if (difference > 0) {
-        const result = difference / qtyValue;
-        console.log('Calculated FBR:', result);
-        return parseFloat(result.toFixed(2)); // Round to 2 decimal places
-      } else {
-        console.log('Difference is not positive');
-      }
-    } else {
-      console.log('Invalid input types:', { hmkmValue, hmkmLast, qtyValue });
-    }
-    return 0; // Default return value
-  };
+//       if (difference > 0) {
+//         const result = difference / qtyValue;
+//         console.log('Calculated FBR:', result);
+//         return parseFloat(result.toFixed(2)); // Round to 2 decimal places
+//       } else {
+//         console.log('Difference is not positive');
+//       }
+//     } else {
+//       console.log('Invalid input types:', { hmkmValue, hmkmLast, qtyValue });
+//     }
+//     return 0; // Default return value
+//   };
 
-  const getOfflineData = async () => {
-    // If the app is offline, try to fetch the latest hmkm from IndexedDB
-    if (!navigator.onLine) {
-      console.log("App is offline. Fetching hmkmLast from offline data.");
-      const hmkm = await fetchLatestHmLast("selectedUnit");  // Use actual selected unit
-      if (hmkm!== undefined ) {
-        setHmLast(hmLast);  // Set the offline value for hmkmLast
-      } else {
-        console.warn("No offline hm_km data found.");
-      }
-    }
-  };
+//   const getOfflineData = async () => {
+//     // If the app is offline, try to fetch the latest hmkm from IndexedDB
+//     if (!navigator.onLine) {
+//       console.log("App is offline. Fetching hmkmLast from offline data.");
+//       const hmkm = await fetchLatestHmLast("selectedUnit");  // Use actual selected unit
+//       if (hmkm!== undefined ) {
+//         setHmLast(hmLast);  // Set the offline value for hmkmLast
+//       } else {
+//         console.warn("No offline hm_km data found.");
+//       }
+//     }
+//   };
 
-  // First, handle offline scenario if applicable
-  getOfflineData();
+//   // First, handle offline scenario if applicable
+//   getOfflineData();
 
-  // Proceed with FBR calculation
-  setFbrResult(calculateFBR());
-}, [hmkmValue, hmkmLast, qtyValue]);
+//   // Proceed with FBR calculation
+//   setFbrResult(calculateFBR());
+// }, [hmkmValue, hmkmLast, qtyValue]);
 
 
 const filteredUnitOptions = (selectedType && 
@@ -1308,8 +1308,8 @@ useEffect(() => {
 
 
 const calculateFBR = (): number => {
-  if (typeof hmkmValue === 'number' && typeof hmkmLast === 'number' && typeof qtyValue === 'number') {
-    const difference = hmkmValue - hmkmLast;
+  if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
+    const difference = hmkmValue - hmLast;
     console.log('Difference (hmLast - hmkm):', difference);
 
     if (qtyValue === 0) {
@@ -1318,14 +1318,14 @@ const calculateFBR = (): number => {
     }
 
     if (difference > 0) {
-      const result = difference / qtyValue;
+      const result = difference / qtyLast;
       console.log('Calculated FBR:', result);
       return parseFloat(result.toFixed(2));
     } else {
       console.log('Difference is not positive');
     }
   } else {
-    console.log('Invalid input types:', { hmkmValue, hmkmLast, qtyValue });
+    console.log('Invalid input types:', { hmkmValue, hmLast, qtyLast });
   }
   return 0;
 };
@@ -1333,7 +1333,7 @@ const calculateFBR = (): number => {
 // Update FBR result
 useEffect(() => {
   setFbrResult(calculateFBR());
-}, [hmkmValue, hmkmLast, qtyValue]);
+}, [hmkmValue, hmLast, qtyLast]);
 
   return (
     <IonPage>
@@ -1574,7 +1574,7 @@ useEffect(() => {
       placeholder="Input FBR"
       disabled={isFormDisabled}
       readonly
-      value={isOnline ? fbrResult : fbrResultOf} 
+      value={ fbrResult} 
     />
   </IonCol>
 </IonRow>

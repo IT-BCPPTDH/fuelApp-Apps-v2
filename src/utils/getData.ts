@@ -87,23 +87,23 @@ export const getShiftDataByLkfId = async (lkfId: string): Promise<ShiftData> => 
 
 export const getCalculationIssued = async (lkfId: string): Promise<number | undefined> => {
   try {
-    // Retrieve all transactions where type is either 'Issued' or 'Transfer'
+  
     const issuedTransactions = await db.dataTransaksi
       .where('type')
       .anyOf(['Issued', 'Transfer'])
       .toArray();
 
-    // Filter transactions by lkfId if necessary
+   
     const filteredTransactions = issuedTransactions.filter(transaction => transaction.lkf_id === lkfId);
 
-    // Sort transactions by date in descending order (latest first)
+   
     filteredTransactions.sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
       return dateB - dateA; // Latest first
     });
 
-    // Calculate the total quantity issued from the filtered transactions
+   
     const totalIssued = filteredTransactions.reduce((sum, transaction) => sum + (transaction.qty ?? 0), 0);
 
     return totalIssued;
