@@ -1,4 +1,4 @@
-import { DataFormTrx, DataLkf,SondingData,db } from "../models/db";
+import { DataFormTrx, DataLkf,SondingData,db, DataMasterTransaksi } from "../models/db";
 interface ShiftData {
   openingDip: number;
   shift?: string;
@@ -321,31 +321,71 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 
 
 
-export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_km?: number, model_unit?: string, owner?: string, qty_last?: number ,  }> => {
+// export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_km?: number, model_unit?: string, owner?: string, qty_last?: number ,  }> => {
+//   try {
+//     // Fetch the latest entry from the database
+//     const latestEntry = await db.dataMasterTrasaksi.where('no_unit').equals(selectedUnit).last();
+
+//     console.log("Fetching latest entry for unit:", selectedUnit);
+//     console.log("Latest entry found:", latestEntry);
+
+//     if (latestEntry) {
+//       return {
+//         hm_km: latestEntry.hm_km,       // Existing field
+//         model_unit: latestEntry.model_unit, // Existing field
+//         owner: latestEntry.owner,          // Existing field
+//         qty_last: latestEntry.qty_last          // New field for qty_last
+//       };
+//     } else {
+//       console.warn("No valid 'hm_last' data found in the dataTransaksi collection.");
+//       return {};
+//     }
+//   } catch (error) {
+//     // Log any errors that occur during data retrieval
+//     console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
+//     return {};
+//   }
+// };
+export const fetchLatestHmLast = async (
+  selectedUnit: string
+): Promise<{ hm_km?: number; model_unit?: string; owner?: string; qty_last?: number }> => {
   try {
-    // Fetch the latest entry from the database
-    const latestEntry = await db.dataMasterTrasaksi.where('no_unit').equals(selectedUnit).last();
+   
+    const latestEntry = await db.dataMasterTrasaksi
+      .orderBy('date_trx')   
+      .filter(entry => entry.no_unit === selectedUnit)  
+      .last();
 
     console.log("Fetching latest entry for unit:", selectedUnit);
-    console.log("Latest entry found:", latestEntry);
-
     if (latestEntry) {
+      console.log("Latest entry found:", latestEntry);
       return {
-        hm_km: latestEntry.hm_km,       // Existing field
-        model_unit: latestEntry.model_unit, // Existing field
-        owner: latestEntry.owner,          // Existing field
-        qty_last: latestEntry.qty_last          // New field for qty_last
+        hm_km: latestEntry.hm_km,         
+        model_unit: latestEntry.model_unit, 
+        owner: latestEntry.owner,         
+        qty_last: latestEntry.qty_last     
       };
     } else {
-      console.warn("No valid 'hm_last' data found in the dataTransaksi collection.");
+      console.warn("No valid 'hm_last' data found for unit:", selectedUnit);
       return {};
     }
   } catch (error) {
-    // Log any errors that occur during data retrieval
+    // Menangani kesalahan dan mengembalikan objek kosong
     console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
     return {};
   }
 };
+
+export const bulkInsertDataMasterTransaksi = async (data: DataMasterTransaksi[]) => {
+  try {
+    await db.dataMasterTrasaksi.bulkPut(data); // Use bulkPut to insert multiple entries
+    console.log("Bulk insert successful for dataMasterTrasaksi");
+  } catch (error) {
+    console.error("Bulk insert failed for dataMasterTrasaksi:", error);
+  }
+};
+
+
 
 
 

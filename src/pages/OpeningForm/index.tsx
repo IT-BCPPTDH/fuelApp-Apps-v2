@@ -31,12 +31,11 @@ import { DataLkf } from "../../models/db";
 // import { getAllUnit } from "../../hooks/getAllUnit";
 // import { getStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
-import { getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
+import { bulkInsertDataMasterTransaksi, getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
 import { getStationData} from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
 import { chevronDownCircleOutline } from 'ionicons/icons';
-import { getAllQuota, getUnitQuotaActive } from "../../hooks/getQoutaUnit";
 
 interface Shift {
   id: number;
@@ -598,6 +597,25 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
   }
   setFlowMeterAwal(value);
 };
+
+
+const handleGet = async () => {
+  try {
+    // Fetch the necessary data if needed, for example, from localStorage or another source
+    const transaksiData = JSON.parse(localStorage.getItem('transaksiData') || '[]'); // Example if data is saved in localStorage
+    
+    // Check if data is available before calling the bulk insert
+    if (transaksiData && Array.isArray(transaksiData) && transaksiData.length > 0) {
+      await bulkInsertDataMasterTransaksi(transaksiData); // Pass the fetched data to the bulk insert function
+      console.log('Data inserted in bulk on button click');
+    } else {
+      console.warn('No valid transaksi data found to insert.');
+    }
+  } catch (error) {
+    console.error('Error during bulk insert:', error);
+  }
+};
+
 
   return (
     <IonPage>
