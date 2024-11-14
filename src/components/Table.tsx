@@ -22,6 +22,7 @@ import { postBulkData } from '../hooks/bulkInsert';
 import { checkmarkCircleOutline } from 'ionicons/icons';
 import { updateDataInTrx } from '../utils/update';
 import { getHomeByIdLkf, getHomeTable } from '../hooks/getHome';
+import { getDataFromStorage } from '../services/dataService';
 
 interface TableDataItem {
   hm_km: any;
@@ -38,13 +39,13 @@ interface TableDataItem {
   jde_operator: string;
   name_operator: string;
   status: number;
+ 
 }
 
 
 interface TableDataProps {
   setPendingStatus: React.Dispatch<React.SetStateAction<boolean>>;
 }
-
 
 const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
 
@@ -59,6 +60,8 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
   const [toastMessage, setToastMessage] = useState('');
   const [lkfId, setLkfId] = useState<string>('');
   const [presentToast] = useIonToast();
+  const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine); 
+
 
 
   useEffect(() => {
@@ -130,95 +133,97 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
   };
   
 
-const handleBulkInsert = async () => {
 
-  if (!navigator.onLine) {
-    await presentToast({
-      
-      message: "Perangakat offline !! , Mohon pastikan terkoneksi dengan jaringan ",
-      duration: 2000,
-      position: 'bottom',
-      color: 'danger',
-    });
-
-   
-
-    return;
-  }
-
-  if (!data || data.length === 0) {
-    setError("No data available for insertion");
-    return;
-  }
-
-  const loginData = localStorage.getItem('loginData');
-  let createdBy = '';
-
-  if (loginData) {
-    const parsedData = JSON.parse(loginData);
-    createdBy = parsedData.jde || '';
-  }
-
-  const bulkData = data.map(item => ({
-    from_data_id: item.from_data_id,
-    no_unit: item.unit_no,
-    model_unit: item.model_unit,
-    owner: item.owner,
-    date_trx: new Date().toISOString(),
-    hm_last: item.hm_km,
-    hm_km: item.hm_km,
-    qty_last: item.qty_issued,
-    qty: item.qty_issued,
-    flow_start: item.fm_awal,
-    flow_end: item.fm_akhir,
-    name_operator: item.name_operator,
-    fbr: parseFloat(item.fbr_historis),
-    signature: '',
-    photo: '',
-    type: item.jenis_trx,
-    lkf_id: nomorLKF || undefined,
-    jde_operator: item.jde_operator,
-    created_by: createdBy,
-    start: new Date().toISOString(),
-    end: new Date().toISOString(),
-  }));
-
-  try {
-    
-    const responses = await postBulkData(bulkData);
-    console.log("Bulk insert responses:", responses);
-
-    const updatedData = data.map((item) => ({
-      ...item,
-      status: 1,
+  const handleBulkInsert = async () => {
+    if (!navigator.onLine) {
+      await presentToast({
+        message: "Perangkat offline! Mohon pastikan terkoneksi dengan jaringan.",
+        duration: 2000,
+        position: 'bottom',
+        color: 'danger',
+      });
+      return;
+    }
+  
+    if (!data || data.length === 0) {
+      setError("No data available for insertion");
+      return;
+    }
+  
+    const loginData = localStorage.getItem('loginData');
+    let createdBy = '';
+  
+    if (loginData) {
+      const parsedData = JSON.parse(loginData);
+      createdBy = parsedData.jde || '';
+    }
+  
+    const bulkData = data.map(item => ({
+      from_data_id: item.from_data_id,
+      no_unit: item.unit_no,
+      model_unit: item.model_unit,
+      owner: item.owner,
+      date_trx: new Date().toISOString(),
+      hm_last: item.hm_km,
+      hm_km: item.hm_km,
+      qty_last: item.qty_issued,
+      qty: item.qty_issued,
+      flow_start: item.fm_awal,
+      flow_end: item.fm_akhir,
+      name_operator: item.name_operator,
+      fbr: parseFloat(item.fbr_historis),
+      signature: '',
+      photo: '',
+      type: item.jenis_trx,
+      lkf_id: nomorLKF || undefined,
+      jde_operator: item.jde_operator,
+      created_by: createdBy,
+      start: new Date().toISOString(),
+      end: new Date().toISOString(),
+     
     }));
+  
+    try {
+      if (navigator.onLine) {
+        const responses = await postBulkData(bulkData);
+        console.log("Bulk insert responses:", responses);
+        
+        const updatedData = data.map((item) => ({
+          ...item,
+          status: 1,
+        }));
+  
+        await Promise.all(updatedData.map(async (item) => {
+          await updateDataInTrx(item.from_data_id, { status: item.status });
+        }));
+        setData(updatedData);
+        
+      }
+      const totalInserted = bulkData.length;
+      const successMessage = `Successfully saved ${totalInserted} items to the server.`;
+      await presentToast({
+        message: successMessage,
+        duration: 2000,
+        position: 'top',
+      });
+      setError(null);
+  
+    } catch (error) {
+      console.error("Error during bulk insert:", error);
+      setError("Failed to save data to server");
+      await presentToast({
+        message: "Failed to save data to server.",
+        duration: 2000,
+        position: 'bottom',
+      });
+    }
+  };
+  
 
-    await Promise.all(updatedData.map(async (item) => {
-      await updateDataInTrx(item.from_data_id, { status: item.status });
-    }));
 
-    setData(updatedData);
 
-    const totalInserted = bulkData.length;
-    const successMessage = `Successfully saved ${totalInserted} items to the server.`;
-    await presentToast({
-      message: successMessage,
-      duration: 2000,
-      position: 'top',
-    });
-    setError(null);
-
-  } catch (error) {
-    console.error("Error during bulk insert:", error);
-    setError("Failed to save data to server");
-    await presentToast({
-      message: "Failed to save data to server.",
-      duration: 2000,
-      position: 'bottom',
-    });
-  }
-};
-
+ 
+  
 
 useEffect(() => {
   const handleOnline = () => {

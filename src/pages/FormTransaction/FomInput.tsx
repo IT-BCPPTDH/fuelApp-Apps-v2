@@ -497,8 +497,7 @@ const [stock, setStock] = useState<number>(0);
             const element = unitQuota[index];
           
             if (element.unit_no === dataPost.no_unit) {
-              // Akumulasi pengurangan qty dari used yang sudah ada
-              element.used = element.used + newQty; // Mengakumulasi nilai used berdasarkan qty yang baru
+              element.used = element.used + newQty; 
             }
           }
         
@@ -517,8 +516,6 @@ const [stock, setStock] = useState<number>(0);
     }
   };
   
-
-
   const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
     if (unitQuota) {
@@ -542,9 +539,6 @@ const [stock, setStock] = useState<number>(0);
   
   
   
-
-
-
   const insertNewData = async (data: DataFormTrx) => {
     try {
       await addDataTrxType(data);
