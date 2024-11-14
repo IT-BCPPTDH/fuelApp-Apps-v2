@@ -78,7 +78,7 @@ interface DataFormTrx {
   fbr: number;
   flow_start: number;
   flow_end: number;
-  signature: string | null;
+  signature: string;
   foto: string;
   type: string;
   lkf_id?: string;
@@ -383,7 +383,7 @@ const handleGetTrx =  async() => {
               name_operator: item.name_operator,
               fbr: item.fbr,
               lkf_id: item.lkf_id ?? "",
-              signature: item.signature ?? null,
+              signature: item.signature ?? "",
               type: item.type ?? "",
               foto: item.foto ?? "",
               fuelman_id: item.fuelman_id,

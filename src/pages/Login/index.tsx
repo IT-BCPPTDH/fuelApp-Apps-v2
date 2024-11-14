@@ -149,7 +149,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
         // Navigate to the opening page
         setShowAlert(true);
-        await bulkInsertDataMasterTransaksi(transaksiData)
+        handleGet()
         router.push("/opening");
       } else {
         console.error("Unexpected response:", response);
@@ -400,8 +400,8 @@ useEffect(() => {
                         {loading ? "Loading..." : "Login"}
                       </IonButton>
 
-                      <IonButton className="check-button" expand="block" onClick={handleGet} disabled={loading}>
-                        {loading ? "Loading..." : "Get"}
+                      <IonButton  color="dark"  expand="block" onClick={handleGet} disabled={loading}>
+                        {loading ? "Loading..." : "Refresh Data"}
                       </IonButton>
 
                     </IonCol>

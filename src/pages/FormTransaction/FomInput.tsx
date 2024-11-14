@@ -124,7 +124,7 @@ const FormTRX: React.FC = () => {
   );
   // const [selectedUnit, setSelectedUnit] = useState<string | undefined>();
 
-  const [signature, setSignature] = useState<File | null>(null);
+  // const [signature, setSignature] = useState<File | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
   const [model, setModel] = useState<string>("");
@@ -260,7 +260,9 @@ const [modelUnit, setModelUnit] = useState<string>('');
 const [owner, setOwner] = useState<string>('');
 const [qtyLast, setQtyLast] = useState<number | undefined>(undefined);
 
+const [photoFile, setPhotoFile] = useState<File | null>(null); // For the file
 
+const [signature, setSignature] = useState<string | null>(null);
 
 const [stock, setStock] = useState<number>(0);
   useEffect(() => {
@@ -405,26 +407,31 @@ const [stock, setStock] = useState<number>(0);
   };
 
   const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    setPhoto: React.Dispatch<React.SetStateAction<File | null>>,
-    setBase64: React.Dispatch<React.SetStateAction<string | undefined>>
-  ) => {
+event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetStateAction<File | null>>, setBase64: React.Dispatch<React.SetStateAction<string | undefined>>, setSignature: React.Dispatch<React.SetStateAction<string | null>>  ) => {
     const file = event.target.files?.[0];
     if (file) {
       try {
+        // Convert the file to base64
         const base64 = await convertToBase64(file);
-        setBase64(base64); // Directly set base64 in state
+       
       } catch (error) {
         console.error("Error converting file to base64", error);
       }
     }
   };
+  
+  
+  
+  
 
   const handleClose = () => {
     route.push("/dashboard");
   };
 
   const handlePost = async (e: React.FormEvent) => {
+
+ 
+
     const validQuantity = quantity ?? 0;
     if (isNaN(validQuantity) || validQuantity <= 0) {
       setQuantityError("Qty Issued harus lebih besar dari 0");
@@ -443,7 +450,8 @@ const [stock, setStock] = useState<number>(0);
     const typeTrxValue = typeTrx[0];
     const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
     const fromDataId = Date.now().toString();
-    const signatureBase64 = signature ? await convertToBase64(signature) : undefined;
+   
+   
     const lkf_id = await getLatestLkfId();
   
     const dataPost: DataFormTrx = {
@@ -462,6 +470,7 @@ const [stock, setStock] = useState<number>(0);
       fbr: fbrResult,
       lkf_id: lkf_id ?? "",
       signature: signatureBase64 ?? "",
+      // signature: signature,
       type: selectedType?.name ?? "",
       foto: photoPreview ?? "",
       fuelman_id: fuelman_id!,
@@ -719,81 +728,81 @@ const [stock, setStock] = useState<number>(0);
   };
   
 
-  useEffect(() => {
-    const fetchUnitData = async () => {
-      if (!selectedUnit) return;
+  // useEffect(() => {
+  //   const fetchUnitData = async () => {
+  //     if (!selectedUnit) return;
   
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getPrevUnitTrx(selectedUnit);
-        if (response.status === '200' && response.data.length > 0) {
-          const latestUnitData = response.data
-            .sort((a: { date_trx: string | number | Date; }, b: { date_trx: string | number | Date; }) => new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime())[0];
-          if (latestUnitData) {
-            const hmKmValue = Number(latestUnitData.hm_km) || 0; 
-            const hmKmLastValue = Number(latestUnitData.hm_km) || 0;
-            setHmkmValue(hmKmValue);
-            setHmKmLast( hmKmLastValue);
-            setModel(latestUnitData.model_unit);
-            setOwner(latestUnitData.owner);
-            setQtyValue(Number(latestUnitData.qty) || 0); 
-            // localStorage.setItem('latestUnitDataHMKM', JSON.stringify(latestUnitData));
-          } else {
-            setError('No data found');
-          }
-        } else {
-          setError('No data found');
-        }
-      } catch (err) {
-        setError('Failed to fetch unit data');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  //     setLoading(true);
+  //     setError(null);
+  //     try {
+  //       const response = await getPrevUnitTrx(selectedUnit);
+  //       if (response.status === '200' && response.data.length > 0) {
+  //         const latestUnitData = response.data
+  //           .sort((a: { date_trx: string | number | Date; }, b: { date_trx: string | number | Date; }) => new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime())[0];
+  //         if (latestUnitData) {
+  //           const hmKmValue = Number(latestUnitData.hm_km) || 0; 
+  //           const hmKmLastValue = Number(latestUnitData.hm_km) || 0;
+  //           setHmkmValue(hmKmValue);
+  //           setHmKmLast( hmKmLastValue);
+  //           setModel(latestUnitData.model_unit);
+  //           setOwner(latestUnitData.owner);
+  //           setQtyValue(Number(latestUnitData.qty) || 0); 
+  //           // localStorage.setItem('latestUnitDataHMKM', JSON.stringify(latestUnitData));
+  //         } else {
+  //           setError('No data found');
+  //         }
+  //       } else {
+  //         setError('No data found');
+  //       }
+  //     } catch (err) {
+  //       setError('Failed to fetch unit data');
+  //       console.error(err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
   
-    fetchUnitData();
-  }, [selectedUnit]);
+  //   fetchUnitData();
+  // }, [selectedUnit]);
 
   
-  useEffect(() => {
-    const fetchUnitData = async () => {
-      if (!selectedUnit) return;
+  // useEffect(() => {
+  //   const fetchUnitData = async () => {
+  //     if (!selectedUnit) return;
   
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getPrevUnitTrx(selectedUnit);
+  //     setLoading(true);
+  //     setError(null);
+  //     try {
+  //       const response = await getPrevUnitTrx(selectedUnit);
   
-        if (response.status === '200' && response.data.length > 0) {
-          const latestUnitData = response.data
-            .sort((a: { date_trx: string | number | Date; }, b: { date_trx: string | number | Date; }) => new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime())[0];
-          if (latestUnitData) {
-            const hmKmValue = Number(latestUnitData.hm_km) || 0; 
-            const hmKmLastValue = Number(latestUnitData.hm_last) || 0;
-            setHmkmValue(hmKmValue);
-            setHmKmLast(hmKmLastValue);
-            setModel(latestUnitData.model_unit);
-            setOwner(latestUnitData.owner);
-            setQtyValue(Number(latestUnitData.qty) || 0); 
-            localStorage.setItem('latestUnitDataHMKM', JSON.stringify(latestUnitData));
-          } else {
-            setError('No data found');
-          }
-        } else {
-          setError('No data found');
-        }
-      } catch (err) {
-        setError('Failed to fetch unit data');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       if (response.status === '200' && response.data.length > 0) {
+  //         const latestUnitData = response.data
+  //           .sort((a: { date_trx: string | number | Date; }, b: { date_trx: string | number | Date; }) => new Date(b.date_trx).getTime() - new Date(a.date_trx).getTime())[0];
+  //         if (latestUnitData) {
+  //           const hmKmValue = Number(latestUnitData.hm_km) || 0; 
+  //           const hmKmLastValue = Number(latestUnitData.hm_last) || 0;
+  //           setHmkmValue(hmKmValue);
+  //           setHmKmLast(hmKmLastValue);
+  //           setModel(latestUnitData.model_unit);
+  //           setOwner(latestUnitData.owner);
+  //           setQtyValue(Number(latestUnitData.qty) || 0); 
+  //           localStorage.setItem('latestUnitDataHMKM', JSON.stringify(latestUnitData));
+  //         } else {
+  //           setError('No data found');
+  //         }
+  //       } else {
+  //         setError('No data found');
+  //       }
+  //     } catch (err) {
+  //       setError('Failed to fetch unit data');
+  //       console.error(err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
   
-    fetchUnitData();
-  }, [selectedUnit]);
+  //   fetchUnitData();
+  // }, [selectedUnit]);
   
 const handleEndTimeChange = (e: CustomEvent) => {
   const newEndTime = e.detail.value as string;
@@ -1725,7 +1734,7 @@ useEffect(() => {
                       accept="image/*"
                       id="signatureInput"
                       style={{ display: "none" }}
-                      onChange={(e) => handleFileChange(e, setPhoto, setBase64)}
+                      onChange={(e) => handleFileChange(e, setPhoto, setBase64, setSignature)}
                     />
                     <IonButton
                       color="warning"

@@ -107,7 +107,7 @@ interface DataFormTrx {
   fbr: number;
   flow_start: number;
   flow_end: number ;
-  signature: string | null;
+  signature: string;
   foto: string;
   type: string;
   lkf_id?: string;
