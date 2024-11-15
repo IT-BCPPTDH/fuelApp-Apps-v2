@@ -896,11 +896,8 @@ useEffect(() => {
       let quotaData;
 
       if (navigator.onLine) {
-        // Attempt to fetch online data
         quotaData = await fetchQuotaData(formattedDate);
       }
-
-      // If quotaData is undefined or not an array, attempt to retrieve from local storage
       if (!quotaData || !Array.isArray(quotaData)) {
         console.warn('Online quota data unavailable or failed. Attempting offline data.');
         quotaData = await getDataFromStorage('unitQuota');
@@ -958,9 +955,72 @@ useEffect(() => {
   loadUnitDataQuota();
 }, [selectedUnit]);
 
+// useEffect(() => {
+//   const loadUnitDataQuota = async () => {
+//     const today = new Date();
+//     const formattedDate = today.toISOString().split('T')[0];
 
+//     try {
+//       let quotaData;
 
+//       if (navigator.onLine) {
+//         // Attempt to fetch online data
+//         quotaData = await fetchQuotaData(formattedDate);
+//       }
 
+//       // If quotaData is undefined or not an array, attempt to retrieve from local storage
+//       if (!quotaData || !Array.isArray(quotaData)) {
+//         console.warn('Online quota data unavailable or failed. Attempting offline data.');
+//         quotaData = await getDataFromStorage('unitQuota');
+//       }
+
+//       if (quotaData && Array.isArray(quotaData)) {
+//         let foundUnitQuota = quotaData.find((unit) => unit.unit_no === selectedUnit);
+
+//         if (!foundUnitQuota && navigator.onLine) {
+//           // Check previous day's data if today’s quota is missing and online
+//           const yesterday = new Date(today);
+//           yesterday.setDate(today.getDate() - 1);  // Subtract one day
+//           const formattedYesterday = yesterday.toISOString().split('T')[0];
+//           const previousQuotaData = await fetchQuotaData(formattedYesterday);
+
+//           foundUnitQuota = previousQuotaData?.find((unit) => unit.unit_no === selectedUnit);
+//         }
+
+//         if (foundUnitQuota?.is_active) {
+//           setCurrentUnitQuota(foundUnitQuota);
+//           const totalQuota = foundUnitQuota.quota;
+//           const usedQuota = foundUnitQuota.used || 0;
+//           const additionalQuota = foundUnitQuota.additional || 0;
+//           const remainingQuota = totalQuota - usedQuota; 
+
+//           if (foundUnitQuota.is_active) {
+//             setUnitQuota(totalQuota);
+//             setRemainingQuota(remainingQuota);
+//             setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
+
+//             const issuedAmount = foundUnitQuota.issued || 0;
+//             if (issuedAmount > remainingQuota) {
+//               setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
+//             }
+//           } else {
+//             setUnitQuota(0);
+//             setRemainingQuota(0);
+//             setQuotaMessage("Pembatasan kuota dinonaktifkan.");
+//           }
+//         }
+//       } else {
+//         setQuotaMessage("Offline quota data unavailable.");
+//         console.error('No quota data available for the specified date or unit.');
+//       }
+//     } catch (error) {
+//       console.error('Error fetching or loading quota data:', error);
+//       setQuotaMessage("Error loading quota data.");
+//     }
+//   };
+
+//   loadUnitDataQuota();
+// }, [selectedUnit]);
 
 
 const calculateFlowEnd = (typeTrx: string): string | number => {
@@ -978,7 +1038,7 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
   return ""; 
 };
 
-// hitung fbr offline
+// hitung fbr offline fix code
 
 useEffect(() => {
   console.log('useEffect Offline/Online:', { hmkmValue, hmLast, qtyLast });

@@ -257,6 +257,8 @@ if (progress > 1) {
       setShowDateModal(false);
     }
   };
+
+  
   
   const fetchShiftDataByStation = async (station: string) => {
     try {
@@ -305,7 +307,8 @@ useEffect(() => {
     }
 
     const dataPost: DataLkf = {
-      date: new Date(date).toISOString(),
+      // date: new Date(date).toISOString(),
+      date: new Date(date).toLocaleDateString('en-CA'),
       shift: shiftSelected.name,
       hm_start: hmAkhir,
       opening_dip: openingDip,
@@ -686,7 +689,6 @@ useEffect(() => {
 
 
 
-
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -732,7 +734,7 @@ useEffect(() => {
               <IonLabel style={{ marginLeft: "20px" }}>
                 Date <span style={{ color: "red", marginLeft: "20px" }}>*</span>
               </IonLabel>
-              <IonItem>
+              {/* <IonItem>
                 <IonInput
                   value={new Date(date).toLocaleDateString()}
                   placeholder="Select Date"
@@ -749,8 +751,23 @@ useEffect(() => {
 
                 />
                 <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>
-              </IonModal>
-
+              </IonModal> */}
+<IonItem>
+        <IonInput
+          value={new Date(date).toLocaleDateString('en-GB')}  // Display date in readable format (e.g., DD/MM/YYYY)
+          placeholder="Select Date"
+          readonly
+          onClick={() => setShowDateModal(true)}
+        />
+      </IonItem>
+      <IonModal isOpen={showDateModal}>
+        <IonDatetime
+          value={date || new Date().toISOString()}
+          onIonChange={handleDateChange}
+          max={new Date().toISOString()}
+        />
+        <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>
+      </IonModal>
             </IonCol>
           </IonRow>
           <div className="padding-content">

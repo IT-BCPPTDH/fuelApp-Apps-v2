@@ -363,7 +363,7 @@ export const fetchLatestHmLast = async (
         hm_km: latestEntry.hm_km,         
         model_unit: latestEntry.model_unit, 
         owner: latestEntry.owner,         
-        qty_last: latestEntry.qty_last     
+        qty_last: latestEntry.qty     
       };
     } else {
       console.warn("No valid 'hm_last' data found for unit:", selectedUnit);
