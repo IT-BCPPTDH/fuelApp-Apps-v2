@@ -1038,7 +1038,7 @@ const calculateFlowEnd = (typeTrx: string): string | number => {
   return ""; 
 };
 
-// hitung fbr offline fix code
+// hitung fbr offline fi
 
 useEffect(() => {
   console.log('useEffect Offline/Online:', { hmkmValue, hmLast, qtyLast });

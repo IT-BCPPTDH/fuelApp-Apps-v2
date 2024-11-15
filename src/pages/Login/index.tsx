@@ -27,9 +27,6 @@ import {
   fetchUnitLastTrx,
 } from "../../services/dataService";
 import Select from "react-select";
-import AsyncSelect from 'react-select/async';
-import { getPrevUnitTrx } from "../../hooks/getDataPrev";
-import { getOperator } from "../../hooks/getAllOperator";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 import { bulkInsertDataMasterTransaksi } from "../../utils/getData";
 

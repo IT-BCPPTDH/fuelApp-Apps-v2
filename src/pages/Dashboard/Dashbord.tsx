@@ -353,7 +353,7 @@ const handleGetTrx =  async() => {
   
   const handleRefresh = async () => {
     if (lkfId) {
-      setLoading(true); // Start loading state
+      setLoading(true); 
       try {
         const response = await getHomeTable(lkfId);
         console.log("Fetched Edit Transaksi:", response);
@@ -427,6 +427,7 @@ const handleGetTrx =  async() => {
     updateCard()
     
   };
+  
   const IssuedTotal = async () => {
     try {
       const fetchedResult = await getCalculationIssued(lkfId);
