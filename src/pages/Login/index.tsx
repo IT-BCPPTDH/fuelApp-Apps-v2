@@ -31,6 +31,7 @@ import AsyncSelect from 'react-select/async';
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getOperator } from "../../hooks/getAllOperator";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
+import { bulkInsertDataMasterTransaksi } from "../../utils/getData";
 
 
 // Define props interface
@@ -101,7 +102,8 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
   }, []);
   
 
-  
+ 
+
   const handleLogin = async () => {
     setLoading(true);
     if (!jde || !selectedUnit) {
@@ -110,6 +112,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
       setLoading(false);
       return;
     }
+
 
     const selectedStation = stationData.find((station) => station.value === selectedUnit);
     if (!selectedStation) {
@@ -146,6 +149,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
         // Navigate to the opening page
         setShowAlert(true);
+        handleGet()
         router.push("/opening");
       } else {
         console.error("Unexpected response:", response);
@@ -218,34 +222,77 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 }, []);
 
 
+// const dataTrasaksi = async () => {
+//   try {
+//     const transaksiData = await getTrasaksiSemua();
+//     console.log("Fetched transaksi data:", transaksiData);
+//     if (transaksiData && Array.isArray(transaksiData) && transaksiData.length > 0) {
+     
+//       localStorage.setItem('transaksiData', JSON.stringify(transaksiData));
+//       console.log('Transaksi data has been saved to IndexedDB and localStorage.');
+//     } else {
+//       console.warn('No transaksi data to save.');
+//     }
+//   } catch (error) {
+//     console.error('Error fetching and saving transaksi data:', error);
+//   }
+// };
+
 const dataTrasaksi = async () => {
   try {
-    // Fetch all transaksi data
-    const transaksiData = await getTrasaksiSemua();
-    console.log("Fetched transaksi data:", transaksiData);
+    // Asumsi getTrasaksiSemua() mengembalikan response dengan format yang Anda sebutkan
+    const response = await getTrasaksiSemua();
+    
+    console.log("Fetched transaksi response:", response);
 
-    // Check if data is available before storing it
-    if (transaksiData && Array.isArray(transaksiData) && transaksiData.length > 0) {
-      // Save the data to localStorage as a string
-      localStorage.setItem('transaksiData', JSON.stringify(transaksiData));
-      
-  
-      console.log('Transaksi data has been saved to IndexedDB and localStorage.');
+    // Pastikan response.status adalah '200' dan response.data ada
+    if (response.status === "200" && response.data && Array.isArray(response.data) && response.data.length > 0) {
+      // Simpan hanya data yang ada di dalam response.data ke localStorage
+      localStorage.setItem('transaksiData', JSON.stringify(response.data));
+      console.log('Transaksi data has been saved to localStorage.');
     } else {
-      console.warn('No transaksi data to save.');
+      console.warn('No transaksi data to save or invalid response.');
     }
   } catch (error) {
     console.error('Error fetching and saving transaksi data:', error);
   }
 };
 
+
 useEffect(() => {
   // Only call dataTrasaksi once when the component mounts
   dataTrasaksi();
-}, []);  // Empty dependency array ensures it runs only once on mount
+}, []); 
+ // Empty dependency array ensures it runs only once on mount
 
 
 
+ const handleGet = async () => {
+  try {
+    // Ambil data transaksi dari localStorage
+    const transaksiDataString = localStorage.getItem('transaksiData');
+    console.log("Data from localStorage:", transaksiDataString); // Debugging
+
+    if (transaksiDataString) {
+      // Parsing data JSON dari string
+      const transaksiData = JSON.parse(transaksiDataString);
+      console.log("Parsed transaksiData:", transaksiData); // Debugging
+
+      // Cek apakah transaksiData adalah array dan tidak kosong
+      if (Array.isArray(transaksiData) && transaksiData.length > 0) {
+        // Lakukan bulk insert ke IndexedDB
+        await bulkInsertDataMasterTransaksi(transaksiData);
+        console.log('Data transaksi berhasil dimasukkan ke IndexedDB.');
+      } else {
+        console.warn('Data transaksi kosong atau tidak valid.');
+      }
+    } else {
+      console.warn('Tidak ada data transaksi yang tersedia di localStorage.');
+    }
+  } catch (error) {
+    console.error('Error saat melakukan bulk insert dari localStorage:', error);
+  }
+};
 
 
 const loadTrxLast = async () => {
@@ -352,6 +399,11 @@ useEffect(() => {
                       <IonButton className="check-button" expand="block" onClick={handleLogin} disabled={loading}>
                         {loading ? "Loading..." : "Login"}
                       </IonButton>
+
+                      <IonButton  color="dark"  expand="block" onClick={handleGet} disabled={loading}>
+                        {loading ? "Loading..." : "Refresh Data"}
+                      </IonButton>
+
                     </IonCol>
                   </>
                 )}

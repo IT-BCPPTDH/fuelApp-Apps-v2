@@ -21,6 +21,8 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonToast,
+  IonProgressBar,
+  IonLoading,
 } from "@ionic/react";
 
 import "./style.css";
@@ -31,12 +33,11 @@ import { DataLkf } from "../../models/db";
 // import { getAllUnit } from "../../hooks/getAllUnit";
 // import { getStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
-import { getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
+import { bulkInsertDataMasterTransaksi, getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
 import { getStationData} from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
 import { chevronDownCircleOutline } from 'ionicons/icons';
-import { getAllQuota, getUnitQuotaActive } from "../../hooks/getQoutaUnit";
 
 interface Shift {
   id: number;
@@ -74,7 +75,7 @@ const OpeningForm: React.FC = () => {
   const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
   const [date, setDate] = useState<string>(new Date().toISOString());
   const [hmAkhir, setHmAkhir] = useState<number | undefined>(undefined);
-
+  const [progress, setProgress] = useState(0);
   const [stationOptions, setStationOptions] = useState<string[]>([]);
 
   const [closeShift, setCloseShift] = useState<any[]>([]); // Initialize as an array
@@ -91,10 +92,28 @@ const input2Ref = useRef<HTMLIonInputElement>(null);
 const [showToast, setShowToast] = useState(false);
 const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+const [buffer, setBuffer] = useState(0.06);
+
 
 const [jdeOptions, setJdeOptions] = useState<
 { JDE: string; fullname: string }[]
 >([]);
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setBuffer((prevBuffer) => prevBuffer + 0.06);
+    setProgress((prevProgress) => prevProgress + 0.06);
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, []);
+
+if (progress > 1) {
+  setTimeout(() => {
+    setBuffer(0.06);
+    setProgress(0);
+  }, 1000);
+}
 
   useEffect(() => {
     const determineShift = () => {
@@ -238,6 +257,8 @@ const [jdeOptions, setJdeOptions] = useState<
       setShowDateModal(false);
     }
   };
+
+  
   
   const fetchShiftDataByStation = async (station: string) => {
     try {
@@ -286,7 +307,8 @@ useEffect(() => {
     }
 
     const dataPost: DataLkf = {
-      date: new Date(date).toISOString(),
+      // date: new Date(date).toISOString(),
+      date: new Date(date).toLocaleDateString('en-CA'),
       shift: shiftSelected.name,
       hm_start: hmAkhir,
       opening_dip: openingDip,
@@ -502,46 +524,11 @@ useEffect(() => {
 
 
 
-const fetchData = async () => {
-  setLoading(true);
-  try {
-    const cachedShiftData = await getDataFromStorage('shiftCloseData');
-    if (cachedShiftData && cachedShiftData.length > 0) {
-      setCloseShift(cachedShiftData);
-      const latestShiftData = cachedShiftData[cachedShiftData.length - 1]; 
-      if (latestShiftData.closing_sonding !== undefined) {
-        setOpeningSonding(latestShiftData.closing_sonding); 
-      }
-      if (latestShiftData.flow_meter_end !== undefined) {
-        setFlowMeterAwal(latestShiftData.flow_meter_end); 
-      }
-      if (latestShiftData.closing_dip !== undefined) {
-        setOpeningDip(latestShiftData.closing_dip); 
-      }
-      if (latestShiftData.hm_end !== undefined) {
-        setHmAkhir(latestShiftData.hm_end);
-        setPrevHmAwal(latestShiftData.hm_end);  // Set HM Awal
-      }
-      
 
-    } else {
-      console.error("No cached shift data found");
-    }
-  } catch (error) {
-    console.error("Error fetching shift data:", error);
-  } finally {
-    setLoading(false);
-  }
-};
 
-useEffect(() => {
-  fetchData(); 
-    const timeoutId = setTimeout(() => {
-      fetchData(); 
-    }, 3000);
-    return () => clearTimeout(timeoutId);
 
-}, []);
+ 
+
 
 const doRefresh = async (event: CustomEvent) => {
   await fetchData();
@@ -599,6 +586,109 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
   setFlowMeterAwal(value);
 };
 
+
+
+
+// const fetchData = async () => {
+//   setLoading(true);
+//   try {
+//     const cachedShiftData = await getDataFromStorage('shiftCloseData');
+//     if (cachedShiftData && cachedShiftData.length > 0) {
+//       setCloseShift(cachedShiftData);
+//       const latestShiftData = cachedShiftData[cachedShiftData.length - 1]; 
+//       if (latestShiftData.closing_sonding !== undefined) {
+//         setOpeningSonding(latestShiftData.closing_sonding); 
+//       }
+//       if (latestShiftData.flow_meter_end !== undefined) {
+//         setFlowMeterAwal(latestShiftData.flow_meter_end); 
+//       }
+//       if (latestShiftData.closing_dip !== undefined) {
+//         setOpeningDip(latestShiftData.closing_dip); 
+//       }
+//       if (latestShiftData.hm_end !== undefined) {
+//         setHmAkhir(latestShiftData.hm_end);
+//         setPrevHmAwal(latestShiftData.hm_end);  // Set HM Awal
+//       }
+      
+
+//     } else {
+//       console.error("No cached shift data found");
+//     }
+//   } catch (error) {
+//     console.error("Error fetching shift data:", error);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+const fetchData = async () => {
+  setLoading(true);
+  setProgress(0);  // Reset progress
+  
+  try {
+    const cachedShiftData = await getDataFromStorage('shiftCloseData');
+    if (cachedShiftData && cachedShiftData.length > 0) {
+      setCloseShift(cachedShiftData);
+      const latestShiftData = cachedShiftData[cachedShiftData.length - 1];
+
+      // Simulate progress updates
+      setProgress(0.2);  // After fetching the first batch of data
+      if (latestShiftData.closing_sonding !== undefined) {
+        setOpeningSonding(latestShiftData.closing_sonding);
+      }
+      setProgress(0.4);
+      
+      if (latestShiftData.flow_meter_end !== undefined) {
+        setFlowMeterAwal(latestShiftData.flow_meter_end);
+      }
+      setProgress(0.6);
+      
+      if (latestShiftData.closing_dip !== undefined) {
+        setOpeningDip(latestShiftData.closing_dip);
+      }
+      setProgress(0.8);
+      
+      if (latestShiftData.hm_end !== undefined) {
+        setHmAkhir(latestShiftData.hm_end);
+        setPrevHmAwal(latestShiftData.hm_end);
+      }
+      setProgress(1);  // Finished data processing
+    } else {
+      console.error("No cached shift data found");
+    }
+  } catch (error) {
+    console.error("Error fetching shift data:", error);
+  }
+};
+
+
+useEffect(() => {
+  // Check if all fields are populated
+  if (
+    openingSonding !== undefined &&
+    openingDip !== undefined &&
+    flowMeterAwal !== undefined &&
+    hmAkhir !== undefined
+  ) {
+    setLoading(false);
+  }
+}, [openingSonding, openingDip, flowMeterAwal, hmAkhir]);  // Dependencies to check if data has changed
+
+useEffect(() => {
+  fetchData();
+
+  const intervalId = setInterval(() => {
+    fetchData();
+  }, );
+
+  return () => clearInterval(intervalId);
+}, []);
+
+
+
+
+
+
+
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
@@ -606,15 +696,13 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
           <IonTitle>Form Opening Data Stock (Dip) & Sonding</IonTitle>
         </IonToolbar>
       </IonHeader>
-
-      
       <IonContent>
       <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
           <IonRefresherContent refreshingSpinner="circles"
            />
           
         </IonRefresher>
-
+       
         <div className="wrapper-content">
           <div className="padding-content">
             <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>
@@ -623,6 +711,7 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
             <h4>Station : {station}</h4>
           </div>
           <IonRow className="padding-content">
+         
             <IonCol style={{ display: "grid" }}>
               <IonLabel>
                 Shift  <span style={{ color: "red", marginLeft: "20px" }}>*</span>
@@ -645,7 +734,7 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               <IonLabel style={{ marginLeft: "20px" }}>
                 Date <span style={{ color: "red", marginLeft: "20px" }}>*</span>
               </IonLabel>
-              <IonItem>
+              {/* <IonItem>
                 <IonInput
                   value={new Date(date).toLocaleDateString()}
                   placeholder="Select Date"
@@ -662,16 +751,31 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
 
                 />
                 <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>
-              </IonModal>
-
+              </IonModal> */}
+<IonItem>
+        <IonInput
+          value={new Date(date).toLocaleDateString('en-GB')}  // Display date in readable format (e.g., DD/MM/YYYY)
+          placeholder="Select Date"
+          readonly
+          onClick={() => setShowDateModal(true)}
+        />
+      </IonItem>
+      <IonModal isOpen={showDateModal}>
+        <IonDatetime
+          value={date || new Date().toISOString()}
+          onIonChange={handleDateChange}
+          max={new Date().toISOString()}
+        />
+        <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>
+      </IonModal>
             </IonCol>
           </IonRow>
           <div className="padding-content">
-            <IonLabel className={showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "error" : ""}>
+            <IonLabel >
               Opening Sonding (Cm) <span style={{ color: "red" }}>*</span>
             </IonLabel>
             <IonInput
-              className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
+              className={`custom-input `}
               type="number"
               value={openingSonding}
               onIonChange={handleOpeningSondingChange}
@@ -684,6 +788,7 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
             )}
           </div>
           <div className="padding-content">
+          
             <IonLabel className={showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "error" : ""}>
               Opening Dip (Liter) <span style={{ color: "red" }}>*</span>
             </IonLabel>
@@ -753,7 +858,8 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
      <IonButton 
         className="check-button" 
         onClick={handlePost} 
-        disabled={!isOnline}
+        // disabled={!isOnline}
+        disabled={openingDip === undefined || Number.isNaN(openingDip)}
       >
         Mulai Kerja
       </IonButton>
@@ -773,8 +879,14 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
         </IonLabel>
       )}
       </IonRow>
+
         </div>
-     
+        {/* <IonLoading
+      isOpen={loading}
+      message="Please wait..."
+      spinner="circles"
+      duration={0}  // This keeps the spinner until you set loading to false
+    /> */}
       </IonContent>
     </IonPage>
   );

@@ -39,6 +39,7 @@ interface TableDataItem {
   jde_operator: string;
   name_operator: string;
   status: number;
+ 
 }
 
 
@@ -179,6 +180,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       created_by: createdBy,
       start: new Date().toISOString(),
       end: new Date().toISOString(),
+     
     }));
   
     try {
@@ -196,18 +198,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         }));
         setData(updatedData);
         
-      } else {
-        const unitQuota = await getDataFromStorage('unitQuota');
-        
-        for (let index = 0; index < unitQuota.length; index++) {
-          const element = unitQuota[index];
-          if (element.unit_no === bulkData[index].no_unit) {
-            element.used = bulkData[index].qty;
-          }
-        }
-        console.log("Updated unitQuota offline:", unitQuota);
       }
-  
       const totalInserted = bulkData.length;
       const successMessage = `Successfully saved ${totalInserted} items to the server.`;
       await presentToast({
@@ -231,7 +222,8 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
 
 
 
-
+ 
+  
 
 useEffect(() => {
   const handleOnline = () => {

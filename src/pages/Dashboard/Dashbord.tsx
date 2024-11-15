@@ -78,7 +78,7 @@ interface DataFormTrx {
   fbr: number;
   flow_start: number;
   flow_end: number;
-  signature: string | null;
+  signature: string;
   foto: string;
   type: string;
   lkf_id?: string;
@@ -346,7 +346,9 @@ useEffect(() => {
 
 
 
+const handleGetTrx =  async() => {
 
+}
   
   
   const handleRefresh = async () => {
@@ -381,7 +383,7 @@ useEffect(() => {
               name_operator: item.name_operator,
               fbr: item.fbr,
               lkf_id: item.lkf_id ?? "",
-              signature: item.signature ?? null,
+              signature: item.signature ?? "",
               type: item.type ?? "",
               foto: item.foto ?? "",
               fuelman_id: item.fuelman_id,
@@ -629,7 +631,7 @@ const fetchcardDash = async (lkfId: string) => {
             </IonRow>
           </IonGrid>
           <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <h4 >Fuelman : {fullname}</h4>
+            <h4 >Fuelman {jde}</h4>
 
             <h4 >{latestDate}</h4>
           </IonRow>

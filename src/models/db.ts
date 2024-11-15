@@ -107,7 +107,7 @@ interface DataFormTrx {
   fbr: number;
   flow_start: number;
   flow_end: number ;
-  signature: string | null;
+  signature: string;
   foto: string;
   type: string;
   lkf_id?: string;
@@ -188,11 +188,11 @@ const db = new Dexie('fuelAppDatabase') as Dexie & {
 };
 
 // Define t10e schema
-db.version(10).stores({
+db.version(11).stores({
   // openingTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
   closeTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
   dataTransaksi: '++id, from_data_id, no_unit, model_unit, owner, date_trx, hm_last, hm_km, qty_last, qty, name_operator, fbr, flow_start, flow_end, signature, foto, type, lkf_id, start_time, end_time, status, jde_operator, fuelman_id, dip_start, dip_end, sonding_start, sonding_end, reference, start, end',
-  dataMasterTrasaksi: '++id, from_data_id, no_unit, model_unit, owner, date_trx, hm_last, hm_km, qty_last, qty, name_operator, fbr, flow_start, flow_end, signature, foto, type, lkf_id, start_time, end_time, status, jde_operator, fuelman_id, dip_start, dip_end, sonding_start, sonding_end, reference, start, end',
+  dataMasterTrasaksi: '++id, from_data_id, no_unit, model_unit, owner, date_trx, hm_last, hm_km, qty_last, qty, name_operator, fbr, flow_start, flow_end, signature, foto, type, lkf_id, start_time, end_time, status, jde_operator, fuelman_id, dip_start, dip_end, sonding_start, sonding_end, reference, start, end, created_at, created_by, isDelete, isStatus, updated_at, updated_by',
   cards: '++id, title, subtitle, icon',
   sondingMaster:'++id, station, cm , liters, site'
 });
