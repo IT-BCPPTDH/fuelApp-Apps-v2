@@ -514,33 +514,25 @@ const handleGetTrx =  async() => {
   };
   
   const modifyDataExample = (newData: any) => {
-    
-    const updatedData = [...newData];
-  
-   
-    const qtyIssuedIndex = updatedData.findIndex(item => item.title === 'QTY Issued');
-    
-    if (qtyIssuedIndex !== -1) {
-      const qtyIssuedItem = updatedData[qtyIssuedIndex];
-  
-     
-      const currentQtyIssued = typeof qtyIssuedItem.value === 'number' ? qtyIssuedItem.value : 0;
-  
-      
-      const qtyLast = typeof newData.qty_last === 'number' ? newData.qty_last : 0;
-  
-     
-      updatedData[qtyIssuedIndex].value = currentQtyIssued + qtyLast;
-  
-     
+    if (!Array.isArray(newData)) {
+      console.error('Expected newData to be an array but got:', newData);
+      return;
     }
   
-    
+    const updatedData = [...newData];
+    const qtyIssuedIndex = updatedData.findIndex(item => item.title === 'QTY Issued');
+  
+    if (qtyIssuedIndex !== -1) {
+      const qtyIssuedItem = updatedData[qtyIssuedIndex];
+      const currentQtyIssued = typeof qtyIssuedItem.value === 'number' ? qtyIssuedItem.value : 0;
+      const qtyLast = typeof qtyIssuedItem.qty_last === 'number' ? qtyIssuedItem.qty_last : 0;
+      updatedData[qtyIssuedIndex].value = currentQtyIssued + qtyLast;
+    }
+  
     updateDataHome(updatedData);
   };
   
   
-
   useEffect(() => {
     const cachedData = localStorage.getItem('cardDash');
     if (cachedData) {
