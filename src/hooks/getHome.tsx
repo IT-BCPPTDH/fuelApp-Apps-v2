@@ -35,7 +35,7 @@ export async function getHomeByIdLkf(lkf_id: string): Promise<any> {
 
     return data;
   } catch (error) {
-    handleError(error);
+    // handleError(error);
   }
 }
 
@@ -44,19 +44,19 @@ export async function getHomeByIdLkf(lkf_id: string): Promise<any> {
 
 
 
-// Helper function to handle errors
-function handleError(error: any) {
-  if (error instanceof ResponseError) {
-    console.error('ResponseError:', error.message);
-    throw error;  // Rethrow or handle the error as needed
-  } else if (error instanceof Error) {
-    console.error('Error:', error.message);
-    throw new Error('An unexpected error occurred.');  // General error message
-  } else {
-    console.error('Unknown error:', error);
-    throw new Error('An unexpected error occurred.');
-  }
-}
+// // Helper function to handle errors
+// function handleError(error: any) {
+//   if (error instanceof ResponseError) {
+//     console.error('ResponseError:', error.message);
+//     throw error;  // Rethrow or handle the error as needed
+//   } else if (error instanceof Error) {
+//     console.error('Error:', error.message);
+//     throw new Error('An unexpected error occurred.');  // General error message
+//   } else {
+//     console.error('Unknown error:', error);
+//     throw new Error('An unexpected error occurred.');
+//   }
+// }
 
 
 

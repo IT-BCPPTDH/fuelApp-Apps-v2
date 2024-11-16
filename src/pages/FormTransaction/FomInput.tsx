@@ -26,6 +26,7 @@ import {
   InputChangeEventDetail,
   IonPopover,
   useIonToast,
+  IonAlert
 } from "@ionic/react";
 import {
   cameraOutline,
@@ -48,7 +49,8 @@ import {
   getFbrByUnit,
   getLatestLkfId,
 } from "../../utils/getData";
-import DynamicAlert from "../../components/Alert";
+
+
 import { fetchOperatorData, fetchQuotaData, fetchUnitData, fetchUnitLastTrx, getDataFromStorage, removeDataFromStorage } from "../../services/dataService";
 import Select, { ActionMeta, SingleValue } from "react-select";
 import { getLatestTrx } from "../../utils/getData";
@@ -60,6 +62,7 @@ import { getCalculationIssued } from "../../utils/getData";
 import CameraInput from "../../components/takeFoto";
 import { saveDataToStorage } from "../../services/dataService";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
+
 
 
 interface Typetrx {
@@ -113,9 +116,14 @@ const typeTrx: Typetrx[] = [
   { id: 4, name: "Receipt KPC" },
 ];
 
+
+interface FormTRXProps {
+  setDataHome: (data: any[]) => void; // Type for the setDataHome function
+}
+
 const compareWith = (o1: Typetrx, o2: Typetrx) => o1.id === o2.id;
 
-const FormTRX: React.FC = () => {
+const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   const input1Ref = useRef<HTMLIonInputElement>(null);
   const input2Ref = useRef<HTMLIonInputElement>(null);
 
@@ -146,9 +154,7 @@ const FormTRX: React.FC = () => {
 
   const [fbr, setFbr] = useState<number | undefined>(undefined);
   const [flowStart, setFlowStart] = useState<number | undefined>(undefined);
-  const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(
-    undefined
-  );
+  const [flowMeterAwal, setFlowMeterAwal] = useState<number>(0);
   const [flowMeterAkhir, setFlowMeterAkhir] = useState<number | undefined>(
     undefined
   );
@@ -178,6 +184,8 @@ const FormTRX: React.FC = () => {
   const [Refrence, setRefrence] = useState<number | undefined>(undefined);
   const [stationData, setStationData] = useState<any>(null);
   const [showError, setShowError] = useState<boolean>(false);
+  const [showErrorType, setShowErrorType] = useState<boolean>(false);
+  const [showJamError, setShowJamError] = useState<boolean>(false);
   // Ensure flowEnd is a number
 
   const [successModalOpen, setSuccessModalOpen] = useState(false);
@@ -194,6 +202,7 @@ const FormTRX: React.FC = () => {
   const [usedQuota, setUsedQuota] = useState(0);
   const [remainingQuota, setRemainingQuota] = useState(0);
   const [quantity, setQuantity] =useState<number | null>(0); 
+  const [quantityLast, setQuantityLast] =useState<number | null>(0); 
   const [quantityError, setQuantityError] = useState("");
   const [employeeError, setemployeeError] = useState<boolean>(false);
   const [unitQouta, setUnitQouta] = useState(0);
@@ -258,7 +267,7 @@ const [endTime, setEndTime] = useState<string | undefined>(undefined);
 const [qoutaData, setquotaData] = useState<number | null>(null);
 const [modelUnit, setModelUnit] = useState<string>('');
 const [owner, setOwner] = useState<string>('');
-const [qtyLast, setQtyLast] = useState<number | undefined>(undefined);
+const [qtyLast, setQtyLast] = useState<number >(0);
 
 const [photoFile, setPhotoFile] = useState<File | null>(null); // For the file
 
@@ -333,7 +342,7 @@ const [stock, setStock] = useState<number>(0);
         console.error("Failed to parse stock data from local storage", error);
       }
     } else {
-      console.log("No stock data found in local storage");
+     
     }
   }, []);
 
@@ -365,7 +374,7 @@ const [stock, setStock] = useState<number>(0);
       if (storedData) {
         try {
           const parsedData = JSON.parse(storedData);
-          console.log("data:", parsedData);
+         
           setStationData(parsedData);
         } catch (error) {
           console.error(
@@ -384,7 +393,7 @@ const [stock, setStock] = useState<number>(0);
   const handleRadioChange = (event: CustomEvent) => {
     const selectedValue = event.detail.value as Typetrx;
     setSelectedType(selectedValue);
-    console.log("Selected type:", JSON.stringify(selectedValue));
+  
   };
 
   const isFormDisabled = !selectedUnit;
@@ -406,32 +415,195 @@ const [stock, setStock] = useState<number>(0);
     }
   };
 
-  const handleFileChange = async (
-event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetStateAction<File | null>>, setBase64: React.Dispatch<React.SetStateAction<string | undefined>>, setSignature: React.Dispatch<React.SetStateAction<string | null>>  ) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      try {
-        // Convert the file to base64
-        const base64 = await convertToBase64(file);
+// const handleFileChange = async (
+// event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetStateAction<File | null>>, setBase64: React.Dispatch<React.SetStateAction<string | undefined>>, setSignature: React.Dispatch<React.SetStateAction<string | null>>  ) => {
+//     const file = event.target.files?.[0];
+//     if (file) {
+//       try {
+//         // Convert the file to base64
+//         const base64 = await convertToBase64(file);
+        
        
-      } catch (error) {
-        console.error("Error converting file to base64", error);
-      }
+//       } catch (error) {
+//         console.error("Error converting file to base64", error);
+//       }
+//     }
+//   };
+  
+  
+  
+const handleFileChange = async (
+  event: React.ChangeEvent<HTMLInputElement>,
+  setPhoto: React.Dispatch<React.SetStateAction<File | null>>,
+  setBase64: React.Dispatch<React.SetStateAction<string | undefined>>,
+  setSignature: React.Dispatch<React.SetStateAction<string | null>>
+) => {
+  const file = event.target.files?.[0]; // Get the selected file
+
+  if (file) {
+    try {
+      // Step 1: Set the photo state (storing the file itself)
+      setPhoto(file);
+
+      // Step 2: Convert the file to Base64 using a utility function
+      const base64 = await convertToBase64(file);
+
+      // Step 3: Set the Base64 state
+      setBase64(base64);
+
+      // Step 4: Set a signature or handle signature logic (optional)
+      // You might want to derive the signature from the file, or simply use a placeholder for now
+      const signature = generateSignature(file); // This is hypothetical; you can replace it with your own logic
+      setSignature(signature);
+
+
+    } catch (error) {
+      console.error("Error converting file to base64", error);
     }
-  };
-  
-  
-  
-  
+  }
+};
+
+const convertToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      resolve(reader.result as string); // Resolve with the base64 string
+    };
+    reader.onerror = (error) => {
+      reject(error); // Reject on error
+    };
+    reader.readAsDataURL(file); // Start reading the file as a Data URL (base64)
+  });
+};
+
+const generateSignature = (file: File): string => {
+  // Example: you could generate a hash, timestamp, or use any other method to create a signature
+  return `${file.name}_${Date.now()}`;
+};
 
   const handleClose = () => {
     route.push("/dashboard");
   };
 
+  // const handlePost = async (e: React.FormEvent) => {
+  //   const validQuantity = quantity ?? 0;
+  //   if (isNaN(validQuantity) || validQuantity <= 0) {
+  //     setQuantityError("Qty Issued harus lebih besar dari 0");
+  //     setIsError(true);
+  //     return;
+  //   }
+  
+  //   if (!selectedType || !selectedUnit || !operatorOptions || quantity === null || 
+  //       fuelman_id === null || fbr === null || flowMeterAwal === null || 
+  //       flowMeterAkhir === null || !startTime || !endTime) {
+  //     setShowError(true);
+  //     setemployeeError(true);
+  //     return;
+  //   }
+  
+  //   const typeTrxValue = typeTrx[0];
+  //   const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
+  //   const fromDataId = Date.now().toString();
+   
+   
+  //   const lkf_id = await getLatestLkfId();
+  
+  //   const dataPost: DataFormTrx = {
+  //     from_data_id: fromDataId,
+  //     no_unit: selectedUnit!,
+  //     model_unit: model!,
+  //     owner: owner!,
+  //     date_trx: new Date().toISOString(),
+  //     hm_last: Number(hmkmLast),
+  //     hm_km: Number(hmkmValue),
+  //     qty_last: quantity ?? 0,
+  //     qty: quantity ?? 0,
+  //     flow_start: Number(flowMeterAwal),
+  //     flow_end: flow_end,
+  //     name_operator: fullName!,
+  //     fbr: fbrResult,
+  //     lkf_id: lkf_id ?? "",
+  //     signature: signatureBase64 ?? "",
+  //     // signature: signature,
+  //     type: selectedType?.name ?? "",
+  //     foto: photoPreview ?? "",
+  //     fuelman_id: fuelman_id!,
+  //     jde_operator: fuelman_id!,
+  //     status: status ?? 0,
+  //     date: "",
+  //     start: startTime,
+  //     end: endTime,
+  //   };
+  
+  //   try {
+  //     if (isOnline) {
+  //       const response = await postTransaksi(dataPost);
+  //       await insertNewData(dataPost);
+  //       await insertNewDataHistori(dataPost);
+  //       updateCard();
+  
+  //       if (response.status === 200) {
+  //         dataPost.status = 1;
+  //         await insertNewData(dataPost);
+  //         await insertNewDataHistori(dataPost);
+         
+  //         if (quantity > 0) {
+  //           updateLocalStorageQuota(selectedUnit, quantity);
+  //         }
+  //         alert("Transaksi sukses dikirim ke server");
+  //       }
+  //     } else {
+  //       const unitQuota =  await getDataFromStorage('unitQuota');
+       
+  //       const newQty = dataPost.qty;
+
+  //         for (let index = 0; index < unitQuota.length; index++) {
+  //           const element = unitQuota[index];
+          
+  //           if (element.unit_no === dataPost.no_unit) {
+  //             element.used = element.used + newQty; 
+  //           }
+  //         }
+        
+  //       const cardDast = localStorage.getItem('cardDast');
+       
+
+  //       dataPost.status = 0;
+  //       await insertNewData(dataPost);
+  //       await insertNewDataHistori(dataPost);
+  //       await saveDataToStorage('unitQuota',unitQuota);
+  //       alert("Transaksi tersimpan pada local");
+  //     }
+
+  //     route.push("/dashboard");
+  //   } catch (error) {
+  //     console.error("Error occurred while posting data:", error);
+  //     setModalMessage("Error occurred while posting data: " + error);
+  //     setErrorModalOpen(true);
+  //   }
+  // };
+  
+  const updateCardDashFlowMeter = (
+    flowMeterAkhir: number,
+    cardData: any[] = [],
+    setDataHome?: Function
+  ) => {
+    const updatedCardData = cardData.map((item: any) =>
+      item.title === "Flow Meter Akhir" ? { ...item, value: flowMeterAkhir } : item
+    );
+  
+    if (setDataHome) {
+      setDataHome(updatedCardData); // Update state if the function is available
+    } else {
+      console.warn("setDataHome function is not defined.");
+    }
+  
+    localStorage.setItem("cardDash", JSON.stringify(updatedCardData)); // Persist changes
+  };
+
   const handlePost = async (e: React.FormEvent) => {
-
- 
-
+    e.preventDefault(); // Prevent default form submission behavior
+  
     const validQuantity = quantity ?? 0;
     if (isNaN(validQuantity) || validQuantity <= 0) {
       setQuantityError("Qty Issued harus lebih besar dari 0");
@@ -439,10 +611,20 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
       return;
     }
   
-    if (!selectedType || !selectedUnit || !operatorOptions || quantity === null || 
-        fuelman_id === null || fbr === null || flowMeterAwal === null || 
-        flowMeterAkhir === null || !startTime || !endTime) {
+    if (
+      !selectedType ||
+      !selectedUnit ||
+      !operatorOptions ||
+      quantity === null ||
+      fuelman_id === null ||
+      fbr === null ||
+      flowMeterAwal === null ||
+      flowMeterAkhir === null ||
+      !startTime ||
+      !endTime
+    ) {
       setShowError(true);
+      setShowErrorType(true);
       setemployeeError(true);
       return;
     }
@@ -450,8 +632,7 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
     const typeTrxValue = typeTrx[0];
     const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
     const fromDataId = Date.now().toString();
-   
-   
+  
     const lkf_id = await getLatestLkfId();
   
     const dataPost: DataFormTrx = {
@@ -460,9 +641,9 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
       model_unit: model!,
       owner: owner!,
       date_trx: new Date().toISOString(),
-      hm_last: Number(hmkmLast),
+      hm_last: Number(hmLast),
       hm_km: Number(hmkmValue),
-      qty_last: quantity ?? 0,
+      qty_last: qtyLast ?? 0,
       qty: quantity ?? 0,
       flow_start: Number(flowMeterAwal),
       flow_end: flow_end,
@@ -470,7 +651,6 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
       fbr: fbrResult,
       lkf_id: lkf_id ?? "",
       signature: signatureBase64 ?? "",
-      // signature: signature,
       type: selectedType?.name ?? "",
       foto: photoPreview ?? "",
       fuelman_id: fuelman_id!,
@@ -492,31 +672,44 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
           dataPost.status = 1;
           await insertNewData(dataPost);
           await insertNewDataHistori(dataPost);
-          alert("Transaksi Succes dikirim ke server");
+  
           if (quantity > 0) {
             updateLocalStorageQuota(selectedUnit, quantity);
           }
+  
+          // Update Flow Meter Akhir in cardDash (online mode)
+          const cardDashOnline = JSON.parse(localStorage.getItem("cardDash") || "[]");
+          updateCardDashFlowMeter(flow_end, cardDashOnline, setDataHome);
+  
+          alert("Transaksi sukses dikirim ke server");
         }
       } else {
-        const unitQuota =  await getDataFromStorage('unitQuota');
-       
+        const unitQuota = await getDataFromStorage("unitQuota");
         const newQty = dataPost.qty;
-
-          for (let index = 0; index < unitQuota.length; index++) {
-            const element = unitQuota[index];
-          
-            if (element.unit_no === dataPost.no_unit) {
-              element.used = element.used + newQty; 
-            }
+  
+        for (let index = 0; index < unitQuota.length; index++) {
+          const element = unitQuota[index];
+  
+          if (element.unit_no === dataPost.no_unit) {
+            element.used = element.used + newQty;
           }
-        
+        }
+  
+        const cardDashOffline = JSON.parse(localStorage.getItem("cardDash") || "[]");
+        if (Array.isArray(cardDashOffline)) {
+          // Update Flow Meter Akhir in cardDash (offline mode)
+          updateCardDashFlowMeter(flow_end, cardDashOffline, setDataHome);
+        } else {
+          console.error("Invalid cardDash data in localStorage");
+        }
+  
         dataPost.status = 0;
         await insertNewData(dataPost);
         await insertNewDataHistori(dataPost);
-        await saveDataToStorage('unitQuota',unitQuota);
-        alert("Trasaksi tersimpan pada local");
+        await saveDataToStorage("unitQuota", unitQuota);
+        alert("Transaksi tersimpan pada local");
       }
-
+  
       route.push("/dashboard");
     } catch (error) {
       console.error("Error occurred while posting data:", error);
@@ -524,7 +717,6 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
       setErrorModalOpen(true);
     }
   };
-  
 
   const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
@@ -555,7 +747,7 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
   const insertNewData = async (data: DataFormTrx) => {
     try {
       await addDataTrxType(data);
-      console.log("Data inserted successfully.");
+     
     } catch (error) {
       console.error("Failed to insert new data:", error);
     }
@@ -564,7 +756,7 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
   const insertNewDataHistori = async (data: DataFormTrx) => {
     try {
       await addDataHistory(data);
-      console.log("Data inserted successfully.");
+  
     } catch (error) {
       console.error("Failed to insert new data:", error);
     }
@@ -573,8 +765,23 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
 
   const handleSignatureConfirm = (newSignature: string) => {
     setSignatureBase64(newSignature);
-    console.log("Updated Signature:", newSignature);
+   
   };
+
+  // useEffect(() => {
+  //   const loadUnitData = async () => {
+  //     const cachedUnitData = await getDataFromStorage('allUnit');
+  //     if (cachedUnitData) {
+  //       setUnitOptions(cachedUnitData);
+  //     } else {
+  //       const units = await fetchUnitData();
+  //       setUnitOptions(units);
+
+  //     }
+  //   };
+
+  //   loadUnitData();
+  // }, []);
 
   useEffect(() => {
     const loadUnitData = async () => {
@@ -591,7 +798,6 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
     loadUnitData();
   }, []);
 
-
   useEffect(() => {
     const loadOperatorData = async () => {
       const cachedData = await getDataFromStorage('allOperator');
@@ -607,7 +813,7 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
   }, []);
 
   useEffect(() => {
-    console.log("operatorOptions updated:", operatorOptions);
+   
   }, [operatorOptions]);
 
 
@@ -624,7 +830,7 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
   }, []);
 
   useEffect(() => {
-    console.log("Qouta  updated:", );
+   
   }, [qoutaData]);
 
 
@@ -640,7 +846,7 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
   const updatedKuota = async (date:String) => {
     removeDataFromStorage('unitQuota')
     const cards = await getAllQuota(date);
-    console.log("QQQ",cards)
+ 
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
@@ -676,13 +882,13 @@ event: React.ChangeEvent<HTMLInputElement>, setPhoto: React.Dispatch<React.SetSt
   useEffect(() => {
     const fetchJdeOptions = async () => {
       const storedJdeOptions = await getDataFromStorage("allOperator");
-      console.log("Data ADA?", storedJdeOptions); // Check the raw data
+ 
   
       if (storedJdeOptions) {
         try {
           if (typeof storedJdeOptions === 'string') {
             const parsedJdeOptions = JSON.parse(storedJdeOptions);
-            console.log("Parsed JDE Options:", parsedJdeOptions);
+           
             setJdeOptions(parsedJdeOptions);
           } else {
             setJdeOptions([]); 
@@ -810,23 +1016,22 @@ const handleEndTimeChange = (e: CustomEvent) => {
 
   // Cek apakah endTime lebih kecil dari startTime
   if (startTime && newEndTime < startTime) {
-    setShowError(true);
+    setShowJamError(true);
   } else {
-    setShowError(false);
+    setShowJamError(false);
   }
 };
 
 useEffect(() => {
-  const userData = localStorage.getItem("cardDash");
-  console.log("dataUse", userData);
-
-  if (userData) {
-    const parsedData = JSON.parse(userData);
+  const dataFlowDash = localStorage.getItem("cardDash");
+  console.log(dataFlowDash)
+  if (dataFlowDash) {
+    const parsedData = JSON.parse(dataFlowDash);
     // Mencari item dengan title "Flow Meter Awal"
     const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
     const flowStockItem= parsedData.find((item: { title: string; }) => item.title === "Stock On Hand");
     console.log("flow akhir",flowMeterItem)
-    console.log("stock ni",flowStockItem)
+   
 
     if (flowMeterItem) {
       setFlowMeterAwal(flowMeterItem.value); 
@@ -837,6 +1042,18 @@ useEffect(() => {
   }
 }, [])
 
+
+// useEffect(() => {
+//   const fetchData = async () => {
+//     const dataFlowDash = await getShiftDataByLkfId()
+//     if (dataFlowDash) {
+//       // Perform any actions with the dataFlowDash here
+//       console.log("Data Flow ", dataFlowDash);
+//     }
+//   };
+
+//   fetchData(); // Call the async function
+// }, []);
 
 
 // fix code
@@ -1025,18 +1242,26 @@ useEffect(() => {
 
 const calculateFlowEnd = (typeTrx: string): string | number => {
   if (flowMeterAwal !== undefined && quantity !== undefined) {
-    
-    // Jika tipe transaksi adalah Receipt atau Receipt KPC
     if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
+      // For "Receipt" or "Receipt KPC", simply return flowMeterAwal
       return flowMeterAwal !== 0 ? flowMeterAwal : "N/A";
-    } else {
-      // Jika tipeTrx bukan receipt atau receipt KPC, lakukan perhitungan
-      const totalFlowEnd = flowMeterAwal + (quantity ?? 0); 
-      return  totalFlowEnd !== 0 ?  totalFlowEnd  : "N/A"; 
+    } 
+    
+    if (typeTrx === "Issued" || typeTrx === "Transfer") {
+      // For "Issued" or "Transfer", calculate totalFlowEnd
+      const totalFlowEnd = flowMeterAwal + (quantity ?? 0);
+      return totalFlowEnd !== 0 ? totalFlowEnd : "N/A";
     }
   }
+  // Return empty string if no conditions are met or inputs are invalid
   return ""; 
 };
+
+console.log(calculateFlowEnd("Receipt"));       // Output: 100
+console.log(calculateFlowEnd("Receipt KPC"));  // Output: 100
+console.log(calculateFlowEnd("Issued")); 
+console.log(calculateFlowEnd("Transfer")); 
+
 
 // hitung fbr offline fi
 
@@ -1070,53 +1295,6 @@ useEffect(() => {
 
 }, [hmkmValue, hmLast, qtyLast]);
 
-// hitung fbr online
-// useEffect(() => {
-//   console.log('useEffect triggered with values:', { hmkmValue, hmkmLast, qtyValue });
-
-//   const calculateFBR = (): number => {
-//     // Check if the necessary values are numbers
-//     if (typeof hmkmValue === 'number' && typeof hmkmLast === 'number' && typeof qtyValue === 'number') {
-//       const difference = hmkmLast - hmkmValue;
-//       console.log('Difference (hmLast - hmkm):', difference);
-
-//       if (qtyValue === 0) {
-//         console.log('qtyValue cannot be zero');
-//         return 0;
-//       }
-
-//       if (difference > 0) {
-//         const result = difference / qtyValue;
-//         console.log('Calculated FBR:', result);
-//         return parseFloat(result.toFixed(2)); // Round to 2 decimal places
-//       } else {
-//         console.log('Difference is not positive');
-//       }
-//     } else {
-//       console.log('Invalid input types:', { hmkmValue, hmkmLast, qtyValue });
-//     }
-//     return 0; // Default return value
-//   };
-
-//   const getOfflineData = async () => {
-//     // If the app is offline, try to fetch the latest hmkm from IndexedDB
-//     if (!navigator.onLine) {
-//       console.log("App is offline. Fetching hmkmLast from offline data.");
-//       const hmkm = await fetchLatestHmLast("selectedUnit");  // Use actual selected unit
-//       if (hmkm!== undefined ) {
-//         setHmLast(hmLast);  // Set the offline value for hmkmLast
-//       } else {
-//         console.warn("No offline hm_km data found.");
-//       }
-//     }
-//   };
-
-//   // First, handle offline scenario if applicable
-//   getOfflineData();
-
-//   // Proceed with FBR calculation
-//   setFbrResult(calculateFBR());
-// }, [hmkmValue, hmkmLast, qtyValue]);
 
 
 const filteredUnitOptions = (selectedType && 
@@ -1162,6 +1340,67 @@ useEffect(() => {
 
   getOfflineData();
 }, [selectedUnit]);
+
+
+
+// const handleUnitChange = async (
+//   newValue: SingleValue<{ value: string; label: string }>, 
+//   actionMeta: ActionMeta<{ value: string; label: string }>
+// ) => {
+//   if (newValue) {
+//     const unitValue = newValue.value; 
+//     setSelectedUnit(unitValue); // Set the selected unit
+
+//     // Find the selected unit option from unitOptions
+//     const selectedUnitOption = unitOptions.find(
+//       (unit) => unit.unit_no === unitValue
+//     );
+
+//     if (selectedUnitOption) {
+//       // Online data found, update state with online values
+//       setModel(selectedUnitOption.brand);
+//       setOwner(selectedUnitOption.owner);
+//       setHmkmValue(selectedUnitOption.hm_km);
+//       setHmKmLast(selectedUnitOption.hm_last);
+//       setQtyValue(selectedUnitOption.qty);
+
+//       const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+//       setKoutaLimit(newKoutaLimit);
+
+//       setShowError(
+//         unitValue.startsWith("LV") || 
+//         (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+//       );
+//     } else {
+//       console.log("You are offline");
+
+//       try {
+//         // Retrieve offline data from IndexedDB
+//         const offlineData = await fetchLatestHmLast(unitValue);
+//         console.log("Offline data fetched:", offlineData);
+
+//         // Set state with offline data if available
+//         if (offlineData.hm_km !== undefined) {
+//           setHmkmValue(Number(offlineData.hm_km));  // Set hm_km from offline data
+//         }
+//         if (offlineData.model_unit) {
+//           setModel(offlineData.model_unit); // Set model from offline data
+//         }
+//         if (offlineData.owner) {
+//           setOwner(offlineData.owner); // Set owner from offline data
+//         }
+//         if (offlineData.qty_last !== undefined) {
+//           setQtyValue(offlineData.qty_last); // Set qty from offline data
+//         }
+
+//       } catch (error) {
+//         console.error("Failed to retrieve data from IndexedDB:", error);
+//       }
+
+//       console.warn(`Unit with value ${unitValue} was not found in unitOptions.`);
+//     }
+//   }
+// };
 
 
 
@@ -1223,10 +1462,6 @@ const handleUnitChange = async (
     }
   }
 };
-
-
-
-
 useEffect(() => {
   const getOfflineData = async () => {
     // Clear hm_km value when a new unit is selected
@@ -1431,17 +1666,18 @@ useEffect(() => {
 
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
-              <IonRow>
+          
+            <IonRow>
               <IonCol size="8"
                     >
                       <div>
-                        <IonLabel style={{fontWeigt:"Bold" , fontSize:"24px"}}>
+                        <IonLabel style={{fontWeigt:"Bold" , fontSize:"16px"}}>
                           Pilih Transaksi
                           <span style={{ color: "red" }}> *</span>
                         </IonLabel>
                         <IonRadioGroup
                         style={{
-                          backgroundColor: showError && selectedType === undefined ? "rgba(255, 0, 0, 0.1)" : "transparent", // Apply red background if error
+                          backgroundColor: showErrorType && selectedType === undefined ? "rgba(255, 0, 0, 0.1)" : "transparent", // Apply red background if error
                           padding: "10px", // Ensure the block has padding for visibility
                           borderRadius: "5px",
                          
@@ -1457,8 +1693,8 @@ useEffect(() => {
                             </IonItem>
                           ))}
                         </IonRadioGroup>
-                        {showError && selectedType === undefined && (
-                          <p style={{ color: "red" }}>* Pilih salah satu tipe</p>
+                        {showErrorType && selectedType === undefined && (
+                          <p style={{ color: "red" }}>* Pilih Jenis Transaksi</p>
                         )}
                       </div>
                     </IonCol>
@@ -1541,6 +1777,37 @@ useEffect(() => {
                    
                 </IonRow>
               </IonGrid>
+              {/* <IonCol size="8"
+                    >
+                      <div>
+                        <IonLabel style={{fontWeigt:"Bold" , fontSize:"24px"}}>
+                          Pilih Transaksi
+                          <span style={{ color: "red" }}> *</span>
+                        </IonLabel>
+                        <IonRadioGroup
+                        style={{
+                          backgroundColor: showError && selectedType === undefined ? "rgba(255, 0, 0, 0.1)" : "transparent", // Apply red background if error
+                          padding: "10px", // Ensure the block has padding for visibility
+                          borderRadius: "5px",
+                         
+                        }}
+                          className="radio-display"
+                          value={selectedType}
+                          onIonChange={handleRadioChange}
+                          compareWith={compareWith}
+                        >
+                          {typeTrx.map((type) => (
+                            <IonItem  style={{fontWeigt:"500px", fontSize:"20px"}} key={type.id} className="item-no-border" >
+                              <IonRadio labelPlacement="end"  value={type}>{type.name}</IonRadio>
+                            </IonItem>
+                          ))}
+                        </IonRadioGroup>
+                        {showError && selectedType === undefined && (
+                          <p style={{ color: "red" }}>* Pilih salah satu tipe</p>
+                        )}
+                      </div>
+                    </IonCol> */}
+                
               <IonRow>
                 <IonCol>
                   <IonLabel>
@@ -1670,6 +1937,7 @@ useEffect(() => {
                           ? calculateFlowEnd(selectedType?.name || "")
                           : ""
                     }
+                   
                     placeholder=""
                   />
                   
@@ -1775,10 +2043,10 @@ useEffect(() => {
                     disabled={isFormDisabled}
                     value={endTime}
                   />
-                  {showError && endTime === undefined && (
+                  {showJamError && endTime === undefined && (
                     <p style={{ color: "red" }}>* Jam selesai pengisian harus input</p>
                   )}
-                  {showError && startTime && endTime && endTime < startTime && (
+                  {showJamError && startTime && endTime && endTime < startTime && (
                     <p style={{ color: "red" }}>* Jam selesai tidak boleh lebih kecil dari jam mulai</p>
                   )}
                 </IonCol>
@@ -1847,9 +2115,10 @@ useEffect(() => {
           onConfirm={handleSignatureConfirm}
         />
         {/* Error Modal */}
-
+          
       </IonContent>
     </IonPage>
   );
 };
 export default FormTRX;
+

@@ -367,10 +367,10 @@ useEffect(() => {
     } catch (error) {
       setShowError(true);
       presentToast({
-        message: 'You are offline. Data saved locally and will be sent when online.',
+        message: 'Selamat Bekerja',
         duration: 2000,
         position: 'top',
-        color: 'warning',
+        color: 'success',
       });
       await addDataToDB(dataPost); // Add new data to local DB
       router.push("/dashboard");

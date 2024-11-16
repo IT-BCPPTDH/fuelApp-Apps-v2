@@ -308,7 +308,7 @@ useEffect(() => {
             <IonCol><IonText>Fullname</IonText></IonCol>
             <IonCol><IonText>Status</IonText></IonCol>
           </IonRow>
-          {paginatedData.map((item: TableDataItem) => (
+          {/* {paginatedData.map((item: TableDataItem) => (
             <IonRow style={{ width: "900px" }} key={item.from_data_id}>
               <IonCol><IonText>{item.unit_no}</IonText></IonCol>
               <IonCol><IonText>{item.model_unit}</IonText></IonCol>
@@ -320,7 +320,26 @@ useEffect(() => {
               <IonCol><IonText>{item.name_operator}</IonText></IonCol>
               <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol>
             </IonRow>
-          ))}
+          ))} */}
+          {paginatedData.map((item: TableDataItem) => {
+  // If the transaction type is "Receipt" or "Receipt KPC", use fm_awal as fm_akhir
+  const displayFmAkhir = (item.jenis_trx === 'Receipt' || item.jenis_trx === 'Receipt KPC') ? item.fm_awal : item.fm_akhir;
+
+  return (
+    <IonRow style={{ width: "900px" }} key={item.from_data_id}>
+      <IonCol><IonText>{item.unit_no}</IonText></IonCol>
+      <IonCol><IonText>{item.model_unit}</IonText></IonCol>
+      <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
+      <IonCol><IonText>{item.jenis_trx}</IonText></IonCol>
+      <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
+      <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
+      <IonCol><IonText>{displayFmAkhir}</IonText></IonCol> {/* Display fm_awal or fm_akhir based on the condition */}
+      <IonCol><IonText>{item.name_operator}</IonText></IonCol>
+      <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol>
+    </IonRow>
+  );
+})}
+
         </IonGrid>
       </IonCard>
       <div style={{ textAlign: 'start', margin: '20px' }}>

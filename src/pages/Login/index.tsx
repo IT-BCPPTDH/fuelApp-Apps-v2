@@ -329,9 +329,13 @@ useEffect(() => {
             <IonGrid className="ion-padding">
               <IonRow className="ion-justify-content-left logo-login">
                 <IonCol size="5">
-                  <IonImg className="img" src="logodh.png" alt="Logo DH" />
-                  <span className="sub-title">Fuel App V2.0</span>
+                  <IonImg className="img" src="logodhbaru1.png" alt="Logo DH"  />
+                  
                 </IonCol>
+               
+              </IonRow>
+              <IonRow>
+              <span className="sub-title">Fuel App V2.0</span>
               </IonRow>
               <IonRow className="mt-content">
                 {alreadyLoggedIn ? (
@@ -397,7 +401,7 @@ useEffect(() => {
                         {loading ? "Loading..." : "Login"}
                       </IonButton>
 
-                      <IonButton  color="dark"  expand="block" onClick={handleGet} disabled={loading}>
+                      <IonButton  color="warning"  expand="block" onClick={handleGet} disabled={loading}>
                         {loading ? "Loading..." : "Refresh Data"}
                       </IonButton>
 
