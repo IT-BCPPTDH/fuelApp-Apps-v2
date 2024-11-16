@@ -177,9 +177,81 @@ useEffect(() => {
 }, []);
 
 
+// useEffect(() => {
+//   const fetchShiftData = async () => {
+//     try {
+//       // Get the latest LKF ID
+//       const lkfId = await getLatestLkfId();
+//       console.log('Latest LKF ID:', lkfId); // Log the latest LKF ID
+
+//       if (lkfId) {
+//         // Get shift data using the LKF ID
+//         const shiftData = await getShiftDataByLkfId(lkfId);
+       
+
+//         // Get calculation issued
+//         const calculationIssued = await getCalculationIssued(lkfId);
+        
+
+//         // Get calculation receive and update stock on hand
+//         const calculationReceive = await getCalculationReceive(lkfId);
+       
+
+//         // Treat calculationReceive as a number directly
+//         const qtyReceive = typeof calculationReceive === 'number' ? calculationReceive : 0;
+        
+//         const qtyIssued = typeof calculationIssued === 'number' ? calculationIssued : 0;
+
+//         // Calculate Stock On Hand as Opening Dip + QTY Received - QTY Issued
+//         const openingDip = shiftData.openingDip ?? 0;
+//         const stockOnHand = openingDip + qtyReceive - qtyIssued;
+
+//         // Calculate Balance as Stock On Hand - QTY Issued
+//         const balance = stockOnHand - qtyIssued;
+//         const flAkhir =  
+        
+
+//         // Update state
+//         setStockOnHand(stockOnHand);
+
+//         // Update cardData state with fetched shift data
+//         setcardDash([
+//           { title: 'Shift', value: shiftData.shift || 'No Data', icon: 'shift.svg' },
+//           { title: 'FS/FT No', value: shiftData.station || 'No Data', icon: 'fs.svg' },
+//           { title: 'Opening Dip', value: openingDip || 0, icon: 'openingdeep.svg' },
+//           { title: 'Receipt', value: qtyReceive || 0, icon: 'receipt.svg' },
+//           { title: 'Stock On Hand', value: stockOnHand || 0, icon: 'stock.svg' },
+//           { title: 'QTY Issued', value: qtyIssued || 0, icon: 'issued.svg' },
+//           { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
+//           { title: 'Closing Dip', value: shiftData.openingDip ?? 0, icon: 'close.svg' },
+//           { title: 'Flow Meter Awal', value: shiftData.flowMeterStart ?? 0, icon: 'flwawal.svg' },
+//           {
+//             title: 'Flow Meter Akhir',
+//                value: (shiftData.flowMeterStart ?? 0) + (qtyIssued ?? 0),
+//             icon: 'flwakhir.svg'
+//           },
+//           { title: 'Total Flow Meter',value: qtyIssued || 0, icon: 'total.svg' },
+//           { title: 'Variance',value: (shiftData.openingDip ?? 0) - (balance  ?? 0), icon: 'variance.svg' }
+          
+//         ]);
+//       } else {
+//         console.log('No LKF ID found');
+//       }
+//     } catch (error) {
+//       console.error('Error fetching shift data:', error);
+//     }
+//   };
+
+
+//   fetchShiftData();
+// }, []);
+
 useEffect(() => {
   const fetchShiftData = async () => {
     try {
+      // Remove existing cardDash data from localStorage
+      localStorage.removeItem('cardDash');
+
       // Get the latest LKF ID
       const lkfId = await getLatestLkfId();
       console.log('Latest LKF ID:', lkfId); // Log the latest LKF ID
@@ -187,19 +259,15 @@ useEffect(() => {
       if (lkfId) {
         // Get shift data using the LKF ID
         const shiftData = await getShiftDataByLkfId(lkfId);
-       
 
         // Get calculation issued
         const calculationIssued = await getCalculationIssued(lkfId);
-        
 
         // Get calculation receive and update stock on hand
         const calculationReceive = await getCalculationReceive(lkfId);
-       
 
         // Treat calculationReceive as a number directly
         const qtyReceive = typeof calculationReceive === 'number' ? calculationReceive : 0;
-        
         const qtyIssued = typeof calculationIssued === 'number' ? calculationIssued : 0;
 
         // Calculate Stock On Hand as Opening Dip + QTY Received - QTY Issued
@@ -208,14 +276,12 @@ useEffect(() => {
 
         // Calculate Balance as Stock On Hand - QTY Issued
         const balance = stockOnHand - qtyIssued;
-        const flAkhir =  
-        
 
         // Update state
         setStockOnHand(stockOnHand);
 
         // Update cardData state with fetched shift data
-        setcardDash([
+        const cardData = [
           { title: 'Shift', value: shiftData.shift || 'No Data', icon: 'shift.svg' },
           { title: 'FS/FT No', value: shiftData.station || 'No Data', icon: 'fs.svg' },
           { title: 'Opening Dip', value: openingDip || 0, icon: 'openingdeep.svg' },
@@ -227,13 +293,19 @@ useEffect(() => {
           { title: 'Flow Meter Awal', value: shiftData.flowMeterStart ?? 0, icon: 'flwawal.svg' },
           {
             title: 'Flow Meter Akhir',
-               value: (shiftData.flowMeterStart ?? 0) + (qtyIssued ?? 0),
+            value: (shiftData.flowMeterStart ?? 0) + (qtyIssued ?? 0),
             icon: 'flwakhir.svg'
           },
-          { title: 'Total Flow Meter',value: qtyIssued || 0, icon: 'total.svg' },
-          { title: 'Variance',value: (shiftData.openingDip ?? 0) - (balance  ?? 0), icon: 'variance.svg' }
-          
-        ]);
+          { title: 'Total Flow Meter', value: qtyIssued || 0, icon: 'total.svg' },
+          { title: 'Variance', value: (shiftData.openingDip ?? 0) - (balance ?? 0), icon: 'variance.svg' }
+        ];
+
+        // Set the new cardDash data into localStorage
+        localStorage.setItem('cardDash', JSON.stringify(cardData));
+
+        // Update state
+        setcardDash(cardData);
+
       } else {
         console.log('No LKF ID found');
       }
@@ -243,8 +315,7 @@ useEffect(() => {
   };
 
   fetchShiftData();
-}, []);
-
+}, []); // Empty dependency array ensures this effect runs once on mount
 
   useEffect(() => {
     // Function to format date as "Tanggal : 25 Januari 2025"
@@ -403,10 +474,14 @@ useEffect(() => {
   }
 
 
+ 
+
   const TambahData = async () => {
+    localStorage.getItem('cardDash');
+    
     route.push("/transaction");
   };
-
+  
 
 
 const handleGetTrx =  async() => {
@@ -515,15 +590,18 @@ const handleGetTrx =  async() => {
   
   const modifyDataExample = (newData: any) => {
     if (!Array.isArray(newData)) {
-      console.error('Expected newData to be an array but got:', newData);
+      
       return;
     }
   
     const updatedData = [...newData];
     const qtyIssuedIndex = updatedData.findIndex(item => item.title === 'QTY Issued');
+    const qtyfloweEndIndex = updatedData.findIndex(item => item.title === 'Flow Meter Akhir');
   
     if (qtyIssuedIndex !== -1) {
       const qtyIssuedItem = updatedData[qtyIssuedIndex];
+      const qtyFlowAkhirItem = updatedData[qtyfloweEndIndex];
+      console.log('Floe', qtyFlowAkhirItem)
       const currentQtyIssued = typeof qtyIssuedItem.value === 'number' ? qtyIssuedItem.value : 0;
       const qtyLast = typeof qtyIssuedItem.qty_last === 'number' ? qtyIssuedItem.qty_last : 0;
       updatedData[qtyIssuedIndex].value = currentQtyIssued + qtyLast;

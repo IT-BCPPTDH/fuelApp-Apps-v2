@@ -583,11 +583,36 @@ const generateSignature = (file: File): string => {
   //   }
   // };
   
+  // const updateCardDashFlowMeter = (
+  //   flowMeterAkhir: number,
+  //   cardData: any[] = [],
+  //   setDataHome?: Function
+  // ) => {
+  //   const updatedCardData = cardData.map((item: any) =>
+  //     item.title === "Flow Meter Akhir" ? { ...item, value: flowMeterAkhir } : item
+  //   );
+  
+  //   if (setDataHome) {
+  //     setDataHome(updatedCardData); // Update state if the function is available
+  //   } else {
+  //     console.warn("setDataHome function is not defined.");
+  //   }
+  
+  //   localStorage.setItem("cardDash", JSON.stringify(updatedCardData)); // Persist changes
+  // };
+
   const updateCardDashFlowMeter = (
     flowMeterAkhir: number,
     cardData: any[] = [],
-    setDataHome?: Function
+    setDataHome?: Function,
+    transactionType?: string // Optional parameter to check the transaction type
   ) => {
+    // Check if transactionType is "Receipt" or "Receipt Kpc", skip if so
+    if (transactionType === "Receipt" || transactionType === "Receipt Kpc") {
+      console.log("Transaction type is Receipt or Receipt Kpc; update skipped.");
+      return; // Exit the function without making any updates
+    }
+  
     const updatedCardData = cardData.map((item: any) =>
       item.title === "Flow Meter Akhir" ? { ...item, value: flowMeterAkhir } : item
     );
@@ -600,6 +625,7 @@ const generateSignature = (file: File): string => {
   
     localStorage.setItem("cardDash", JSON.stringify(updatedCardData)); // Persist changes
   };
+  
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault(); // Prevent default form submission behavior
@@ -711,6 +737,8 @@ const generateSignature = (file: File): string => {
       }
   
       route.push("/dashboard");
+      
+     
     } catch (error) {
       console.error("Error occurred while posting data:", error);
       setModalMessage("Error occurred while posting data: " + error);
@@ -1021,26 +1049,61 @@ const handleEndTimeChange = (e: CustomEvent) => {
     setShowJamError(false);
   }
 };
-
 useEffect(() => {
   const dataFlowDash = localStorage.getItem("cardDash");
-  console.log(dataFlowDash)
-  if (dataFlowDash) {
-    const parsedData = JSON.parse(dataFlowDash);
-    // Mencari item dengan title "Flow Meter Awal"
-    const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
-    const flowStockItem= parsedData.find((item: { title: string; }) => item.title === "Stock On Hand");
-    console.log("flow akhir",flowMeterItem)
-   
+  console.log("Raw data from localStorage:", dataFlowDash);
 
-    if (flowMeterItem) {
-      setFlowMeterAwal(flowMeterItem.value); 
-    }
-    if (flowStockItem) {
-      setStock(flowStockItem.value); 
+  if (dataFlowDash) {
+    try {
+      const parsedData = JSON.parse(dataFlowDash);
+      console.log("Parsed data:", parsedData);
+
+      if (Array.isArray(parsedData)) {
+        // Mencari item dengan title "Flow Meter Awal"
+        const flowMeterItem = parsedData.find(
+          (item: { title: string }) => item.title === "Flow Meter Akhir"
+        );
+        const flowStockItem = parsedData.find(
+          (item: { title: string }) => item.title === "Stock On Hand"
+        );
+
+        console.log("Flow Meter Akhir:", flowMeterItem);
+        console.log("Stock On Hand:", flowStockItem);
+
+        if (flowMeterItem) {
+          setFlowMeterAwal(flowMeterItem.value);
+        }
+        if (flowStockItem) {
+          setStock(flowStockItem.value);
+        }
+      } else {
+        console.error("Parsed data is not an array:", parsedData);
+      }
+    } catch (error) {
+      console.error("Error parsing JSON from localStorage:", error);
     }
   }
-}, [])
+}, []);
+
+// useEffect(() => {
+//   const dataFlowDash = localStorage.getItem("cardDash");
+//   console.log(dataFlowDash)
+//   if (dataFlowDash) {
+//     const parsedData = JSON.parse(dataFlowDash);
+//     // Mencari item dengan title "Flow Meter Awal"
+//     const flowMeterItem = parsedData.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
+//     const flowStockItem= parsedData.find((item: { title: string; }) => item.title === "Stock On Hand");
+//     console.log("flow akhir",flowMeterItem)
+   
+
+//     if (flowMeterItem) {
+//       setFlowMeterAwal(flowMeterItem.value); 
+//     }
+//     if (flowStockItem) {
+//       setStock(flowStockItem.value); 
+//     }
+//   }
+// }, [])
 
 
 // useEffect(() => {

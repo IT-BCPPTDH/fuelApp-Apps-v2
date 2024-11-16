@@ -33,6 +33,7 @@ interface TableDataItem {
   fbr_historis: string;
   jenis_trx: string;
   qty_issued: number;
+  qty_last: number;
   fm_awal: number;
   fm_akhir: number;
   hm_last: number;
@@ -113,6 +114,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         fbr_historis: item.fbr ?? '',
         jenis_trx: item.type || '',
         qty_issued: item.qty ?? 0,
+        qty_last: item.qty_last ?? 0,
         fm_awal: item.flow_start ?? 0,
         fm_akhir: item.flow_end ?? 0,
         hm_last: item.hm_last,
@@ -164,7 +166,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       model_unit: item.model_unit,
       owner: item.owner,
       date_trx: new Date().toISOString(),
-      hm_last: item.hm_km,
+      hm_last: item.hm_last,
       hm_km: item.hm_km,
       qty_last: item.qty_issued,
       qty: item.qty_issued,
@@ -303,6 +305,7 @@ useEffect(() => {
             <IonCol><IonText>FBR Histori</IonText></IonCol>
             <IonCol><IonText>Jenis Trx</IonText></IonCol>
             <IonCol><IonText>QTY Issued</IonText></IonCol>
+            <IonCol><IonText>Issued Last</IonText></IonCol>
             <IonCol><IonText>FM Awal</IonText></IonCol>
             <IonCol><IonText>FM Akhir</IonText></IonCol>
             <IonCol><IonText>Fullname</IonText></IonCol>
@@ -332,6 +335,7 @@ useEffect(() => {
       <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
       <IonCol><IonText>{item.jenis_trx}</IonText></IonCol>
       <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
+      <IonCol><IonText>{item.qty_last}</IonText></IonCol>
       <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
       <IonCol><IonText>{displayFmAkhir}</IonText></IonCol> {/* Display fm_awal or fm_akhir based on the condition */}
       <IonCol><IonText>{item.name_operator}</IonText></IonCol>
