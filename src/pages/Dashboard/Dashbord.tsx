@@ -288,8 +288,8 @@ useEffect(() => {
           { title: 'Receipt', value: qtyReceive || 0, icon: 'receipt.svg' },
           { title: 'Stock On Hand', value: stockOnHand || 0, icon: 'stock.svg' },
           { title: 'QTY Issued', value: qtyIssued || 0, icon: 'issued.svg' },
-          { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
-          { title: 'Closing Dip', value: shiftData.openingDip ?? 0, icon: 'close.svg' },
+          // { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
+          // { title: 'Closing Dip', value: shiftData.openingDip ?? 0, icon: 'close.svg' },
           { title: 'Flow Meter Awal', value: shiftData.flowMeterStart ?? 0, icon: 'flwawal.svg' },
           {
             title: 'Flow Meter Akhir',
@@ -297,7 +297,7 @@ useEffect(() => {
             icon: 'flwakhir.svg'
           },
           { title: 'Total Flow Meter', value: qtyIssued || 0, icon: 'total.svg' },
-          { title: 'Variance', value: (shiftData.openingDip ?? 0) - (balance ?? 0), icon: 'variance.svg' }
+          // { title: 'Variance', value: (shiftData.openingDip ?? 0) - (balance ?? 0), icon: 'variance.svg' }
         ];
 
         // Set the new cardDash data into localStorage
@@ -745,12 +745,12 @@ const fetchcardDash = async (lkfId: string) => {
         { title: 'Receipt', value: totalReceive, icon: 'receipt.svg' },
         { title: 'Stock On Hand', value: stockOnHand || 'No Data', icon: 'stock.svg' },
         { title: 'QTY Issued', value: fetchedResult ?? 0, icon: 'issued.svg' },
-        { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
-        { title: 'Closing Dip', value: openingDip || 0, icon: 'close.svg' },
+        // { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
+        // { title: 'Closing Dip', value: openingDip || 0, icon: 'close.svg' },
         { title: 'Flow Meter Awal', value: flowMeterStart, icon: 'flwawal.svg' },
         { title: 'Flow Meter Akhir', value: flowMeterAkhir, icon: 'flwakhir.svg' },
         { title: 'Total Flow Meter', value: issued || 0, icon: 'total.svg' },
-        { title: 'Variance', value: item.totalVariance || 0, icon: 'variance.svg' },
+        // { title: 'Variance', value: item.totalVariance || 0, icon: 'variance.svg' },
       ];
 
       setDataHome(preparedData);
@@ -850,7 +850,7 @@ const fetchcardDash = async (lkfId: string) => {
             </IonRow>
           </IonGrid>
           <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <h4 >Fuelman : {fullname}</h4>
+            <h4 >Fuelman : {jde}</h4>
 
             <h4 >{latestDate}</h4>
           </IonRow>

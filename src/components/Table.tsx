@@ -305,7 +305,6 @@ useEffect(() => {
             <IonCol><IonText>FBR Histori</IonText></IonCol>
             <IonCol><IonText>Jenis Trx</IonText></IonCol>
             <IonCol><IonText>QTY Issued</IonText></IonCol>
-            <IonCol><IonText>Issued Last</IonText></IonCol>
             <IonCol><IonText>FM Awal</IonText></IonCol>
             <IonCol><IonText>FM Akhir</IonText></IonCol>
             <IonCol><IonText>Fullname</IonText></IonCol>
@@ -337,7 +336,7 @@ useEffect(() => {
       <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
       <IonCol><IonText>{item.qty_last}</IonText></IonCol>
       <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
-      <IonCol><IonText>{displayFmAkhir}</IonText></IonCol> {/* Display fm_awal or fm_akhir based on the condition */}
+     
       <IonCol><IonText>{item.name_operator}</IonText></IonCol>
       <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol>
     </IonRow>
