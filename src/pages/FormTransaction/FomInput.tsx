@@ -59,7 +59,7 @@ import { getAllQuota } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
-import CameraInput from "../../components/takeFoto";
+// import CameraInput from "../../components/takeFoto";
 import { saveDataToStorage } from "../../services/dataService";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 
@@ -425,29 +425,34 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     setSignature: React.Dispatch<React.SetStateAction<string | null>>
   ) => {
     const file = event.target.files?.[0]; // Get the selected file
-
+  
     if (file) {
       try {
-        // Step 1: Set the photo state (storing the file itself)
-        setPhoto(file);
-
-        // Step 2: Convert the file to Base64 using a utility function
+    
+        console.log('Selected file:', file);
+        
+        // You may want to generate a "signature" from the file, e.g., a hash or name
+        const fotoSignature = generateSignature(file); // Generate the signature based on your logic
+        console.log('Generated signature:', fotoSignature); // Log the signature
+        setSignature(fotoSignature); // Set the signature state
+  
+        // Step 2: Convert the file to Base64 using the convertToBase64 function
         const base64 = await convertToBase64(file);
-
+        console.log('Base64 representation:', base64); // Log Base64 string
+  
         // Step 3: Set the Base64 state
         setBase64(base64);
-
-        // Step 4: Set a signature or handle signature logic (optional)
-        // You might want to derive the signature from the file, or simply use a placeholder for now
-        const signature = generateSignature(file); // This is hypothetical; you can replace it with your own logic
-        setSignature(signature);
-
-
+  
+        // You do not need to generate the signature again here, unless it's different logic
+        // const signature = generateSignature(file); // If you need a different logic for signature, call it here
+        // setSignature(signature);
+  
       } catch (error) {
-        console.error("Error converting file to base64", error);
+        console.error('Error handling file:', error);
       }
     }
   };
+  
 
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -870,25 +875,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     determineShift();
   }, []);
 
-  // const handleStartTimeChange = (e: CustomEvent) => {
-  //   const newStartTime = e.detail.value as string;
-  //   setStartTime(newStartTime); 
-  //   const now = new Date();
-  //     const currentHour = now.getHours();
-  //     const isDayShift = currentHour >= 6 && currentHour < 18;
-  //     const isNightShift = currentHour >= 18 || currentHour < 6;
 
-  //   if (endTime) {
-  //     if (!validateShiftTime(startTime, newStartTime)) {
-  //       setShowJamError(true);
-  //       setShowJamErrorInput(true); 
-  //     } else {
-  //       setShowJamError(false);
-  //       setShowJamErrorInput(false); 
-  //     }
-  //   }
-  // };
-  
   const handleStartTimeChange = (e: CustomEvent) => {
     const newStartTime = e.detail.value as string;
     setStartTime(newStartTime);
@@ -940,75 +927,39 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     const isDayShift = currentHour >= 6 && currentHour < 18;
     const isNightShift = currentHour >= 18 || currentHour < 6;
   
-    // Define the shift start times based on current shift
+    // Define the shift start and end times based on current shift
     const shiftStart = isDayShift ? 6 : 18;  // 06:00 for Day shift, 18:00 for Night shift
     const shiftEnd = isDayShift ? 18 : 6;    // 18:00 for Day shift, 06:00 for Night shift
   
-    // Validate end time based on the determined shift
-    const newEndHour = new Date(`1970-01-01T${newEndTime}:00`).getHours();
+    // Convert the newEndTime to a Date object to extract the hours
+    const newEndDate = new Date(`1970-01-01T${newEndTime}:00`);
+    const newEndHour = newEndDate.getHours();
   
-    // Check if the new end time falls within the valid shift range
-    if (
-      (isDayShift && (newEndHour < shiftStart || newEndHour >= shiftEnd)) ||
-      (isNightShift && (newEndHour < shiftStart && newEndHour >= shiftEnd))
-    ) {
+    // Validate that the endTime is within the allowed shift time range
+    const isEndTimeInShiftRange =
+      (isDayShift && newEndHour >= shiftStart && newEndHour < shiftEnd) ||
+      (isNightShift && (newEndHour >= shiftStart || newEndHour < shiftEnd));
+  
+    // Check if endTime is earlier than startTime
+    const newStartDate = new Date(`1970-01-01T${startTime}:00`);
+    const isEndTimeAfterStartTime = newEndDate >= newStartDate;
+  
+    // If endTime is not within shift range or endTime is earlier than startTime, show an error
+    if (!isEndTimeInShiftRange || !isEndTimeAfterStartTime) {
       setShowJamError(true);
       setShowJamErrorInput(true);
     } else {
       setShowJamError(false);
       setShowJamErrorInput(false);
     }
-  
-    // Proceed with startTime validation
-    if (startTime) {
-      if (!validateShiftTime(startTime, newEndTime)) {
-        setShowJamError(true);
-        setShowJamErrorInput(true); // Show error if validation fails
-      } else {
-        setShowJamError(false);
-        setShowJamErrorInput(false); // Hide error if validation is successful
-      }
-    }
   };
   
 
-
-  // const handleStartTimeChange = (e: CustomEvent) => {
-  //   const newStartTime = e.detail.value as string;
-  //   setStartTime(newStartTime);
-
-  //   // Validate startTime and endTime for the current shift
-  //   if (endTime && !validateShiftTime(newStartTime, endTime)) {
-  //     setShowJamError(true);
-     
-  //   } else {
-     
-  //     setShowJamError(false);
-  //   }
-  // };
-
-
-  // const handleEndTimeChange = (e: CustomEvent) => {
-  //   const newEndTime = e.detail.value as string;
-  //   setEndTime(newEndTime);
-  
-  //   // Cek apakah endTime lebih kecil dari startTime
-  //   if (startTime && newEndTime < startTime) {
-  //     setShowJamError(true);
-  //   } else {
-  //     setShowJamError(false);
-  //   }
-  // };
-  
   useEffect(() => {
     const dataFlowDash = localStorage.getItem("cardDash");
-    console.log("Raw data from localStorage:", dataFlowDash);
-
     if (dataFlowDash) {
       try {
         const parsedData = JSON.parse(dataFlowDash);
-        console.log("Parsed data:", parsedData);
-
         if (Array.isArray(parsedData)) {
           // Mencari item dengan title "Flow Meter Awal"
           const flowMeterItem = parsedData.find(
@@ -1017,10 +968,6 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
           const flowStockItem = parsedData.find(
             (item: { title: string }) => item.title === "Stock On Hand"
           );
-
-          console.log("Flow Meter Akhir:", flowMeterItem);
-          console.log("Stock On Hand:", flowStockItem);
-
           if (flowMeterItem) {
             setFlowMeterAwal(flowMeterItem.value);
           }
@@ -1168,8 +1115,6 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   };
 
   useEffect(() => {
-    console.log('useEffect Offline/Online:', { hmLast ,hmkmValue, qtyLast });
-
     const calculateFBR = (): number => {
       if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
         const difference = hmkmValue - hmLast;
@@ -1188,7 +1133,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
           console.log('Difference is not positive');
         }
       } else {
-        console.log('Invalid input types:', { hmkmValue, hmLast, qtyLast });
+      
       }
       return 0;
     };
@@ -1202,17 +1147,9 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer'))
     ? unitOptions.filter(unit => unit.unit_no.startsWith("FT") || unit.unit_no.startsWith("TK"))
     : unitOptions;
-
-
-
- 
-
-
   useEffect(() => {
-    console.log("Updated hmkmLast value:", hmkmLast);
+
   }, [hmkmLast]);
-
-
 
   useEffect(() => {
     const getOfflineData = async () => {
@@ -1353,7 +1290,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
         console.log('Difference is not positive');
       }
     } else {
-      console.log('Invalid input types:', { hmkmValue, hmLast, qtyLast });
+     
     }
     return 0;
   };
@@ -1757,7 +1694,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
               </IonRow>
               <IonRow>
                 <IonCol>
-                  <CameraInput />
+                  {/* <CameraInput /> */}
                 </IonCol>
                 <IonCol>
                   <IonCard style={{ height: "160px" }}>
@@ -1804,7 +1741,9 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
                   disabled={
                     isError ||
                     quantity === null ||
-                    !validateShiftTime(startTime, endTime) // Disable if time validation fails
+                    !validateShiftTime(startTime, endTime) ||
+                    showJamError
+                     // Disable if time validation fails
                   }
                   onClick={(e) => {
                     handlePost(e);

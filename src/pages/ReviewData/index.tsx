@@ -124,6 +124,8 @@ const ReviewData: React.FC = () => {
                 setCloseDip(parsedData.closing_dip || 0);
                 setHmEnd(parsedData.hm_end || 0);
                 setCloseData(parsedData.close_data || 0);
+                setTotalVariance(parsedData.variant || 0);
+                setFlowMeterAkhir(parsedData.flow_meter_end || 0);
     
                 // Save values for variance calculation
                 closeDataValue = parsedData.close_data || 0;
@@ -131,8 +133,7 @@ const ReviewData: React.FC = () => {
             }
     
             // Calculate Total Variance
-            setTotalVariance(closeDataValue - closingDipValue);
-    
+         
             const userData = localStorage.getItem("loginData");
             if (userData) {
                 const parsedData = JSON.parse(userData);
@@ -268,40 +269,40 @@ const ReviewData: React.FC = () => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
-                <div style={{ marginTop: "20px", padding: "20px" }}>
+                <div style={{ marginTop: "18px", padding: "18px" }}>
                     <IonList>
                         <IonListHeader>
-                            <IonLabel className='font-review'>Review Data</IonLabel>
+                            <IonLabel style={{fontSize:"24px"}} className='font-review'>Review Data</IonLabel>
                         </IonListHeader>
                         <IonItem>
-                            <IonLabel className='font-review'>Open Sonding / Dip: {openingSonding !== undefined ? openingSonding : "Loading..."} Cm : {openingDip} Liters</IonLabel>
+                            <IonLabel style={{fontSize:"18px"}}  className='font-review'>Open Sonding / Dip: {openingSonding !== undefined ? openingSonding : "Loading..."} Cm / {openingDip} Liters</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Receive : {totalReceipt}</IonLabel>
+                            <IonLabel  style={{fontSize:"18px"}} className='font-review'>Receive : {totalReceipt}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Stock On Hand : {stockOnHand}</IonLabel>
+                            <IonLabel style={{fontSize:"18px"}} className='font-review'>Stock On Hand : {stockOnHand}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Issued : {totalIssued}</IonLabel>
+                            <IonLabel style={{fontSize:"18px"}} className='font-review'>Issued : {totalIssued}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>HM KM End: {hmEnd}</IonLabel>
+                            <IonLabel style={{fontSize:"18px"}} className='font-review'>HM KM End: {hmEnd}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Closing Sonding / Dip : {closeSonding} Cm : {closingDip}  Liter </IonLabel>
+                            <IonLabel style={{fontSize:"18px"}} className='font-review'>Closing Sonding / Dip : {closeSonding} Cm / {closingDip}  Liter </IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Start Meter : {flowMeterAwal}</IonLabel>
+                            <IonLabel style={{fontSize:"18px"}} className='font-review'>Flow Meter Akhir: {flowMeteAkhir}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Total Meter : {totalIssued}</IonLabel>
+                            <IonLabel style={{fontSize:"18px"}} className='font-review'>Total Meter : {totalIssued}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Daily Variance : {totalVariance}</IonLabel>
+                            <IonLabel style={{fontSize:"18px"}} className='font-review'>Daily Variance : {totalVariance}</IonLabel>
                         </IonItem>
                     </IonList>
-                    <div style={{ marginTop: "20px", float: "inline-end" }}>
+                    <div style={{ marginTop: "18px", float: "inline-end" }}>
                         <IonButton color="light" onClick={() => route.push('/closing-data') }>
                             <IonIcon slot="start" icon={closeCircleOutline} />Batal
                         </IonButton>

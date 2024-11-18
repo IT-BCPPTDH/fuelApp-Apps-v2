@@ -250,7 +250,7 @@ const FormClosing: React.FC = () => {
         } else {
             setErrorMessage('');
             setHmEnd(hmEndInput);
-            setPreviousHmEnd(hmEndInput); // Update previous value
+            // setPreviousHmEnd(hmEndInput); // Update previous value
             setIsCloseShiftDisabled(false); // Enable the button
         }
     };
@@ -277,7 +277,6 @@ const FormClosing: React.FC = () => {
         loadSondingData();
     }, []);
     
-
     useEffect(() => {
         const fetchLoginData = async () => {
             const storedLoginData = await getDataFromStorage('loginData'); 
