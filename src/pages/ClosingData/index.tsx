@@ -277,7 +277,6 @@ const FormClosing: React.FC = () => {
         loadSondingData();
     }, []);
     
-
     useEffect(() => {
         const fetchLoginData = async () => {
             const storedLoginData = await getDataFromStorage('loginData'); 

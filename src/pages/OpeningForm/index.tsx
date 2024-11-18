@@ -540,7 +540,7 @@ useEffect(() => {
   const fetchDataWithDelay = async () => {
     try {
       setLoading(true); 
-      await new Promise((resolve) => setTimeout(resolve, 30000)); 
+      await new Promise((resolve) => setTimeout(resolve, 15000)); 
       await fetchData(); 
     } catch (error) {
       console.error("Error in delayed fetchData:", error);

@@ -118,7 +118,7 @@ const typeTrx: Typetrx[] = [
 
 
 interface FormTRXProps {
-  setDataHome: (data: any[]) => void; 
+  setDataHome: (data: any[]) => void; // Type for the setDataHome function
 }
 
 const compareWith = (o1: Typetrx, o2: Typetrx) => o1.id === o2.id;
@@ -425,29 +425,34 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     setSignature: React.Dispatch<React.SetStateAction<string | null>>
   ) => {
     const file = event.target.files?.[0]; // Get the selected file
-
+  
     if (file) {
       try {
-        // Step 1: Set the photo state (storing the file itself)
-        setPhoto(file);
-
-        // Step 2: Convert the file to Base64 using a utility function
+        // Step 1: Log the file and generate signature (for debugging)
+        console.log('Selected file:', file);
+        
+        // You may want to generate a "signature" from the file, e.g., a hash or name
+        const fotoSignature = generateSignature(file); // Generate the signature based on your logic
+        console.log('Generated signature:', fotoSignature); // Log the signature
+        setSignature(fotoSignature); // Set the signature state
+  
+        // Step 2: Convert the file to Base64 using the convertToBase64 function
         const base64 = await convertToBase64(file);
-
+        console.log('Base64 representation:', base64); // Log Base64 string
+  
         // Step 3: Set the Base64 state
         setBase64(base64);
-
-        // Step 4: Set a signature or handle signature logic (optional)
-        // You might want to derive the signature from the file, or simply use a placeholder for now
-        const signature = generateSignature(file); // This is hypothetical; you can replace it with your own logic
-        setSignature(signature);
-
-
+  
+        // You do not need to generate the signature again here, unless it's different logic
+        // const signature = generateSignature(file); // If you need a different logic for signature, call it here
+        // setSignature(signature);
+  
       } catch (error) {
-        console.error("Error converting file to base64", error);
+        console.error('Error handling file:', error);
       }
     }
   };
+  
 
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -949,19 +954,12 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     }
   };
   
-  
 
-
- 
   useEffect(() => {
     const dataFlowDash = localStorage.getItem("cardDash");
-    console.log("Raw data from localStorage:", dataFlowDash);
-
     if (dataFlowDash) {
       try {
         const parsedData = JSON.parse(dataFlowDash);
-        console.log("Parsed data:", parsedData);
-
         if (Array.isArray(parsedData)) {
           // Mencari item dengan title "Flow Meter Awal"
           const flowMeterItem = parsedData.find(
@@ -970,10 +968,6 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
           const flowStockItem = parsedData.find(
             (item: { title: string }) => item.title === "Stock On Hand"
           );
-
-          console.log("Flow Meter Akhir:", flowMeterItem);
-          console.log("Stock On Hand:", flowStockItem);
-
           if (flowMeterItem) {
             setFlowMeterAwal(flowMeterItem.value);
           }
@@ -1121,8 +1115,6 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   };
 
   useEffect(() => {
-    console.log('useEffect Offline/Online:', { hmLast ,hmkmValue, qtyLast });
-
     const calculateFBR = (): number => {
       if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
         const difference = hmkmValue - hmLast;
@@ -1141,7 +1133,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
           console.log('Difference is not positive');
         }
       } else {
-        console.log('Invalid input types:', { hmkmValue, hmLast, qtyLast });
+      
       }
       return 0;
     };
@@ -1155,17 +1147,9 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer'))
     ? unitOptions.filter(unit => unit.unit_no.startsWith("FT") || unit.unit_no.startsWith("TK"))
     : unitOptions;
-
-
-
- 
-
-
   useEffect(() => {
-    console.log("Updated hmkmLast value:", hmkmLast);
+
   }, [hmkmLast]);
-
-
 
   useEffect(() => {
     const getOfflineData = async () => {
@@ -1306,7 +1290,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
         console.log('Difference is not positive');
       }
     } else {
-      console.log('Invalid input types:', { hmkmValue, hmLast, qtyLast });
+     
     }
     return 0;
   };

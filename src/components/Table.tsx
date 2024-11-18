@@ -336,7 +336,7 @@ useEffect(() => {
       <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
       <IonCol><IonText>{item.qty_last}</IonText></IonCol>
       <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
-     
+      <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
       <IonCol><IonText>{item.name_operator}</IonText></IonCol>
       <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol>
     </IonRow>
