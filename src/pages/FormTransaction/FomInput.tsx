@@ -118,7 +118,7 @@ const typeTrx: Typetrx[] = [
 
 
 interface FormTRXProps {
-  setDataHome: (data: any[]) => void; // Type for the setDataHome function
+  setDataHome: (data: any[]) => void; 
 }
 
 const compareWith = (o1: Typetrx, o2: Typetrx) => o1.id === o2.id;
@@ -870,25 +870,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     determineShift();
   }, []);
 
-  // const handleStartTimeChange = (e: CustomEvent) => {
-  //   const newStartTime = e.detail.value as string;
-  //   setStartTime(newStartTime); 
-  //   const now = new Date();
-  //     const currentHour = now.getHours();
-  //     const isDayShift = currentHour >= 6 && currentHour < 18;
-  //     const isNightShift = currentHour >= 18 || currentHour < 6;
 
-  //   if (endTime) {
-  //     if (!validateShiftTime(startTime, newStartTime)) {
-  //       setShowJamError(true);
-  //       setShowJamErrorInput(true); 
-  //     } else {
-  //       setShowJamError(false);
-  //       setShowJamErrorInput(false); 
-  //     }
-  //   }
-  // };
-  
   const handleStartTimeChange = (e: CustomEvent) => {
     const newStartTime = e.detail.value as string;
     setStartTime(newStartTime);
@@ -940,66 +922,37 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     const isDayShift = currentHour >= 6 && currentHour < 18;
     const isNightShift = currentHour >= 18 || currentHour < 6;
   
-    // Define the shift start times based on current shift
+    // Define the shift start and end times based on current shift
     const shiftStart = isDayShift ? 6 : 18;  // 06:00 for Day shift, 18:00 for Night shift
     const shiftEnd = isDayShift ? 18 : 6;    // 18:00 for Day shift, 06:00 for Night shift
   
-    // Validate end time based on the determined shift
-    const newEndHour = new Date(`1970-01-01T${newEndTime}:00`).getHours();
+    // Convert the newEndTime to a Date object to extract the hours
+    const newEndDate = new Date(`1970-01-01T${newEndTime}:00`);
+    const newEndHour = newEndDate.getHours();
   
-    // Check if the new end time falls within the valid shift range
-    if (
-      (isDayShift && (newEndHour < shiftStart || newEndHour >= shiftEnd)) ||
-      (isNightShift && (newEndHour < shiftStart && newEndHour >= shiftEnd))
-    ) {
+    // Validate that the endTime is within the allowed shift time range
+    const isEndTimeInShiftRange =
+      (isDayShift && newEndHour >= shiftStart && newEndHour < shiftEnd) ||
+      (isNightShift && (newEndHour >= shiftStart || newEndHour < shiftEnd));
+  
+    // Check if endTime is earlier than startTime
+    const newStartDate = new Date(`1970-01-01T${startTime}:00`);
+    const isEndTimeAfterStartTime = newEndDate >= newStartDate;
+  
+    // If endTime is not within shift range or endTime is earlier than startTime, show an error
+    if (!isEndTimeInShiftRange || !isEndTimeAfterStartTime) {
       setShowJamError(true);
       setShowJamErrorInput(true);
     } else {
       setShowJamError(false);
       setShowJamErrorInput(false);
     }
-  
-   
-    if (startTime) {
-      if (!validateShiftTime(startTime, newEndTime)) {
-        setShowJamError(true);
-        setShowJamErrorInput(true); 
-      } else {
-        setShowJamError(false);
-        setShowJamErrorInput(false); // Hide error if validation is successful
-      }
-    }
   };
   
-
-
-  // const handleStartTimeChange = (e: CustomEvent) => {
-  //   const newStartTime = e.detail.value as string;
-  //   setStartTime(newStartTime);
-
-  //   // Validate startTime and endTime for the current shift
-  //   if (endTime && !validateShiftTime(newStartTime, endTime)) {
-  //     setShowJamError(true);
-     
-  //   } else {
-     
-  //     setShowJamError(false);
-  //   }
-  // };
-
-
-  // const handleEndTimeChange = (e: CustomEvent) => {
-  //   const newEndTime = e.detail.value as string;
-  //   setEndTime(newEndTime);
   
-  //   // Cek apakah endTime lebih kecil dari startTime
-  //   if (startTime && newEndTime < startTime) {
-  //     setShowJamError(true);
-  //   } else {
-  //     setShowJamError(false);
-  //   }
-  // };
-  
+
+
+ 
   useEffect(() => {
     const dataFlowDash = localStorage.getItem("cardDash");
     console.log("Raw data from localStorage:", dataFlowDash);
@@ -1804,7 +1757,9 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
                   disabled={
                     isError ||
                     quantity === null ||
-                    !validateShiftTime(startTime, endTime) // Disable if time validation fails
+                    !validateShiftTime(startTime, endTime) ||
+                    showJamError
+                     // Disable if time validation fails
                   }
                   onClick={(e) => {
                     handlePost(e);

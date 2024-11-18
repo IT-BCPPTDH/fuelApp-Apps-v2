@@ -380,24 +380,10 @@ useEffect(() => {
   }, []);
 
 
-  // const fetchLatestLkfData = async () => {
-  //   const latestData = await getLatestLkfDataDate();
-    
-  //   if (latestData) {
-  //     console.log("Latest LKF Data:", latestData);
-  //   } else {
-  //     console.log("No LKF data found.");
-  //   }
-  // };
-  
-  // // Panggil fungsi untuk mengambil data
-  // fetchLatestLkfData();
-
  
 
 
 
-
   useEffect(() => {
     const userData = async () => {
       const data = await getDataFromStorage('loginData');
@@ -433,49 +419,9 @@ useEffect(() => {
     userData(); // Call the async function
   }, []);
 
-  // const getLastLkfData = () => {
-  //   const lastLkfData = localStorage.getItem('lastLkfDataStation');
-  
-  //   if (lastLkfData) {
-  //     try {
-  //       const parsedData = JSON.parse(lastLkfData);
-  //       console.log("Retrieved Last LKF Data:", parsedData);
-  
-  //       // Access specific properties such as closing_sonding
-  //       if (parsedData.closing_sonding) {
-  //         console.log("Closing Sonding:", parsedData.closing_sonding);
-  //       } else {
-  //         console.log("Closing Sonding data is not available");
-  //       }
-  
-  //       return parsedData;
-  //     } catch (error) {
-  //       console.error("Error parsing last LKF data:", error);
-  //     }
-  //   } else {
-  //     console.log("No last LKF data found in local storage");
-  //   }
-  
-  //   return null;
-  // };
-  // useEffect(() => {
-  //   getLastLkfData();
-  // }, []);
-    
+ 
 
-  // useEffect(() => {
-  //   const loadShiftClose = async () => {
-  //     const cachedShiftData = await getDataFromStorage('shiftCloseData');
-  //     console.log("Chace",cachedShiftData)
-  //     if (cachedShiftData) {
-  //       setCloseShift(cachedShiftData); 
-  //     } else 
-       
-  //     }
-  //   };
-  
-  //   loadShiftClose();
-  // }, []);
+
 
 useEffect(() => {
     // Retrieve station from local storage
@@ -594,7 +540,7 @@ useEffect(() => {
   const fetchDataWithDelay = async () => {
     try {
       setLoading(true); 
-      await new Promise((resolve) => setTimeout(resolve, 10000)); 
+      await new Promise((resolve) => setTimeout(resolve, 30000)); 
       await fetchData(); 
     } catch (error) {
       console.error("Error in delayed fetchData:", error);
@@ -619,13 +565,6 @@ useEffect(() => {
     setLoading(false);
   }
 }, [openingSonding, openingDip, flowMeterAwal, hmAkhir]);  // Dependencies to check if data has changed
-
-
-
-
-
-
-
 
 
   return (

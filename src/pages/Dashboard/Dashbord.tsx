@@ -32,6 +32,8 @@ import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
 import { addDataTrxType, updateDataToDB } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
 import { Network } from '@capacitor/network';
+import { getPrevUnitTrx } from '../../hooks/getDataPrev';
+import { getStationData } from '../../hooks/getDataTrxStation';
 
 
 // Define the data structure for the card
@@ -246,6 +248,18 @@ useEffect(() => {
 //   fetchShiftData();
 // }, []);
 
+const fetchBlank= async(unitNo :string)=>{
+  const response = await getStationData(unitNo); 
+  console.log("Raw Response Blank:", response);
+ }
+ const unitNo = 'T112';
+ useEffect(() => {
+  if (unitNo) {
+    fetchBlank(unitNo);
+  }
+}, [unitNo]);
+
+
 useEffect(() => {
   const fetchShiftData = async () => {
     try {
@@ -339,8 +353,6 @@ useEffect(() => {
       }
     };
 
-
-    
 
     const fetchLkfIdAndData = async () => {
       try {
@@ -484,9 +496,10 @@ useEffect(() => {
   
 
 
-const handleGetTrx =  async() => {
-
+const handleBack =  async() => {
+ window.location.href= ('/login')
 }
+
   
 
   const handleRefresh = async () => {
@@ -792,7 +805,7 @@ const fetchcardDash = async (lkfId: string) => {
   const displayData = isOffline && cachedData ? JSON.parse(cachedData) : dataHome;
   
 
- 
+
   return (
     <IonPage>
       <IonContent>
@@ -833,6 +846,7 @@ const fetchcardDash = async (lkfId: string) => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Refresh
             </IonButton>
+            
             {/* <IonButton color="primary" onClick={updateAllData}>
               <IonImg src='refresh.svg' alt="Refresh" />
               Update Data
