@@ -59,7 +59,7 @@ import { getAllQuota } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
-// import CameraInput from "../../components/takeFoto";
+
 import { saveDataToStorage } from "../../services/dataService";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 
@@ -1694,7 +1694,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
               </IonRow>
               <IonRow>
                 <IonCol>
-                  {/* <CameraInput /> */}
+                  
                 </IonCol>
                 <IonCol>
                   <IonCard style={{ height: "160px" }}>
