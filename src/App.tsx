@@ -71,7 +71,7 @@ const App: React.FC = () => {
                     {isLoggedIn === 'true' ? <ReviewData /> : <Redirect to="/login" />}
                 </Route>
                 <Route exact path="/">
-                    {isLoggedIn === 'true' ? <Redirect to="/dashboard" /> : <Redirect to="/login" />}
+                    {isLoggedIn === 'true' ? <Redirect to="/" /> : <Redirect to="/login" />}
                 </Route>
             </IonReactRouter>
         </IonApp>
