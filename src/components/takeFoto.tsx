@@ -32,7 +32,7 @@ const CameraInput: React.FC = () => {
       <IonCard style={{ height: '160px', marginTop: '-7px' }}>
         <IonButton size="small" onClick={handleChooseSource}>
           <IonIcon slot="start" icon={cameraOutline} />
-          Ambil Foto *
+          Ambil Foto 
         </IonButton>
         {photoPreview && (
           <IonCard style={{ marginTop: '10px', padding: '10px' }}>

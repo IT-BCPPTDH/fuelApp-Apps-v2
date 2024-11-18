@@ -1,6 +1,14 @@
-.logo-login{
-    padding-top: 2lvh;
-    padding-bottom: 2lvh;
+.logo-login {
+  display: flex;
+  justify-content: center; /* Centers the content horizontally */
+  align-items: center; /* Centers the content vertically */
+  width: 100%;
+}
+
+.img {
+  width: 100%; /* Make the width responsive */
+  max-width: 120px; /* Ensure the image doesn't exceed the max width */
+  height: auto; /* Adjust the height automatically based on the aspect ratio */
 }
 .background-content{
     background-color: black;
@@ -35,16 +43,17 @@
     
   }
   .bg-text{
-    background: #e8625cc9;
+    background: #d8312ae3;
     color: white;
     border-radius: 4px;
-    margin-top: 20px;
+    margin-top: 10px;
     margin-left: 6px;
     margin-right: 6px;
     height: 60px;
     text-align: center;
-    font-size: 36px;
+    font-size: 24px;
     font-weight: bold;
+    height: auto;
 }
   
   .mr-content{
@@ -98,17 +107,22 @@
   text-align: justify;
   margin-left: 15px;
 }
-.img{
-  width: 260px;
-  height: 52px;
-}
+
 
 .select-custom {
   --background: white; /* Set the background to white */
   --color: black; /* Optional: Set the text color to black for contrast */
 
 }
- 
+.img {
+  width: 100%; /* Make the width responsive */
+  max-width: 120px; /* Ensure the image doesn't exceed the max width */
+  height: auto; /* Adjust the height automatically based on the aspect ratio */
+  display: block; /* Ensure the image behaves as a block element */
+  margin: 0 auto; /* Center the image horizontally */
+  position: relative; /* You can use relative or static positioning depending on your layout */
+  align-self: center; /* Center it in the flex container if it's within one */
+}
 .radio-display {
   display: inline-flex;
   margin-left: -15px;

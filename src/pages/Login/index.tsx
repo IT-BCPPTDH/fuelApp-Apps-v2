@@ -27,9 +27,6 @@ import {
   fetchUnitLastTrx,
 } from "../../services/dataService";
 import Select from "react-select";
-import AsyncSelect from 'react-select/async';
-import { getPrevUnitTrx } from "../../hooks/getDataPrev";
-import { getOperator } from "../../hooks/getAllOperator";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 import { bulkInsertDataMasterTransaksi } from "../../utils/getData";
 
@@ -142,15 +139,21 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
           site: selectedStation.site,
         };
         
+        console.log("Starting handleGet to process transaksiData...");
+        await handleGet();
         saveDataToStorage("loginData", loginData);
        
         // Notify the App component about the login success
         onLoginSuccess();
 
         // Navigate to the opening page
+       
+       
+       
         setShowAlert(true);
-        handleGet()
         router.push("/opening");
+        setShowAlert(true);
+      
       } else {
         console.error("Unexpected response:", response);
         setShowError(true);
@@ -163,6 +166,33 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
     }
   };
   
+  const handleGet = async () => {
+    try {
+      // Ambil data transaksi dari localStorage
+      const transaksiDataString = localStorage.getItem('transaksiData');
+      console.log("Data from localStorage:", transaksiDataString); // Debugging
+  
+      if (transaksiDataString) {
+        // Parsing data JSON dari string
+        const transaksiData = JSON.parse(transaksiDataString);
+        console.log("Parsed transaksiData:", transaksiData); // Debugging
+  
+        // Cek apakah transaksiData adalah array dan tidak kosong
+        if (Array.isArray(transaksiData) && transaksiData.length > 0) {
+          // Lakukan bulk insert ke IndexedDB
+          await bulkInsertDataMasterTransaksi(transaksiData);
+          console.log('Data transaksi berhasil dimasukkan ke IndexedDB.');
+        } else {
+          console.warn('Data transaksi kosong atau tidak valid.');
+        }
+      } else {
+        console.warn('Tidak ada data transaksi yang tersedia di localStorage.');
+      }
+    } catch (error) {
+      console.error('Error saat melakukan bulk insert dari localStorage:', error);
+    }
+  };
+
 
   const loadOperator = async () => {
     try {
@@ -222,21 +252,6 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 }, []);
 
 
-// const dataTrasaksi = async () => {
-//   try {
-//     const transaksiData = await getTrasaksiSemua();
-//     console.log("Fetched transaksi data:", transaksiData);
-//     if (transaksiData && Array.isArray(transaksiData) && transaksiData.length > 0) {
-     
-//       localStorage.setItem('transaksiData', JSON.stringify(transaksiData));
-//       console.log('Transaksi data has been saved to IndexedDB and localStorage.');
-//     } else {
-//       console.warn('No transaksi data to save.');
-//     }
-//   } catch (error) {
-//     console.error('Error fetching and saving transaksi data:', error);
-//   }
-// };
 
 const dataTrasaksi = async () => {
   try {
@@ -267,32 +282,7 @@ useEffect(() => {
 
 
 
- const handleGet = async () => {
-  try {
-    // Ambil data transaksi dari localStorage
-    const transaksiDataString = localStorage.getItem('transaksiData');
-    console.log("Data from localStorage:", transaksiDataString); // Debugging
 
-    if (transaksiDataString) {
-      // Parsing data JSON dari string
-      const transaksiData = JSON.parse(transaksiDataString);
-      console.log("Parsed transaksiData:", transaksiData); // Debugging
-
-      // Cek apakah transaksiData adalah array dan tidak kosong
-      if (Array.isArray(transaksiData) && transaksiData.length > 0) {
-        // Lakukan bulk insert ke IndexedDB
-        await bulkInsertDataMasterTransaksi(transaksiData);
-        console.log('Data transaksi berhasil dimasukkan ke IndexedDB.');
-      } else {
-        console.warn('Data transaksi kosong atau tidak valid.');
-      }
-    } else {
-      console.warn('Tidak ada data transaksi yang tersedia di localStorage.');
-    }
-  } catch (error) {
-    console.error('Error saat melakukan bulk insert dari localStorage:', error);
-  }
-};
 
 
 const loadTrxLast = async () => {
@@ -322,8 +312,6 @@ useEffect(() => {
   loadTrxLast(); 
 }, []);
 
-
-
   return (
     <IonPage>
       <IonContent fullscreen className="ion-content">
@@ -332,9 +320,13 @@ useEffect(() => {
             <IonGrid className="ion-padding">
               <IonRow className="ion-justify-content-left logo-login">
                 <IonCol size="5">
-                  <IonImg className="img" src="logodh.png" alt="Logo DH" />
-                  <span className="sub-title">Fuel App V2.0</span>
+                  <IonImg className="img" src="logodhbaru1.png" alt="Logo DH"  />
+                  
                 </IonCol>
+               
+              </IonRow>
+              <IonRow>
+              <span className="sub-title">Fuel App V2.0</span>
               </IonRow>
               <IonRow className="mt-content">
                 {alreadyLoggedIn ? (
@@ -400,7 +392,7 @@ useEffect(() => {
                         {loading ? "Loading..." : "Login"}
                       </IonButton>
 
-                      <IonButton  color="dark"  expand="block" onClick={handleGet} disabled={loading}>
+                      <IonButton  color="warning"  expand="block" onClick={handleGet} disabled={loading}>
                         {loading ? "Loading..." : "Refresh Data"}
                       </IonButton>
 
@@ -411,7 +403,10 @@ useEffect(() => {
               {showError && (
                 <IonRow className="bg-text">
                   <IonCol>
-                    <IonTitle style={{ marginTop: "10px" }}>Unit atau Employee Id salah! Periksa kembali</IonTitle>
+                    <IonTitle style={{ fontSize:"14px" }}>
+                      <span>
+                    Station atau Employee ID Salah !!</span>
+                    </IonTitle>
                   </IonCol>
                 </IonRow>
               )}

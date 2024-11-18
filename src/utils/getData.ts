@@ -62,6 +62,7 @@ export const getLatestLkfId = async (): Promise<string | undefined> => {
   }
 };
 
+
 export const getShiftDataByLkfId = async (lkfId: string): Promise<ShiftData> => {
   try {
     const shiftData = await db.closeTrx.where('lkf_id').equals(lkfId).first();
@@ -120,7 +121,7 @@ export const getCalculationReceive = async (lkfId: string, ): Promise<number | u
     // Retrieve all transactions where type is 'Receive'
     const receiptTransactions = await db.dataTransaksi
       .where('type')
-      .equals('Receipt')
+      .anyOf('Receipt', 'Receipt KPC')
       .toArray();
     
     // Calculate the total quantity Receive
@@ -212,140 +213,6 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
   }
 };
 
-// export const getLatestHmLast = async (selectedUnit: string): Promise<number | undefined> => {
-//   try {
-//     const selectedUnitId = Number(selectedUnit); // Convert to number
-
-//     // Get entries for the selected unit
-//     const entries = await (await db.dataTransaksi
-//       .filter(entry => entry.id === selectedUnitId) // Filter by selected unit ID
-//       .sortBy('timestamp') // Assuming there is a timestamp to sort by; adjust as needed
-//     ) // Assuming there is a timestamp to sort by; adjust as needed
-//       .reverse() // Reverse to get the latest first
-     
-
-//     // Get the latest entry
-//     const latestEntry = entries.length > 0 ? entries[0] : null;
-
-//     // Check if there's a valid 'hm_last' value
-//     if (latestEntry && latestEntry.hm_last != null) {
-//       return latestEntry.hm_last; // Return the correct property
-//     } else {
-//       console.warn("No valid 'hm_last' data found for the selected unit.");
-//       return undefined;
-//     }
-//   } catch (error) {
-//     console.error("Failed to fetch the latest 'hm_last' value:", error);
-//     return undefined;
-//   }
-// };
-
-// export const getLatestHmLast = async (
-//   selectedUnit: string
-// ): Promise<{ hm_last?: number; model_unit?: string; owner?: string }> => {
-//   try {
-//     // Fetch the latest entry for the selected unit from the database
-//     const latestEntry = await db.dataTransaksi
-//       .where('no_unit')
-//       .equals(selectedUnit)
-//       .last();
-
-//     // Check if the entry is found and extract 'hm_last', 'model_unit', and 'owner'
-//     if (latestEntry) {
-//       const { hm_km, model_unit, owner } = latestEntry;
-//       return {
-//         hm_last: hm_km ?? undefined, // Return `hm_km` as `hm_last` if it exists
-//         model_unit: model_unit ?? undefined, // Return `model_unit` if it exists
-//         owner: owner ?? undefined // Return `owner` if it exists
-//       };
-//     } else {
-//       console.warn("No valid data found for 'hm_last', 'model_unit', or 'owner' in the dataTransaksi collection.");
-//       return {}; // Return an empty object if no data is found
-//     }
-//   } catch (error) {
-//     // Log any errors that occur during data retrieval
-//     console.error("Failed to fetch the latest data from IndexedDB:", error);
-//     return {}; // Return an empty object in case of an error
-//   }
-// };
-// // export const getLatestHmLast = async (
-// //   selectedUnit: string
-// // ): Promise<{ hm_last?: number; model?: string; owner?: string }> => {
-// //   try {
-// //     const latestEntry = await db.dataTransaksi
-// //       .where('no_unit')
-// //       .equals(selectedUnit)
-// //       .last();
-
-// //     if (latestEntry) {
-// //       const { hm_km, model_unit, owner } = latestEntry;
-// //       return {
-// //         hm_last: hm_km ?? undefined,
-// //         model: model_unit ?? undefined,
-// //         owner: owner ?? undefined
-// //       };
-// //     } else {
-// //       console.warn("No valid data found in IndexedDB for 'hm_last', 'model', or 'owner'.");
-// //       return {};
-// //     }
-// //   } catch (error) {
-// //     console.error("Failed to fetch data from IndexedDB:", error);
-// //     return {};
-// //   }
-// // };
-// Update fetchLatestHmLast to return an object with hm_last, model, and owner
-// Update fetchLatestHmLast to return an object with hm_last, model, owner, and qty_last
-// export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_km?: number, model_unit?: string, owner?: string, qty_last?: number }> => {
-//   try {
-//     // Fetch the latest entry from the database
-//     const latestEntry = await db.dataTransaksi.where('no_unit').equals(selectedUnit).last();
-    
-//     if (latestEntry) {
-//       return {
-//         hm_km: latestEntry.hm_km,       // Existing field
-//         model_unit: latestEntry.model_unit, // Existing field
-//         owner: latestEntry.owner,          // Existing field
-//         qty_last: latestEntry.qty          // New field for qty_last
-//       };
-//     } else {
-//       console.warn("No valid 'hm_last' data found in the dataTransaksi collection.");
-//       return {};
-//     }
-//   } catch (error) {
-//     // Log any errors that occur during data retrieval
-//     console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
-//     return {};
-//   }
-// };
-
-
-
-
-// export const fetchLatestHmLast = async (selectedUnit: string): Promise<{ hm_km?: number, model_unit?: string, owner?: string, qty_last?: number ,  }> => {
-//   try {
-//     // Fetch the latest entry from the database
-//     const latestEntry = await db.dataMasterTrasaksi.where('no_unit').equals(selectedUnit).last();
-
-//     console.log("Fetching latest entry for unit:", selectedUnit);
-//     console.log("Latest entry found:", latestEntry);
-
-//     if (latestEntry) {
-//       return {
-//         hm_km: latestEntry.hm_km,       // Existing field
-//         model_unit: latestEntry.model_unit, // Existing field
-//         owner: latestEntry.owner,          // Existing field
-//         qty_last: latestEntry.qty_last          // New field for qty_last
-//       };
-//     } else {
-//       console.warn("No valid 'hm_last' data found in the dataTransaksi collection.");
-//       return {};
-//     }
-//   } catch (error) {
-//     // Log any errors that occur during data retrieval
-//     console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
-//     return {};
-//   }
-// };
 export const fetchLatestHmLast = async (
   selectedUnit: string
 ): Promise<{ hm_km?: number; model_unit?: string; owner?: string; qty_last?: number }> => {
@@ -384,11 +251,6 @@ export const bulkInsertDataMasterTransaksi = async (data: DataMasterTransaksi[])
     console.error("Bulk insert failed for dataMasterTrasaksi:", error);
   }
 };
-
-
-
-
-
 
 
 export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {

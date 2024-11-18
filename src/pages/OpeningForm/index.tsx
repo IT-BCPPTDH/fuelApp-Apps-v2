@@ -17,12 +17,12 @@ import {
   useIonToast,
   useIonRouter,
   IonPage,
-  IonCard,
+  IonLoading,
   IonRefresher,
   IonRefresherContent,
   IonToast,
-  IonProgressBar,
-  IonLoading,
+  IonSpinner,
+  IonImg
 } from "@ionic/react";
 
 import "./style.css";
@@ -50,14 +50,7 @@ const shifts: Shift[] = [
   { id: 2, name: "Night", type: "" },
 ];
 
-
-
-
 const compareWith = (o1: Shift, o2: Shift) => o1.id === o2.id;
-
-
-
-
 
 const OpeningForm: React.FC = () => {
   const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
@@ -222,34 +215,6 @@ if (progress > 1) {
     debouncedUpdate(openingSonding, station);
   }, [openingSonding, station, debouncedUpdate]);
 
-
-
-
-  // useEffect(() => {
-  //   const updateOpeningDip = async () => {
-  //     if (openingSonding !== undefined && station !== undefined) {
-  //       try {
-  //         if (openingSonding === 0 && station === 'loginData') {
-  //           setOpeningDip(0);
-  //         } else {
-  //           const matchingData = sondingMasterData.find(
-  //             (item) => item.station === station && item.cm === openingSonding
-  //           );
-  //           if (matchingData) {
-  //             setOpeningDip(matchingData.liters);
-  //           } else {
-  //             setOpeningDip(undefined);
-  //           }
-  //         }
-  //       } catch (error) {
-  //         console.error('Failed to update opening dip', error);
-  //       }
-  //     }
-  //   };
-
-  //   updateOpeningDip();
-  // }, [openingSonding, station, sondingMasterData]);
-
   const handleDateChange = (e: CustomEvent) => {
     const selectedDate = e.detail.value as string;
     if (selectedDate) {
@@ -367,10 +332,10 @@ useEffect(() => {
     } catch (error) {
       setShowError(true);
       presentToast({
-        message: 'You are offline. Data saved locally and will be sent when online.',
+        message: 'Selamat Bekerja',
         duration: 2000,
         position: 'top',
-        color: 'warning',
+        color: 'success',
       });
       await addDataToDB(dataPost); // Add new data to local DB
       router.push("/dashboard");
@@ -586,43 +551,9 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
   setFlowMeterAwal(value);
 };
 
-
-
-
-// const fetchData = async () => {
-//   setLoading(true);
-//   try {
-//     const cachedShiftData = await getDataFromStorage('shiftCloseData');
-//     if (cachedShiftData && cachedShiftData.length > 0) {
-//       setCloseShift(cachedShiftData);
-//       const latestShiftData = cachedShiftData[cachedShiftData.length - 1]; 
-//       if (latestShiftData.closing_sonding !== undefined) {
-//         setOpeningSonding(latestShiftData.closing_sonding); 
-//       }
-//       if (latestShiftData.flow_meter_end !== undefined) {
-//         setFlowMeterAwal(latestShiftData.flow_meter_end); 
-//       }
-//       if (latestShiftData.closing_dip !== undefined) {
-//         setOpeningDip(latestShiftData.closing_dip); 
-//       }
-//       if (latestShiftData.hm_end !== undefined) {
-//         setHmAkhir(latestShiftData.hm_end);
-//         setPrevHmAwal(latestShiftData.hm_end);  // Set HM Awal
-//       }
-      
-
-//     } else {
-//       console.error("No cached shift data found");
-//     }
-//   } catch (error) {
-//     console.error("Error fetching shift data:", error);
-//   } finally {
-//     setLoading(false);
-//   }
-// };
 const fetchData = async () => {
   setLoading(true);
-  setProgress(0);  // Reset progress
+  setProgress(0);  
   
   try {
     const cachedShiftData = await getDataFromStorage('shiftCloseData');
@@ -659,6 +590,22 @@ const fetchData = async () => {
     console.error("Error fetching shift data:", error);
   }
 };
+useEffect(() => {
+  const fetchDataWithDelay = async () => {
+    try {
+      setLoading(true); 
+      await new Promise((resolve) => setTimeout(resolve, 10000)); 
+      await fetchData(); 
+    } catch (error) {
+      console.error("Error in delayed fetchData:", error);
+    } finally {
+      setLoading(false); 
+    }
+  };
+
+  fetchDataWithDelay();
+}, []);
+
 
 
 useEffect(() => {
@@ -673,15 +620,7 @@ useEffect(() => {
   }
 }, [openingSonding, openingDip, flowMeterAwal, hmAkhir]);  // Dependencies to check if data has changed
 
-useEffect(() => {
-  fetchData();
 
-  const intervalId = setInterval(() => {
-    fetchData();
-  }, );
-
-  return () => clearInterval(intervalId);
-}, []);
 
 
 
@@ -704,6 +643,37 @@ useEffect(() => {
         </IonRefresher>
        
         <div className="wrapper-content">
+          
+        <IonModal isOpen={loading} className="custom-modal">
+       
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '50%',
+            backgroundColor: '#73a33f00',
+          }}
+        >
+          <div style={{ textAlign: 'center', backgroundColor: '#73a33f00', padding: '20px', borderRadius: '8px' }}>
+          <IonImg
+           
+              src="logodhbaru1.png"
+              alt="Logo DH"
+              style={{
+                width: '220px',
+                height: '80px',
+                position: 'relative',
+                zIndex: 1,
+              }}
+            />
+           
+            <p style={{ justifyContent:"center" , fontSize:"36px" , color:"orange"}}>Proses Load Data!!</p>
+            <p style={{ justifyContent:"center" , fontSize:"24px" , color:"green"}}>Mohon Tunggu Sebentar!!</p>
+            <IonSpinner name="crescent"  className="ion-spinner"/>
+          </div>
+        </div>
+      </IonModal>
           <div className="padding-content">
             <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>
             <h4>Employee ID : {fuelmanId}</h4>
@@ -752,7 +722,7 @@ useEffect(() => {
                 />
                 <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>
               </IonModal> */}
-<IonItem>
+        <IonItem>
         <IonInput
           value={new Date(date).toLocaleDateString('en-GB')}  // Display date in readable format (e.g., DD/MM/YYYY)
           placeholder="Select Date"
@@ -778,9 +748,11 @@ useEffect(() => {
               className={`custom-input `}
               type="number"
               value={openingSonding}
-              onIonChange={handleOpeningSondingChange}
-
-             
+              onIonInput={(e) => {
+                const value = Number(e.detail.value);
+                handleOpeningSondingChange(e); // Call the handler here
+              }}
+              // onIonChange={handleOpeningSondingChange}
               // onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
             />
             {showError && openingSonding === undefined && (

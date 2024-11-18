@@ -14,8 +14,13 @@ const ReviewData: React.FC = () => {
     const route = useIonRouter();
     const [latestLkfId, setLatestLkfId] = useState<string | undefined>(undefined);
     const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
+    const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
     const [closeSonding, setCloseSonding] = useState<number | undefined>(undefined);
-    const [receive, setReceive] = useState<number | undefined>(undefined);
+
+    const [closingDip, setCloseDip] = useState<number | undefined>(undefined);
+    const [hmEnd, setHmEnd] = useState<number | undefined>(undefined);
+    const [closeData, setCloseData] = useState<number | undefined>(undefined);
+    const [totalReceipt, setReceipt] = useState<number | undefined>(undefined);
     const [stock, setStockOnHand] = useState<number | undefined>(undefined);
     const [qtyIssued, setIssued] = useState<number | undefined>(undefined);
     const [flowMeterStart, setFlowMeterStart] = useState<number | undefined>(undefined);
@@ -28,36 +33,106 @@ const ReviewData: React.FC = () => {
     const [totalIssued, setTotalIssued] = useState<number>();
     const [stockOnHand, setDataStock] = useState<number >();
     const [flowMeterAwal, setFlowMeterAwal] = useState<number>();
-    const [totalDataFlowMeter, setTotalFlowMeter] = useState<number>();
+    const [totalVariance, setTotalVariance] = useState(0);
+    const [totalDataFlowMeter, setTotalFlowMeter] = useState<number>(); 
+   
+
+
+
+    // useEffect(() => {
+    //     const fetchLatestLkfId = async () => {
+    //         const id = await getLatestLkfId();
+    //         setLatestLkfId(id);
+
+    //         const data = await getLatestLkfData();
+    //         if (data) {
+    //             setLatestLkfId(data.lkf_id);
+    //             setOpeningSonding(data.opening_sonding);
+    //         }
+
+    //         const shiftData = localStorage.getItem("shiftData");
+    //         if (shiftData) {
+    //             const parsedData = JSON.parse(shiftData);
+    //             setCloseSonding(parsedData.open_sonding || 0);
+               
+    //             setStockOnHand(parsedData.stockOnHand || 0);
+    //             setIssued(parsedData.qtyIssued || 0);
+    //             setFlowMeterStart(parsedData.flowMeterStart || 0);
+    //             setTotalFlowMeter(parsedData.totalFlowMeter || 0);
+    //         }
+
+    //         const lkfData = localStorage.getItem("latestLkfData");
+    //         if (lkfData) {
+    //             const parsedData = JSON.parse(lkfData);
+    //             setCloseSonding(parsedData.closing_sonding || 0);
+    //         }
+    //         if (lkfData) {
+    //             const parsedData = JSON.parse(lkfData);
+    //             setCloseDip(parsedData.closing_dip || 0);
+    //         }
+    //         if (lkfData) {
+    //             const parsedData = JSON.parse(lkfData);
+    //             setHmEnd(parsedData.hm_end || 0);
+    //         }
+
+    //         if (lkfData) {
+    //             const parsedData = JSON.parse(lkfData);
+    //             setCloseData(parsedData.close_data || 0);
+    //         }
+
+    //         const userData = localStorage.getItem("loginData");
+    //         if (userData) {
+    //             const parsedData = JSON.parse(userData);
+    //             setDataUserLog(parsedData);
+    //             setStation(parsedData.station);
+    //         }
+    //     };
+    //     fetchLatestLkfId();
+    // }, []);
+
+    
 
     useEffect(() => {
         const fetchLatestLkfId = async () => {
             const id = await getLatestLkfId();
             setLatestLkfId(id);
-
+    
             const data = await getLatestLkfData();
             if (data) {
                 setLatestLkfId(data.lkf_id);
                 setOpeningSonding(data.opening_sonding);
             }
-
+    
             const shiftData = localStorage.getItem("shiftData");
             if (shiftData) {
                 const parsedData = JSON.parse(shiftData);
                 setCloseSonding(parsedData.open_sonding || 0);
-                setReceive(parsedData.calculationReceive || 0);
                 setStockOnHand(parsedData.stockOnHand || 0);
                 setIssued(parsedData.qtyIssued || 0);
                 setFlowMeterStart(parsedData.flowMeterStart || 0);
                 setTotalFlowMeter(parsedData.totalFlowMeter || 0);
             }
-
+    
             const lkfData = localStorage.getItem("latestLkfData");
+            let closeDataValue = 0;
+            let closingDipValue = 0;
+    
             if (lkfData) {
                 const parsedData = JSON.parse(lkfData);
+    
                 setCloseSonding(parsedData.closing_sonding || 0);
+                setCloseDip(parsedData.closing_dip || 0);
+                setHmEnd(parsedData.hm_end || 0);
+                setCloseData(parsedData.close_data || 0);
+    
+                // Save values for variance calculation
+                closeDataValue = parsedData.close_data || 0;
+                closingDipValue = parsedData.closing_dip || 0;
             }
-
+    
+            // Calculate Total Variance
+            setTotalVariance(closeDataValue - closingDipValue);
+    
             const userData = localStorage.getItem("loginData");
             if (userData) {
                 const parsedData = JSON.parse(userData);
@@ -65,26 +140,22 @@ const ReviewData: React.FC = () => {
                 setStation(parsedData.station);
             }
         };
+    
         fetchLatestLkfId();
     }, []);
-
-
-
-
+    
     useEffect(() => {
         const getcardDash = () => {
             try {
                 const cachedData = localStorage.getItem('cardDash');
                 if (cachedData) {
                     const cardDash = JSON.parse(cachedData);
-
                     const totalIsssued = cardDash.find((item: { title: string; }) => item.title === "QTY Issued");
-
                     const closeData = cardDash.find((item: { title: string; }) => item.title === "Stock On Hand");
                     const flowMeterAwal = cardDash.find((item: { title: string; }) => item.title === "Flow Meter Awal");
                     const totalMeter = cardDash.find((item: { title: string; }) => item.title === "Flow Meter Akhir");
-
-                    
+                    const totalReceipt = cardDash.find((item: { title: string; }) => item.title === "Receipt");
+                    const openingDip = cardDash.find((item: { title: string; }) => item.title === "Opening Dip");
 
                     if (totalIsssued) {
                         setTotalIssued(Number(totalIsssued.value || 0));
@@ -100,6 +171,13 @@ const ReviewData: React.FC = () => {
                     if (totalMeter) {
                         setTotalFlowMeter(Number(totalMeter.value || 0));
                     }
+                    if (totalReceipt) {
+                        setReceipt(Number(totalReceipt.value || 0));
+                    }
+                    if (openingDip) {
+                        setOpeningDip(Number(openingDip.value || 0));
+                    }
+                    
                 }
             } catch (error) {
                 console.error('Error retrieving cardDash from localStorage:', error);
@@ -196,10 +274,10 @@ const ReviewData: React.FC = () => {
                             <IonLabel className='font-review'>Review Data</IonLabel>
                         </IonListHeader>
                         <IonItem>
-                            <IonLabel className='font-review'>Open Sonding / Dip: {openingSonding !== undefined ? openingSonding : "Loading..."} Cm</IonLabel>
+                            <IonLabel className='font-review'>Open Sonding / Dip: {openingSonding !== undefined ? openingSonding : "Loading..."} Cm : {openingDip} Liters</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Receive : {receive}</IonLabel>
+                            <IonLabel className='font-review'>Receive : {totalReceipt}</IonLabel>
                         </IonItem>
                         <IonItem>
                             <IonLabel className='font-review'>Stock On Hand : {stockOnHand}</IonLabel>
@@ -208,10 +286,10 @@ const ReviewData: React.FC = () => {
                             <IonLabel className='font-review'>Issued : {totalIssued}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Balance : {stockOnHand}</IonLabel>
+                            <IonLabel className='font-review'>HM KM End: {hmEnd}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Closing Sonding / Dip : {closeSonding}</IonLabel>
+                            <IonLabel className='font-review'>Closing Sonding / Dip : {closeSonding} Cm : {closingDip}  Liter </IonLabel>
                         </IonItem>
                         <IonItem>
                             <IonLabel className='font-review'>Start Meter : {flowMeterAwal}</IonLabel>
@@ -220,7 +298,7 @@ const ReviewData: React.FC = () => {
                             <IonLabel className='font-review'>Total Meter : {totalIssued}</IonLabel>
                         </IonItem>
                         <IonItem>
-                            <IonLabel className='font-review'>Daily Variance :</IonLabel>
+                            <IonLabel className='font-review'>Daily Variance : {totalVariance}</IonLabel>
                         </IonItem>
                     </IonList>
                     <div style={{ marginTop: "20px", float: "inline-end" }}>
