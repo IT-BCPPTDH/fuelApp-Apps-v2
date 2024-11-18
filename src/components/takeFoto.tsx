@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { IonCard, IonButton, IonLabel, IonImg, IonIcon, IonCol, IonAlert } from '@ionic/react';
 import { cameraOutline, imageOutline } from 'ionicons/icons';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+// import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 const CameraInput: React.FC = () => {
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined);
