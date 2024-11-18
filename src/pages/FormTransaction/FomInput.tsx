@@ -959,11 +959,11 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
       setShowJamErrorInput(false);
     }
   
-    // Proceed with startTime validation
+   
     if (startTime) {
       if (!validateShiftTime(startTime, newEndTime)) {
         setShowJamError(true);
-        setShowJamErrorInput(true); // Show error if validation fails
+        setShowJamErrorInput(true); 
       } else {
         setShowJamError(false);
         setShowJamErrorInput(false); // Hide error if validation is successful

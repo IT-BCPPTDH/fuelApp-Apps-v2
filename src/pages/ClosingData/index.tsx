@@ -250,7 +250,7 @@ const FormClosing: React.FC = () => {
         } else {
             setErrorMessage('');
             setHmEnd(hmEndInput);
-            setPreviousHmEnd(hmEndInput); // Update previous value
+            // setPreviousHmEnd(hmEndInput); // Update previous value
             setIsCloseShiftDisabled(false); // Enable the button
         }
     };
