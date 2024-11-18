@@ -59,7 +59,7 @@ import { getAllQuota } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
-import CameraInput from "../../components/takeFoto";
+// import CameraInput from "../../components/takeFoto";
 import { saveDataToStorage } from "../../services/dataService";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 
@@ -428,7 +428,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   
     if (file) {
       try {
-        // Step 1: Log the file and generate signature (for debugging)
+    
         console.log('Selected file:', file);
         
         // You may want to generate a "signature" from the file, e.g., a hash or name
@@ -1694,7 +1694,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
               </IonRow>
               <IonRow>
                 <IonCol>
-                  <CameraInput />
+                  {/* <CameraInput /> */}
                 </IonCol>
                 <IonCol>
                   <IonCard style={{ height: "160px" }}>
