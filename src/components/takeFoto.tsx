@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { IonCard, IonButton, IonLabel, IonImg, IonIcon, IonCol, IonAlert } from '@ionic/react';
-import { cameraOutline, imageOutline } from 'ionicons/icons';
+import { cameraOutline } from 'ionicons/icons';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 
-const CameraInput: React.FC = () => {
-  const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined);
+// Define the type for the props, including setPhotoPreview
+interface CameraInputProps {
+  setPhotoPreview: React.Dispatch<React.SetStateAction<string | undefined>>;
+}
+
+const CameraInput: React.FC<CameraInputProps> = ({ setPhotoPreview }) => {
   const [showAlert, setShowAlert] = useState(false);
+  const [photoPreview, setPhotoPreviewLocal] = useState<string | undefined>(undefined); // Local state for preview
 
   // Function to choose between taking a photo or selecting from the gallery
   const handleChooseSource = () => {
@@ -21,7 +26,13 @@ const CameraInput: React.FC = () => {
         source: source,
         quality: 90,
       });
-      setPhotoPreview(photo.dataUrl);
+      const imageUrl = photo.dataUrl;
+
+      // Log the image URL to the console
+      console.log('Captured Image URL:', imageUrl);
+
+      setPhotoPreview(imageUrl);  // Pass the URL to the parent component
+      setPhotoPreviewLocal(imageUrl); // Optionally, update the local preview state
     } catch (error) {
       console.error('Error selecting photo:', error);
     }
@@ -32,13 +43,14 @@ const CameraInput: React.FC = () => {
       <IonCard style={{ height: '160px', marginTop: '-7px' }}>
         <IonButton size="small" onClick={handleChooseSource}>
           <IonIcon slot="start" icon={cameraOutline} />
-          Ambil Foto 
+          Ambil Foto
         </IonButton>
+        {/* Render the photo preview if it exists */}
         {photoPreview && (
           <IonCard style={{ marginTop: '10px', padding: '10px' }}>
             <IonLabel>Preview:</IonLabel>
             <IonImg
-              src={photoPreview}
+              src={photoPreview}  // Correct: Use `photoPreview` (string URL) instead of `setPhotoPreview`
               alt="Photo Preview"
               style={{ maxWidth: '100%', maxHeight: '200px' }}
             />
@@ -70,6 +82,6 @@ const CameraInput: React.FC = () => {
       />
     </IonCol>
   );
-}; 
+};
 
 export default CameraInput;
