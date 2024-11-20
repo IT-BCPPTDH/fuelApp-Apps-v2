@@ -207,10 +207,12 @@ if (progress > 1) {
           console.error('Failed to update opening dip', error);
         }
       }
-    }, 300), // Adjust the delay as needed
-    [sondingMasterData] // Dependency array
+    }, 300), 
+    [sondingMasterData] 
   );
 
+
+  
   useEffect(() => {
     debouncedUpdate(openingSonding, station);
   }, [openingSonding, station, debouncedUpdate]);

@@ -426,5 +426,3 @@ useEffect(() => {
 };
 
 export default Login;
-
-

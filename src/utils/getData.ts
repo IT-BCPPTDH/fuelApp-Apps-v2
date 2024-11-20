@@ -91,7 +91,7 @@ export const getCalculationIssued = async (lkfId: string): Promise<number | unde
   
     const issuedTransactions = await db.dataTransaksi
       .where('type')
-      .anyOf(['Issued', 'Transfer'])
+      .anyOf(['Issued'])
       .toArray();
 
    
@@ -108,6 +108,35 @@ export const getCalculationIssued = async (lkfId: string): Promise<number | unde
     const totalIssued = filteredTransactions.reduce((sum, transaction) => sum + (transaction.qty ?? 0), 0);
 
     return totalIssued;
+  } catch (error) {
+    console.error("Failed to fetch issued transactions from IndexedDB:", error);
+    return undefined;
+  }
+};
+
+
+
+export const getCalculationITransfer = async (lkfId: string): Promise<number | undefined> => {
+  try {
+  
+    const transferTransactions = await db.dataTransaksi
+      .where('type')
+      .anyOf(['Transfer'])
+      .toArray();
+
+   
+    const filteredTransactions = transferTransactions.filter(transaction => transaction.lkf_id === lkfId);
+
+   
+    filteredTransactions.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      return dateB - dateA; // Latest first
+    });
+
+    const totalTransfer = filteredTransactions.reduce((sum, transaction) => sum + (transaction.qty ?? 0), 0);
+
+    return totalTransfer;
   } catch (error) {
     console.error("Failed to fetch issued transactions from IndexedDB:", error);
     return undefined;

@@ -60,6 +60,8 @@ import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
 
+import CameraInput from "../../components/takeFoto";
+
 import { saveDataToStorage } from "../../services/dataService";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 
@@ -117,13 +119,11 @@ const typeTrx: Typetrx[] = [
 ];
 
 
-interface FormTRXProps {
-  setDataHome: (data: any[]) => void; // Type for the setDataHome function
-}
+
 
 const compareWith = (o1: Typetrx, o2: Typetrx) => o1.id === o2.id;
 
-const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
+const FormTRX: React.FC = () => {
   const input1Ref = useRef<HTMLIonInputElement>(null);
   const input2Ref = useRef<HTMLIonInputElement>(null);
 
@@ -163,6 +163,10 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   const [signatureBase64, setSignatureBase64] = useState<string | undefined>(
     undefined
   );
+
+  const [fotoBase64, setFotoBase64] = useState<string | undefined>(
+    undefined
+  );
   const [fuelman_id, setFuelmanId] = useState<string>("");
   const [allUsers, setAllUser] = useState<string>("");
   const route = useIonRouter();
@@ -172,13 +176,13 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   >([]);
   const [koutaLimit, setKoutaLimit] = useState<number | undefined>(undefined);
   const [photo, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [dipStart, setDipStart] = useState<number | undefined>(undefined);
   const [dipEnd, setDipEnd] = useState<number | undefined>(undefined);
   const [sondingStart, setSondingStart] = useState<number | undefined>(
     undefined
   );
   const [presentToast] = useIonToast(); // Destructure the toast function
+  const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined);
 
   const [sondingEnd, setSondingEnd] = useState<number | undefined>(undefined);
   const [Refrence, setRefrence] = useState<number | undefined>(undefined);
@@ -239,7 +243,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   const [lkfId, setLkfId] = useState<string>('');
   const [qtyValue, setQtyValue] = useState<number | null>(null);
 
-
+ 
   // State untuk menyimpan data unit
   // const [noUnit, setNoUnit] = useState<string>(''); // Nilai no_unit yang ingin dipanggil
   const [loading, setLoading] = useState<boolean>(false);
@@ -272,7 +276,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   const [owner, setOwner] = useState<string>('');
   const [qtyLast, setQtyLast] = useState<number>(0);
 
-  const [photoFile, setPhotoFile] = useState<File | null>(null); // For the file
+  const [photoFile, setPhotoFile] = useState<string | null>(null); // For the file
 
   const [signature, setSignature] = useState<string | null>(null);
 
@@ -420,7 +424,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>,
-    setPhoto: React.Dispatch<React.SetStateAction<File | null>>,
+    setPhoto: React.Dispatch<React.SetStateAction<string | null>>,
     setBase64: React.Dispatch<React.SetStateAction<string | undefined>>,
     setSignature: React.Dispatch<React.SetStateAction<string | null>>
   ) => {
@@ -428,24 +432,22 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   
     if (file) {
       try {
-    
+       
         console.log('Selected file:', file);
         
-        // You may want to generate a "signature" from the file, e.g., a hash or name
-        const fotoSignature = generateSignature(file); // Generate the signature based on your logic
-        console.log('Generated signature:', fotoSignature); // Log the signature
-        setSignature(fotoSignature); // Set the signature state
+        const uploadFoto = generateFoto(file); 
+        console.log('Generated signature:', uploadFoto ); 
+        setPhoto(uploadFoto); 
+
+        const fotoSignature = generateSignature(file); 
+        console.log('Generated signature:', fotoSignature); 
+        setSignature(fotoSignature); 
   
-        // Step 2: Convert the file to Base64 using the convertToBase64 function
         const base64 = await convertToBase64(file);
-        console.log('Base64 representation:', base64); // Log Base64 string
+        console.log('Base64 representation:', base64); 
   
-        // Step 3: Set the Base64 state
+        
         setBase64(base64);
-  
-        // You do not need to generate the signature again here, unless it's different logic
-        // const signature = generateSignature(file); // If you need a different logic for signature, call it here
-        // setSignature(signature);
   
       } catch (error) {
         console.error('Error handling file:', error);
@@ -458,12 +460,12 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        resolve(reader.result as string); // Resolve with the base64 string
+        resolve(reader.result as string); 
       };
       reader.onerror = (error) => {
         reject(error); // Reject on error
       };
-      reader.readAsDataURL(file); // Start reading the file as a Data URL (base64)
+      reader.readAsDataURL(file); 
     });
   };
 
@@ -471,6 +473,12 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
     // Example: you could generate a hash, timestamp, or use any other method to create a signature
     return `${file.name}_${Date.now()}`;
   };
+
+  const generateFoto = (file: File): string => {
+    // Example: you could generate a hash, timestamp, or use any other method to create a signature
+    return `${file.name}_${Date.now()}`;
+  };
+
 
   const handleClose = () => {
     route.push("/dashboard");
@@ -584,7 +592,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
 
           // Update Flow Meter Akhir in cardDash (online mode)
           const cardDashOnline = JSON.parse(localStorage.getItem("cardDash") || "[]");
-          updateCardDashFlowMeter(flow_end, cardDashOnline, setDataHome);
+          updateCardDashFlowMeter(flow_end, cardDashOnline);
 
           alert("Transaksi sukses dikirim ke server");
         }
@@ -603,7 +611,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
         const cardDashOffline = JSON.parse(localStorage.getItem("cardDash") || "[]");
         if (Array.isArray(cardDashOffline)) {
           // Update Flow Meter Akhir in cardDash (offline mode)
-          updateCardDashFlowMeter(flow_end, cardDashOffline, setDataHome);
+          updateCardDashFlowMeter(flow_end, cardDashOffline);
         } else {
           console.error("Invalid cardDash data in localStorage");
         }
@@ -1004,7 +1012,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
       if (typeof selectedUnit === "string" && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
         // Validate against remaining quota for specific unit types
         if (inputQuantity > quota) {
-          setQuantityError("Qty tidak boleh lebih besar dari sisa kouta.");
+          setQuantityError("Qty tidak boleh lebih besar dari sisa kuota.");
           setIsError(true);
           return;
         }
@@ -1026,12 +1034,10 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   };
   
 
-
   useEffect(() => {
     const loadUnitDataQuota = async () => {
       const today = new Date();
       const formattedDate = today.toISOString().split('T')[0];
-
       try {
         let quotaData;
 
@@ -1236,17 +1242,18 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
       }
     }
   };
+
   useEffect(() => {
     const getOfflineData = async () => {
-      // Clear hm_km value when a new unit is selected
-      setHmLast(0);  // Reset to 0 initially when unit is changed
+  
+      setHmLast(0);  
 
       const offlineData = await fetchLatestHmLast(selectedUnit);
 
-      // Log the fetched offline data for debugging
+    
       console.log("Fetched offline data:", offlineData);
 
-      // If the unit has a valid hm_km, set it
+      
       if (offlineData.hm_km !== undefined) {
         setHmLast(offlineData.hm_km);  // Set hm_km from offline data
       } else {
@@ -1553,7 +1560,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
                     type="number"
                     value={flowMeterAwal}
                     placeholder="Input Flow meter awal"
-                    disabled={isFormDisabled}
+                    disabled
                   />
                 </IonCol>
                 <IonCol>
@@ -1574,7 +1581,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
                         ? calculateFlowEnd(selectedType?.name || "")
                         : ""
                     }
-
+                    disabled
                     placeholder=""
                   />
 
@@ -1694,7 +1701,8 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
               </IonRow>
               <IonRow>
                 <IonCol>
-                  
+                <CameraInput setPhotoPreview={setPhotoPreview} />
+
                 </IonCol>
                 <IonCol>
                   <IonCard style={{ height: "160px" }}>
@@ -1703,7 +1711,7 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
                       accept="image/*"
                       id="signatureInput"
                       style={{ display: "none" }}
-                      onChange={(e) => handleFileChange(e, setPhoto, setBase64, setSignature)}
+                      onChange={(e) => handleFileChange(e, setPhotoFile, setBase64, setSignature)}
                     />
                     <IonButton 
                       color="warning"
@@ -1769,8 +1777,8 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
           <IonAlert
             
             isOpen={isAlertOpen}
-            header="Data Tersimpan"
-            message="Data Anda berhasil disimpan."
+            header="Pastikan Data Terisi Semua"
+            message="Simpan Data "
             buttons={['OK']}
             style={{ width: '400' }} 
           />
@@ -1781,4 +1789,5 @@ const FormTRX: React.FC<FormTRXProps> = ({ setDataHome }) => {
   );
 };
 export default FormTRX;
+
 

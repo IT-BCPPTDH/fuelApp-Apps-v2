@@ -60,9 +60,7 @@ const App: React.FC = () => {
                     {isLoggedIn === 'true' ? <DashboardFuelMan /> : <Redirect to="/login" />}
                 </Route>
                 <Route exact path="/transaction">
-                    {isLoggedIn === 'true' ? <FormTrx setDataHome={function (data: any[]): void {
-                        throw new Error('Function not implemented.');
-                    } } /> : <Redirect to="/login" />}
+                    {isLoggedIn === 'true' ? <FormTrx/> : <Redirect to="/login" />}
                 </Route>
                 <Route exact path="/closing-data">
                     {isLoggedIn === 'true' ? <FormClosing /> : <Redirect to="/login" />}

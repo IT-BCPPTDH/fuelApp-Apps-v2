@@ -23,7 +23,7 @@ import {
 
 } from '@ionic/react';
 import TableData from '../../components/Table';
-import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate } from '../../utils/getData';
+import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate, getCalculationITransfer } from '../../utils/getData';
 import { getHomeByIdLkf, getHomeTable } from '../../hooks/getHome';
 import NetworkStatus from '../../components/network';
 import { fetchUnitData, getDataFromStorage } from '../../services/dataService';
@@ -204,10 +204,12 @@ const DashboardFuelMan: React.FC = () => {
           // Get calculation receive and update stock on hand
           const calculationReceive = await getCalculationReceive(lkfId);
 
+          const calculationTransfer = await getCalculationITransfer(lkfId)
+
           // Treat calculationReceive as a number directly
           const qtyReceive = typeof calculationReceive === 'number' ? calculationReceive : 0;
           const qtyIssued = typeof calculationIssued === 'number' ? calculationIssued : 0;
-
+          const qtyTransfer = typeof calculationTransfer === 'number' ? calculationTransfer : 0;
           // Calculate Stock On Hand as Opening Dip + QTY Received - QTY Issued
           const openingDip = shiftData.openingDip ?? 0;
           const stockOnHand = openingDip + qtyReceive - qtyIssued  ;
@@ -224,7 +226,7 @@ const DashboardFuelMan: React.FC = () => {
             { title: 'FS/FT No', value: shiftData.station || 'No Data', icon: 'fs.svg' },
             { title: 'Opening Dip', value: openingDip || 0, icon: 'openingdeep.svg' },
             { title: 'Receipt', value: qtyReceive || 0, icon: 'receipt.svg' },
-            { title: 'Stock On Hand', value: stockOnHand || 0, icon: 'stock.svg' },
+            { title: 'Transfer', value: qtyTransfer || 0, icon: 'issued.svg' },
             { title: 'QTY Issued', value: qtyIssued || 0, icon: 'issued.svg' },
             // { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
             // { title: 'Closing Dip', value: shiftData.openingDip ?? 0, icon: 'close.svg' },
@@ -235,6 +237,7 @@ const DashboardFuelMan: React.FC = () => {
               icon: 'flwakhir.svg'
             },
             { title: 'Total Flow Meter', value: qtyIssued || 0, icon: 'total.svg' },
+            { title: 'Stock On Hand', value: stockOnHand || 0, icon: 'stock.svg' },
             // { title: 'Variance', value: (shiftData.openingDip ?? 0) - (balance ?? 0), icon: 'variance.svg' }
           ];
 
@@ -749,8 +752,8 @@ const DashboardFuelMan: React.FC = () => {
                   marginRight: "15px",
                   marginTop: "-15px"
                 }}>
-                  * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
-                  * QTY Issued adalah Issued + Transfer
+                  * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Tambah’ Untuk Membuka Formnya, Terima kasih
+                 
                 </p>
               </p>
             </IonRow>

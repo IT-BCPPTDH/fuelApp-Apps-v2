@@ -8,7 +8,16 @@ import { logoutUser } from '../../hooks/useAuth';
 
 import './style.css';
 import { deleteAllClosingData, deleteAllDataTransaksi } from '../../utils/delete';
-import { removeDataFromStorage } from '../../services/dataService';
+import { getDataFromStorage, removeDataFromStorage } from '../../services/dataService';
+
+interface UserData {
+    jde: any;
+    userId: string;
+    session_token: string;
+    station: string;
+    logId: string;
+    logout_time:string;
+}
 
 const ReviewData: React.FC = () => {
     const route = useIonRouter();
@@ -35,61 +44,148 @@ const ReviewData: React.FC = () => {
     const [flowMeterAwal, setFlowMeterAwal] = useState<number>();
     const [totalVariance, setTotalVariance] = useState(0);
     const [totalDataFlowMeter, setTotalFlowMeter] = useState<number>(); 
+    const[jde, setJde] =useState("")
    
 
 
 
-    // useEffect(() => {
-    //     const fetchLatestLkfId = async () => {
-    //         const id = await getLatestLkfId();
-    //         setLatestLkfId(id);
+  useEffect(() => {
+        const fetchLatestLkfId = async () => {
+            const id = await getLatestLkfId();
+            setLatestLkfId(id);
 
-    //         const data = await getLatestLkfData();
-    //         if (data) {
-    //             setLatestLkfId(data.lkf_id);
-    //             setOpeningSonding(data.opening_sonding);
-    //         }
+            const data = await getLatestLkfData();
+            if (data) {
+                setLatestLkfId(data.lkf_id);
+                setOpeningSonding(data.opening_sonding);
+            }
 
-    //         const shiftData = localStorage.getItem("shiftData");
-    //         if (shiftData) {
-    //             const parsedData = JSON.parse(shiftData);
-    //             setCloseSonding(parsedData.open_sonding || 0);
+            const shiftData = localStorage.getItem("shiftData");
+            if (shiftData) {
+                const parsedData = JSON.parse(shiftData);
+                setCloseSonding(parsedData.open_sonding || 0);
                
-    //             setStockOnHand(parsedData.stockOnHand || 0);
-    //             setIssued(parsedData.qtyIssued || 0);
-    //             setFlowMeterStart(parsedData.flowMeterStart || 0);
-    //             setTotalFlowMeter(parsedData.totalFlowMeter || 0);
-    //         }
+                setStockOnHand(parsedData.stockOnHand || 0);
+                setIssued(parsedData.qtyIssued || 0);
+                setFlowMeterStart(parsedData.flowMeterStart || 0);
+                setTotalFlowMeter(parsedData.totalFlowMeter || 0);
+            }
 
-    //         const lkfData = localStorage.getItem("latestLkfData");
-    //         if (lkfData) {
-    //             const parsedData = JSON.parse(lkfData);
-    //             setCloseSonding(parsedData.closing_sonding || 0);
-    //         }
-    //         if (lkfData) {
-    //             const parsedData = JSON.parse(lkfData);
-    //             setCloseDip(parsedData.closing_dip || 0);
-    //         }
-    //         if (lkfData) {
-    //             const parsedData = JSON.parse(lkfData);
-    //             setHmEnd(parsedData.hm_end || 0);
-    //         }
+            const lkfData = localStorage.getItem("latestLkfData");
+            if (lkfData) {
+                const parsedData = JSON.parse(lkfData);
+                setCloseSonding(parsedData.closing_sonding || 0);
+            }
+            if (lkfData) {
+                const parsedData = JSON.parse(lkfData);
+                setCloseDip(parsedData.closing_dip || 0);
+            }
+            if (lkfData) {
+                const parsedData = JSON.parse(lkfData);
+                setHmEnd(parsedData.hm_end || 0);
+            }
 
-    //         if (lkfData) {
-    //             const parsedData = JSON.parse(lkfData);
-    //             setCloseData(parsedData.close_data || 0);
-    //         }
+            if (lkfData) {
+                const parsedData = JSON.parse(lkfData);
+                setCloseData(parsedData.close_data || 0);
+            }
 
-    //         const userData = localStorage.getItem("loginData");
-    //         if (userData) {
-    //             const parsedData = JSON.parse(userData);
-    //             setDataUserLog(parsedData);
-    //             setStation(parsedData.station);
-    //         }
-    //     };
-    //     fetchLatestLkfId();
-    // }, []);
+            const userData = localStorage.getItem("loginData");
+            if (userData) {
+                const parsedData = JSON.parse(userData);
+                setDataUserLog(parsedData);
+                setStation(parsedData.station);
+            }
+        };
+        fetchLatestLkfId();
+    }, []);
 
+    const getSessionTokenFromCookies = () => {
+        const cookieName = "session_token=";
+        const cookieArray = document.cookie.split(';');
+    
+        for (let i = 0; i < cookieArray.length; i++) {
+            const cookie = cookieArray[i].trim();
+            if (cookie.startsWith(cookieName)) {
+                return cookie.substring(cookieName.length, cookie.length);
+            }
+        }
+        return null;  // If the session_token is not found
+    };
+
+
+
+    const handleLogout = async () => {
+        try {
+            const now = new Date();
+            const logout_time = now.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
+            const time = now.toTimeString().split(' ')[0]; // Format time as HH:MM:SS
+    
+            // Prepare parameters with date and time
+            const params = {
+                logout_time: logout_time,
+                time: time,
+                station: '', 
+                JDE: '',
+                userId: '',
+                isLoggin: '',
+                logId: '',
+                isLogging: ''
+            };
+    
+            // Call the API to log out
+            await logoutUser(params);
+    
+            // Remove cookies after successful logout
+            Cookies.remove('isLoggedIn');
+            Cookies.remove('session_token');
+            // Clear specific shift data from local storage
+            const shiftData = localStorage.getItem('shiftData');
+            if (shiftData) {
+                const parsedShiftData = JSON.parse(shiftData);
+                // Example to remove 'flowMeterEnd' from shiftData if it exists
+                if (parsedShiftData.flowMeterEnd !== undefined) {
+                    delete parsedShiftData.flowMeterEnd;
+                    localStorage.setItem('shiftData', JSON.stringify(parsedShiftData));
+                } else {
+                    // Completely remove shiftData if no specific field to retain
+                    removeDataFromStorage('shiftData');
+
+                }
+
+                
+            }
+    
+            // Remove unitQouta from localStorage
+            removeDataFromStorage('unitQouta');
+       
+            removeDataFromStorage('lastLkfDataStation');
+            removeDataFromStorage('lastClosingSonding');
+            removeDataFromStorage('lastDipLiter');
+            removeDataFromStorage('lastFlowMeter');
+            removeDataFromStorage('shiftCloseData');
+            removeDataFromStorage('loginData');
+            removeDataFromStorage('allOperator');
+            removeDataFromStorage('allUnit');
+            removeDataFromStorage('stationData');
+
+            localStorage.removeItem('cardDash');
+            localStorage.removeItem('latestLkfData');
+
+           
+            // Delete dataTransaksi from IndexedDB
+            // await deleteData();
+            await deleteAllDataTransaksi();
+            await deleteAllClosingData()
+            // Redirect to the home page or login page
+            // route.push('/')
+            window.location.href='/'
+        
+        } catch (error) {
+            console.error('Logout failed:', error);
+            // Handle logout failure, e.g., show an error message
+        }
+    };
     
 
     useEffect(() => {
@@ -187,80 +283,6 @@ const ReviewData: React.FC = () => {
 
         getcardDash();
     }, []);
-
-
-    const handleLogout = async () => {
-        try {
-            const now = new Date();
-            const logout_time = now.toISOString().split('T')[0]; // Format date as YYYY-MM-DD
-            const time = now.toTimeString().split(' ')[0]; // Format time as HH:MM:SS
-    
-            // Prepare parameters with date and time
-            const params = {
-                logout_time: logout_time,
-                time: time,
-                station: '', 
-                JDE: '',
-                userId: '',
-                isLoggin: '',
-                logId: '',
-                isLogging: ''
-            };
-    
-            // Call the API to log out
-            await logoutUser(params);
-    
-            // Remove cookies after successful logout
-            Cookies.remove('isLoggedIn');
-            Cookies.remove('session_token');
-            // Clear specific shift data from local storage
-            const shiftData = localStorage.getItem('shiftData');
-            if (shiftData) {
-                const parsedShiftData = JSON.parse(shiftData);
-                // Example to remove 'flowMeterEnd' from shiftData if it exists
-                if (parsedShiftData.flowMeterEnd !== undefined) {
-                    delete parsedShiftData.flowMeterEnd;
-                    localStorage.setItem('shiftData', JSON.stringify(parsedShiftData));
-                } else {
-                    // Completely remove shiftData if no specific field to retain
-                    removeDataFromStorage('shiftData');
-
-                }
-
-                
-            }
-    
-            // Remove unitQouta from localStorage
-            removeDataFromStorage('unitQouta');
-       
-            removeDataFromStorage('lastLkfDataStation');
-            removeDataFromStorage('lastClosingSonding');
-            removeDataFromStorage('lastDipLiter');
-            removeDataFromStorage('lastFlowMeter');
-            removeDataFromStorage('shiftCloseData');
-            removeDataFromStorage('loginData');
-            removeDataFromStorage('allOperator');
-            removeDataFromStorage('allUnit');
-            removeDataFromStorage('stationData');
-
-            localStorage.removeItem('cardDash');
-            localStorage.removeItem('latestLkfData');
-
-           
-            // Delete dataTransaksi from IndexedDB
-            // await deleteData();
-            await deleteAllDataTransaksi();
-            await deleteAllClosingData()
-            // Redirect to the home page or login page
-            // route.push('/')
-            window.location.href='/'
-        
-        } catch (error) {
-            console.error('Logout failed:', error);
-            // Handle logout failure, e.g., show an error message
-        }
-    };
-    
     return (
         <IonPage>
             <IonHeader translucent={true} className="ion-no-border">

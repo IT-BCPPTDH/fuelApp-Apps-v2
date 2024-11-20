@@ -348,7 +348,7 @@ useEffect(() => {
         <IonButton onClick={handlePrevious} disabled={currentPage === 1}>
           <IonIcon icon={chevronBackOutline} />
         </IonButton>
-        <span style={{ margin: '0 20px' }}>Page {currentPage} of {totalPages}</span>
+        <span style={{ margin: '0 20px' }}>Page  {totalPages}</span>
         <IonButton onClick={handleNext} disabled={currentPage === totalPages}>
           <IonIcon icon={chevronForwardOutline} />
         </IonButton>
