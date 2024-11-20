@@ -59,7 +59,9 @@ import { getAllQuota } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
+
 import CameraInput from "../../components/takeFoto";
+
 import { saveDataToStorage } from "../../services/dataService";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 
@@ -1700,12 +1702,7 @@ const FormTRX: React.FC = () => {
               <IonRow>
                 <IonCol>
                 <CameraInput setPhotoPreview={setPhotoPreview} />
-                    {/* {photoPreview && (
-                      <div>
-                        <h3>Photo Preview:</h3>
-                        <img src={photoPreview} alt="Preview" style={{ width: '100%', maxHeight: '300px' }} />
-                      </div>
-                    )} */}
+
                 </IonCol>
                 <IonCol>
                   <IonCard style={{ height: "160px" }}>

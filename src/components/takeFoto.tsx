@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { IonCard, IonButton, IonLabel, IonImg, IonIcon, IonCol, IonAlert } from '@ionic/react';
 import { cameraOutline } from 'ionicons/icons';
@@ -85,3 +86,4 @@ const CameraInput: React.FC<CameraInputProps> = ({ setPhotoPreview }) => {
 };
 
 export default CameraInput;
+
