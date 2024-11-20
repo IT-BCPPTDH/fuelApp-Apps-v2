@@ -62,6 +62,22 @@ interface DataStationSonding {
   updated_by: string | null;
 }
 
+interface DataLastLkf {
+  closing_sonding: number;
+  closing_dip: number;
+  flow_meter_end: number;
+  hm_end: number;
+}
+
+interface Lkf{
+  close_data: number;
+  closing_dip: number;
+  closing_sonding: number;
+  flow_meter_end: number;
+  hm_end: number;
+  station: string;
+}
+
 const shifts: Shift[] = [
   { id: 1, name: "Day", type: "" },
   { id: 2, name: "Night", type: "" },
@@ -89,7 +105,7 @@ const OpeningForm: React.FC = () => {
   const [progress, setProgress] = useState(0);
   const [stationOptions, setStationOptions] = useState<string[]>([]);
 
-  const [closeShift, setCloseShift] = useState<any[]>([]); // Initialize as an array
+  const [closeShift, setCloseShift] = useState<DataLastLkf|null>(null); // Initialize as an array
   const [loading, setLoading] = useState<boolean>(true); // State to manage loading status
   const [error, setError] = useState<string | null>(null); 
   const router = useIonRouter();
@@ -553,10 +569,10 @@ useEffect(() => {
         if (stationData) {
           // const shiftClose = await fetchShiftData(stationData); // Pass the selected date to fetch data
           const lastLKF = localStorage.getItem('CapacitorStorage.lastLKF')
-          let lkf = JSON.parse(lastLKF)
+          let lkf: any = lastLKF ? JSON.parse(lastLKF) : null;
           // console.log('123',lkf)
           // console.log(234,stationData)
-          const shiftClose = lkf?.find((v:lkf) => v.station === stationData)
+          const shiftClose = lkf?.find((v:Lkf) => v.station === stationData)
           // console.log("Fetched Shift Close Data:", shiftClose);
 
           // Filter to only include specific fields
@@ -609,14 +625,14 @@ useEffect(() => {
             }
           }
 
-          const lastLkf = {
-            closing_sonding: shiftClose.closing_sonding,
-            closing_dip: shiftClose.closing_dip,
-            flow_meter_en: shiftClose.flow_meter_end,
-            hm_end: shiftClose.hm_end
+          const dataLastLkf: DataLastLkf = {
+            closing_sonding: shiftClose?.closing_sonding || 0, // Use default value if `shiftClose` might be undefined
+            closing_dip: shiftClose?.closing_dip || 0,
+            flow_meter_end: shiftClose?.flow_meter_end || 0,
+            hm_end: shiftClose?.hm_end || 0
           }
 
-          setCloseShift(lastLkf);
+          setCloseShift(dataLastLkf);
         } else {
           console.error("Station data not found in loginData");
         }
