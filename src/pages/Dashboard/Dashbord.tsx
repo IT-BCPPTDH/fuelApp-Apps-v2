@@ -132,6 +132,7 @@ const DashboardFuelMan: React.FC = () => {
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [result, setResult] = useState<number | null>(null);
   const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
+  const [fuelmanName, setFuelmanName] = useState<string | undefined>(undefined);
   const [unitOptions, setUnitOptions] = useState<
     {
       hm_km: SetStateAction<number | null>;
@@ -183,6 +184,20 @@ const DashboardFuelMan: React.FC = () => {
   }, []);
 
 
+  useEffect(() => {
+    const userData = async () => {
+      const data = await getDataFromStorage('loginData');
+      if (data) {
+        const parsedData = data; // Assuming data is already an object.
+        setFuelmanName(parsedData.fullname);
+        setFuelmanID(parsedData.jde)
+      } else {
+        console.error('No user data found in storage');
+      }
+    };
+    
+    userData(); // Call the async function
+  }, []);
 
 
   useEffect(() => {
@@ -234,10 +249,10 @@ const DashboardFuelMan: React.FC = () => {
             { title: 'Flow Meter Awal', value: shiftData.flowMeterStart ?? 0, icon: 'flwawal.svg' },
             {
               title: 'Flow Meter Akhir',
-              value: (shiftData.flowMeterStart ?? 0) + (qtyIssued ?? 0),
+              value: (shiftData.flowMeterStart ?? 0) + (qtyIssued ?? 0)+(qtyTransfer?? 0),
               icon: 'flwakhir.svg'
             },
-            { title: 'Total Flow Meter', value: qtyIssued || 0, icon: 'total.svg' },
+            { title: 'Total Flow Meter', value: qtyIssued + qtyTransfer || 0, icon: 'total.svg' },
             { title: 'Stock On Hand', value: stockOnHand || 0, icon: 'stock.svg' },
             // { title: 'Variance', value: (shiftData.openingDip ?? 0) - (balance ?? 0), icon: 'variance.svg' }
           ];
@@ -632,7 +647,7 @@ const DashboardFuelMan: React.FC = () => {
 
         const flowMeterStart = item.flow_meter_start || 0;
         const flowMeterAkhir = flowMeterStart + issued + transfer;
-
+      
         const preparedData = [
           { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
           { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
@@ -644,7 +659,7 @@ const DashboardFuelMan: React.FC = () => {
           // { title: 'Closing Dip', value: openingDip || 0, icon: 'close.svg' },
           { title: 'Flow Meter Awal', value: flowMeterStart, icon: 'flwawal.svg' },
           { title: 'Flow Meter Akhir', value: flowMeterAkhir, icon: 'flwakhir.svg' },
-          { title: 'Total Flow Meter', value: issued || 0, icon: 'total.svg' },
+          { title: 'Total Flow Meter', value: issued + transfer || 0, icon: 'total.svg' },
           // { title: 'Variance', value: item.totalVariance || 0, icon: 'variance.svg' },
         ];
 
@@ -746,8 +761,10 @@ const DashboardFuelMan: React.FC = () => {
             </IonRow>
           </IonGrid>
           <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <h4 >Fuelman TAB</h4>
-            <h4 >{latestDate}</h4>
+            <IonLabel>
+              Fuelman : {fuelmanName}  : {fuelmanID}
+            </IonLabel>
+            <IonLabel >{latestDate}</IonLabel>
           </IonRow>
         </div>
         <IonGrid >

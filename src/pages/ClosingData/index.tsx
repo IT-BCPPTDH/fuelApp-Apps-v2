@@ -312,7 +312,7 @@ const FormClosing: React.FC = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const cachedShiftData = await getDataFromStorage('shiftCloseData');
+                const cachedShiftData = await getDataFromStorage('lastLKF');
                 if (cachedShiftData && cachedShiftData.length > 0) {
                     const latestShiftData = cachedShiftData[cachedShiftData.length - 1];
                     if (latestShiftData.hm_end !== undefined) {
@@ -392,6 +392,7 @@ const FormClosing: React.FC = () => {
                                         type="number"
                                         onIonChange={handleHmEndChange}
                                         placeholder="HM KM Akhir"
+                                        value={hmEnd}
                                     />
                                      {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
                                 </IonCol>
