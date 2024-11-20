@@ -60,7 +60,7 @@ import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
 
-import CameraInput from "../../components/takeFoto";
+// import CameraInput from "../../components/takeFoto";
 
 import { saveDataToStorage } from "../../services/dataService";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
@@ -1701,7 +1701,7 @@ const FormTRX: React.FC = () => {
               </IonRow>
               <IonRow>
                 <IonCol>
-                <CameraInput setPhotoPreview={setPhotoPreview} />
+                {/* <CameraInput setPhotoPreview={setPhotoPreview} /> */}
 
                 </IonCol>
                 <IonCol>
