@@ -740,7 +740,7 @@ useEffect(() => {
        
         <div className="wrapper-content">
           
-        <IonModal isOpen={loading} className="custom-modal">
+        {/* <IonModal isOpen={loading} className="custom-modal">
        
         <div
           style={{
@@ -769,7 +769,7 @@ useEffect(() => {
             <IonSpinner name="crescent"  className="ion-spinner"/>
           </div>
         </div>
-      </IonModal>
+      </IonModal> */}
           <div className="padding-content">
             <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>
             <h4>Employee ID : {fuelmanId} - {fuelmanName}</h4>

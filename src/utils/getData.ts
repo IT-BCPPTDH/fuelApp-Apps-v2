@@ -18,39 +18,39 @@ interface ShiftData {
 
 
 // get Data By Fuelman Id
-export const getDataByFuelmanID = async (fuelman_id: string): Promise<DataLkf[]> => {
-  try {
-    const allData = await db.closeTrx.where("fuelman_id").equals(fuelman_id).toArray();
-    // Ensure latest record by ID
-    return allData.sort((a, b) => (b.id as number) - (a.id as number)); 
-  } catch (error) {
-    console.error("Failed to get data from IndexedDB:", error);
-    return [];
-  }
-};
+// export const getDataByFuelmanID = async (fuelman_id: string): Promise<DataLkf[]> => {
+//   try {
+//     const allData = await db.closeTrx.where("fuelman_id").equals(fuelman_id).toArray();
+//     // Ensure latest record by ID
+//     return allData.sort((a, b) => (b.id as number) - (a.id as number)); 
+//   } catch (error) {
+//     console.error("Failed to get data from IndexedDB:", error);
+//     return [];
+//   }
+// };
 
 // Function to get data by Station
-export const getDataByStation = async (station: string): Promise<DataLkf[]> => {
-  try {
-    const allData = await db.closeTrx.where("station").equals(station).toArray();
-    // sort data lastest 
-    return allData.sort((a, b) => (b.id as number) - (a.id as number)); 
-  } catch (error) {
-    console.error("Failed to get data from IndexedDB:", error);
-    return [];
-  }
-};
+// export const getDataByStation = async (station: string): Promise<DataLkf[]> => {
+//   try {
+//     const allData = await db.closeTrx.where("station").equals(station).toArray();
+//     // sort data lastest 
+//     return allData.sort((a, b) => (b.id as number) - (a.id as number)); 
+//   } catch (error) {
+//     console.error("Failed to get data from IndexedDB:", error);
+//     return [];
+//   }
+// };
 
 // Function to get data by ID
-export const getDataByID = async (id: number): Promise<DataLkf[]> => {
-  try {
-    const allData = await db.closeTrx.where("id").equals(id).toArray();
-    return allData;
-  } catch (error) {
-    console.error("Failed to get data from IndexedDB:", error);
-    return [];
-  }
-};
+// export const getDataByID = async (id: number): Promise<DataLkf[]> => {
+//   try {
+//     const allData = await db.closeTrx.where("id").equals(id).toArray();
+//     return allData;
+//   } catch (error) {
+//     console.error("Failed to get data from IndexedDB:", error);
+//     return [];
+//   }
+// };
 
 export const getLatestLkfId = async (): Promise<string | undefined> => {
   try {
