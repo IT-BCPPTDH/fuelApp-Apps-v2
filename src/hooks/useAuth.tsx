@@ -12,12 +12,6 @@ interface PostAuthParams {
 
 interface PostLogoutParams {
     logout_time: string;
-    station: string;
-    JDE: string;
-    userId: string;
-    isLoggin: string;
-    logId: string;
-    isLogging: string;
 }
 
 export class ResponseError extends Error {

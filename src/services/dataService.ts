@@ -8,7 +8,7 @@ import { Station } from '../models/interfaces';
 import { getAllSonding } from '../hooks/getAllSonding';
 import { getOperator } from '../hooks/getAllOperator';
 import { getStationData } from '../hooks/getDataTrxStation';
-import { getPrevUnitTrx } from '../hooks/getDataPrev';
+import { getDataLastLKF, getDataLastTrx, getPrevUnitTrx } from '../hooks/getDataPrev';
 import { postAuthLogin } from '../hooks/useAuth';
 import { getHomeByIdLkf } from '../hooks/getHome';
 
@@ -202,6 +202,38 @@ export const fetchUnitLastTrx = async (unitNo: string): Promise<any[]> => {
   } catch (error) {
     // Log the error with details
     console.error('Failed to fetch Shift Data. Error:', error);
+    return [];
+  }
+};
+
+export const fetchLasTrx = async (): Promise<any[]> => {
+  try {
+    const response = await getDataLastTrx(); 
+    if (response.status === '200' && Array.isArray(response.data)) {
+      await saveDataToStorage('lastTrx', response.data);
+      return response.data;
+    } else {
+      console.error('Unexpected data format');
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch unit data', error);
+    return [];
+  }
+};
+
+export const fetchLasLKF = async (): Promise<any[]> => {
+  try {
+    const response = await getDataLastLKF(); 
+    if (response.status === '200' && Array.isArray(response.data)) {
+      await saveDataToStorage('lastLKF', response.data);
+      return response.data;
+    } else {
+      console.error('Unexpected data format');
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch unit data', error);
     return [];
   }
 };

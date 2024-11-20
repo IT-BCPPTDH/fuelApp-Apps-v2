@@ -33,12 +33,14 @@ interface TableDataItem {
   fbr_historis: string;
   jenis_trx: string;
   qty_issued: number;
+  qty_last: number;
   fm_awal: number;
   fm_akhir: number;
   hm_last: number;
   jde_operator: string;
   name_operator: string;
   status: number;
+ 
 }
 
 
@@ -112,6 +114,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         fbr_historis: item.fbr ?? '',
         jenis_trx: item.type || '',
         qty_issued: item.qty ?? 0,
+        qty_last: item.qty_last ?? 0,
         fm_awal: item.flow_start ?? 0,
         fm_akhir: item.flow_end ?? 0,
         hm_last: item.hm_last,
@@ -163,7 +166,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       model_unit: item.model_unit,
       owner: item.owner,
       date_trx: new Date().toISOString(),
-      hm_last: item.hm_km,
+      hm_last: item.hm_last,
       hm_km: item.hm_km,
       qty_last: item.qty_issued,
       qty: item.qty_issued,
@@ -179,6 +182,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       created_by: createdBy,
       start: new Date().toISOString(),
       end: new Date().toISOString(),
+     
     }));
   
     try {
@@ -196,18 +200,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         }));
         setData(updatedData);
         
-      } else {
-        const unitQuota = await getDataFromStorage('unitQuota');
-        
-        for (let index = 0; index < unitQuota.length; index++) {
-          const element = unitQuota[index];
-          if (element.unit_no === bulkData[index].no_unit) {
-            element.used = bulkData[index].qty;
-          }
-        }
-        console.log("Updated unitQuota offline:", unitQuota);
       }
-  
       const totalInserted = bulkData.length;
       const successMessage = `Successfully saved ${totalInserted} items to the server.`;
       await presentToast({
@@ -231,7 +224,8 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
 
 
 
-
+ 
+  
 
 useEffect(() => {
   const handleOnline = () => {
@@ -316,7 +310,7 @@ useEffect(() => {
             <IonCol><IonText>Fullname</IonText></IonCol>
             <IonCol><IonText>Status</IonText></IonCol>
           </IonRow>
-          {paginatedData.map((item: TableDataItem) => (
+          {/* {paginatedData.map((item: TableDataItem) => (
             <IonRow style={{ width: "900px" }} key={item.from_data_id}>
               <IonCol><IonText>{item.unit_no}</IonText></IonCol>
               <IonCol><IonText>{item.model_unit}</IonText></IonCol>
@@ -328,14 +322,33 @@ useEffect(() => {
               <IonCol><IonText>{item.name_operator}</IonText></IonCol>
               <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol>
             </IonRow>
-          ))}
+          ))} */}
+          {paginatedData.map((item: TableDataItem) => {
+  // If the transaction type is "Receipt" or "Receipt KPC", use fm_awal as fm_akhir
+  const displayFmAkhir = (item.jenis_trx === 'Receipt' || item.jenis_trx === 'Receipt KPC') ? item.fm_awal : item.fm_akhir;
+
+  return (
+    <IonRow style={{ width: "900px" }} key={item.from_data_id}>
+      <IonCol><IonText>{item.unit_no}</IonText></IonCol>
+      <IonCol><IonText>{item.model_unit}</IonText></IonCol>
+      <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
+      <IonCol><IonText>{item.jenis_trx}</IonText></IonCol>
+      <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
+      <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
+      <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
+      <IonCol><IonText>{item.name_operator}</IonText></IonCol>
+      <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol>
+    </IonRow>
+  );
+})}
+
         </IonGrid>
       </IonCard>
       <div style={{ textAlign: 'start', margin: '20px' }}>
         <IonButton onClick={handlePrevious} disabled={currentPage === 1}>
           <IonIcon icon={chevronBackOutline} />
         </IonButton>
-        <span style={{ margin: '0 20px' }}>Page {currentPage} of {totalPages}</span>
+        <span style={{ margin: '0 20px' }}>Page  {totalPages}</span>
         <IonButton onClick={handleNext} disabled={currentPage === totalPages}>
           <IonIcon icon={chevronForwardOutline} />
         </IonButton>

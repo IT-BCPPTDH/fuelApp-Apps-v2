@@ -1,0 +1,10 @@
+{
+	"appId": "io.ionic.starter",
+	"appName": "FuelApp",
+	"webDir": "dist",
+	"plugins": {
+		"CapacitorHttp": {
+			"enabled": true
+		}
+	}
+}

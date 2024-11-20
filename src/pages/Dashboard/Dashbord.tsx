@@ -19,19 +19,22 @@ import {
   IonSpinner,
   IonSkeletonText,
   IonThumbnail,
-  
+
 
 } from '@ionic/react';
 import TableData from '../../components/Table';
-import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate } from '../../utils/getData';
+import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate, getCalculationITransfer } from '../../utils/getData';
 import { getHomeByIdLkf, getHomeTable } from '../../hooks/getHome';
 import NetworkStatus from '../../components/network';
-import { fetchUnitData, getDataFromStorage } from '../../services/dataService';
+import { fetchUnitData, getDataFromStorage, saveDataToStorage } from '../../services/dataService';
 import { handLeftSharp, home, navigate } from 'ionicons/icons';
 import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
-import { addDataTrxType } from '../../utils/insertData';
+import { addDataToDB, addDataTrxType, updateDataToDB } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
 import { Network } from '@capacitor/network';
+import { getPrevUnitTrx } from '../../hooks/getDataPrev';
+import { getStationData } from '../../hooks/getDataTrxStation';
+import { postOpening } from '../../hooks/serviceApi';
 
 
 // Define the data structure for the card
@@ -78,7 +81,7 @@ interface DataFormTrx {
   fbr: number;
   flow_start: number;
   flow_end: number;
-  signature: string | null;
+  signature: string;
   foto: string;
   type: string;
   lkf_id?: string;
@@ -105,7 +108,7 @@ const DashboardFuelMan: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [lkfId, setLkfId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
-  
+
   const [jde, setJde] = useState<string>('');
   const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
   const [jdeOptions, setJdeOptions] = useState<
@@ -114,13 +117,16 @@ const DashboardFuelMan: React.FC = () => {
 
   const [opDip, setOpDip] = useState<number | null>(null)
   const [shift, setOpShift] = useState<string | null>(null)
-  const [station, setOpStation] = useState<string | null>(null)
+
   const [receipt, setOpReceipt] = useState<number | null>(null)
   const [transfer, setOpTransfer] = useState<string | null>(null)
   const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
   const [totalPengeluaran, setTotalPengeluaran] = useState(0);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  
+  const [fuelmanID, setFuelmanID] = useState<string>('');
+  const [station, setStation] = useState<string>('');
+  const [site, setSite] = useState<string>('');
+
   const [pendingStatus, setPendingStatus] = useState(true);
   const [closeShift, setCloseShift] = useState<any[]>([]); // Initialize as an array
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
@@ -141,49 +147,145 @@ const DashboardFuelMan: React.FC = () => {
 
   const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(undefined);
   const [dataHome, setDataHome] = useState<any[]>([
-  
+
 
   ]);
-
+  const [stockOnHand, setStockOnHand] = useState<number>(0);
   const [totalIssued, setTotalIssued] = useState<number | null>(null); // State to store total_issued
 
   const [cardDash, setcardDash] = useState<cardDash[]>([
-  
+    { title: 'Shift', value: 'No Data', icon: 'shit.svg' },
+    { title: 'FS/FT No', value: 'No Data', icon: 'fs.svg' },
+    { title: 'Opening Dip', value: 'No Data', icon: 'openingdeep.svg' },
+    { title: 'Receipt', value: 'No Data', icon: 'receipt.svg' },
+    { title: 'Stock On Hand', value: 'No Data', icon: 'stock.svg' },
+    { title: 'QTY Issued', value: 'No Data', icon: 'issued.svg' },
+    { title: 'Balance', value: 'No Data', icon: 'balance.svg' },
+    { title: 'Closing Dip', value: 'No Data', icon: 'close.svg' },
+    { title: 'Flow Meter Awal', value: 'No Data', icon: 'flwawal.svg' },
+    { title: 'Flow Meter Akhir', value: 'No Data', icon: 'flwakhir.svg' },
+    { title: 'Total Flow Meter', value: 'No Data', icon: 'total.svg' },
+    { title: 'Variance', value: 'No Data', icon: 'variance.svg' }
   ]);
 
 
-//   useEffect(() => {
-//     const handleOnline = () => setIsOnline(true);
-//     const handleOffline = () => setIsOnline(false);
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    const updateOflineStatus = () => setIsOnline(navigator.onLine);
 
-//     window.addEventListener('online', handleOnline);
-//     window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
 
-//     // Cek data di local storage saat komponen di-mount
-//     const cachedData = localStorage.getItem('cardDash');
-//     if (cachedData) {
-//         setDataHome(JSON.parse(cachedData));
-//     }
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
 
-//     // Cleanup event listeners
-//     return () => {
-//         window.removeEventListener('online', handleOnline);
-//         window.removeEventListener('offline', handleOffline);
-//     };
-// }, []);
 
-useEffect(() => {
-  const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-  const updateOflineStatus = () => setIsOnline(navigator.onLine);
 
-  window.addEventListener('online', updateOnlineStatus);
-  window.addEventListener('offline', updateOnlineStatus);
 
-  return () => {
-    window.removeEventListener('online', updateOnlineStatus);
-    window.removeEventListener('offline', updateOnlineStatus);
-  };
-}, []);
+  useEffect(() => {
+    const fetchShiftData = async () => {
+      try {
+        // Remove existing cardDash data from localStorage
+        localStorage.removeItem('cardDash');
+
+        // Get the latest LKF ID
+        const lkfId = await getLatestLkfId();
+
+
+        if (lkfId) {
+          // Get shift data using the LKF ID
+          const shiftData = await getShiftDataByLkfId(lkfId);
+
+          // Get calculation issued
+          const calculationIssued = await getCalculationIssued(lkfId);
+
+          // Get calculation receive and update stock on hand
+          const calculationReceive = await getCalculationReceive(lkfId);
+
+          const calculationTransfer = await getCalculationITransfer(lkfId)
+
+          // Treat calculationReceive as a number directly
+          const qtyReceive = typeof calculationReceive === 'number' ? calculationReceive : 0;
+          const qtyIssued = typeof calculationIssued === 'number' ? calculationIssued : 0;
+          const qtyTransfer = typeof calculationTransfer === 'number' ? calculationTransfer : 0;
+          // Calculate Stock On Hand as Opening Dip + QTY Received - QTY Issued
+          const openingDip = shiftData.openingDip ?? 0;
+          const stockOnHand = openingDip + qtyReceive - qtyIssued  ;
+
+          // Calculate Balance as Stock On Hand - QTY Issued
+          const balance = stockOnHand - qtyIssued;
+
+          // Update state
+          setStockOnHand(stockOnHand);
+
+          // Update cardData state with fetched shift data
+          const cardData = [
+            { title: 'Shift', value: shiftData.shift || 'No Data', icon: 'shift.svg' },
+            { title: 'FS/FT No', value: shiftData.station || 'No Data', icon: 'fs.svg' },
+            { title: 'Opening Dip', value: openingDip || 0, icon: 'openingdeep.svg' },
+            { title: 'Receipt', value: qtyReceive || 0, icon: 'receipt.svg' },
+            { title: 'Transfer', value: qtyTransfer || 0, icon: 'issued.svg' },
+            { title: 'QTY Issued', value: qtyIssued || 0, icon: 'issued.svg' },
+            // { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
+            // { title: 'Closing Dip', value: shiftData.openingDip ?? 0, icon: 'close.svg' },
+            { title: 'Flow Meter Awal', value: shiftData.flowMeterStart ?? 0, icon: 'flwawal.svg' },
+            {
+              title: 'Flow Meter Akhir',
+              value: (shiftData.flowMeterStart ?? 0) + (qtyIssued ?? 0),
+              icon: 'flwakhir.svg'
+            },
+            { title: 'Total Flow Meter', value: qtyIssued || 0, icon: 'total.svg' },
+            { title: 'Stock On Hand', value: stockOnHand || 0, icon: 'stock.svg' },
+            // { title: 'Variance', value: (shiftData.openingDip ?? 0) - (balance ?? 0), icon: 'variance.svg' }
+          ];
+
+          // Set the new cardDash data into localStorage
+          localStorage.setItem('cardDash', JSON.stringify(cardData));
+
+          // Update state
+          setcardDash(cardData);
+
+        } else {
+          console.log('No LKF ID found');
+        }
+      } catch (error) {
+        console.error('Error fetching shift data:', error);
+      }
+    };
+
+    fetchShiftData();
+    checkOpening()
+  }, []); // Empty dependency array ensures this effect runs once on mount
+
+  const checkOpening = async() =>{
+    console.log(1,isOnline)
+    if(isOnline){
+      console.log(2,'on')
+      let dataPost = await getDataFromStorage('openingSonding');
+      if(dataPost.status === 'pending'){
+        console.log(3)
+        const result = await postOpening(dataPost);
+  
+        if (result.status === '201' && result.message === 'Data Created') {
+          dataPost = {
+            ...dataPost,
+            status:'sent'
+          }
+          // presentToast({
+          //   message: 'Data posted successfully!',
+          //   duration: 2000,
+          //   position: 'top',
+          //   color: 'success',
+          // });
+          saveDataToStorage("openingSonding", dataPost);
+          await addDataToDB(dataPost);
+      }
+    }
+  }
+}
 
   useEffect(() => {
     // Function to format date as "Tanggal : 25 Januari 2025"
@@ -207,7 +309,6 @@ useEffect(() => {
       }
     };
 
-
     const fetchLkfIdAndData = async () => {
       try {
         const id = await getLatestLkfId();
@@ -229,7 +330,7 @@ useEffect(() => {
           const variance = totalFlowMeter - qtyIssued;
 
 
-       
+
           const homeData = await getHomeByIdLkf(id);
           const loginData = localStorage.getItem('loginData');
           if (loginData) {
@@ -264,7 +365,7 @@ useEffect(() => {
   }, []);
 
 
-  
+
   const handleLogout = () => {
     route.push('/closing-data');
   };
@@ -278,7 +379,7 @@ useEffect(() => {
         if (Array.isArray(storedJdeOptions)) {
           setJdeOptions(storedJdeOptions);
         } else {
-          console.log("Data FuelMan");
+
         }
       } else {
         console.log("No JDE options found in storage.");
@@ -288,37 +389,8 @@ useEffect(() => {
     fetchJdeOptions();
   }, []);
 
-  useEffect(() => {
-    const fetchJdeOptions = async () => {
-      // Fetch loginData and allOperator from Capacitor Storage
-      const storedLoginData = await getDataFromStorage("loginData");
-      const storedJdeOptions = await getDataFromStorage("allOperator");
-
-      if (storedLoginData && storedJdeOptions) {
-        // Parse the stored loginData and allOperator
-        const loginData = JSON.parse(storedLoginData);
-        const allOperators = Array.isArray(storedJdeOptions) ? storedJdeOptions : JSON.parse(storedJdeOptions);
-
-        // Get the JDE from loginData
-        const loggedInJde = loginData.jde;
-
-        // Find the operator that matches the JDE from loginData
-        const operator = allOperators.find((emp: { jde: string }) => emp.jde === loggedInJde);
-
-        // If the operator is found, set it; otherwise, set an empty array
-        setJdeOptions(operator ? [operator] : []);
-        setFullname(operator ? operator.fullname : ""); // Set fullname for the Fuelman display
-      } else {
-        console.log("No JDE options or loginData found in storage.");
-      }
-    };
-
-    fetchJdeOptions();
-  }, []);
 
 
-
-  
 
   useEffect(() => {
     const loadUnitData = async () => {
@@ -340,30 +412,22 @@ useEffect(() => {
   }
 
 
+
+
   const TambahData = async () => {
+    localStorage.getItem('cardDash');
+
     route.push("/transaction");
   };
 
-
-
-
-  
-  
   const handleRefresh = async () => {
     if (lkfId) {
-      setLoading(true); // Start loading state
+      setLoading(true);
       try {
         const response = await getHomeTable(lkfId);
-        console.log("Fetched Edit Transaksi:", response);
-
-        // Ensure response.data is an array
         if (response && response.data && Array.isArray(response.data)) {
           const newData = response.data;
-
-          // First, delete all existing data in dataTransaksi
           await deleteAllDataTransaksi();
-
-          // Then, add the new data
           for (const item of newData) {
             const dataPost: DataFormTrx = {
               date: new Date().toISOString(),
@@ -381,12 +445,12 @@ useEffect(() => {
               name_operator: item.name_operator,
               fbr: item.fbr,
               lkf_id: item.lkf_id ?? "",
-              signature: item.signature ?? null,
+              signature: item.signature ?? "",
               type: item.type ?? "",
               foto: item.foto ?? "",
               fuelman_id: item.fuelman_id,
               status: item.status ?? 1,
-              jde_operator: item.jde_operator, 
+              jde_operator: item.jde_operator,
               dip_start: 0, // Replace with actual value
               dip_end: 0, // Replace with actual value
               sonding_start: 0, // Replace with actual value
@@ -398,16 +462,17 @@ useEffect(() => {
               liters: 0,
               cm: 0
             };
-            
+
 
             await addDataTrxType(dataPost);
+
           }
 
 
           setData(newData);
         } else {
           console.error("Expected an array in response.data but got:", response);
-          setData([]); // Reset to empty array on error
+          setData([]);
         }
       } catch (error) {
         console.error("Failed to refresh data:", error);
@@ -422,156 +487,207 @@ useEffect(() => {
       setLoading(false);
     }
     updateAllData()
-    updateCard()
-    
+    // updateCard()
+
   };
+
+  useEffect(() => {
+    IssuedTotal();
+  }, [lkfId]);
+
+
+  useEffect(() => {
+    const cachedData = localStorage.getItem('cardDash');
+
+    if (cachedData) {
+      setDataHome(JSON.parse(cachedData));
+    }
+  }, []);
+
+  const updateDataHome = (newData: React.SetStateAction<any[]>) => {
+
+    setDataHome(newData);
+    localStorage.setItem('cardDash', JSON.stringify(newData));
+
+
+  };
+
+  const modifyDataExample = (newData: any) => {
+    if (!Array.isArray(newData)) {
+
+      return;
+    }
+
+    const updatedData = [...newData];
+    const qtyIssuedIndex = updatedData.findIndex(item => item.title === 'QTY Issued');
+    const qtyfloweEndIndex = updatedData.findIndex(item => item.title === 'Flow Meter Akhir');
+
+    if (qtyIssuedIndex !== -1) {
+      const qtyIssuedItem = updatedData[qtyIssuedIndex];
+      const qtyFlowAkhirItem = updatedData[qtyfloweEndIndex];
+      const currentQtyIssued = typeof qtyIssuedItem.value === 'number' ? qtyIssuedItem.value : 0;
+      const qtyLast = typeof qtyIssuedItem.qty_last === 'number' ? qtyIssuedItem.qty_last : 0;
+      updatedData[qtyIssuedIndex].value = currentQtyIssued + qtyLast;
+    }
+
+    updateDataHome(updatedData);
+  };
+
+
+  useEffect(() => {
+    const cachedData = localStorage.getItem('cardDash');
+    if (cachedData) {
+      const data = JSON.parse(cachedData);
+      setDataHome(data);
+
+      modifyDataExample(data);
+
+    }
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const cachedShiftData = await getDataFromStorage('shiftCloseData');
+      if (cachedShiftData && cachedShiftData.length > 0) {
+        setCloseShift(cachedShiftData);
+        const latestShiftData = cachedShiftData[cachedShiftData.length - 1];
+        if (latestShiftData.closing_sonding !== undefined) {
+          setOpeningSonding(latestShiftData.closing_sonding);
+        }
+        if (latestShiftData.flow_meter_end !== undefined) {
+          setFlowMeterAwal(latestShiftData.flow_meter_end);
+        }
+        if (latestShiftData.opening_dip !== undefined) {
+          setOpeningDip(latestShiftData.opening_dip);
+        }
+
+      } else {
+        console.error("No cached shift data found");
+      }
+    } catch (error) {
+      console.error("Error fetching shift data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+
+  const fetchcardDash = async (lkfId: string) => {
+    try {
+      console.log("Fetching data for LKF ID:", lkfId);
+      const cachedData = localStorage.getItem('cardDash');
+
+      if (cachedData) {
+        const preparedData = JSON.parse(cachedData);
+
+        // Update Flow Meter Akhir offline based on cached data
+        const flowMeterStart = preparedData.find((item: any) => item.title === 'Flow Meter Awal')?.value || 0;
+        const issued = preparedData.find((item: any) => item.title === 'QTY Issued')?.value || 0;
+        const transfer = preparedData.find((item: any) => item.title === 'Transfer')?.value || 0;
+        const flowMeterAkhir = flowMeterStart + issued + transfer;
+
+        // Update the cached data with recalculated Flow Meter Akhir
+        const updatedData = preparedData.map((item: any) =>
+          item.title === 'Flow Meter Akhir'
+            ? { ...item, value: flowMeterAkhir }
+            : item
+        );
+
+        setDataHome(updatedData);
+        return; // Exit if offline mode is handled
+      }
+
+      // Check online status
+      if (!navigator.onLine) {
+        console.warn("Offline mode - cannot fetch new data.");
+        return;
+      }
+
+      const dataHome = await getHomeByIdLkf(lkfId);
+
+      if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
+        const item = dataHome.data[0];
+        const openingDip = item.total_opening || 0;
+        const received = item.total_receive || 0;
+        const receivedKpc = item.total_receive_kpc || 0;
+        const issued = item.total_issued || 0;
+        const transfer = item.total_transfer || 0;
+        const stockOnHand = openingDip + received + receivedKpc - issued - transfer;
+        const totalReceive = received + receivedKpc;
+
+        const fetchedResult = await getCalculationIssued(lkfId);
+
+        setTotalQuantityIssued(fetchedResult ?? 0);
+        setOpShift(item.shift);
+        setOpDip(openingDip);
+        setStation(item.station);
+        setOpReceipt(received);
+        setTotalIssued(issued);
+        setOpTransfer(transfer);
+        setOpReceiveKpc(receivedKpc);
+
+        const flowMeterStart = item.flow_meter_start || 0;
+        const flowMeterAkhir = flowMeterStart + issued + transfer;
+
+        const preparedData = [
+          { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
+          { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
+          { title: 'Opening Dip', value: openingDip, icon: 'openingdeep.svg' },
+          { title: 'Receipt', value: totalReceive, icon: 'receipt.svg' },
+          { title: 'Stock On Hand', value: stockOnHand || 'No Data', icon: 'stock.svg' },
+          { title: 'QTY Issued', value: fetchedResult ?? 0, icon: 'issued.svg' },
+          // { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
+          // { title: 'Closing Dip', value: openingDip || 0, icon: 'close.svg' },
+          { title: 'Flow Meter Awal', value: flowMeterStart, icon: 'flwawal.svg' },
+          { title: 'Flow Meter Akhir', value: flowMeterAkhir, icon: 'flwakhir.svg' },
+          { title: 'Total Flow Meter', value: issued || 0, icon: 'total.svg' },
+          // { title: 'Variance', value: item.totalVariance || 0, icon: 'variance.svg' },
+        ];
+
+        setDataHome(preparedData);
+        localStorage.setItem('cardDash', JSON.stringify(preparedData));
+
+      } else {
+        console.error("No valid data found:", dataHome);
+        setDataHome([]);
+      }
+    } catch (error) {
+      console.error("Error fetching card data:", error);
+      setDataHome([]);
+    }
+  };
+
+
+  useEffect(() => {
+    if (lkfId) {
+      fetchcardDash(lkfId);
+    }
+  }, [lkfId]);
+
   const IssuedTotal = async () => {
     try {
       const fetchedResult = await getCalculationIssued(lkfId);
-      console.log(`Fetched result: ${fetchedResult}`); 
-      setResult(fetchedResult ?? null); 
+
+      setResult(fetchedResult ?? null);
       // Set to null if fetchedResult is undefined
     } catch (error) {
       console.error('Error fetching issued total:', error);
     }
   };
 
-  useEffect(() => {
-    IssuedTotal();
-  }, [lkfId]);
- 
-
-  useEffect(() => {
-    const cachedData = localStorage.getItem('cardDash');
-    if (cachedData) {
-        setDataHome(JSON.parse(cachedData));
-    }
-}, []);
-
-const updateCard = async () => {
-  localStorage.removeItem('cardDash')
-  const cards = await fetchcardDash(lkfId);
-}
-
-const fetchData = async () => {
-  setLoading(true);
-  try {
-    const cachedShiftData = await getDataFromStorage('shiftCloseData');
-    if (cachedShiftData && cachedShiftData.length > 0) {
-      setCloseShift(cachedShiftData);
-      const latestShiftData = cachedShiftData[cachedShiftData.length - 1]; 
-      if (latestShiftData.closing_sonding !== undefined) {
-        setOpeningSonding(latestShiftData.closing_sonding); 
-      }
-      if (latestShiftData.flow_meter_end !== undefined) {
-        setFlowMeterAwal(latestShiftData.flow_meter_end); 
-      }
-      if (latestShiftData.opening_dip !== undefined) {
-        setOpeningDip(latestShiftData.opening_dip); 
-      }
-    
-    } else {
-      console.error("No cached shift data found");
-    }
-  } catch (error) {
-    console.error("Error fetching shift data:", error);
-  } finally {
-    setLoading(false);
-  }
-};
-useEffect(() => {
-  fetchData(); 
-}, []);
-
-const fetchcardDash = async (lkfId: string) => {
-  try {
-    console.log("Fetching data for LKF ID:", lkfId);
-    const cachedData = localStorage.getItem('cardDash');
-    if (cachedData) {
-      console.log("Using cached data");
-      const preparedData = JSON.parse(cachedData);
-      setDataHome(preparedData); 
-      return; 
-    }
-
-    // Cek status online
-    if (!navigator.onLine) {
-      console.warn("Offline: Using cached data only");
-      return; 
-    }
-
-    const dataHome = await getHomeByIdLkf(lkfId);
-    console.log("Full Content Cards:", dataHome); 
-    if (dataHome && dataHome.data && Array.isArray(dataHome.data) && dataHome.data.length > 0) {
-      const item = dataHome.data[0];
-      const openingDip = item.total_opening || 0;
-      const received = item.total_receive || 0;
-      const receivedKpc = item.total_receive_kpc || 0;
-      const issued = item.total_issued || 0;
-      const transfer = item.total_transfer || 0;
-      const stockOnHand = openingDip + received + receivedKpc - issued - transfer;
-      const totalReceive = received + receiveKpc
-
-      // Ambil total quantity issued
-      const fetchedResult = await getCalculationIssued(lkfId);
-      console.log("Fetched total quantity issued:", fetchedResult); // Log hasil yang diambil
-
-      // Update state dengan data yang diambil
-      setTotalQuantityIssued(fetchedResult ?? 0);
-      setOpShift(item.shift);
-      setOpDip(openingDip);
-      setOpStation(item.station);
-      setOpReceipt(received);
-      setTotalIssued(issued);
-      setOpTransfer(transfer);
-      setOpReceiveKpc(receivedKpc);
-
-      // Siapkan data untuk dirender
-      const preparedData = [
-        { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
-        { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
-        { title: 'Opening Dip', value: openingDip, icon: 'openingdeep.svg' },
-        { title: 'Receipt', value: totalReceive, icon: 'receipt.svg' },
-        { title: 'Stock On Hand', value: stockOnHand || 'No Data', icon: 'stock.svg' },
-        { title: 'QTY Issued', value: fetchedResult ?? 0, icon: 'issued.svg' },
-        { title: 'Balance', value: stockOnHand || 0, icon: 'balance.svg' },
-        { title: 'Closing Dip', value: openingDip || 0, icon: 'close.svg' },
-        { title: 'Flow Meter Awal', value: item.flow_meter_start || 0, icon: 'flwawal.svg' },
-        { title: 'Flow Meter Akhir', value: (item.flow_meter_start + issued) || 0, icon: 'flwakhir.svg' },
-        { title: 'Total Flow Meter', value: issued || 0, icon: 'total.svg' },
-        { title: 'Variance', value: item.totalVariance || 0, icon: 'variance.svg' },
-      ];
-
-      setDataHome(preparedData);
-      localStorage.setItem('cardDash', JSON.stringify(preparedData)); // Cache data yang sudah disiapkan
-
-    } else {
-      console.error("No valid data found:", dataHome);
-      setDataHome([]); // Kosongkan data jika tidak ada atau format tidak valid
-    }
-  } catch (error) {
-    console.error("Error fetching card data:", error);
-    setDataHome([]); // Kosongkan data jika terjadi kesalahan
-  }
-};
-
-  
-  
-  useEffect(() => {
-    if (lkfId) {
-      fetchcardDash(lkfId);
-    }
-  }, [lkfId]);
-  
 
   const isOffline = !navigator.onLine; // Check if the user is offline
 
   // Retrieve cached data from local storage if offline
   const cachedData = localStorage.getItem('cardDash');
   const displayData = isOffline && cachedData ? JSON.parse(cachedData) : dataHome;
-  
 
- 
+
+
   return (
     <IonPage>
       <IonContent>
@@ -579,7 +695,7 @@ const fetchcardDash = async (lkfId: string) => {
           <IonRow>
             <IonCol>
               <div className='logoDashboard'>
-                <IonImg style={{ padding: "10px", marginLeft: "15px" }} src="logodh.png" alt='logo-dashboard' />
+                <IonImg style={{ padding: "5px", marginLeft: "15px", width: "120px" }} src="logodhbaru1.png" alt='logo-dashboard' />
               </div>
             </IonCol>
             <IonCol style={{ textAlign: 'right' }}>
@@ -612,11 +728,12 @@ const fetchcardDash = async (lkfId: string) => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Refresh
             </IonButton>
+
             {/* <IonButton color="primary" onClick={updateAllData}>
               <IonImg src='refresh.svg' alt="Refresh" />
               Update Data
             </IonButton> */}
-             <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout} disabled={pendingStatus}>
+            <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout} disabled={pendingStatus}>
               Close LKF & Logout
             </IonButton>
           </div>
@@ -629,81 +746,27 @@ const fetchcardDash = async (lkfId: string) => {
             </IonRow>
           </IonGrid>
           <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <h4 >Fuelman : {fullname}</h4>
-
+            <h4 >Fuelman TAB</h4>
             <h4 >{latestDate}</h4>
           </IonRow>
         </div>
         <IonGrid >
           <IonRow >
-            {/* {cardDash.map((card, index) => (
+            {cardDash.map((card, index) => (
               <IonCol size="4" key={index}>
-                <IonCard style={{height:"90px"}} >
+                <IonCard style={{ height: "90px" }} >
                   <IonCardHeader>
                     <IonCardSubtitle style={{ fontSize: "16px" }}>{card.title}</IonCardSubtitle>
                     <div style={{ display: "inline-flex", gap: "10px" }}>
                       <IonImg src={card.icon} alt={card.title} style={{ width: '30px', height: '30px', marginTop: "10px" }} />
-                      <IonCardContent style={{ fontSize: "24px", fontWeight: "500" , marginTop:"-10px"}}>{card.value}</IonCardContent>
+                      <IonCardContent style={{ fontSize: "24px", fontWeight: "500", marginTop: "-10px" }}>{card.value}</IonCardContent>
                     </div>
-                    
+
                   </IonCardHeader>
-                  
+
                 </IonCard>
               </IonCol>
-            ))} */}
-
-
-            {dataHome.length > 0 ? (
-              dataHome.map((card, index) => (
-                <IonCol size="4" key={index}>
-                  <IonCard style={{ height: "90px" }}>
-                    <IonCardHeader>
-                      <IonCardSubtitle style={{ fontSize: "16px" }}>
-                        {card.title}
-                      </IonCardSubtitle>
-                      <div style={{ display: "inline-flex", gap: "10px" }}>
-                        <IonImg
-                          src={card.icon}
-                          alt={card.title}
-                          style={{ width: '30px', height: '30px', marginTop: "10px" }}
-                        />
-                        <IonCardContent
-                          style={{ fontSize: "24px", fontWeight: "500", marginTop: "-10px" }}
-                        >
-                          {card.value}
-                        </IonCardContent>
-                      </div>
-                    </IonCardHeader>
-                  </IonCard>
-                </IonCol>
-              ))
-            ) : (
-              Array(12).fill(0).map((_, index) => (
-                <IonCol size="4" key={index}>
-                  <IonCard style={{ height: "90px" }}>
-                    <IonCardHeader>
-                      <IonCardSubtitle style={{ fontSize: "16px" }}>
-                        <IonSkeletonText animated={true} style={{ width: "60%" }} />
-                      </IonCardSubtitle>
-                      <div style={{ display: "inline-flex", gap: "10px" }}>
-                        <IonThumbnail slot="start">
-                          <IonSkeletonText animated={true} style={{ width: '30px', height: '30px' }} />
-                        </IonThumbnail>
-                        <IonText style={{ fontSize: "16px" }}>
-                          <IonSkeletonText animated={true} style={{ width: "60%" }} />
-                        </IonText>
-                        <IonCardContent
-                          style={{ fontSize: "24px", fontWeight: "500", marginTop: "-10px" }}
-                        >
-                          <IonSkeletonText animated={true} style={{ width: "50%" }} />
-                        </IonCardContent>
-                      </div>
-                    </IonCardHeader>
-                  </IonCard>
-                </IonCol>
-              ))
-            )}
-
+            ))}
             <IonRow>
               <p style={{
                 display: 'flex',
@@ -718,20 +781,20 @@ const fetchcardDash = async (lkfId: string) => {
                   marginRight: "15px",
                   marginTop: "-15px"
                 }}>
-                  * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Dip’ Untuk Membuka Formnya, Terima kasih
-                  * QTY Issued adalah Issued + Transfer
+                  * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Tambah’ Untuk Membuka Formnya, Terima kasih
+                 
                 </p>
               </p>
             </IonRow>
           </IonRow>
-       
+
           <IonButton
-          style={{ padding: "15px", marginTop: "-40px" }}
-          className='check-button'
-          onClick={TambahData}>
-          <IonImg src='plus.svg' />
-          <span style={{ marginLeft: "10px" }}>Tambah Data</span>
-        </IonButton>
+            style={{ padding: "15px", marginTop: "-40px" }}
+            className='check-button'
+            onClick={TambahData}>
+            <IonImg src='plus.svg' />
+            <span style={{ marginLeft: "10px" }}>Tambah Data</span>
+          </IonButton>
           <TableData setPendingStatus={setPendingStatus} />
         </IonGrid>
 

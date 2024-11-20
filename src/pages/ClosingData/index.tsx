@@ -213,7 +213,8 @@ const FormClosing: React.FC = () => {
             close_data: finalCloseData || 0, // Use the final close data here
             variant: variant || 0,
             flow_meter_start: 0,
-            opening_dip: 0
+            opening_dip: 0,
+            status: ''
         };
     
         try {
@@ -250,7 +251,7 @@ const FormClosing: React.FC = () => {
         } else {
             setErrorMessage('');
             setHmEnd(hmEndInput);
-            setPreviousHmEnd(hmEndInput); // Update previous value
+            // setPreviousHmEnd(hmEndInput); // Update previous value
             setIsCloseShiftDisabled(false); // Enable the button
         }
     };
@@ -277,7 +278,6 @@ const FormClosing: React.FC = () => {
         loadSondingData();
     }, []);
     
-
     useEffect(() => {
         const fetchLoginData = async () => {
             const storedLoginData = await getDataFromStorage('loginData'); 
