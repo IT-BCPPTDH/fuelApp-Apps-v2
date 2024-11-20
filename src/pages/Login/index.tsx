@@ -25,15 +25,29 @@ import {
   fetchOperatorData,
   fetchQuotaData,
   fetchUnitLastTrx,
+  fetchUnitData,
+  fetchLasTrx,
+  fetchLasLKF,
 } from "../../services/dataService";
 import Select from "react-select";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
 import { bulkInsertDataMasterTransaksi } from "../../utils/getData";
+import { getAllSonding } from "../../hooks/getAllSonding";
 
 
 // Define props interface
 interface LoginProps {
   onLoginSuccess: () => void;
+}
+
+interface operator {
+  JDE: string;
+  fullname: string;
+  admin_fuel: string
+  falsedivision: string
+  fuelman: boolean
+  id: BigInteger 
+  position: string
 }
 
 const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
@@ -101,6 +115,71 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
  
 
+  // const handleLogin = async () => {
+  //   setLoading(true);
+  //   if (!jde || !selectedUnit) {
+  //     console.error("Employee ID dan Station harus diisi.");
+  //     setShowError(true);
+  //     setLoading(false);
+  //     return;
+  //   }
+
+
+  //   const selectedStation = stationData.find((station) => station.value === selectedUnit);
+  //   if (!selectedStation) {
+  //     console.error("Selected station not found");
+  //     setShowError(true);
+  //     setLoading(false);
+  //     return;
+  //   }
+
+  //   const currentDate = new Date().toISOString();
+
+  //   try {
+  //     const response = await postAuthLogin({
+  //       station: selectedUnit,
+  //       date: currentDate,
+  //       JDE: jde,
+  //     });
+
+  //     if (response.status === '200' && response.message === 'Data Created') {
+  //       const { token } = response.data;
+  //       Cookies.set("session_token", token, { expires: 1 });
+  //       Cookies.set("isLoggedIn", "true", { expires: 1 });
+
+  //       const loginData = {
+  //         station: selectedUnit,
+  //         jde: jde,
+  //         site: selectedStation.site,
+  //       };
+        
+  //       console.log("Starting handleGet to process transaksiData...");
+  //       await handleGet();
+  //       saveDataToStorage("loginData", loginData);
+       
+  //       // Notify the App component about the login success
+  //       onLoginSuccess();
+
+  //       // Navigate to the opening page
+       
+       
+       
+  //       setShowAlert(true);
+  //       router.push("/opening");
+  //       setShowAlert(true);
+      
+  //     } else {
+  //       console.error("Unexpected response:", response);
+  //       setShowError(true);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error during login:", error);
+  //     setShowError(true);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  
   const handleLogin = async () => {
     setLoading(true);
     if (!jde || !selectedUnit) {
@@ -110,7 +189,6 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
       return;
     }
 
-
     const selectedStation = stationData.find((station) => station.value === selectedUnit);
     if (!selectedStation) {
       console.error("Selected station not found");
@@ -118,46 +196,39 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
       setLoading(false);
       return;
     }
-
-    const currentDate = new Date().toISOString();
+    setLoading(false);
+    // const currentDate = new Date().toISOString();
 
     try {
-      const response = await postAuthLogin({
-        station: selectedUnit,
-        date: currentDate,
-        JDE: jde,
-      });
+      const op = await getDataFromStorage('allOperator')
+      console.log('operator',op)
 
-      if (response.status === '200' && response.message === 'Data Created') {
-        const { token } = response.data;
-        Cookies.set("session_token", token, { expires: 1 });
-        Cookies.set("isLoggedIn", "true", { expires: 1 });
+      let checkID = op.find((v : operator)=> v.JDE === jde)
+      console.log('id',checkID)
+      if(checkID.fuelman){
+        
+        console.log('login')
 
         const loginData = {
           station: selectedUnit,
-          jde: jde,
+          jde: checkID.JDE,
           site: selectedStation.site,
+          fullname: checkID.fullname
         };
         
-        console.log("Starting handleGet to process transaksiData...");
-        await handleGet();
+        
         saveDataToStorage("loginData", loginData);
-       
-        // Notify the App component about the login success
-        onLoginSuccess();
+        Cookies.set("isLoggedIn", "true", { expires: 1 });
 
-        // Navigate to the opening page
-       
-       
-       
-        setShowAlert(true);
         router.push("/opening");
+        onLoginSuccess();
         setShowAlert(true);
-      
-      } else {
-        console.error("Unexpected response:", response);
+        console.log('off')
+      }else{
+        console.log('salah')
         setShowError(true);
       }
+
     } catch (error) {
       console.error("Error during login:", error);
       setShowError(true);
@@ -165,7 +236,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
       setLoading(false);
     }
   };
-  
+
   const handleGet = async () => {
     try {
       // Ambil data transaksi dari localStorage
@@ -273,12 +344,44 @@ const dataTrasaksi = async () => {
   }
 };
 
+const loadUnitData = async () => {
+  const units = await fetchUnitData();
+};
+const loadLastTrx = async () => {
+const units = await fetchLasTrx();
+};
+
+const loadLastLKF = async () => {
+const units = await fetchLasLKF();
+};
+
 
 useEffect(() => {
+  loadUnitData()
+  loadLastTrx()
+  loadLastLKF()
+  fetchSondingMasterData();
   // Only call dataTrasaksi once when the component mounts
   dataTrasaksi();
 }, []); 
+
+
+
  // Empty dependency array ensures it runs only once on mount
+ const fetchSondingMasterData = async () => {
+  try {
+    const response = await getAllSonding();
+    if (response.status === '200' && Array.isArray(response.data)) {
+      // setSondingMasterData(response.data);
+      await saveDataToStorage('masterSonding', response.data);
+    } else {
+      console.error('Unexpected data format');
+    }
+  } catch (error) {
+    console.error('Failed to fetch sonding master data', error);
+  }
+};
+
 
 
 

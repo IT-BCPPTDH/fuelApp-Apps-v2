@@ -26,14 +26,15 @@ import TableData from '../../components/Table';
 import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate, getCalculationITransfer } from '../../utils/getData';
 import { getHomeByIdLkf, getHomeTable } from '../../hooks/getHome';
 import NetworkStatus from '../../components/network';
-import { fetchUnitData, getDataFromStorage } from '../../services/dataService';
+import { fetchUnitData, getDataFromStorage, saveDataToStorage } from '../../services/dataService';
 import { handLeftSharp, home, navigate } from 'ionicons/icons';
 import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
-import { addDataTrxType, updateDataToDB } from '../../utils/insertData';
+import { addDataToDB, addDataTrxType, updateDataToDB } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
 import { Network } from '@capacitor/network';
 import { getPrevUnitTrx } from '../../hooks/getDataPrev';
 import { getStationData } from '../../hooks/getDataTrxStation';
+import { postOpening } from '../../hooks/serviceApi';
 
 
 // Define the data structure for the card
@@ -256,7 +257,35 @@ const DashboardFuelMan: React.FC = () => {
     };
 
     fetchShiftData();
+    checkOpening()
   }, []); // Empty dependency array ensures this effect runs once on mount
+
+  const checkOpening = async() =>{
+    console.log(1,isOnline)
+    if(isOnline){
+      console.log(2,'on')
+      let dataPost = await getDataFromStorage('openingSonding');
+      if(dataPost.status === 'pending'){
+        console.log(3)
+        const result = await postOpening(dataPost);
+  
+        if (result.status === '201' && result.message === 'Data Created') {
+          dataPost = {
+            ...dataPost,
+            status:'sent'
+          }
+          // presentToast({
+          //   message: 'Data posted successfully!',
+          //   duration: 2000,
+          //   position: 'top',
+          //   color: 'success',
+          // });
+          saveDataToStorage("openingSonding", dataPost);
+          await addDataToDB(dataPost);
+      }
+    }
+  }
+}
 
   useEffect(() => {
     // Function to format date as "Tanggal : 25 Januari 2025"
