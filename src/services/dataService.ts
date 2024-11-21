@@ -222,6 +222,22 @@ export const fetchLasTrx = async (): Promise<any[]> => {
   }
 };
 
+export const fetchTrasData= async (no_unit:string): Promise<any[]> => {
+  try {
+    const response = await getPrevUnitTrx(no_unit); 
+    if (response.status === '200' && Array.isArray(response.data)) {
+      await saveDataToStorage('dataTrx', response.data);
+      return response.data;
+    } else {
+      console.error('Unexpected data format');
+      return [];
+    }
+  } catch (error) {
+    console.error('Failed to fetch unit data', error);
+    return [];
+  }
+};
+
 export const fetchLasLKF = async (): Promise<any[]> => {
   try {
     const response = await getDataLastLKF(); 

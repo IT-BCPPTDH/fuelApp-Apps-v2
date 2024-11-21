@@ -1185,7 +1185,7 @@ const FormTRX: React.FC = () => {
         
         setShift('Day');
       } else if (isNightShift) {
-        setShift('Night Shift');
+        setShift('Night');
       }
     };
 
@@ -1427,6 +1427,66 @@ const FormTRX: React.FC = () => {
 
  
 
+  // const handleUnitChange = async (
+  //   newValue: SingleValue<{ value: string; label: string }>,
+  //   actionMeta: ActionMeta<{ value: string; label: string }>
+  // ) => {
+  //   if (newValue) {
+  //     const unitValue = newValue.value;
+  //     setSelectedUnit(unitValue); // Set the selected unit
+
+  //     // Find the selected unit option from unitOptions
+  //     const selectedUnitOption = unitOptions.find(
+  //       (unit) => unit.unit_no === unitValue
+  //     );
+
+  //     if (selectedUnitOption) {
+  //       // Update state based on the online data
+  //       setModel(selectedUnitOption.brand);
+  //       setOwner(selectedUnitOption.owner);
+  //       setHmkmValue(selectedUnitOption.hm_last);
+  //       setHmKmLast(selectedUnitOption.hm_last);
+  //       setQtyValue(selectedUnitOption.qty);
+
+  //       const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+  //       setKoutaLimit(newKoutaLimit);
+
+  //       setShowError(
+  //         unitValue.startsWith("LV") ||
+  //         (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+  //       );
+  //     } else {
+  //       console.log("You are offline");
+
+  //       try {
+  //         // Retrieve data from IndexedDB using fetchLatestHmLast
+  //         const offlineData = await fetchLatestHmLast(unitValue);
+  //         console.log("hm_data", offlineData)
+
+
+  //         if (offlineData.hm_km !== undefined) {
+  //           setHmLast(Number(hmLast));  // Convert hm_km to a string before setting it
+  //         }
+  //         if (offlineData.model_unit) {
+  //           setModel(offlineData.model_unit); // Set model from offline data
+  //         }
+  //         if (offlineData.owner) {
+  //           setOwner(offlineData.owner); // Set owner from offline data
+  //         }
+  //         if (offlineData.qty_last !== undefined) {
+  //           setQtyValue(offlineData.qty_last); // Set qty from offline data
+  //         }
+
+  //       } catch (error) {
+  //         console.error("Failed to retrieve data from IndexedDB:", error);
+  //       }
+
+  //       console.warn(`Unit with value ${unitValue} was not found in unitOptions.`);
+  //     }
+  //   }
+  // };
+
+
   const handleUnitChange = async (
     newValue: SingleValue<{ value: string; label: string }>,
     actionMeta: ActionMeta<{ value: string; label: string }>
@@ -1485,7 +1545,7 @@ const FormTRX: React.FC = () => {
       }
     }
   };
-
+  
   useEffect(() => {
     const getOfflineData = async () => {
   
@@ -1497,7 +1557,7 @@ const FormTRX: React.FC = () => {
       console.log("Fetched offline data:", offlineData);
 
       
-      if (offlineData.hm_km !== undefined) {
+      if (offlineData.hm_km!== undefined) {
         setHmLast(offlineData.hm_km);  // Set hm_km from offline data
       } else {
         setHmLast(0); // Set hm_km to 0 if the unit doesn't match
@@ -1594,9 +1654,10 @@ const FormTRX: React.FC = () => {
   </IonRow>
 )}
           <div style={{ marginTop: "30px" }}>
-            {latestDate}
+           
             <IonGrid>
             <h1>Shift: {shift}</h1>
+            {latestDate}
               <IonRow>
                 <IonCol size="8"
                 >
@@ -1719,7 +1780,7 @@ const FormTRX: React.FC = () => {
                     type="number"
                     placeholder="Input HM/KM Unit"
                     // value={hmkmLast} // Fallback to hmkmLast
-                    value={hmLast || ""}
+                    value={hmLast}
                     
                     // onIonChange={(e) => setHmLast(Number(e.detail.value))}
                     disabled

@@ -177,6 +177,7 @@ const ReviewData: React.FC = () => {
             // await deleteData();
             await deleteAllDataTransaksi();
             await deleteAllClosingData()
+            await deleteAllDataTransaksi()
             // Redirect to the home page or login page
             // route.push('/')
             window.location.href='/'

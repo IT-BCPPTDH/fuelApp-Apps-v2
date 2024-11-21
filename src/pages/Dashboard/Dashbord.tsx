@@ -32,7 +32,7 @@ import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
 import { addDataToDB, addDataTrxType, updateDataToDB } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
 import { Network } from '@capacitor/network';
-import { getPrevUnitTrx } from '../../hooks/getDataPrev';
+
 import { getStationData } from '../../hooks/getDataTrxStation';
 import { postOpening } from '../../hooks/serviceApi';
 

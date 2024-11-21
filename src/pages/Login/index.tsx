@@ -326,15 +326,13 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
 const dataTrasaksi = async () => {
   try {
-    // Asumsi getTrasaksiSemua() mengembalikan response dengan format yang Anda sebutkan
+    // Mengambil data transaksi dari API atau sumber lainnya
     const response = await getTrasaksiSemua();
-    
-    console.log("Fetched transaksi response:", response);
+    console.log("API response:", response); // Log the response to check its structure
 
-    // Pastikan response.status adalah '200' dan response.data ada
-    if (response.status === "200" && response.data && Array.isArray(response.data) && response.data.length > 0) {
-      // Simpan hanya data yang ada di dalam response.data ke localStorage
-      localStorage.setItem('transaksiData', JSON.stringify(response.data));
+    if (response.status === '200' && response.data && Array.isArray(response.data) && response.data.length > 0) {
+      // Menyimpan data transaksi ke localStorage dengan nama 'transaksiData'
+      localStorage.setItem('prevData', JSON.stringify(response.data));
       console.log('Transaksi data has been saved to localStorage.');
     } else {
       console.warn('No transaksi data to save or invalid response.');
@@ -343,6 +341,7 @@ const dataTrasaksi = async () => {
     console.error('Error fetching and saving transaksi data:', error);
   }
 };
+
 
 const loadUnitData = async () => {
   const units = await fetchUnitData();

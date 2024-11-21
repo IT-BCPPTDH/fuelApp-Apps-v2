@@ -58,33 +58,13 @@ interface DataLkfUpdate {
 }
 
 interface DataMasterTransaksi {
-  date: string | number | Date;
 
   id?: number; // Auto-incremented ID
-  // liters: number;
-  // cm: number;
-  from_data_id: string;
-  no_unit: string;
-  model_unit: string;
-  owner: string;
-  date_trx: string;
-  hm_last: number;
   hm_km: number;
-  qty_last: number;
-  qty: number;
-  name_operator: string;
-  fbr: number;
-  flow_start: number;
-  flow_end: number ;
-  signature: string | null;
-  foto: string;
-  type: string;
-  lkf_id?: string;
-  status: number;
-  fuelman_id: string;
-  jde_operator:string;
-  start:string;
-  end:string;
+  no_unit:string;
+  qty:number;
+  model_unit:string;
+  owner:string;
 
   
 }
