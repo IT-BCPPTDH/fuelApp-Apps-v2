@@ -693,21 +693,21 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
 //     console.error("Error fetching shift data:", error);
 //   }
 // };
-// useEffect(() => {
-//   const fetchDataWithDelay = async () => {
-//     try {
-//       setLoading(true); 
-//       await new Promise((resolve) => setTimeout(resolve, 200)); 
-//       // await fetchData(); 
-//     } catch (error) {
-//       console.error("Error in delayed fetchData:", error);
-//     } finally {
-//       setLoading(false); 
-//     }
-//   };
+useEffect(() => {
+  const fetchDataWithDelay = async () => {
+    try {
+      setLoading(true); 
+      await new Promise((resolve) => setTimeout(resolve, 200)); 
+      // await fetchData(); 
+    } catch (error) {
+      console.error("Error in delayed fetchData:", error);
+    } finally {
+      setLoading(false); 
+    }
+  };
 
-//   // fetchDataWithDelay();
-// }, []);
+  // fetchDataWithDelay();
+}, []);
 
 
 
@@ -940,7 +940,7 @@ useEffect(() => {
         isOpen={showToast}
         onDidDismiss={() => setShowToast(false)}
         message="Anda sedang offline. Silakan cek koneksi internet Anda."
-        duration={2000}
+        duration={200}
       />
           </IonRow>
           <IonRow>

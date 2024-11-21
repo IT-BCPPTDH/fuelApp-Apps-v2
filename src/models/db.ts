@@ -99,7 +99,7 @@ interface DataFormTrx {
   no_unit: string;
   model_unit: string;
   owner: string;
-  date_trx: string;
+  date_trx: any;
   hm_last: number;
   hm_km: number;
   qty_last: number;
