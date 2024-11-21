@@ -634,7 +634,7 @@ const FormTRX: React.FC = () => {
   };
 
   const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
-    const unitQuota = await getDataFromStorage("unitQouta");
+    const unitQuota = await getDataFromStorage("unitQuota");
     if (unitQuota) {
       const parsedData = JSON.parse(unitQuota);
       const updatedData = parsedData.map((unit: { unit_no: string; quota: number; used: number; }) => {
@@ -650,7 +650,7 @@ const FormTRX: React.FC = () => {
       });
 
 
-      await saveDataToStorage("unitQouta", JSON.stringify(updatedData));
+      await saveDataToStorage("unitQuota", JSON.stringify(updatedData));
     }
   };
 
@@ -720,7 +720,7 @@ const FormTRX: React.FC = () => {
 
   useEffect(() => {
     const loadQoutaData = async () => {
-      const cachedData = await getDataFromStorage('unitQouta');
+      const cachedData = await getDataFromStorage('unitQuota');
       if (cachedData) {
         setQuotaData(cachedData);
       } else {
