@@ -278,7 +278,6 @@ const loadUnitData = async () => {
 const loadLastTrx = async () => {
 const units = await fetchLasTrx();
 };
-
 const loadLastLKF = async () => {
 const units = await fetchLasLKF();
 };

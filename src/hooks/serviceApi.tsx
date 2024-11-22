@@ -50,6 +50,9 @@ export const postOpening = async (params: PostOpeningParams): Promise<any> => {
     const url = `${LINK_BACKEND}/api/operator/post-lkf`;
 
     try {
+        console.log('Starting POST request to:', url); // Log the URL you're posting to
+        console.log('Request params:', params); // Log the parameters being sent
+
         const response = await CapacitorHttp.post({
             url,
             headers: {
@@ -58,9 +61,10 @@ export const postOpening = async (params: PostOpeningParams): Promise<any> => {
             data: params,
         });
 
-        const responseData = response.data || {};
-        console.log('Server Response Data:', responseData);
+        console.log('Response Status:', response.status);
+        console.log('Response Data:', response.data);
 
+        const responseData = response.data || {};
         if (response.status !== 201 || responseData.message !== 'Data Created') {
             console.error('Response Error:', responseData);
             throw new ResponseError('Failed to post opening data', response, responseData);
@@ -69,9 +73,11 @@ export const postOpening = async (params: PostOpeningParams): Promise<any> => {
         // Save posted data to local storage
         localStorage.setItem('postedData', JSON.stringify(responseData));
         return responseData;
+
     } catch (error) {
+        console.error('Error during postOpening:', error);
         if (error instanceof ResponseError) {
-            throw error;
+            throw error; // Rethrow if it's a known ResponseError
         } else {
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
             console.error('Error Details:', message);
@@ -79,6 +85,7 @@ export const postOpening = async (params: PostOpeningParams): Promise<any> => {
         }
     }
 };
+
 
 export const updateData = async (params: UpdateData): Promise<any> => {
     const url = `${LINK_BACKEND}/api/operator/close-lkf`;

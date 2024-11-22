@@ -475,6 +475,7 @@ useEffect(() => {
   const loadShiftClose = async () => {
     // const cachedShiftData = await getDataFromStorage('shiftCloseData');
     
+
       // Get login data from Capacitor Storage
       const userData = await getDataFromStorage('loginData');
       if (userData) {
@@ -623,6 +624,9 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               type="number"
               value={openingSonding}
               onIonChange={handleOpeningSondingChange}
+
+             
+              // onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
             />
             {showError && openingSonding === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>

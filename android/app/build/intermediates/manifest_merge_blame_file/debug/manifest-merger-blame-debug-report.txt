@@ -27,8 +27,8 @@
 19-->/Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:49:5-80
 19-->/Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:49:22-77
 20    <uses-permission android:name="android.permission.INTERNET" />
-20-->/Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:51:5-67
-20-->/Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:51:22-64
+20-->/Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:52:5-67
+20-->/Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:52:22-64
 21
 22    <queries>
 22-->[:capacitor-camera] /Users/septian-tm/app/New-Fuel-App-Tab/node_modules/@capacitor/camera/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml:7:5-11:15

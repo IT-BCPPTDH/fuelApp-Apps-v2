@@ -11,10 +11,10 @@ INJECTED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/Androi
 	android:name
 		ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:33:13-62
 manifest
-ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:2:1-53:12
-INJECTED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:2:1-53:12
-INJECTED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:2:1-53:12
-INJECTED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:2:1-53:12
+ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:2:1-54:12
+INJECTED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:2:1-54:12
+INJECTED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:2:1-54:12
+INJECTED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:2:1-54:12
 MERGED from [:capacitor-community-http] /Users/septian-tm/app/New-Fuel-App-Tab/node_modules/@capacitor-community/http/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml:2:1-7:12
 MERGED from [:capacitor-app] /Users/septian-tm/app/New-Fuel-App-Tab/node_modules/@capacitor/app/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml:2:1-7:12
 MERGED from [:capacitor-camera] /Users/septian-tm/app/New-Fuel-App-Tab/node_modules/@capacitor/camera/android/build/intermediates/merged_manifest/debug/AndroidManifest.xml:2:1-13:12
@@ -163,9 +163,9 @@ ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidMa
 	android:name
 		ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:49:22-77
 uses-permission#android.permission.INTERNET
-ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:51:5-67
+ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:52:5-67
 	android:name
-		ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:51:22-64
+		ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:52:22-64
 meta-data#android.support.FILE_PROVIDER_PATHS
 ADDED from /Users/septian-tm/app/New-Fuel-App-Tab/android/app/src/main/AndroidManifest.xml:37:13-39:54
 	android:resource
