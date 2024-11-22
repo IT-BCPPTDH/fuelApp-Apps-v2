@@ -7,7 +7,7 @@ import { getLatestLkfId, getLatestLkfData } from '../../utils/getData';
 import { logoutUser } from '../../hooks/useAuth';
 
 import './style.css';
-import { deleteAllClosingData, deleteAllDataTransaksi } from '../../utils/delete';
+import { deleteAllClosingData, deleteAllDataMaster, deleteAllDataTransaksi } from '../../utils/delete';
 import { getDataFromStorage, removeDataFromStorage } from '../../services/dataService';
 
 interface UserData {
@@ -177,9 +177,9 @@ const ReviewData: React.FC = () => {
             // await deleteData();
             await deleteAllDataTransaksi();
             await deleteAllClosingData()
-            await deleteAllDataTransaksi()
+            await deleteAllDataMaster()
             // Redirect to the home page or login page
-            // route.push('/')
+            route.push('/')
             window.location.href='/'
         
         } catch (error) {

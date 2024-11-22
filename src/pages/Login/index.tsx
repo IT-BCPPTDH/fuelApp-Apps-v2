@@ -34,7 +34,6 @@ import Select from "react-select";
 import { bulkInsertDataMasterTransaksi } from "../../utils/getData";
 import { getAllSonding } from "../../hooks/getAllSonding";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
-import { reloadSharp } from "ionicons/icons";
 
 
 // Define props interface
@@ -156,7 +155,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
         
         saveDataToStorage("loginData", loginData);
         Cookies.set("isLoggedIn", "true", { expires: 1 });
-
+         await handleGet()
         router.push("/opening");
         onLoginSuccess();
         setShowAlert(true);
@@ -176,25 +175,26 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
   const dataTrasaksi = async() =>{
     const result = await getTrasaksiSemua()
-    console.log("data",result)
+   
 
   }
 
   const handleGet = async () => {
     try {
-      // Ambil data transaksi dari localStorage
-      const transaksiDataString = localStorage.getItem('transaksiData');
-      console.log("Data from localStorage:", transaksiDataString); // Debugging
+      // Ambil data transaksi dari localStorage dengan key 'lastTrx' menggunakan getDataFromStorage
+      const transaksiData = await getDataFromStorage('lastTrx');
+      console.log("Data from localStorage:", transaksiData); // Debugging
   
-      if (transaksiDataString) {
-        // Parsing data JSON dari string
-        const transaksiData = JSON.parse(transaksiDataString);
-        console.log("Parsed transaksiData:", transaksiData); // Debugging
+      // Check if the data is an object or a string
+      if (transaksiData) {
+        // If the data is a string, parse it as JSON
+        const transaksiDataParsed = typeof transaksiData === 'string' ? JSON.parse(transaksiData) : transaksiData;
+        console.log("Parsed transaksiData:", transaksiDataParsed); // Debugging
   
         // Cek apakah transaksiData adalah array dan tidak kosong
-        if (Array.isArray(transaksiData) && transaksiData.length > 0) {
+        if (Array.isArray(transaksiDataParsed) && transaksiDataParsed.length > 0) {
           // Lakukan bulk insert ke IndexedDB
-          await bulkInsertDataMasterTransaksi(transaksiData);
+          await bulkInsertDataMasterTransaksi(transaksiDataParsed);
           console.log('Data transaksi berhasil dimasukkan ke IndexedDB.');
         } else {
           console.warn('Data transaksi kosong atau tidak valid.');
@@ -206,6 +206,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
       console.error('Error saat melakukan bulk insert dari localStorage:', error);
     }
   };
+  
 
 
   const loadOperator = async () => {
@@ -239,6 +240,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
     const loadUnitDataQuota = async () => {
         const today = new Date();
         const formattedDate = today.toISOString().split('T')[0];
+        console.log("date",formattedDate)
         try {
             const quotaData = await fetchQuotaData(formattedDate);
             console.log('Fetched Qouta Login ', quotaData);
@@ -248,7 +250,7 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
                 if (!foundUnitQuota) {
                     const yesterday = new Date(today);
-                    yesterday.setDate(today.getDate() - 1);
+                    // yesterday.setDate(today.getDate() - 1);
                     const formattedYesterday = yesterday.toISOString().split('T')[0];
                     const previousQuotaData = await fetchQuotaData(formattedYesterday);
                     console.log('Fetched previous quota data:', previousQuotaData);
@@ -267,44 +269,15 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
 
 
-const handleGet = async () => {
-  try {
-    // Ambil data transaksi dari localStorage
-    const transaksiDataString = localStorage.getItem('transaksiData');
-    console.log("Data from localStorage:", transaksiDataString); // Debugging
 
-    if (transaksiDataString) {
-      // Parsing data JSON dari string
-      const transaksiData = JSON.parse(transaksiDataString);
-      console.log("Parsed transaksiData:", transaksiData); // Debugging
-
-      // Cek apakah transaksiData adalah array dan tidak kosong
-      if (Array.isArray(transaksiData) && transaksiData.length > 0) {
-        // Lakukan bulk insert ke IndexedDB
-        await bulkInsertDataMasterTransaksi(transaksiData);
-        console.log('Data transaksi berhasil dimasukkan ke IndexedDB.');
-      } else {
-        console.warn('Data transaksi kosong atau tidak valid.');
-      }
-    } else {
-      console.warn('Tidak ada data transaksi yang tersedia di localStorage.');
-    }
-  } catch (error) {
-    console.error('Error saat melakukan bulk insert dari localStorage:', error);
-  }
-};
 
 
 const loadUnitData = async () => {
   const units = await fetchUnitData();
 };
-
 const loadLastTrx = async () => {
 const units = await fetchLasTrx();
 };
-
-
-
 
 const loadLastLKF = async () => {
 const units = await fetchLasLKF();

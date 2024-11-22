@@ -31,7 +31,7 @@ import { DataLkf } from "../../models/db";
 // import { getAllUnit } from "../../hooks/getAllUnit";
 // import { getStation } from "../../hooks/useStation";
 import { getAllSonding } from "../../hooks/getAllSonding";
-import { getLatestLkfDataDate, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
+import { getLatestLkfDataDate, getLatestLkfId, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
 import { getStationData} from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
@@ -111,10 +111,13 @@ const input2Ref = useRef<HTMLIonInputElement>(null);
 const [showToast, setShowToast] = useState(false);
 const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+const [tanggalTrx , setTanggalTrx] = useState (new Date().toLocaleDateString())
 
 const [jdeOptions, setJdeOptions] = useState<
 { JDE: string; fullname: string }[]
 >([]);
+
+
 
   useEffect(() => {
     const determineShift = () => {
@@ -130,10 +133,11 @@ const [jdeOptions, setJdeOptions] = useState<
       } else if (isNightShift) {
         setShiftSelected(shifts.find((shift) => shift.name === "Night"));
       }
-    };
-
+    }
+     localStorage.setItem("tanggalTransaksi",tanggalTrx)
     determineShift();
   }, [])
+
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
@@ -215,38 +219,17 @@ const [jdeOptions, setJdeOptions] = useState<
 
 
 
-  // useEffect(() => {
-  //   const updateOpeningDip = async () => {
-  //     if (openingSonding !== undefined && station !== undefined) {
-  //       try {
-  //         if (openingSonding === 0 && station === 'loginData') {
-  //           setOpeningDip(0);
-  //         } else {
-  //           const matchingData = sondingMasterData.find(
-  //             (item) => item.station === station && item.cm === openingSonding
-  //           );
-  //           if (matchingData) {
-  //             setOpeningDip(matchingData.liters);
-  //           } else {
-  //             setOpeningDip(undefined);
-  //           }
-  //         }
-  //       } catch (error) {
-  //         console.error('Failed to update opening dip', error);
-  //       }
-  //     }
-  //   };
-
-  //   updateOpeningDip();
-  // }, [openingSonding, station, sondingMasterData]);
-
   const handleDateChange = (e: CustomEvent) => {
     const selectedDate = e.detail.value as string;
     if (selectedDate) {
       setDate(selectedDate);
       setShowDateModal(false);
+      setTanggalTrx(new Date(selectedDate).toLocaleString())
+      localStorage.setItem("tanggalTransaksi",new Date(selectedDate).toLocaleString())
     }
+    
   };
+
   
   const fetchShiftDataByStation = async (station: string) => {
     try {
@@ -282,9 +265,35 @@ const [jdeOptions, setJdeOptions] = useState<
       setShowError(true);
       return;
     }
-    console.log(1)
+
+  const lkf_id = await getLatestLkfId();
+    let latestDataDateFormatted: string | null = null;
+    try {
+      const latestDataDate = await getLatestLkfDataDate();
+      if (latestDataDate && latestDataDate.date) {
+        const date = new Date(latestDataDate.date);
+        date.setDate(date.getDate() );
+    
+        latestDataDateFormatted = date.toISOString(); 
+      } else {
+        const currentDate = new Date();
+    
+
+        currentDate.setDate(currentDate.getDate() );
+    
+        latestDataDateFormatted = currentDate.toISOString(); 
+      }
+    } catch (error) {
+      console.error('Error fetching latest data date:', error);
+      
+      // Fallback jika terjadi error
+      const currentDate = new Date();
+      currentDate.setDate(currentDate.getDate()); // Tambahkan 1 hari
+      latestDataDateFormatted = currentDate.toISOString();
+    }
+    
     let dataPost: DataLkf = {
-      date: new Date(date).toISOString(),
+      date: latestDataDateFormatted,
       shift: shiftSelected.name,
       hm_start: hmAkhir,
       opening_dip: openingDip,
@@ -603,7 +612,7 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               </IonLabel>
               <IonItem>
                 <IonInput
-                  value={new Date(date).toLocaleDateString()}
+                  value={tanggalTrx}
                   placeholder="Select Date"
                   readonly
                   onClick={() => setShowDateModal(true)}

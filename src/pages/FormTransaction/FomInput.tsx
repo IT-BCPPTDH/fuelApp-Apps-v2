@@ -283,7 +283,7 @@ const FormTRX: React.FC = () => {
   const [signature, setSignature] = useState<string | null>(null);
 
   const [latestDate, setLatestDate] = useState<string>('');
-
+  const [tanggalTransaksi, setTanggalTransaksi] = useState<string | null>(null);
   const [stock, setStock] = useState<number>(0);
   useEffect(() => {
     const handleOnline = () => {
@@ -599,6 +599,7 @@ const FormTRX: React.FC = () => {
   };
   
 
+
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -654,30 +655,12 @@ const FormTRX: React.FC = () => {
 
 
   useEffect(() => {
-    // Function to format date as "Tanggal : 25 Januari 2025"
-    const formatDate = (date: Date): string => {
-      const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-      return `Tanggal : ${new Intl.DateTimeFormat('id-ID', options).format(date)}`;
-    };
-
-    const fetchDate = async () => {
-      try {
-        const latestDataDate = await getLatestLkfDataDate();
-        if (latestDataDate && latestDataDate.date) {
-          const date = new Date(latestDataDate.date);
-          setLatestDate(formatDate(date));
-        } else {
-          setLatestDate('No Date Available');
-        }
-      } catch (error) {
-        console.error('Error fetching latest data date:', error);
-        setLatestDate('Error fetching date');
-      }
-    };
-
-    fetchDate();
+    const savedDate = localStorage.getItem("tanggalTransaksi");
+    if (savedDate) {
+      setTanggalTransaksi(new Date(savedDate).toLocaleString()); 
+    }
   }, []);
-
+  
   // const handlePost = async (e: React.FormEvent) => {
   //   e.preventDefault(); // Prevent default form submission behavior
 
@@ -1080,7 +1063,7 @@ const FormTRX: React.FC = () => {
     const value = e.detail.value ? Number(e.detail.value) : null;
   
     if (value !== null && value < hmLast) {
-      // Jika nilai lebih kecil dari hmlst, set error
+      
       setShowError(true);
     } else {
       // Jika valid, update hmkmValue
@@ -1445,38 +1428,41 @@ const FormTRX: React.FC = () => {
     if (newValue) {
       const unitValue = newValue.value;
       setSelectedUnit(unitValue); // Set the selected unit
-
+  
       // Find the selected unit option from unitOptions
       const selectedUnitOption = unitOptions.find(
         (unit) => unit.unit_no === unitValue
       );
-
+  
       if (selectedUnitOption) {
         // Update state based on the online data
         setModel(selectedUnitOption.brand);
         setOwner(selectedUnitOption.owner);
-        setHmkmValue(selectedUnitOption.hm_km);
-        setHmKmLast(selectedUnitOption.hm_last);
+        setHmkmValue(selectedUnitOption.hm_km); // Set the hm_km value here
+        setHmKmLast(selectedUnitOption.hm_last); // Set hm_last if available
         setQtyValue(selectedUnitOption.qty);
-
+  
         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
         setKoutaLimit(newKoutaLimit);
-
+  
         setShowError(
           unitValue.startsWith("LV") ||
           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
         );
       } else {
         console.log("You are offline");
-
+  
         try {
           // Retrieve data from IndexedDB using fetchLatestHmLast
           const offlineData = await fetchLatestHmLast(unitValue);
-          console.log("hm", offlineData)
-
-
+          console.log("Offline HM Data:", offlineData);
+  
+          const offlineHM = await getDataFromStorage('lastTrx');
+          const hmKmValues = offlineHM.map((item: { hm_km: number }) => item.hm_km);
+          console.log("HM KM Values:", hmKmValues);
+  
           if (offlineData.hm_km !== undefined) {
-            setHmLast(Number(hmLast));  // Convert hm_km to a string before setting it
+            setHmKmLast(offlineData.hm_km); // Set hm_km from offline data
           }
           if (offlineData.model_unit) {
             setModel(offlineData.model_unit); // Set model from offline data
@@ -1487,16 +1473,16 @@ const FormTRX: React.FC = () => {
           if (offlineData.qty_last !== undefined) {
             setQtyValue(offlineData.qty_last); // Set qty from offline data
           }
-
+  
         } catch (error) {
           console.error("Failed to retrieve data from IndexedDB:", error);
         }
-
+  
         console.warn(`Unit with value ${unitValue} was not found in unitOptions.`);
       }
     }
   };
-
+  
   useEffect(() => {
     const getOfflineData = async () => {
   
@@ -1606,8 +1592,8 @@ const FormTRX: React.FC = () => {
   </IonRow>
 )}
           <div style={{ marginTop: "30px" }}>
-            {latestDate}
-            <IonGrid>
+            
+            <IonGrid>  
             <h1>Shift: {shift}</h1>
               <IonRow>
                 <IonCol size="8"
