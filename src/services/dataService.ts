@@ -182,29 +182,7 @@ export const fetchShiftData = async (station: string): Promise<any[]> => {
 };
 
 
-export const fetchUnitLastTrx = async (unitNo: string): Promise<any[]> => {
-  try {
-    const response = await getPrevUnitTrx(unitNo); 
-    // Log the raw response for debugging
-    console.log("Raw Response:", response);
 
-    if (response && response.status === '200' && Array.isArray(response.data)) {
-      await saveDataToStorage('unitTrxData', response.data);
-      
-      // Log success with clear context
-      console.log("Shift data fetched successfully:", response.data);
-      
-      return response.data;
-    } else {
-      console.error('Unexpected data format or status. Response:', response);
-      return [];
-    }
-  } catch (error) {
-    // Log the error with details
-    console.error('Failed to fetch Shift Data. Error:', error);
-    return [];
-  }
-};
 
 export const fetchLasTrx = async (): Promise<any[]> => {
   try {

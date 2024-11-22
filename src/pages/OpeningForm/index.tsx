@@ -90,6 +90,7 @@ const OpeningForm: React.FC = () => {
   const [showDateModal, setShowDateModal] = useState<boolean>(false);
   const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
+ 
   const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
   const [date, setDate] = useState<string>(new Date().toISOString());
   const [hmAkhir, setHmAkhir] = useState<number | undefined>(undefined);
@@ -363,6 +364,11 @@ const [jdeOptions, setJdeOptions] = useState<
   const handleOpeningSondingChange = (e: CustomEvent) => {
     const value = Number(e.detail.value); // Convert to number
     setOpeningSonding(value);
+  };
+
+  const handleOpeningDipChange = (e: CustomEvent) => {
+    const value = Number(e.detail.value); // Convert to number
+    setOpeningDip(value);
   };
 
 
@@ -642,7 +648,7 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               type="number"
               placeholder="Input opening dip dalam liter"
               value={openingDip}
-              disabled
+              onIonChange={handleOpeningDipChange}
               readonly={stationOptions.includes(station ||'')}
               onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
 

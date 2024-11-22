@@ -256,7 +256,7 @@ export const fetchLatestHmLast = async (
     if (latestEntry) {
       console.log("Latest entry found:", latestEntry);
       return {
-        hm_km: latestEntry.hm_km,         
+        hm_km: latestEntry.hm_km, 
         model_unit: latestEntry.model_unit, 
         owner: latestEntry.owner,         
         qty_last: latestEntry.qty     

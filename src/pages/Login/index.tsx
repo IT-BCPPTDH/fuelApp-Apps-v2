@@ -24,15 +24,17 @@ import {
   getDataFromStorage,
   fetchOperatorData,
   fetchQuotaData,
-  fetchUnitLastTrx,
+
   fetchUnitData,
   fetchLasTrx,
   fetchLasLKF,
 } from "../../services/dataService";
 import Select from "react-select";
-import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
+
 import { bulkInsertDataMasterTransaksi } from "../../utils/getData";
 import { getAllSonding } from "../../hooks/getAllSonding";
+import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
+import { reloadSharp } from "ionicons/icons";
 
 
 // Define props interface
@@ -115,71 +117,6 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
  
 
-  // const handleLogin = async () => {
-  //   setLoading(true);
-  //   if (!jde || !selectedUnit) {
-  //     console.error("Employee ID dan Station harus diisi.");
-  //     setShowError(true);
-  //     setLoading(false);
-  //     return;
-  //   }
-
-
-  //   const selectedStation = stationData.find((station) => station.value === selectedUnit);
-  //   if (!selectedStation) {
-  //     console.error("Selected station not found");
-  //     setShowError(true);
-  //     setLoading(false);
-  //     return;
-  //   }
-
-  //   const currentDate = new Date().toISOString();
-
-  //   try {
-  //     const response = await postAuthLogin({
-  //       station: selectedUnit,
-  //       date: currentDate,
-  //       JDE: jde,
-  //     });
-
-  //     if (response.status === '200' && response.message === 'Data Created') {
-  //       const { token } = response.data;
-  //       Cookies.set("session_token", token, { expires: 1 });
-  //       Cookies.set("isLoggedIn", "true", { expires: 1 });
-
-  //       const loginData = {
-  //         station: selectedUnit,
-  //         jde: jde,
-  //         site: selectedStation.site,
-  //       };
-        
-  //       console.log("Starting handleGet to process transaksiData...");
-  //       await handleGet();
-  //       saveDataToStorage("loginData", loginData);
-       
-  //       // Notify the App component about the login success
-  //       onLoginSuccess();
-
-  //       // Navigate to the opening page
-       
-       
-       
-  //       setShowAlert(true);
-  //       router.push("/opening");
-  //       setShowAlert(true);
-      
-  //     } else {
-  //       console.error("Unexpected response:", response);
-  //       setShowError(true);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error during login:", error);
-  //     setShowError(true);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  
   const handleLogin = async () => {
     setLoading(true);
     if (!jde || !selectedUnit) {
@@ -236,6 +173,12 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
       setLoading(false);
     }
   };
+
+  const dataTrasaksi = async() =>{
+    const result = await getTrasaksiSemua()
+    console.log("data",result)
+
+  }
 
   const handleGet = async () => {
     try {
@@ -324,21 +267,30 @@ const [transaksiData, setTransaksiData] = useState<any>(null);
 
 
 
-const dataTrasaksi = async () => {
+const handleGet = async () => {
   try {
-    // Mengambil data transaksi dari API atau sumber lainnya
-    const response = await getTrasaksiSemua();
-    console.log("API response:", response); // Log the response to check its structure
+    // Ambil data transaksi dari localStorage
+    const transaksiDataString = localStorage.getItem('transaksiData');
+    console.log("Data from localStorage:", transaksiDataString); // Debugging
 
-    if (response.status === '200' && response.data && Array.isArray(response.data) && response.data.length > 0) {
-      // Menyimpan data transaksi ke localStorage dengan nama 'transaksiData'
-      localStorage.setItem('prevData', JSON.stringify(response.data));
-      console.log('Transaksi data has been saved to localStorage.');
+    if (transaksiDataString) {
+      // Parsing data JSON dari string
+      const transaksiData = JSON.parse(transaksiDataString);
+      console.log("Parsed transaksiData:", transaksiData); // Debugging
+
+      // Cek apakah transaksiData adalah array dan tidak kosong
+      if (Array.isArray(transaksiData) && transaksiData.length > 0) {
+        // Lakukan bulk insert ke IndexedDB
+        await bulkInsertDataMasterTransaksi(transaksiData);
+        console.log('Data transaksi berhasil dimasukkan ke IndexedDB.');
+      } else {
+        console.warn('Data transaksi kosong atau tidak valid.');
+      }
     } else {
-      console.warn('No transaksi data to save or invalid response.');
+      console.warn('Tidak ada data transaksi yang tersedia di localStorage.');
     }
   } catch (error) {
-    console.error('Error fetching and saving transaksi data:', error);
+    console.error('Error saat melakukan bulk insert dari localStorage:', error);
   }
 };
 
@@ -346,9 +298,13 @@ const dataTrasaksi = async () => {
 const loadUnitData = async () => {
   const units = await fetchUnitData();
 };
+
 const loadLastTrx = async () => {
 const units = await fetchLasTrx();
 };
+
+
+
 
 const loadLastLKF = async () => {
 const units = await fetchLasLKF();
@@ -361,7 +317,7 @@ useEffect(() => {
   loadLastLKF()
   fetchSondingMasterData();
   // Only call dataTrasaksi once when the component mounts
-  dataTrasaksi();
+ 
 }, []); 
 
 
@@ -383,36 +339,6 @@ useEffect(() => {
 
 
 
-
-
-
-
-const loadTrxLast = async () => {
-  try {
-    // First, check local storage for cached operator data
-    const cachedData = await getDataFromStorage('oneMounth');
-    if (cachedData && Array.isArray(cachedData)) {
-      console.log("Loaded data terakhir:", cachedData);
-      setDtTrx(cachedData); // Use the cached data
-    } else {
-      // If no cached data, fetch from the API
-      const fetchedJdeOptions = await fetchUnitLastTrx(selectedUnit);
-      if (fetchedJdeOptions.length > 0) {
-        console.log("Fetched operator data and saved to local storage:", fetchedJdeOptions);
-        setDtTrx(fetchedJdeOptions); // Update state with fetched data
-      } else {
-        console.error("No valid operator data fetched");
-      }
-    }
-  } catch (error) {
-    console.error("Error loading operator data:", error);
-  }
-};
-
-
-useEffect(() => {
-  loadTrxLast(); 
-}, []);
 
   return (
     <IonPage>
