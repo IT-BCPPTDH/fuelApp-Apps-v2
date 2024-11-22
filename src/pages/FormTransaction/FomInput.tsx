@@ -39,17 +39,19 @@ import SignatureModal from "../../components/SignatureModal";
 import { getAllUnit } from "../../hooks/getAllUnit";
 
 import { postTransaksi } from "../../hooks/postTrx";
-import { DataFormTrx } from "../../models/db";
+import { DataFormTrx, DataMasterTransaksi } from "../../models/db";
 import { db } from "../../models/db";
 import { DataDashboard } from "../../models/db";
 import { addDataDashboard, addDataHistory, addDataTrxType } from "../../utils/insertData";
 import { getUser } from "../../hooks/getAllUser";
 import { convertToBase64 } from "../../utils/base64";
 import {
+  bulkInsertDataMasterTransaksi,
   fetchLatestHmLast,
   getFbrByUnit,
   getLatestLkfDataDate,
   getLatestLkfId,
+  insertNewDataNewMaster,
 } from "../../utils/getData";
 
 
@@ -375,44 +377,56 @@ const FormTRX: React.FC = () => {
 
   //   loadUnitDataQuota();
   // }, [selectedUnit]);
-
-
+ 
   useEffect(() => {
     const loadUnitDataQuota = async () => {
-      // Create a Date object from latestDate or use current date
-      const today = latestDate ? new Date(latestDate.split(': ')[1]) : new Date();
+      // Retrieve the transaction date from localStorage
+      let latestDataDateFormatted = "";
+      const savedDate = localStorage.getItem("tanggalTransaksi");
+      if (savedDate) {
+        const transactionDate = new Date(savedDate);
+        latestDataDateFormatted = transactionDate.toISOString();
+      } else {
+        console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+      }
   
-      // Manually adjust for time zone issues if necessary (e.g., UTC+7)
-      const formattedDate = today.toLocaleDateString('en-CA'); // This formats the date as YYYY-MM-DD
-      console.log("Formatted Date:", formattedDate); // Log to verify correct date
+      // Default to today's date if no date is available
+      const today = latestDataDateFormatted
+        ? new Date(latestDataDateFormatted)
+        : new Date();
+      const formattedDate = today.toLocaleDateString("en-CA");
+      console.log("Formatted Date:", formattedDate);
   
       try {
         let quotaData;
-  
-        // Fetch online data for the current date
         if (navigator.onLine) {
           quotaData = await fetchQuotaData(formattedDate);
         }
   
-        // If no online data, try offline data
         if (!quotaData || !Array.isArray(quotaData)) {
-          console.warn('Online quota data unavailable or failed. Attempting offline data.');
-          quotaData = await getDataFromStorage('unitQuota');
+          console.warn(
+            "Online quota data unavailable or failed. Attempting offline data."
+          );
+          quotaData = await getDataFromStorage("unitQuota");
           console.log("Offline Quota Data:", quotaData); // Log offline data for debugging
         }
   
         if (quotaData && Array.isArray(quotaData)) {
-          let foundUnitQuota = quotaData.find((unit) => unit.unit_no === selectedUnit);
+          let foundUnitQuota = quotaData.find(
+            (unit) => unit.unit_no === selectedUnit
+          );
   
           if (!foundUnitQuota && navigator.onLine) {
             // Check previous day's data if today’s quota is missing and online
             const yesterday = new Date(today);
             yesterday.setDate(today.getDate() - 1); // Go back one day
-            const formattedYesterday = yesterday.toLocaleDateString('en-CA');
+            const formattedYesterday = yesterday.toLocaleDateString("en-CA");
             console.log("Checking previous day's data:", formattedYesterday);
   
             const previousQuotaData = await fetchQuotaData(formattedYesterday);
-            foundUnitQuota = previousQuotaData?.find((unit) => unit.unit_no === selectedUnit);
+            foundUnitQuota = previousQuotaData?.find(
+              (unit) => unit.unit_no === selectedUnit
+            );
           }
   
           if (foundUnitQuota?.is_active) {
@@ -423,11 +437,15 @@ const FormTRX: React.FC = () => {
   
             setUnitQuota(totalQuota);
             setRemainingQuota(remainingQuota);
-            setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
+            setQuotaMessage(
+              `Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`
+            );
   
             const issuedAmount = foundUnitQuota.issued || 0;
             if (issuedAmount > remainingQuota) {
-              setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
+              setQuotaMessage(
+                `Error: Issued amount exceeds remaining quota for ${selectedUnit}`
+              );
             }
           } else {
             setQuotaMessage("Pembatasan kuota dinonaktifkan.");
@@ -436,15 +454,15 @@ const FormTRX: React.FC = () => {
           }
         } else {
           setQuotaMessage("Offline quota data unavailable.");
-          console.error('No quota data available for the specified date or unit.');
+          console.error("No quota data available for the specified date or unit.");
         }
       } catch (error) {
-        console.error('Error fetching or loading quota data:', error);
+        console.error("Error fetching or loading quota data:", error);
         setQuotaMessage("Error loading quota data.");
       }
     };
   
-    if (latestDate) {
+    if (selectedUnit) {
       loadUnitDataQuota();
     }
   }, [selectedUnit, latestDate]);
@@ -784,6 +802,14 @@ const FormTRX: React.FC = () => {
   //   }
   // };
 
+
+  useEffect(() => {
+    const savedDate = localStorage.getItem("tanggalTransaksi");
+    if (savedDate) {
+      setTanggalTransaksi(new Date(savedDate).toLocaleString()); 
+    }
+  }, []);
+
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault(); // Prevent default form submission behavior
   
@@ -820,34 +846,16 @@ const FormTRX: React.FC = () => {
     const fromDataId = Date.now().toString();
   
     const lkf_id = await getLatestLkfId();
-    let latestDataDateFormatted: string | null = null;
   
-    try {
-      const latestDataDate = await getLatestLkfDataDate();
-      if (latestDataDate && latestDataDate.date) {
-        const date = new Date(latestDataDate.date);
-        date.setDate(date.getDate() + 1);
-    
-        latestDataDateFormatted = date.toISOString(); 
-      } else {
-        const currentDate = new Date();
-    
-
-        currentDate.setDate(currentDate.getDate() + 1);
-    
-        latestDataDateFormatted = currentDate.toISOString(); // Fallback dengan tambahan 1 hari
-      }
-    } catch (error) {
-      console.error('Error fetching latest data date:', error);
-      
-      // Fallback jika terjadi error
-      const currentDate = new Date();
-      currentDate.setDate(currentDate.getDate() + 1); // Tambahkan 1 hari
-      latestDataDateFormatted = currentDate.toISOString();
+    let latestDataDateFormatted = "";
+    const savedDate = localStorage.getItem("tanggalTransaksi");
+    if (savedDate) {
+      const transactionDate = new Date(savedDate);
+      latestDataDateFormatted = transactionDate.toISOString();
+    } else {
+      console.error("No saved date available in localStorage for 'tanggalTransaksi'");
     }
-    
   
-    // Use the formatted date as the date_trx in dataPost
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -879,12 +887,17 @@ const FormTRX: React.FC = () => {
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost);
         await insertNewDataHistori(dataPost);
+        // Add data to dataMasterTrasaksi after successful post
+       
+  
         updateCard();
   
         if (response.status === 200) {
           dataPost.status = 1;
           await insertNewData(dataPost);
           await insertNewDataHistori(dataPost);
+          await insertNewDataNewMaster(dataPost); // Ensure data is added here as well
+  
           setIsAlertOpen(true);
   
           if (quantity > 0) {
@@ -920,10 +933,10 @@ const FormTRX: React.FC = () => {
         dataPost.status = 0;
         await insertNewData(dataPost);
         await insertNewDataHistori(dataPost);
+        await insertNewDataNewMaster(dataPost)
         await saveDataToStorage("unitQuota", unitQuota);
-        
       }
-     
+
       route.push("/dashboard");
   
     } catch (error) {
@@ -932,6 +945,7 @@ const FormTRX: React.FC = () => {
       setErrorModalOpen(true);
     }
   };
+  
   
 
   const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
@@ -968,6 +982,8 @@ const FormTRX: React.FC = () => {
       console.error("Failed to insert new data:", error);
     }
   };
+
+  
 
   const insertNewDataHistori = async (data: DataFormTrx) => {
     try {
