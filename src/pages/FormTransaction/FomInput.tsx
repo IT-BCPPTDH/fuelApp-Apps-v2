@@ -51,7 +51,7 @@ import {
   getFbrByUnit,
   getLatestLkfDataDate,
   getLatestLkfId,
-  insertNewDataNewMaster,
+
 } from "../../utils/getData";
 
 
@@ -886,17 +886,16 @@ const FormTRX: React.FC = () => {
       if (isOnline) {
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost);
-   
-        await insertNewDataNewMaster(dataPost); 
-       
+        await addDataHistory(dataPost)
+    
+
   
         updateCard();
   
         if (response.status === 200) {
           dataPost.status = 1;
           await insertNewData(dataPost);
-       
-          await insertNewDataNewMaster(dataPost); 
+          await addDataHistory(dataPost)
          
   
           setIsAlertOpen(true);
@@ -934,7 +933,7 @@ const FormTRX: React.FC = () => {
         dataPost.status = 0;
         await insertNewData(dataPost);
         await insertNewDataHistori(dataPost);
-        await insertNewDataNewMaster(dataPost)
+ 
         await saveDataToStorage("unitQuota", unitQuota);
       }
 
@@ -994,6 +993,10 @@ const FormTRX: React.FC = () => {
       console.error("Failed to insert new data:", error);
     }
   };
+
+
+  
+
 
 
   const handleSignatureConfirm = (newSignature: string) => {
@@ -1411,29 +1414,7 @@ const FormTRX: React.FC = () => {
 
  
 
-  useEffect(() => {
-    const getOfflineData = async () => {
-      // Fetch the latest data for the selected unit
-      const offlineData = await fetchLatestHmLast(selectedUnit);
-
-      // Set state variables based on the fetched data
-      if (offlineData.hm_km !== undefined) {
-        setHmLast(offlineData.hm_km); // Set hm_km as a number
-      }
-      if (offlineData.model_unit) {
-        setModelUnit(offlineData.model_unit); // Set model_unit as a string
-      }
-      if (offlineData.owner) {
-        setOwner(offlineData.owner); // Set owner as a string
-      }
-      if (offlineData.qty_last !== undefined) {
-        setQtyLast(offlineData.qty_last); // Set qty_last as a number
-      }
-    };
-
-    getOfflineData();
-  }, [selectedUnit]);
-
+ 
 
 
  
@@ -1472,7 +1453,7 @@ const FormTRX: React.FC = () => {
         try {
           // Retrieve data from IndexedDB using fetchLatestHmLast
           const offlineData = await fetchLatestHmLast(unitValue);
-          console.log("Offline HM Data:", offlineData);
+         
   
           const offlineHM = await getDataFromStorage('lastTrx');
           const hmKmValues = offlineHM.map((item: { hm_km: number }) => item.hm_km);
@@ -1500,36 +1481,22 @@ const FormTRX: React.FC = () => {
     }
   };
   
+  
   useEffect(() => {
     const getOfflineData = async () => {
   
       setHmLast(0);  
 
       const offlineData = await fetchLatestHmLast(selectedUnit);
-
-    
-      console.log("Fetched offline data:", offlineData);
-
-      
       if (offlineData.hm_km !== undefined) {
-        setHmLast(offlineData.hm_km);  // Set hm_km from offline data
+        setHmLast(offlineData.hm_km);  
       } else {
-        setHmLast(0); // Set hm_km to 0 if the unit doesn't match
+        setHmLast(0); 
       }
 
-      // Set other fields if available
-      if (offlineData.model_unit) {
-        setModelUnit(offlineData.model_unit);
-      }
-      if (offlineData.owner) {
-        setOwner(offlineData.owner);
-      }
-      if (offlineData.qty_last !== undefined) {
-        setQtyLast(offlineData.qty_last);
-      }
     };
 
-    // Call to fetch the latest data whenever the selected unit changes
+   
     getOfflineData();
   }, [selectedUnit]);
  
@@ -1734,7 +1701,7 @@ const FormTRX: React.FC = () => {
                     type="number"
                     placeholder="Input HM/KM Unit"
                     // value={hmkmLast} // Fallback to hmkmLast
-                    value={hmLast || ""}
+                    value={isNaN(hmLast) ? 0 : hmLast}
                     
                     // onIonChange={(e) => setHmLast(Number(e.detail.value))}
                     disabled

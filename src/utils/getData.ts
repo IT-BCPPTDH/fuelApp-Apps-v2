@@ -277,23 +277,20 @@ export const fetchLatestHmLast = async (
   selectedUnit: string
 ): Promise<{ hm_km?: number; model_unit?: string; owner?: string; qty_last?: number }> => {
   try {
-    // Fetch the data asynchronously and await the result
+   
     const latestEntry = await db.dataMasterTrasaksi
       .where('no_unit')        // Filter by unit
       .equals(selectedUnit)    // Select the correct unit
       .sortBy('date_trx');     // Sort by transaction date (ascending order)
 
-    console.log("Fetching latest entry for unit:", selectedUnit);
-
-    // If there are results, reverse the array to get the latest entry first
+  
+   
     const latestEntryReversed = latestEntry.reverse()[0]; // Get the first element after reversing
 
     if (latestEntryReversed) {
       console.log("Latest entry found:", latestEntryReversed);
       return {
-        hm_km: latestEntryReversed.hm_km, 
-        model_unit: latestEntryReversed.model_unit, 
-        owner: latestEntryReversed.owner,         
+        hm_km: latestEntryReversed.hm_km,        
         qty_last: latestEntryReversed.qty     
       };
     } else {
@@ -317,28 +314,6 @@ export const bulkInsertDataMasterTransaksi = async (data: DataMasterTransaksi[])
     console.error("Bulk insert failed for dataMasterTrasaksi:", error);
   }
 };
-
-export const insertNewDataNewMaster = async (data: { hm_km: number; no_unit: string; qty: number }) => {
-  try {
-    // Tambahkan properti id baru menggunakan timestamp
-    const fullData: DataMasterTransaksi = {
-      id: Date.now(), // Membuat ID baru berdasarkan timestamp
-      ...data,
-      model_unit: "",
-      owner: ""
-    };
-
-    // Menyimpan data ke IndexedDB
-    await db.dataMasterTrasaksi.add(fullData);
-    console.log("Data berhasil disimpan ke dataMasterTrasaksi dengan ID baru");
-  } catch (error) {
-    console.error("Gagal menyimpan data ke dataMasterTrasaksi:", error);
-  }
-};
-
-
-
-
 
 
 export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {

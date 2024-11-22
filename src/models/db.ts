@@ -63,8 +63,7 @@ interface DataMasterTransaksi {
   hm_km: number;
   no_unit:string;
   qty:number;
-  model_unit:string;
-  owner:string;
+ 
 
   
 }
