@@ -343,9 +343,9 @@ useEffect(() => {
 
 
 
-  // const handleLogout = () => {
-  //   route.push(u'/closing-data');
-  // };
+const handleLogout = () => {
+  route.push('/closing-data');
+};
 
   useEffect(() => {
     const fetchJdeOptions = async () => {
@@ -710,7 +710,7 @@ useEffect(() => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Update Data
             </IonButton> */}
-            <IonButton color="warning" style={{ marginLeft: "10px" }} disabled={pendingStatus}>
+            <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout}  disabled={pendingStatus}>
               Close LKF & Logout
             </IonButton>
           </div>

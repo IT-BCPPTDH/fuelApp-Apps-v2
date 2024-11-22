@@ -267,29 +267,13 @@ const [jdeOptions, setJdeOptions] = useState<
     }
 
   const lkf_id = await getLatestLkfId();
-    let latestDataDateFormatted: string | null = null;
-    try {
-      const latestDataDate = await getLatestLkfDataDate();
-      if (latestDataDate && latestDataDate.date) {
-        const date = new Date(latestDataDate.date);
-        date.setDate(date.getDate() );
-    
-        latestDataDateFormatted = date.toISOString(); 
-      } else {
-        const currentDate = new Date();
-    
-
-        currentDate.setDate(currentDate.getDate() );
-    
-        latestDataDateFormatted = currentDate.toISOString(); 
-      }
-    } catch (error) {
-      console.error('Error fetching latest data date:', error);
-      
-      // Fallback jika terjadi error
-      const currentDate = new Date();
-      currentDate.setDate(currentDate.getDate()); // Tambahkan 1 hari
-      latestDataDateFormatted = currentDate.toISOString();
+    let latestDataDateFormatted = "";
+    const savedDate = localStorage.getItem("tanggalTransaksi");
+    if (savedDate) {
+      const transactionDate = new Date(savedDate);
+      latestDataDateFormatted = transactionDate.toISOString(); 
+    } else {
+      console.error("No saved date available in localStorage for 'tanggalTransaksi'");
     }
     
     let dataPost: DataLkf = {

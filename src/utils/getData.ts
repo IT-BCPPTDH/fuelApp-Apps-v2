@@ -318,6 +318,14 @@ export const bulkInsertDataMasterTransaksi = async (data: DataMasterTransaksi[])
   }
 };
 
+export const insertNewDataNewMaster = async (data: DataMasterTransaksi) => {
+  try {
+    await db.dataMasterTrasaksi.add(data); // Insert the data
+    console.log("Data successfully inserted into dataMasterTrasaksi");
+  } catch (error) {
+    console.error("Failed to insert data into dataMasterTrasaksi:", error);
+  }
+};
 
 export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {
   try {
