@@ -886,8 +886,8 @@ const FormTRX: React.FC = () => {
       if (isOnline) {
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost);
-        await insertNewDataHistori(dataPost);
-        // Add data to dataMasterTrasaksi after successful post
+   
+        await insertNewDataNewMaster(dataPost); 
        
   
         updateCard();
@@ -895,8 +895,9 @@ const FormTRX: React.FC = () => {
         if (response.status === 200) {
           dataPost.status = 1;
           await insertNewData(dataPost);
-          await insertNewDataHistori(dataPost);
-          await insertNewDataNewMaster(dataPost); // Ensure data is added here as well
+       
+          await insertNewDataNewMaster(dataPost); 
+         
   
           setIsAlertOpen(true);
   

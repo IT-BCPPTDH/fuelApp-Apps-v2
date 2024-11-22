@@ -12,7 +12,7 @@ import {
   IonIcon
 } from "@ionic/react";
 import { saveOutline } from 'ionicons/icons';
-import { getDataByFuelmanID } from '../../utils/getData';
+
 
 
 const tableData = [
@@ -32,19 +32,19 @@ const TableData: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredData, setFilteredData] = useState<any[]>([]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const loginData = localStorage.getItem('loginData');
-      if (loginData) {
-        const { jde } = JSON.parse(loginData);
-        const data = await getDataByFuelmanID(jde);
-        setFilteredData(data);
-        console.log("Filtered data from IndexedDB:", data);
-      }
-    };
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     const loginData = localStorage.getItem('loginData');
+  //     if (loginData) {
+  //       const { jde } = JSON.parse(loginData);
+  //       const data = await getDataByFuelmanID(jde);
+  //       setFilteredData(data);
+  //       console.log("Filtered data from IndexedDB:", data);
+  //     }
+  //   };
 
-    fetchData();
-  }, []);
+  //   fetchData();
+  // }, []);
 
   const filteredDataList = tableData.filter(item =>
     item.unit_no.toLowerCase().includes(searchQuery.toLowerCase()) ||

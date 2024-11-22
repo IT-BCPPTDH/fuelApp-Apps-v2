@@ -318,14 +318,28 @@ export const bulkInsertDataMasterTransaksi = async (data: DataMasterTransaksi[])
   }
 };
 
-export const insertNewDataNewMaster = async (data: DataMasterTransaksi) => {
+export const insertNewDataNewMaster = async (data: { hm_km: number; no_unit: string; qty: number }) => {
   try {
-    await db.dataMasterTrasaksi.add(data); // Insert the data
-    console.log("Data successfully inserted into dataMasterTrasaksi");
+    // Tambahkan properti id baru menggunakan timestamp
+    const fullData: DataMasterTransaksi = {
+      id: Date.now(), // Membuat ID baru berdasarkan timestamp
+      ...data,
+      model_unit: "",
+      owner: ""
+    };
+
+    // Menyimpan data ke IndexedDB
+    await db.dataMasterTrasaksi.add(fullData);
+    console.log("Data berhasil disimpan ke dataMasterTrasaksi dengan ID baru");
   } catch (error) {
-    console.error("Failed to insert data into dataMasterTrasaksi:", error);
+    console.error("Gagal menyimpan data ke dataMasterTrasaksi:", error);
   }
 };
+
+
+
+
+
 
 export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {
   try {
