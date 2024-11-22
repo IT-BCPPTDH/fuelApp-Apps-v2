@@ -26,7 +26,7 @@ interface DataLkf {
   signature:string;
   close_data:number,
   variant:number,
-  status:string
+  status?:string,
 }
 
 
