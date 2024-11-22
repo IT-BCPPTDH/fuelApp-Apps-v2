@@ -242,35 +242,72 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
   }
 };
 
+// export const fetchLatestHmLast = async (
+//   selectedUnit: string
+// ): Promise<{ hm_km?: number; model_unit?: string; owner?: string; qty_last?: number }> => {
+//   try {
+   
+//     const latestEntry = await db.dataMasterTrasaksi
+//       .orderBy('date_trx')   
+//       .filter(entry => entry.no_unit === selectedUnit)  
+//       .last();
+
+//     console.log("Fetching latest entry for unit:", selectedUnit);
+//     if (latestEntry) {
+//       console.log("Latest entry found:", latestEntry);
+//       return {
+//         hm_km: latestEntry.hm_km, 
+//         model_unit: latestEntry.model_unit, 
+//         owner: latestEntry.owner,         
+//         qty_last: latestEntry.qty     
+//       };
+//     } else {
+//       console.warn("No valid 'hm_last' data found for unit:", selectedUnit);
+//       return {};
+//     }
+//   } catch (error) {
+//     // Menangani kesalahan dan mengembalikan objek kosong
+//     console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
+//     return {};
+//   }
+// };
+
+// FIX CODE
 export const fetchLatestHmLast = async (
   selectedUnit: string
 ): Promise<{ hm_km?: number; model_unit?: string; owner?: string; qty_last?: number }> => {
   try {
-   
+    // Fetch the data asynchronously and await the result
     const latestEntry = await db.dataMasterTrasaksi
-      .orderBy('date_trx')   
-      .filter(entry => entry.no_unit === selectedUnit)  
-      .last();
+      .where('no_unit')        // Filter by unit
+      .equals(selectedUnit)    // Select the correct unit
+      .sortBy('date_trx');     // Sort by transaction date (ascending order)
 
     console.log("Fetching latest entry for unit:", selectedUnit);
-    if (latestEntry) {
-      console.log("Latest entry found:", latestEntry);
+
+    // If there are results, reverse the array to get the latest entry first
+    const latestEntryReversed = latestEntry.reverse()[0]; // Get the first element after reversing
+
+    if (latestEntryReversed) {
+      console.log("Latest entry found:", latestEntryReversed);
       return {
-        hm_km: latestEntry.hm_km,         
-        model_unit: latestEntry.model_unit, 
-        owner: latestEntry.owner,         
-        qty_last: latestEntry.qty     
+        hm_km: latestEntryReversed.hm_km, 
+        model_unit: latestEntryReversed.model_unit, 
+        owner: latestEntryReversed.owner,         
+        qty_last: latestEntryReversed.qty     
       };
     } else {
-      console.warn("No valid 'hm_last' data found for unit:", selectedUnit);
+      console.warn("No valid data found for unit:", selectedUnit);
       return {};
     }
   } catch (error) {
-    // Menangani kesalahan dan mengembalikan objek kosong
-    console.error("Failed to fetch the latest 'hm_last' value from IndexedDB:", error);
+    // Handling errors and returning an empty object
+    console.error("Failed to fetch the latest entry from IndexedDB:", error);
     return {};
   }
 };
+
+
 
 export const bulkInsertDataMasterTransaksi = async (data: DataMasterTransaksi[]) => {
   try {

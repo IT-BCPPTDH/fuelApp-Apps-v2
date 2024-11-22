@@ -63,7 +63,9 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
   const [presentToast] = useIonToast();
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine); 
 
-
+  const [signatureBase64, setSignatureBase64] = useState<string | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     // Check if there are any pending items
@@ -174,8 +176,8 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       flow_end: item.fm_akhir,
       name_operator: item.name_operator,
       fbr: parseFloat(item.fbr_historis),
-      signature: '',
-      photo: '',
+      signature: signatureBase64,
+      photo: signatureBase64,
       type: item.jenis_trx,
       lkf_id: nomorLKF || undefined,
       jde_operator: item.jde_operator,

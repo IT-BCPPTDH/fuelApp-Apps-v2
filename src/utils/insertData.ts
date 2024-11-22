@@ -65,14 +65,17 @@ export const addDataClosing = async (data: DataLkfUpdate) => {
     console.error("Failed to add data to IndexedDB:", error);
   }
 };
+
 export const getOfflineData = async (): Promise<DataLkf[]> => {
   try {
-    return await db.closeTrx.toArray();
+    const data: DataLkfUpdate[] = await db.closeTrx.toArray();
+    return data as DataLkf[]; // Type assertion
   } catch (error) {
     console.error("Failed to get offline data from IndexedDB:", error);
     return [];
   }
 };
+
 
 export const removeDataFromDB = async (id: string) => {
   try {

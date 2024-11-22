@@ -52,10 +52,6 @@
         "source": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-main-35:/drawable-port-xxhdpi/splash.png"
     },
     {
-        "merged": "io.ionic.starter.app-merged_res-33:/drawable_ic_launcher_background.xml.flat",
-        "source": "io.ionic.starter.app-main-35:/drawable/ic_launcher_background.xml"
-    },
-    {
         "merged": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-merged_res-33:/mipmap-xxhdpi_ic_launcher_foreground.png.flat",
         "source": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-main-35:/mipmap-xxhdpi/ic_launcher_foreground.png"
     },
@@ -96,12 +92,12 @@
         "source": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-main-35:/mipmap-hdpi/ic_launcher_foreground.png"
     },
     {
-        "merged": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-merged_res-33:/mipmap-mdpi_ic_launcher_round.png.flat",
-        "source": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-main-35:/mipmap-mdpi/ic_launcher_round.png"
-    },
-    {
         "merged": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-merged_res-33:/drawable-port-xhdpi_splash.png.flat",
         "source": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-main-35:/drawable-port-xhdpi/splash.png"
+    },
+    {
+        "merged": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-merged_res-33:/mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-main-35:/mipmap-mdpi/ic_launcher_round.png"
     },
     {
         "merged": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-merged_res-33:/drawable_ic_launcher_background.xml.flat",
@@ -164,16 +160,16 @@
         "source": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-main-35:/drawable-land-xxxhdpi/splash.png"
     },
     {
-        "merged": "io.ionic.starter.app-merged_res-33:/xml_network_security_config.xml.flat",
-        "source": "io.ionic.starter.app-main-35:/xml/network_security_config.xml"
-    },
-    {
         "merged": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-merged_res-33:/mipmap-hdpi_ic_launcher_round.png.flat",
         "source": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-main-35:/mipmap-hdpi/ic_launcher_round.png"
     },
     {
         "merged": "io.ionic.starter.app-merged_res-33:/mipmap-mdpi_ic_launcher_round.webp.flat",
         "source": "io.ionic.starter.app-main-35:/mipmap-mdpi/ic_launcher_round.webp"
+    },
+    {
+        "merged": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-merged_res-33:/xml_network_security_config.xml.flat",
+        "source": "/Users/septian-tm/.gradle/daemon/8.2.1/io.ionic.starter.app-main-35:/xml/network_security_config.xml"
     },
     {
         "merged": "io.ionic.starter.app-merged_res-33:/mipmap-xxxhdpi_ic_launcher_foreground.webp.flat",

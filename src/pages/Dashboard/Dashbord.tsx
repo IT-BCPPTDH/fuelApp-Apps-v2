@@ -32,7 +32,7 @@ import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
 import { addDataToDB, addDataTrxType, updateDataToDB } from '../../utils/insertData';
 import { deleteAllDataTransaksi } from '../../utils/delete';
 import { Network } from '@capacitor/network';
-import { getPrevUnitTrx } from '../../hooks/getDataPrev';
+
 import { getStationData } from '../../hooks/getDataTrxStation';
 import { postOpening } from '../../hooks/serviceApi';
 
@@ -151,6 +151,9 @@ const DashboardFuelMan: React.FC = () => {
 
 
   ]);
+
+  const [tanggalTransaksi, setTanggalTransaksi] = useState<string | null>(null);
+
   const [stockOnHand, setStockOnHand] = useState<number>(0);
   const [totalIssued, setTotalIssued] = useState<number | null>(null); // State to store total_issued
 
@@ -302,88 +305,47 @@ const DashboardFuelMan: React.FC = () => {
   }
 }
 
-  useEffect(() => {
-    // Function to format date as "Tanggal : 25 Januari 2025"
-    const formatDate = (date: Date): string => {
-      const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-      return `Tanggal : ${new Intl.DateTimeFormat('id-ID', options).format(date)}`;
-    };
+// useEffect(() => {
+//   // Function to format date as "Tanggal : 25 Januari 2025"
+//   const formatDate = (date: Date): string => {
+//     const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+//     return `Tanggal : ${new Intl.DateTimeFormat('id-ID', options).format(date)}`;
+//   };
 
-    const fetchDate = async () => {
-      try {
-        const latestDataDate = await getLatestLkfDataDate();
-        if (latestDataDate && latestDataDate.date) {
-          const date = new Date(latestDataDate.date);
-          setLatestDate(formatDate(date));
-        } else {
-          setLatestDate('No Date Available');
-        }
-      } catch (error) {
-        console.error('Error fetching latest data date:', error);
-        setLatestDate('Error fetching date');
-      }
-    };
+//   const fetchDate = async () => {
+//     try {
+//       const latestDataDate = await getLatestLkfDataDate();
+//       if (latestDataDate && latestDataDate.date) {
+//         const date = new Date(latestDataDate.date);
 
-    const fetchLkfIdAndData = async () => {
-      try {
-        const id = await getLatestLkfId();
-        if (id) {
-          setLkfId(id);
+//         // Add one day to the date
+//         date.setDate(date.getDate());
 
-          const shiftData = await getShiftDataByLkfId(id);
-          const calculationIssued = await getCalculationIssued(id);
-          const calculationReceive = await getCalculationReceive(id);
+//         setLatestDate(formatDate(date));
+//       } else {
+//         setLatestDate('No Date Available');
+//       }
+//     } catch (error) {
+//       console.error('Error fetching latest data date:', error);
+//       setLatestDate('Error fetching date');
+//     }
+//   };
 
-          const qtyReceive = typeof calculationReceive === 'number' ? calculationReceive : 0;
-          const qtyIssued = typeof calculationIssued === 'number' ? calculationIssued : 0;
+//   fetchDate();
+// }, []);
 
-          const openingDip = shiftData.openingDip ?? 0;
-          const stockOnHand = openingDip + qtyReceive - qtyIssued;
-          const flowMeterStart = shiftData.flowMeterStart ?? 0;
-          const flowMeterEnd = flowMeterStart + qtyIssued;
-          const totalFlowMeter = qtyIssued;
-          const variance = totalFlowMeter - qtyIssued;
+useEffect(() => {
+  const savedDate = localStorage.getItem("tanggalTransaksi");
+  if (savedDate) {
+    setTanggalTransaksi(new Date(savedDate).toLocaleString()); 
+  }
+}, []);
 
 
 
-          const homeData = await getHomeByIdLkf(id);
-          const loginData = localStorage.getItem('loginData');
-          if (loginData) {
-            const { jde } = JSON.parse(loginData);
-            if (homeData && homeData.fullname) {
-              const matchedEmployee = homeData.fullname.find((employee: any) => employee.JDE === jde);
-              if (matchedEmployee) {
-
-                setJde(matchedEmployee.jde);
-              } else {
-
-              }
-            }
-          }
-        } else {
-          setError('No LKF ID found');
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          setError(`Error fetching data: ${error.message}`);
-        } else {
-          setError('An unexpected error occurred.');
-        }
-        console.error('Error fetching shift data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDate();
-    fetchLkfIdAndData();
-  }, []);
-
-
-
-  const handleLogout = () => {
-    route.push('/closing-data');
-  };
+  // const handleLogout = () => {
+  //   route.push(u'/closing-data');
+  // };
 
   useEffect(() => {
     const fetchJdeOptions = async () => {
@@ -748,7 +710,7 @@ const DashboardFuelMan: React.FC = () => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Update Data
             </IonButton> */}
-            <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout} disabled={pendingStatus}>
+            <IonButton color="warning" style={{ marginLeft: "10px" }} disabled={pendingStatus}>
               Close LKF & Logout
             </IonButton>
           </div>
@@ -760,12 +722,16 @@ const DashboardFuelMan: React.FC = () => {
               <IonCol></IonCol>
             </IonRow>
           </IonGrid>
-          <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <IonLabel>
-              Fuelman : {fuelmanName}  : {fuelmanID}
-            </IonLabel>
-            <IonLabel >{latestDate}</IonLabel>
-          </IonRow>
+                <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <IonLabel>
+                    Fuelman : {fuelmanName}  : {fuelmanID}
+                  </IonLabel>
+                  {tanggalTransaksi ? (
+                      <IonLabel>Tanggal: {tanggalTransaksi}</IonLabel>
+                    ) : (
+                      <IonLabel>Tidak ada tanggal yang disimpan.</IonLabel>
+                    )}
+                </IonRow>
         </div>
         <IonGrid >
           <IonRow >
