@@ -25,14 +25,20 @@ import {
 
 import "./style.css";
 import { postOpening } from "../../hooks/serviceApi";
-import { addDataToDB, getOfflineData, removeDataFromDB } from "../../utils/insertData";
+import {
+  addDataToDB,
+  getOfflineData,
+  removeDataFromDB,
+} from "../../utils/insertData";
 import { DataLkf } from "../../models/db";
-import { getAllSonding } from "../../hooks/getAllSonding";
-import { getLatestLkfDataDate, getLatestLkfId, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
+import {
+  getLatestLkfId,
+} from "../../utils/getData";
 import { getStationData } from "../../hooks/getDataTrxStation";
-import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
-import { debounce } from "../../utils/debounce";
-
+import {
+  saveDataToStorage,
+  getDataFromStorage,
+} from "../../services/dataService";
 interface Shift {
   id: number;
   name: string;
@@ -64,19 +70,27 @@ const compareWith = (o1: Shift, o2: Shift) => o1.id === o2.id;
 
 const OpeningForm: React.FC = () => {
   const [openingDip, setOpeningDip] = useState<number | undefined>(undefined);
-  const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(undefined);
+  const [flowMeterAwal, setFlowMeterAwal] = useState<number | undefined>(
+    undefined
+  );
   const [hmAwal, setHmAwal] = useState<number | undefined>(undefined);
   const [site, setSite] = useState<string | undefined>(undefined);
   const [station, setStation] = useState<string | undefined>(undefined);
   const [fuelmanId, setFuelmanID] = useState<string | undefined>(undefined);
   const [fuelmanName, setFuelmanName] = useState<string | undefined>(undefined);
-  const [shiftSelected, setShiftSelected] = useState<Shift | undefined>(undefined);
+  const [shiftSelected, setShiftSelected] = useState<Shift | undefined>(
+    undefined
+  );
   const [showError, setShowError] = useState<boolean>(false);
   const [id, setLkfId] = useState<string | undefined>(undefined);
   const [showDateModal, setShowDateModal] = useState<boolean>(false);
   const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
-  const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
-  const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
+  const [openingSonding, setOpeningSonding] = useState<number | undefined>(
+    undefined
+  );
+  const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<
+    number | undefined
+  >(undefined);
   const [date, setDate] = useState<string>(new Date().toISOString());
   const [hmAkhir, setHmAkhir] = useState<number | undefined>(undefined);
   const [stationOptions, setStationOptions] = useState<string[]>([]);
@@ -85,13 +99,15 @@ const OpeningForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const router = useIonRouter();
   const [presentToast] = useIonToast();
-  const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
+  const [closingSonding, setClosingSonding] = useState<number | undefined>(
+    undefined
+  );
   const [prevHmAwal, setPrevHmAwal] = useState<number | undefined>(undefined);
   const input1Ref = useRef<HTMLIonInputElement>(null);
   const input2Ref = useRef<HTMLIonInputElement>(null);
   const [showToast, setShowToast] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [tanggalTrx, setTanggalTrx] = useState(new Date().toLocaleDateString())
+  const [tanggalTrx, setTanggalTrx] = useState(new Date().toLocaleDateString());
   const [jdeOptions, setJdeOptions] = useState<
     { JDE: string; fullname: string }[]
   >([]);
@@ -107,17 +123,17 @@ const OpeningForm: React.FC = () => {
       } else if (isNightShift) {
         setShiftSelected(shifts.find((shift) => shift.name === "Night"));
       }
-    }
+    };
     determineShift();
-  }, [])
+  }, []);
 
   useEffect(() => {
     const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
+    window.addEventListener("online", updateOnlineStatus);
+    window.addEventListener("offline", updateOnlineStatus);
     return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
+      window.removeEventListener("online", updateOnlineStatus);
+      window.removeEventListener("offline", updateOnlineStatus);
     };
   }, []);
 
@@ -128,11 +144,11 @@ const OpeningForm: React.FC = () => {
   useEffect(() => {
     const generateLkfId = () => {
       const timestamp = Date.now();
-      return (timestamp % 100000000).toString().padStart(8, '0');
+      return (timestamp % 100000000).toString().padStart(8, "0");
     };
 
     setLkfId(generateLkfId());
-  }, [])
+  }, []);
 
   const handleDateChange = (e: CustomEvent) => {
     const selectedDate = e.detail.value as string;
@@ -141,12 +157,11 @@ const OpeningForm: React.FC = () => {
       setShowDateModal(false);
       const formattedDate = new Date(selectedDate).toLocaleDateString();
       setTanggalTrx(formattedDate);
-      saveDataToStorage("tanggalTransaksi", formattedDate)
+      saveDataToStorage("tanggalTransaksi", formattedDate);
     }
   };
 
   const handlePost = async () => {
-    console.log(0)
     // if (!isOnline) {
     //   setShowToast(true);
     //   return;
@@ -206,25 +221,23 @@ const OpeningForm: React.FC = () => {
       signature: "",
       close_data: 0,
       variant: 0,
-      status: 'pending'
+      status: "pending",
     };
 
     try {
-      console.log(2)
       if (isOnline) {
-        console.log(3)
         const result = await postOpening(dataPost);
 
-        if (result.status === '201' && result.message === 'Data Created') {
+        if (result.status === "201" && result.message === "Data Created") {
           dataPost = {
             ...dataPost,
-            status: 'sent'
-          }
+            status: "sent",
+          };
           presentToast({
-            message: 'Data posted successfully!',
+            message: "Data posted successfully!",
             duration: 2000,
-            position: 'top',
-            color: 'success',
+            position: "top",
+            color: "success",
           });
           await addDataToDB(dataPost);
 
@@ -232,26 +245,25 @@ const OpeningForm: React.FC = () => {
         } else {
           setShowError(true);
           presentToast({
-            message: 'Failed to post data.',
+            message: "Failed to post data.",
             duration: 2000,
-            position: 'top',
-            color: 'danger',
+            position: "top",
+            color: "danger",
           });
         }
       } else {
-        console.log(4)
         saveDataToStorage("openingSonding", dataPost);
         await addDataToDB(dataPost);
         router.push("/dashboard");
       }
-
     } catch (error) {
       setShowError(true);
       presentToast({
-        message: 'You are offline. Data saved locally and will be sent when online.',
+        message:
+          "You are offline. Data saved locally and will be sent when online.",
         duration: 2000,
-        position: 'top',
-        color: 'warning',
+        position: "top",
+        color: "warning",
       });
       await addDataToDB(dataPost);
       router.push("/dashboard");
@@ -266,38 +278,41 @@ const OpeningForm: React.FC = () => {
           try {
             for (const data of offlineData) {
               const result = await postOpening(data);
-              if (result.status === '201' && result.message === 'Data Created') {
+              if (
+                result.status === "201" &&
+                result.message === "Data Created"
+              ) {
                 await removeDataFromDB(data.lkf_id);
               }
             }
             presentToast({
-              message: 'Offline data sent successfully!',
+              message: "Offline data sent successfully!",
               duration: 2000,
-              position: 'top',
-              color: 'success',
+              position: "top",
+              color: "success",
             });
           } catch (error) {
-            console.error('Failed to send offline data:', error);
+            console.error("Failed to send offline data:", error);
           }
         }
       }
     };
 
-    window.addEventListener('online', checkAndSendOfflineData);
-    return () => window.removeEventListener('online', checkAndSendOfflineData);
+    window.addEventListener("online", checkAndSendOfflineData);
+    return () => window.removeEventListener("online", checkAndSendOfflineData);
   }, []);
 
   useEffect(() => {
     const userData = async () => {
-      const data = await getDataFromStorage('loginData');
+      const data = await getDataFromStorage("loginData");
       if (data) {
         const parsedData = data;
         setFuelmanID(parsedData.jde);
-        setFuelmanName(parsedData.fullname)
+        setFuelmanName(parsedData.fullname);
         setStation(parsedData.station);
         setSite(parsedData.site);
       } else {
-        console.error('No user data found in storage');
+        console.error("No user data found in storage");
       }
     };
 
@@ -310,16 +325,16 @@ const OpeningForm: React.FC = () => {
 
   const fetchSondingOffline = async () => {
     try {
-      const sondingDataMaster = await getDataFromStorage('masterSonding');
+      const sondingDataMaster = await getDataFromStorage("masterSonding");
       const parsedSondingData =
-        typeof sondingDataMaster === 'string'
+        typeof sondingDataMaster === "string"
           ? JSON.parse(sondingDataMaster)
           : sondingDataMaster;
       if (Array.isArray(parsedSondingData)) {
         setSondingMasterData(parsedSondingData);
       }
     } catch (error) {
-      console.error('Error fetching sonding data:', error);
+      console.error("Error fetching sonding data:", error);
     }
   };
 
@@ -345,36 +360,31 @@ const OpeningForm: React.FC = () => {
     updateOpeningDip();
   }, [openingSonding, updateOpeningDip]);
 
-
   useEffect(() => {
     const loadShiftClose = async () => {
-      console.log('Loading shift close data...');
-      const userData = await getDataFromStorage('loginData');
-
+      const userData = await getDataFromStorage("loginData");
       if (userData) {
         const stationData = userData.station;
         if (stationData) {
-          const lastLKF = await getDataFromStorage('lastLKF');
+          const lastLKF = await getDataFromStorage("lastLKF");
 
           let lkf;
-          if (typeof lastLKF === 'string') {
+          if (typeof lastLKF === "string") {
             try {
               lkf = JSON.parse(lastLKF);
-              console.log('Parsed lastLKF:', lkf);
             } catch (error) {
-              console.error('Error parsing lastLKF:', error);
+              console.error("Error parsing lastLKF:", error);
               return;
             }
           } else {
             // If it's already an object, no need to parse
             lkf = lastLKF;
-            console.log('Using lastLKF as object:', lkf);
+            console.log("Using lastLKF as object:", lkf);
           }
 
           const shiftClose = lkf?.find((v: any) => v.station === stationData);
 
           if (shiftClose) {
-            console.log('Shift close data found:', shiftClose);
             setCloseShift(shiftClose);
             const latestShiftData = shiftClose;
 
@@ -392,16 +402,15 @@ const OpeningForm: React.FC = () => {
               setPrevHmAwal(latestShiftData.hm_end);
             }
           } else {
-            console.error('Shift close data not found for the station');
+            console.error("Shift close data not found for the station");
           }
         } else {
-          console.error('Station data not found in loginData');
+          console.error("Station data not found in loginData");
         }
       } else {
-        console.error('No loginData found in storage');
+        console.error("No loginData found in storage");
       }
     };
-
     loadShiftClose();
   }, [date]);
 
@@ -424,16 +433,14 @@ const OpeningForm: React.FC = () => {
       const numericValue = Number(value);
       if (!Number.isNaN(numericValue)) {
         setOpeningSonding(numericValue);
-        console.log("Manual openingSonding update:", numericValue);
       }
     }
   };
 
-
   const handleOpeningDipChange = (e: CustomEvent) => {
     const value = e.detail.value;
 
-    if (value === null || value === '') {
+    if (value === null || value === "") {
       setOpeningDip(undefined);
     } else {
       const numericValue = Number(value);
@@ -442,7 +449,6 @@ const OpeningForm: React.FC = () => {
       }
     }
   };
-
 
   return (
     <IonPage>
@@ -457,22 +463,26 @@ const OpeningForm: React.FC = () => {
         </IonRefresher>
         <div className="wrapper-content">
           <div className="padding-content">
-            <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>
-            <h4>Employee ID : {fuelmanId} - {fuelmanName}</h4>
+            <h2 style={{ textAlign: "center", fontSize: "30px" }}>
+              LKF ID : {id}
+            </h2>
+            <h4>
+              Employee ID : {fuelmanId} - {fuelmanName}
+            </h4>
             <h4>Site : {site}</h4>
             <h4>Station : {station}</h4>
           </div>
           <IonRow className="padding-content">
             <IonCol style={{ display: "grid" }}>
               <IonLabel>
-                Shift  <span style={{ color: "red", marginLeft: "20px" }}>*</span>
+                Shift{" "}
+                <span style={{ color: "red", marginLeft: "20px" }}>*</span>
               </IonLabel>
               <IonRadioGroup
                 className="radio-display"
                 compareWith={compareWith}
                 value={shiftSelected}
-                onIonChange={(ev) => handleShiftChange(ev.detail.value)}
-              >
+                onIonChange={(ev) => handleShiftChange(ev.detail.value)}>
                 {shifts.map((shift) => (
                   <IonItem key={shift.id} className="item-no-border">
                     <IonRadio slot="start" value={shift} />
@@ -492,26 +502,42 @@ const OpeningForm: React.FC = () => {
                   readonly
                   onClick={() => setShowDateModal(true)}
                 />
-
               </IonItem>
               <IonModal isOpen={showDateModal}>
                 <IonDatetime
                   value={date || new Date().toISOString()}
                   onIonChange={handleDateChange}
                   max={new Date().toISOString()}
-
                 />
-                <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>
+                <IonButton
+                  color="success"
+                  onClick={() => setShowDateModal(false)}>
+                  Close
+                </IonButton>
               </IonModal>
-
             </IonCol>
           </IonRow>
           <div className="padding-content">
-            <IonLabel className={showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "error" : ""}>
+            <IonLabel
+              className={
+                showError &&
+                (openingSonding === undefined ||
+                  Number.isNaN(openingSonding) ||
+                  openingSonding < 100)
+                  ? "error"
+                  : ""
+              }>
               Opening Sonding (Cm) <span style={{ color: "red" }}>*</span>
             </IonLabel>
             <IonInput
-              className={`custom-input ${showError && (openingSonding === undefined || Number.isNaN(openingSonding) || openingSonding < 100) ? "input-error" : ""}`}
+              className={`custom-input ${
+                showError &&
+                (openingSonding === undefined ||
+                  Number.isNaN(openingSonding) ||
+                  openingSonding < 100)
+                  ? "input-error"
+                  : ""
+              }`}
               type="number"
               value={openingSonding}
               onIonChange={handleOpeningSondingChange}
@@ -521,25 +547,46 @@ const OpeningForm: React.FC = () => {
             )}
           </div>
           <div className="padding-content">
-            <IonLabel className={showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "error" : ""}>
+            <IonLabel
+              className={
+                showError &&
+                (openingDip === undefined ||
+                  Number.isNaN(openingDip) ||
+                  openingDip < 100)
+                  ? "error"
+                  : ""
+              }>
               Opening Dip (Liter) <span style={{ color: "red" }}>*</span>
             </IonLabel>
-            <IonInput style={{ background: "#cfcfcf" }}
-              className={`custom-input ${showError && (openingDip === undefined || Number.isNaN(openingDip) || openingDip < 100) ? "input-error" : ""}`}
+            <IonInput
+              style={{ background: "#cfcfcf" }}
+              className={`custom-input ${
+                showError &&
+                (openingDip === undefined ||
+                  Number.isNaN(openingDip) ||
+                  openingDip < 100)
+                  ? "input-error"
+                  : ""
+              }`}
               type="number"
               placeholder="Input opening dip dalam liter"
               value={openingDip}
               onIonChange={handleOpeningDipChange}
-              readonly={stationOptions.includes(station || '')}
+              readonly={stationOptions.includes(station || "")}
               onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
-
             />
             {showError && openingDip === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
           <div className="padding-content">
-            <IonLabel className={showError && (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal)) ? "error" : ""}>
+            <IonLabel
+              className={
+                showError &&
+                (flowMeterAwal === undefined || Number.isNaN(flowMeterAwal))
+                  ? "error"
+                  : ""
+              }>
               Flow Meter Awal <span style={{ color: "red" }}>*</span>
             </IonLabel>
             <IonInput
@@ -554,22 +601,32 @@ const OpeningForm: React.FC = () => {
             {showError && (
               <p style={{ color: "red" }}>
                 {flowMeterAwal === undefined
-                  ? '* Field harus diisi'
-                  : (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal)
-                    ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
-                    : ''
-                }
+                  ? "* Field harus diisi"
+                  : prevFlowMeterAwal !== undefined &&
+                    flowMeterAwal < prevFlowMeterAwal
+                  ? "* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya"
+                  : ""}
               </p>
             )}
           </div>
           <div className="padding-content">
             <IonLabel>
-              HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
+              HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM
+              Kendaraan)
             </IonLabel>
             <IonInput
-              className={`custom-input ${showError && (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0)) ? "input-error" : ""}`}
+              className={`custom-input ${
+                showError &&
+                (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0))
+                  ? "input-error"
+                  : ""
+              }`}
               type="number"
-              placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
+              placeholder={
+                station === "FT"
+                  ? "Input HM Awal (0 jika di Fuel Truck)"
+                  : "Input HM Awal"
+              }
               value={hmAkhir}
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
@@ -590,8 +647,7 @@ const OpeningForm: React.FC = () => {
             <IonButton
               className="check-button"
               onClick={handlePost}
-              disabled={!isOnline}
-            >
+              disabled={!isOnline}>
               Mulai Kerja
             </IonButton>
             <IonToast
@@ -603,8 +659,11 @@ const OpeningForm: React.FC = () => {
           </IonRow>
           <IonRow>
             {!isOnline && (
-              <IonLabel color="danger" style={{ marginTop: '10px' }}>
-                <span style={{ marginLeft: "15px", fontWeight: "600" }}> Device offline , periksa koneksi tablet </span>
+              <IonLabel color="danger" style={{ marginTop: "10px" }}>
+                <span style={{ marginLeft: "15px", fontWeight: "600" }}>
+                  {" "}
+                  Device offline , periksa koneksi tablet{" "}
+                </span>
               </IonLabel>
             )}
           </IonRow>
@@ -613,5 +672,4 @@ const OpeningForm: React.FC = () => {
     </IonPage>
   );
 };
-
 export default OpeningForm;

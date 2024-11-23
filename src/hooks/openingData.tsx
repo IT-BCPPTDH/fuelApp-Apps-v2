@@ -49,37 +49,6 @@ export const postAuth = async ({ station, jde_operator }: PostAuthParams) => {
     }
 };
 
-// // Post opening request
-// export const postOpening = async ({ station, jde_operator }: PostAuthParams) => {
-//     const url = `${LINK_BACKEND}/api/operator/post-lkf`;
-
-//     try {
-//         const response = await CapacitorHttp.post({
-//             url,
-//             headers: {
-//                 'Content-Type': 'application/json',
-//             },
-//             data: { station, jde_operator },
-//         });
-
-//         if (response.status !== 200) {
-//             console.error('Response Error:', response.data);
-//             throw new ResponseError('Failed to post opening data', response, response.data);
-//         }
-
-//         return response.data;
-//     } catch (error: unknown) {
-//         if (error instanceof ResponseError) {
-//             throw error;
-//         } else {
-//             const message = error instanceof Error ? error.message : 'Unknown error occurred';
-//             console.error('Error Details:', message);
-//             throw new ResponseError(`Error during post opening: ${message}`, { status: 500, statusText: 'Internal Server Error' });
-//         }
-//     }
-// };
-
-// Get last LKF data by station
 export async function getDataLastLkfByStation(station: string): Promise<any> {
     const url = `${LINK_BACKEND}/api/operator/last-lkf/station}`;
 
@@ -96,13 +65,11 @@ export async function getDataLastLkfByStation(station: string): Promise<any> {
         }
 
         const data = response.data;
-
-        // Ensure data is an object with a data field that's an array
         if (data && data.data && Array.isArray(data.data)) {
-            return data; // Return the full response object
+            return data; 
         } else {
             console.error('Unexpected data format from API:', data);
-            return { data: [] }; // Return a default structure
+            return { data: [] }; 
         }
     } catch (error: unknown) {
         if (error instanceof ResponseError) {
@@ -112,6 +79,6 @@ export async function getDataLastLkfByStation(station: string): Promise<any> {
         } else {
             console.error('Unknown error:', error);
         }
-        return { data: [] }; // Return a default structure
+        return { data: [] }; 
     }
 }
