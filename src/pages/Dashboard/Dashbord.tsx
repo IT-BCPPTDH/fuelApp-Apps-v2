@@ -198,7 +198,7 @@ const DashboardFuelMan: React.FC = () => {
         console.error('No user data found in storage');
       }
     };
-    
+
     userData(); // Call the async function
   }, []);
 
@@ -231,7 +231,7 @@ const DashboardFuelMan: React.FC = () => {
           const qtyTransfer = typeof calculationTransfer === 'number' ? calculationTransfer : 0;
           // Calculate Stock On Hand as Opening Dip + QTY Received - QTY Issued
           const openingDip = shiftData.openingDip ?? 0;
-          const stockOnHand = openingDip + qtyReceive - qtyIssued  ;
+          const stockOnHand = openingDip + qtyReceive - qtyIssued;
 
           // Calculate Balance as Stock On Hand - QTY Issued
           const balance = stockOnHand - qtyIssued;
@@ -252,7 +252,7 @@ const DashboardFuelMan: React.FC = () => {
             { title: 'Flow Meter Awal', value: shiftData.flowMeterStart ?? 0, icon: 'flwawal.svg' },
             {
               title: 'Flow Meter Akhir',
-              value: (shiftData.flowMeterStart ?? 0) + (qtyIssued ?? 0)+(qtyTransfer?? 0),
+              value: (shiftData.flowMeterStart ?? 0) + (qtyIssued ?? 0) + (qtyTransfer ?? 0),
               icon: 'flwakhir.svg'
             },
             { title: 'Total Flow Meter', value: qtyIssued + qtyTransfer || 0, icon: 'total.svg' },
@@ -278,19 +278,19 @@ const DashboardFuelMan: React.FC = () => {
     checkOpening()
   }, []); // Empty dependency array ensures this effect runs once on mount
 
-  const checkOpening = async() =>{
-    console.log(1,isOnline)
-    if(isOnline){
-      console.log(2,'on')
+  const checkOpening = async () => {
+    console.log(1, isOnline)
+    if (isOnline) {
+      console.log(2, 'on')
       let dataPost = await getDataFromStorage('openingSonding');
-      if(dataPost.status === 'pending'){
+      if (dataPost.status === 'pending') {
         console.log(3)
         const result = await postOpening(dataPost);
-  
+
         if (result.status === '201' && result.message === 'Data Created') {
           dataPost = {
             ...dataPost,
-            status:'sent'
+            status: 'sent'
           }
           // presentToast({
           //   message: 'Data posted successfully!',
@@ -300,67 +300,67 @@ const DashboardFuelMan: React.FC = () => {
           // });
           saveDataToStorage("openingSonding", dataPost);
           await addDataToDB(dataPost);
+        }
       }
     }
   }
-}
 
-// useEffect(() => {
-//   // Function to format date as "Tanggal : 25 Januari 2025"
-//   const formatDate = (date: Date): string => {
-//     const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
-//     return `Tanggal : ${new Intl.DateTimeFormat('id-ID', options).format(date)}`;
-//   };
+  // useEffect(() => {
+  //   // Function to format date as "Tanggal : 25 Januari 2025"
+  //   const formatDate = (date: Date): string => {
+  //     const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric' };
+  //     return `Tanggal : ${new Intl.DateTimeFormat('id-ID', options).format(date)}`;
+  //   };
 
-//   const fetchDate = async () => {
-//     try {
-//       const latestDataDate = await getLatestLkfDataDate();
-//       if (latestDataDate && latestDataDate.date) {
-//         const date = new Date(latestDataDate.date);
+  //   const fetchDate = async () => {
+  //     try {
+  //       const latestDataDate = await getLatestLkfDataDate();
+  //       if (latestDataDate && latestDataDate.date) {
+  //         const date = new Date(latestDataDate.date);
 
-//         // Add one day to the date
-//         date.setDate(date.getDate());
+  //         // Add one day to the date
+  //         date.setDate(date.getDate());
 
-//         setLatestDate(formatDate(date));
-//       } else {
-//         setLatestDate('No Date Available');
-//       }
-//     } catch (error) {
-//       console.error('Error fetching latest data date:', error);
-//       setLatestDate('Error fetching date');
-//     }
-//   };
+  //         setLatestDate(formatDate(date));
+  //       } else {
+  //         setLatestDate('No Date Available');
+  //       }
+  //     } catch (error) {
+  //       console.error('Error fetching latest data date:', error);
+  //       setLatestDate('Error fetching date');
+  //     }
+  //   };
 
-//   fetchDate();
-// }, []);
+  //   fetchDate();
+  // }, []);
 
 
-useEffect(() => {
-  const tanggal = async () =>{
-    const savedDate = await getDataFromStorage("tanggalTransaksi");
-  if (savedDate) {
+  useEffect(() => {
+    const tanggal = async () => {
+      const savedDate = await getDataFromStorage("tanggalTransaksi");
+      if (savedDate) {
 
-    const transactionDate = new Date(savedDate);
-    if (!isNaN(transactionDate.getTime())) {
-      setTanggalTransaksi(transactionDate.toLocaleDateString('en-GB'));
-    } else {
-      console.error("Invalid date format in localStorage:", savedDate);
-      setTanggalTransaksi("Invalid Date");
+        const transactionDate = new Date(savedDate);
+        if (!isNaN(transactionDate.getTime())) {
+          setTanggalTransaksi(transactionDate.toLocaleDateString('en-GB'));
+        } else {
+          console.error("Invalid date format in localStorage:", savedDate);
+          setTanggalTransaksi("Invalid Date");
+        }
+      } else {
+        // Jika tidak ada tanggal yang disimpan
+        console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+        setTanggalTransaksi("No Date Available");
+      }
+
     }
-  } else {
-    // Jika tidak ada tanggal yang disimpan
-    console.error("No saved date available in localStorage for 'tanggalTransaksi'");
-    setTanggalTransaksi("No Date Available");
-  }
-
-  }
-  tanggal()
-}, []);
+    tanggal()
+  }, []);
 
 
-const handleLogout = () => {
-  route.push('/closing-data');
-};
+  const handleLogout = () => {
+    route.push('/closing-data');
+  };
 
   useEffect(() => {
     const fetchJdeOptions = async () => {
@@ -407,36 +407,37 @@ const handleLogout = () => {
         if (!tanggal) {
           throw new Error('tanggalTransaksi is not available in storage.');
         }
-  
+
         // Check if the date is in "dd/mm/yyyy" format and reformat to "yyyy-mm-dd"
         let formattedDate: string;
         if (typeof tanggal === 'string' && tanggal.includes('/')) {
           const [day, month, year] = tanggal.split('/');
           if (!day || !month || !year) {
-           
+
           }
-          formattedDate =`${year}-${month}-${day}`
+          formattedDate = `${year}-${month}-${day}`
+          // Parse the formatted date into a valid Date object
+          const tanggalQuota = new Date(formattedDate);
+          if (isNaN(tanggalQuota.getTime())) {
+
+          }
+
+          // Format the date as 'yyyy-mm-dd'
+          const finalFormattedDate = tanggalQuota.toISOString().split('T')[0];
+          console.log('Formatted Date:', finalFormattedDate);
+
+          // Fetch quota data using the formatted date
+          const quotaData = await fetchQuotaData(finalFormattedDate);
+          console.log('Fetched Quota Login:', quotaData);
         } else {
-          
+
         }
-        // Parse the formatted date into a valid Date object
-        const tanggalQuota = new Date(formattedDate);
-        if (isNaN(tanggalQuota.getTime())) {
-         
-        }
-  
-        // Format the date as 'yyyy-mm-dd'
-        const finalFormattedDate = tanggalQuota.toISOString().split('T')[0];
-        console.log('Formatted Date:', finalFormattedDate);
-  
-        // Fetch quota data using the formatted date
-        const quotaData = await fetchQuotaData(finalFormattedDate);
-        console.log('Fetched Quota Login:', quotaData);
+
       } catch (error) {
         console.error('Error in loadUnitDataQuota:', error);
       }
     };
-  
+
     loadUnitDataQuota();
   }, []);
 
@@ -444,7 +445,7 @@ const handleLogout = () => {
   const updateAllData = async () => {
     const units = await fetchUnitData();
     const unit = await getHomeTable(lkfId);
-   
+
   }
 
   const TambahData = async () => {
@@ -457,13 +458,13 @@ const handleLogout = () => {
     if (lkfId) {
       setLoading(true);
       try {
-       
+
         const response = await getHomeTable(lkfId);
         // Ensure response.data is an array
         if (response && response.data && Array.isArray(response.data)) {
           const newData = response.data;
           // First, delete all existing data in dataTransaksi
-          
+
           for (const item of newData) {
             const dataPost: DataFormTrx = {
               date: new Date().toISOString(),
@@ -501,7 +502,7 @@ const handleLogout = () => {
 
 
             await addDataTrxType(dataPost);
-           
+
 
           }
 
@@ -669,7 +670,7 @@ const handleLogout = () => {
 
         const flowMeterStart = item.flow_meter_start || 0;
         const flowMeterAkhir = flowMeterStart + issued + transfer;
-      
+
         const preparedData = [
           { title: 'Shift', value: item.shift || 'No Data', icon: 'shift.svg' },
           { title: 'FS/FT No', value: item.station || 'No Data', icon: 'fs.svg' },
@@ -770,7 +771,7 @@ const handleLogout = () => {
               <IonImg src='refresh.svg' alt="Refresh" />
               Update Data
             </IonButton> */}
-            <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout}  disabled={pendingStatus}>
+            <IonButton color="warning" style={{ marginLeft: "10px" }} onClick={handleLogout} disabled={pendingStatus}>
               Close LKF & Logout
             </IonButton>
           </div>
@@ -782,16 +783,16 @@ const handleLogout = () => {
               <IonCol></IonCol>
             </IonRow>
           </IonGrid>
-                <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <IonLabel>
-                    Fuelman : {fuelmanName}  : {fuelmanID}
-                  </IonLabel>
-                  {tanggalTransaksi ? (
-                      <IonLabel>Tanggal: {tanggalTransaksi}</IonLabel>
-                    ) : (
-                      <IonLabel>Tidak ada tanggal yang disimpan.</IonLabel>
-                    )}
-                </IonRow>
+          <IonRow style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <IonLabel>
+              Fuelman : {fuelmanName}  : {fuelmanID}
+            </IonLabel>
+            {tanggalTransaksi ? (
+              <IonLabel>Tanggal: {tanggalTransaksi}</IonLabel>
+            ) : (
+              <IonLabel>Tidak ada tanggal yang disimpan.</IonLabel>
+            )}
+          </IonRow>
         </div>
         <IonGrid >
           <IonRow >
@@ -825,7 +826,7 @@ const handleLogout = () => {
                   marginTop: "-15px"
                 }}>
                   * Sebelum Logout Pastikan Data Sonding Dip /Stock diisi, Klik Tombol ‘Tambah’ Untuk Membuka Formnya, Terima kasih
-                 
+
                 </p>
               </p>
             </IonRow>
