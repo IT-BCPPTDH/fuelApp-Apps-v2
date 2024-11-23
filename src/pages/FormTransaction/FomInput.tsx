@@ -51,7 +51,7 @@ import {
   getFbrByUnit,
   getLatestLkfDataDate,
   getLatestLkfId,
-  insertNewDataNewMaster,
+
 } from "../../utils/getData";
 
 
@@ -278,7 +278,7 @@ const FormTRX: React.FC = () => {
   const [qoutaData, setquotaData] = useState<number | null>(null);
   const [modelUnit, setModelUnit] = useState<string>('');
   const [owner, setOwner] = useState<string>('');
-  const [qtyLast, setQtyLast] = useState<number>(0);
+  const [qtyLast, setQty] = useState<number>(0);
 
   const [photoFile, setPhotoFile] = useState<string | null>(null); // For the file
 
@@ -675,9 +675,12 @@ const FormTRX: React.FC = () => {
   useEffect(() => {
     const savedDate = localStorage.getItem("tanggalTransaksi");
     if (savedDate) {
-      setTanggalTransaksi(new Date(savedDate).toLocaleString()); 
+     
+      setTanggalTransaksi(new Date(savedDate).toLocaleDateString('en-GB'));  
     }
   }, []);
+  
+  
   
   // const handlePost = async (e: React.FormEvent) => {
   //   e.preventDefault(); // Prevent default form submission behavior
@@ -849,13 +852,18 @@ const FormTRX: React.FC = () => {
   
     let latestDataDateFormatted = "";
     const savedDate = localStorage.getItem("tanggalTransaksi");
+    
     if (savedDate) {
       const transactionDate = new Date(savedDate);
-      latestDataDateFormatted = transactionDate.toISOString();
+    
+      // Add 12 hours to the transactionDate
+      transactionDate.setHours(transactionDate.getHours() + 12);
+    
+      // Format the date to ISO string (or any format you prefer)
+      latestDataDateFormatted = transactionDate.toISOString(); 
     } else {
       console.error("No saved date available in localStorage for 'tanggalTransaksi'");
     }
-  
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -886,17 +894,17 @@ const FormTRX: React.FC = () => {
       if (isOnline) {
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost);
-        await insertNewDataHistori(dataPost);
-        // Add data to dataMasterTrasaksi after successful post
-       
+        await addDataHistory(dataPost)
+    
+
   
         updateCard();
   
         if (response.status === 200) {
           dataPost.status = 1;
           await insertNewData(dataPost);
-          await insertNewDataHistori(dataPost);
-          await insertNewDataNewMaster(dataPost); // Ensure data is added here as well
+          await addDataHistory(dataPost)
+         
   
           setIsAlertOpen(true);
   
@@ -933,7 +941,7 @@ const FormTRX: React.FC = () => {
         dataPost.status = 0;
         await insertNewData(dataPost);
         await insertNewDataHistori(dataPost);
-        await insertNewDataNewMaster(dataPost)
+ 
         await saveDataToStorage("unitQuota", unitQuota);
       }
 
@@ -993,6 +1001,10 @@ const FormTRX: React.FC = () => {
       console.error("Failed to insert new data:", error);
     }
   };
+
+
+  
+
 
 
   const handleSignatureConfirm = (newSignature: string) => {
@@ -1371,33 +1383,6 @@ const FormTRX: React.FC = () => {
     return "";
   };
 
-  useEffect(() => {
-    const calculateFBR = (): number => {
-      if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
-        const difference = hmkmValue - hmLast;
-        console.log('Difference offline/online (hmkmValue - hmLast):', difference);
-
-        if (qtyLast === 0) {
-          console.log('qtyLast cannot be zero');
-          return 0;
-        }
-
-        if (difference > 0) {
-          const result = difference / qtyLast;
-          console.log('Calculated FBR offline/online:', result);
-          return parseFloat(result.toFixed(2));
-        } else {
-          console.log('Difference is not positive');
-        }
-      } else {
-      
-      }
-      return 0;
-    };
-
-    setFbrResultOf(calculateFBR());
-
-  }, [hmkmValue, hmLast, qtyLast]);
 
 
   const filteredUnitOptions = (selectedType &&
@@ -1410,29 +1395,7 @@ const FormTRX: React.FC = () => {
 
  
 
-  useEffect(() => {
-    const getOfflineData = async () => {
-      // Fetch the latest data for the selected unit
-      const offlineData = await fetchLatestHmLast(selectedUnit);
-
-      // Set state variables based on the fetched data
-      if (offlineData.hm_km !== undefined) {
-        setHmLast(offlineData.hm_km); // Set hm_km as a number
-      }
-      if (offlineData.model_unit) {
-        setModelUnit(offlineData.model_unit); // Set model_unit as a string
-      }
-      if (offlineData.owner) {
-        setOwner(offlineData.owner); // Set owner as a string
-      }
-      if (offlineData.qty_last !== undefined) {
-        setQtyLast(offlineData.qty_last); // Set qty_last as a number
-      }
-    };
-
-    getOfflineData();
-  }, [selectedUnit]);
-
+ 
 
 
  
@@ -1471,7 +1434,7 @@ const FormTRX: React.FC = () => {
         try {
           // Retrieve data from IndexedDB using fetchLatestHmLast
           const offlineData = await fetchLatestHmLast(unitValue);
-          console.log("Offline HM Data:", offlineData);
+         
   
           const offlineHM = await getDataFromStorage('lastTrx');
           const hmKmValues = offlineHM.map((item: { hm_km: number }) => item.hm_km);
@@ -1498,6 +1461,38 @@ const FormTRX: React.FC = () => {
       }
     }
   };
+
+  useEffect(() => {
+    const calculateFBR = (): number => {
+      // Ensure all values are numbers before calculation
+      if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
+        const difference = hmkmValue - hmLast;
+        console.log('Difference offline/online (hmkmValue - hmLast):', difference);
+  
+        if (qtyLast === 0) {
+          console.log('qtyLast cannot be zero');
+          return 0;
+        }
+  
+        if (difference > 0) {
+          const result = difference / qtyLast;
+          console.log('Calculated FBR offline/online:', result);
+          return parseFloat(result.toFixed(2)); // Round to 2 decimal places
+        } else {
+          console.log('Difference is not positive');
+        }
+      } else {
+        console.log('Invalid data: hmkmValue, hmLast, or qtyLast is not a number');
+      }
+      return 0; // Fallback in case the calculation doesn't happen
+    };
+  
+    const fbrResult = calculateFBR();
+    setFbrResultOf(fbrResult);
+  
+  }, [hmkmValue, hmLast, qtyLast]);
+  
+  
   
   useEffect(() => {
     const getOfflineData = async () => {
@@ -1505,30 +1500,16 @@ const FormTRX: React.FC = () => {
       setHmLast(0);  
 
       const offlineData = await fetchLatestHmLast(selectedUnit);
-
-    
-      console.log("Fetched offline data:", offlineData);
-
-      
       if (offlineData.hm_km !== undefined) {
-        setHmLast(offlineData.hm_km);  // Set hm_km from offline data
+        setHmLast(offlineData.hm_km);  
+        setQty(offlineData.qty_last || 0)
       } else {
-        setHmLast(0); // Set hm_km to 0 if the unit doesn't match
+        setHmLast(0); 
       }
 
-      // Set other fields if available
-      if (offlineData.model_unit) {
-        setModelUnit(offlineData.model_unit);
-      }
-      if (offlineData.owner) {
-        setOwner(offlineData.owner);
-      }
-      if (offlineData.qty_last !== undefined) {
-        setQtyLast(offlineData.qty_last);
-      }
     };
 
-    // Call to fetch the latest data whenever the selected unit changes
+   
     getOfflineData();
   }, [selectedUnit]);
  
@@ -1537,7 +1518,7 @@ const FormTRX: React.FC = () => {
 
 
   const calculateFBR = (): number => {
-    if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
+    if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast=== 'number') {
       const difference = hmkmValue - hmLast;
       console.log('Difference (hmLast - hmkm):', difference);
 
@@ -1733,7 +1714,7 @@ const FormTRX: React.FC = () => {
                     type="number"
                     placeholder="Input HM/KM Unit"
                     // value={hmkmLast} // Fallback to hmkmLast
-                    value={hmLast || ""}
+                    value={isNaN(hmLast) ? 0 : hmLast}
                     
                     // onIonChange={(e) => setHmLast(Number(e.detail.value))}
                     disabled

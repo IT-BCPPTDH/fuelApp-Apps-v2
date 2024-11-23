@@ -273,27 +273,25 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 // };
 
 // FIX CODE
+
 export const fetchLatestHmLast = async (
   selectedUnit: string
 ): Promise<{ hm_km?: number; model_unit?: string; owner?: string; qty_last?: number }> => {
   try {
-    // Fetch the data asynchronously and await the result
+   
     const latestEntry = await db.dataMasterTrasaksi
       .where('no_unit')        // Filter by unit
       .equals(selectedUnit)    // Select the correct unit
       .sortBy('date_trx');     // Sort by transaction date (ascending order)
 
-    console.log("Fetching latest entry for unit:", selectedUnit);
-
-    // If there are results, reverse the array to get the latest entry first
+  
+   
     const latestEntryReversed = latestEntry.reverse()[0]; // Get the first element after reversing
 
     if (latestEntryReversed) {
       console.log("Latest entry found:", latestEntryReversed);
       return {
-        hm_km: latestEntryReversed.hm_km, 
-        model_unit: latestEntryReversed.model_unit, 
-        owner: latestEntryReversed.owner,         
+        hm_km: latestEntryReversed.hm_km,        
         qty_last: latestEntryReversed.qty     
       };
     } else {
@@ -318,14 +316,6 @@ export const bulkInsertDataMasterTransaksi = async (data: DataMasterTransaksi[])
   }
 };
 
-export const insertNewDataNewMaster = async (data: DataMasterTransaksi) => {
-  try {
-    await db.dataMasterTrasaksi.add(data); // Insert the data
-    console.log("Data successfully inserted into dataMasterTrasaksi");
-  } catch (error) {
-    console.error("Failed to insert data into dataMasterTrasaksi:", error);
-  }
-};
 
 export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {
   try {

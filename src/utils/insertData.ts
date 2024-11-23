@@ -108,13 +108,35 @@ export async function addDataTrxType(data: DataFormTrx) {
 }
 
 
+// export async function addDataHistory(data: DataFormTrx) {
+//   try {
+//     await db.dataMasterTrasaksi.add(data);
+//   } catch (error) {
+//     console.error("Failed to add data to IndexedDB:", error);
+//   }
+// }
+
+
 export async function addDataHistory(data: DataFormTrx) {
   try {
-    await db.dataMasterTrasaksi.add(data);
+    // Menyaring hanya data yang diperlukan dan menambahkan nilai untuk 'hm_km'
+    const filteredData = {
+      hm_km: data.hm_km,
+      no_unit: data.no_unit,
+      qty: data.qty,
+    
+    };
+
+    // Menambahkan data yang sudah difilter ke dalam IndexedDB
+    await db.dataMasterTrasaksi.add(filteredData);
+    console.log('Data berhasil disisipkan!');
   } catch (error) {
-    console.error("Failed to add data to IndexedDB:", error);
+    console.error('Failed to add data to IndexedDB:', error);
   }
 }
+
+
+
 
 export async function addDataSonding(data: SondingData) {
   try {
