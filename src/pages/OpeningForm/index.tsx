@@ -219,16 +219,31 @@ const [jdeOptions, setJdeOptions] = useState<
 
 
 
+  // const handleDateChange = (e: CustomEvent) => {
+  //   const selectedDate = e.detail.value as string;
+  //   if (selectedDate) {
+  //     setDate(selectedDate);
+  //     setShowDateModal(false);
+  //     setTanggalTrx(new Date(selectedDate).toLocaleString())
+  //     localStorage.setItem("tanggalTransaksi",new Date(selectedDate).toLocaleString())
+  //   }
+    
+  // };
+
   const handleDateChange = (e: CustomEvent) => {
     const selectedDate = e.detail.value as string;
     if (selectedDate) {
       setDate(selectedDate);
       setShowDateModal(false);
-      setTanggalTrx(new Date(selectedDate).toLocaleString())
-      localStorage.setItem("tanggalTransaksi",new Date(selectedDate).toLocaleString())
+  
+      
+      const formattedDate = new Date(selectedDate).toLocaleDateString();
+  
+      setTanggalTrx(formattedDate);
+      localStorage.setItem("tanggalTransaksi", formattedDate); 
     }
-    
   };
+  
 
   
   const fetchShiftDataByStation = async (station: string) => {
@@ -267,14 +282,21 @@ const [jdeOptions, setJdeOptions] = useState<
     }
 
   const lkf_id = await getLatestLkfId();
-    let latestDataDateFormatted = "";
-    const savedDate = localStorage.getItem("tanggalTransaksi");
-    if (savedDate) {
-      const transactionDate = new Date(savedDate);
-      latestDataDateFormatted = transactionDate.toISOString(); 
-    } else {
-      console.error("No saved date available in localStorage for 'tanggalTransaksi'");
-    }
+
+  let latestDataDateFormatted = "";
+  const savedDate = localStorage.getItem("tanggalTransaksi");
+  
+  if (savedDate) {
+    const transactionDate = new Date(savedDate);
+  
+    // Add 12 hours to the transactionDate
+    transactionDate.setHours(transactionDate.getHours() + 12);
+  
+    // Format the date to ISO string (or any format you prefer)
+    latestDataDateFormatted = transactionDate.toISOString(); 
+  } else {
+    console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+  }
     
     let dataPost: DataLkf = {
       date: latestDataDateFormatted,

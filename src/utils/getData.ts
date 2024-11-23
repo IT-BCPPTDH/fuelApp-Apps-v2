@@ -273,6 +273,7 @@ export const getLatestTrx = async (selectedUnit: string): Promise<number | undef
 // };
 
 // FIX CODE
+
 export const fetchLatestHmLast = async (
   selectedUnit: string
 ): Promise<{ hm_km?: number; model_unit?: string; owner?: string; qty_last?: number }> => {

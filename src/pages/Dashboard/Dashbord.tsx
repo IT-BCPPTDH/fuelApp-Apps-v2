@@ -337,10 +337,10 @@ const DashboardFuelMan: React.FC = () => {
 useEffect(() => {
   const savedDate = localStorage.getItem("tanggalTransaksi");
   if (savedDate) {
-    setTanggalTransaksi(new Date(savedDate).toLocaleString()); 
+   
+    setTanggalTransaksi(new Date(savedDate).toLocaleDateString('en-GB'));  
   }
 }, []);
-
 
 
 const handleLogout = () => {
@@ -386,7 +386,10 @@ const handleLogout = () => {
 
   const updateAllData = async () => {
     const units = await fetchUnitData();
+    const unit = await getHomeTable(lkfId);
+   
   }
+
 
 
 
@@ -401,10 +404,13 @@ const handleLogout = () => {
     if (lkfId) {
       setLoading(true);
       try {
+       
         const response = await getHomeTable(lkfId);
+        // Ensure response.data is an array
         if (response && response.data && Array.isArray(response.data)) {
           const newData = response.data;
-          await deleteAllDataTransaksi();
+          // First, delete all existing data in dataTransaksi
+          
           for (const item of newData) {
             const dataPost: DataFormTrx = {
               date: new Date().toISOString(),
@@ -442,6 +448,7 @@ const handleLogout = () => {
 
 
             await addDataTrxType(dataPost);
+           
 
           }
 
@@ -464,7 +471,7 @@ const handleLogout = () => {
       setLoading(false);
     }
     updateAllData()
-    // updateCard()
+    //  deleteAllDataTransaksi();
 
   };
 

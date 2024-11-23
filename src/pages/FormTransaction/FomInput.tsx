@@ -278,7 +278,7 @@ const FormTRX: React.FC = () => {
   const [qoutaData, setquotaData] = useState<number | null>(null);
   const [modelUnit, setModelUnit] = useState<string>('');
   const [owner, setOwner] = useState<string>('');
-  const [qtyLast, setQtyLast] = useState<number>(0);
+  const [qtyLast, setQty] = useState<number>(0);
 
   const [photoFile, setPhotoFile] = useState<string | null>(null); // For the file
 
@@ -675,9 +675,12 @@ const FormTRX: React.FC = () => {
   useEffect(() => {
     const savedDate = localStorage.getItem("tanggalTransaksi");
     if (savedDate) {
-      setTanggalTransaksi(new Date(savedDate).toLocaleString()); 
+     
+      setTanggalTransaksi(new Date(savedDate).toLocaleDateString('en-GB'));  
     }
   }, []);
+  
+  
   
   // const handlePost = async (e: React.FormEvent) => {
   //   e.preventDefault(); // Prevent default form submission behavior
@@ -849,13 +852,18 @@ const FormTRX: React.FC = () => {
   
     let latestDataDateFormatted = "";
     const savedDate = localStorage.getItem("tanggalTransaksi");
+    
     if (savedDate) {
       const transactionDate = new Date(savedDate);
-      latestDataDateFormatted = transactionDate.toISOString();
+    
+      // Add 12 hours to the transactionDate
+      transactionDate.setHours(transactionDate.getHours() + 12);
+    
+      // Format the date to ISO string (or any format you prefer)
+      latestDataDateFormatted = transactionDate.toISOString(); 
     } else {
       console.error("No saved date available in localStorage for 'tanggalTransaksi'");
     }
-  
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -1375,33 +1383,6 @@ const FormTRX: React.FC = () => {
     return "";
   };
 
-  useEffect(() => {
-    const calculateFBR = (): number => {
-      if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
-        const difference = hmkmValue - hmLast;
-        console.log('Difference offline/online (hmkmValue - hmLast):', difference);
-
-        if (qtyLast === 0) {
-          console.log('qtyLast cannot be zero');
-          return 0;
-        }
-
-        if (difference > 0) {
-          const result = difference / qtyLast;
-          console.log('Calculated FBR offline/online:', result);
-          return parseFloat(result.toFixed(2));
-        } else {
-          console.log('Difference is not positive');
-        }
-      } else {
-      
-      }
-      return 0;
-    };
-
-    setFbrResultOf(calculateFBR());
-
-  }, [hmkmValue, hmLast, qtyLast]);
 
 
   const filteredUnitOptions = (selectedType &&
@@ -1480,6 +1461,37 @@ const FormTRX: React.FC = () => {
       }
     }
   };
+
+  useEffect(() => {
+    const calculateFBR = (): number => {
+      // Ensure all values are numbers before calculation
+      if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
+        const difference = hmkmValue - hmLast;
+        console.log('Difference offline/online (hmkmValue - hmLast):', difference);
+  
+        if (qtyLast === 0) {
+          console.log('qtyLast cannot be zero');
+          return 0;
+        }
+  
+        if (difference > 0) {
+          const result = difference / qtyLast;
+          console.log('Calculated FBR offline/online:', result);
+          return parseFloat(result.toFixed(2)); // Round to 2 decimal places
+        } else {
+          console.log('Difference is not positive');
+        }
+      } else {
+        console.log('Invalid data: hmkmValue, hmLast, or qtyLast is not a number');
+      }
+      return 0; // Fallback in case the calculation doesn't happen
+    };
+  
+    const fbrResult = calculateFBR();
+    setFbrResultOf(fbrResult);
+  
+  }, [hmkmValue, hmLast, qtyLast]);
+  
   
   
   useEffect(() => {
@@ -1490,6 +1502,7 @@ const FormTRX: React.FC = () => {
       const offlineData = await fetchLatestHmLast(selectedUnit);
       if (offlineData.hm_km !== undefined) {
         setHmLast(offlineData.hm_km);  
+        setQty(offlineData.qty_last || 0)
       } else {
         setHmLast(0); 
       }
@@ -1505,7 +1518,7 @@ const FormTRX: React.FC = () => {
 
 
   const calculateFBR = (): number => {
-    if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
+    if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast=== 'number') {
       const difference = hmkmValue - hmLast;
       console.log('Difference (hmLast - hmkm):', difference);
 
