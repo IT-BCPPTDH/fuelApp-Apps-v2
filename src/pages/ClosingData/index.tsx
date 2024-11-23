@@ -121,40 +121,93 @@ const FormClosing: React.FC = () => {
     }, []);
     
 
-    useEffect(() => {
-        const fetchSondingMasterData = async () => {
-            try {
-                const response = await getAllSonding();
-                if (response.status === '200' && Array.isArray(response.data)) {
-                    setSondingMasterData(response.data);
-                } else {
-                    console.error('Unexpected data format');
-                }
-            } catch (error) {
-                console.error('Failed to fetch sonding master data', error);
-            }
-        };
+    // useEffect(() => {
+    //     const fetchSondingMasterData = async () => {
+    //         try {
+    //             const response = await getAllSonding();
+    //             if (response.status === '200' && Array.isArray(response.data)) {
+    //                 setSondingMasterData(response.data);
+    //             } else {
+    //                 console.error('Unexpected data format');
+    //             }
+    //         } catch (error) {
+    //             console.error('Failed to fetch sonding master data', error);
+    //         }
+    //     };
 
-        fetchSondingMasterData();
-    }, []);
+    //     fetchSondingMasterData();
+    // }, []);
 
-    useEffect(() => {
+    const fetchSondingOffline = async () => {
+        try {
+          const sondingDataMaster = await getDataFromStorage('masterSonding');
+      
+          // Check if data is already an object or needs parsing
+          const parsedSondingData =
+            typeof sondingDataMaster === 'string'
+              ? JSON.parse(sondingDataMaster)
+              : sondingDataMaster;
+      
+          console.log('Fetched masterSonding:', parsedSondingData);
+      
+          if (parsedSondingData) {
+            // Update the state with fetched data
+            setSondingMasterData(parsedSondingData); // Assuming you have a state for this
+          } else {
+            console.warn('No valid masterSonding data found.');
+          }
+        } catch (error) {
+          console.error('Error fetching masterSonding from storage:', error);
+        }
+      };
+      
+      useEffect(() => {
+        fetchSondingOffline();
+      }, []);
+      
+    
+      useEffect(() => {
         const updateClosingDip = () => {
-            if (closingSonding !== undefined && station !== undefined && sondingMasterData.length > 0) {
-                const matchingData = sondingMasterData.find(
-                    (item) => item.station === station && item.cm === closingSonding
-                );
-
-                if (matchingData) {
-                    setOpeningDip(matchingData.liters);
-                } else {
-                    setOpeningSonding(undefined);
-                }
+          if (closingSonding !== undefined && station !== undefined && sondingMasterData.length > 0) {
+            // Find the matching data based on station and closingSonding
+            const matchingData = sondingMasterData.find(
+              (item) => item.station === station && item.cm === closingSonding
+            );
+      
+            if (matchingData) {
+              // Update openingDip with liters value
+              setOpeningDip(matchingData.liters);
+            } else {
+              // Clear the state if no match is found
+              setOpeningDip(undefined);
             }
+          }
         };
-
+      
         updateClosingDip();
-    }, [closingSonding, station, sondingMasterData]);
+      }, [closingSonding, station, sondingMasterData]);
+      
+      useEffect(() => {
+        const updateClosingDip = () => {
+          if (closingSonding !== undefined && station !== undefined && sondingMasterData.length > 0) {
+            // Find the matching data based on station and closingSonding
+            const matchingData = sondingMasterData.find(
+              (item) => item.station === station && item.cm === closingSonding
+            );
+      
+            if (matchingData) {
+              // Update openingDip with liters value
+              setOpeningDip(matchingData.liters);
+            } else {
+              // Clear the state if no match is found
+              setOpeningDip(undefined);
+            }
+          }
+        };
+      
+        updateClosingDip();
+      }, [closingSonding, station, sondingMasterData]);
+
 
     useEffect(() => {
         if (closingDip !== undefined && closeData !== undefined) {

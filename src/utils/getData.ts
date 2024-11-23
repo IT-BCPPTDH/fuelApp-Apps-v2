@@ -180,15 +180,7 @@ export const getAllDataTrx = async (lkfId: string): Promise<DataFormTrx[]> => {
 };
 
 
-export const getAllDataSonding = async (): Promise<SondingData[]> => {
-  try {
-    const allData = await db.sondingMaster.toArray();
-    return allData;
-  } catch (error) {
-    console.error("Failed to fetch data from IndexedDB:", error);
-    return [];
-  }
-};
+
 
 export const getLatestLkfData = async (): Promise<{ lkf_id?: string; opening_sonding?: number } | undefined> => {
   try {
@@ -292,8 +284,9 @@ export const fetchLatestHmLast = async (
       console.log("Latest entry found:", latestEntryReversed);
       return {
         hm_km: latestEntryReversed.hm_km,        
-        qty_last: latestEntryReversed.qty     
+        qty_last: latestEntryReversed.qty   
       };
+
     } else {
       console.warn("No valid data found for unit:", selectedUnit);
       return {};

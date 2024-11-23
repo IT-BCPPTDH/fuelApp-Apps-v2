@@ -157,7 +157,7 @@ const ReviewData: React.FC = () => {
             }
     
             // Remove unitQouta from localStorage
-            removeDataFromStorage('unitQouta');
+            removeDataFromStorage('unitQuota');
        
             removeDataFromStorage('lastLkfDataStation');
             removeDataFromStorage('lastClosingSonding');
@@ -168,9 +168,13 @@ const ReviewData: React.FC = () => {
             removeDataFromStorage('allOperator');
             removeDataFromStorage('allUnit');
             removeDataFromStorage('stationData');
+            removeDataFromStorage('lastLKF');
+            removeDataFromStorage('lastTrx');
+            removeDataFromStorage(' tanggalTransaksi')
+        
+            removeDataFromStorage('cardDash');
+            removeDataFromStorage('latestLkfData');
 
-            localStorage.removeItem('cardDash');
-            localStorage.removeItem('latestLkfData');
 
            
             // Delete dataTransaksi from IndexedDB

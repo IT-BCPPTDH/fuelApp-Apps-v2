@@ -161,16 +161,23 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       const parsedData = JSON.parse(loginData);
       createdBy = parsedData.jde || '';
     }
-  
+    const tanggal = await getDataFromStorage('tanggalTransaksi');
+    let formattedDate: string;
+    if (typeof tanggal === 'string' && tanggal.includes('/')) {
+      const [day, month, year] = tanggal.split('/');
+      console.log("test",day,month,year)
+      formattedDate =`${day}-${month}-${year}`
+    } 
+    
     const bulkData = data.map(item => ({
       from_data_id: item.from_data_id,
       no_unit: item.unit_no,
       model_unit: item.model_unit,
       owner: item.owner,
-      date_trx: new Date().toISOString(),
+      date_trx: formattedDate,
       hm_last: item.hm_last,
       hm_km: item.hm_km,
-      qty_last: item.qty_issued,
+      qty_last: item.qty_last,
       qty: item.qty_issued,
       flow_start: item.fm_awal,
       flow_end: item.fm_akhir,

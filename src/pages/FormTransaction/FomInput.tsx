@@ -42,7 +42,7 @@ import { postTransaksi } from "../../hooks/postTrx";
 import { DataFormTrx, DataMasterTransaksi } from "../../models/db";
 import { db } from "../../models/db";
 import { DataDashboard } from "../../models/db";
-import { addDataDashboard, addDataHistory, addDataTrxType } from "../../utils/insertData";
+import { addDataHistory, addDataTrxType } from "../../utils/insertData";
 import { getUser } from "../../hooks/getAllUser";
 import { convertToBase64 } from "../../utils/base64";
 import {
@@ -381,26 +381,29 @@ const FormTRX: React.FC = () => {
   useEffect(() => {
     const loadUnitDataQuota = async () => {
       // Retrieve the transaction date from localStorage
-      let latestDataDateFormatted = "";
-      const savedDate =  await getDataFromStorage("tanggalTransaksi");
-      if (savedDate) {
-        const transactionDate = new Date(savedDate) ;
-        latestDataDateFormatted = transactionDate.toISOString();
-      } else {
-        console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+      const tanggal = await getDataFromStorage('tanggalTransaksi');
+      if (!tanggal) {
+        throw new Error('tanggalTransaksi is not available in storage.');
       }
-  
-      // // Default to today's date if no date is available
-      // const today = latestDataDateFormatted
-      //   ? new Date(latestDataDateFormatted)
-      //   : new Date();
-      // const formattedDate = today.toLocaleDateString("en-CA");
-      // console.log("Formatted Date:", formattedDate);
+
+      // Check if the date is in "dd/mm/yyyy" format and reformat to "yyyy-mm-dd"
+      let formattedDate: string;
+    
   
       try {
         let quotaData;
         if (navigator.onLine) {
-          quotaData = await fetchQuotaData(latestDataDateFormatted);
+          if (typeof tanggal === 'string' && tanggal.includes('/')) {
+            const [day, month, year] = tanggal.split('/');
+            console.log("test",day,month,year)
+            formattedDate =`${day}-${month}-${year}`
+        
+            console.log('Formatted Date:', formattedDate);
+    
+            // Fetch quota data using the formatted date
+            quotaData = await fetchQuotaData(formattedDate);
+            console.log('Fetched Quota Login:', quotaData);
+          } 
         }
         if (!quotaData || !Array.isArray(quotaData)) {
           console.warn(
@@ -481,24 +484,7 @@ const FormTRX: React.FC = () => {
   }, []);
 
 
-  useEffect(() => {
-    const storedData = localStorage.getItem("cardDataDashborad");
-    if (storedData) {
-      try {
-        const parsedData = JSON.parse(storedData);
-
-        console.log("Parsed data:", parsedData);
-
-        parsedData.forEach(async (item: DataDashboard) => {
-          await addDataDashboard(item);
-        });
-      } catch (error) {
-        console.error("Failed to parse stock data from local storage", error);
-      }
-    } else {
-
-    }
-  }, []);
+ 
 
   useEffect(() => {
     const handleOnline = () => {

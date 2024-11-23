@@ -159,22 +159,17 @@ interface SondingData {
 
 // Create and configure the database
 const db = new Dexie('fuelAppDatabase') as Dexie & {
-  openingTrx: Dexie.Table<DataLkf, number>;
   dataTransaksi: Dexie.Table<DataFormTrx, number>;
   dataMasterTrasaksi:Dexie.Table<DataMasterTransaksi, number>;
-  cards: Dexie.Table<DataDashboard, number>;
-  sondingMaster:Table<SondingData,number>
   closeTrx: Dexie.Table<DataLkfUpdate, number>;
 };
 
 // Define t10e schema
-db.version(14).stores({
-  // openingTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
+db.version(15).stores({
   closeTrx: '++id, date, shift, hm_start, opening_dip, opening_sonding, flow_meter_start, site, fuelman_id, station, lkf_id,km_end, closing_dip, closing_sonding, flow_meter_end,note,signature',
   dataTransaksi: '++id, from_data_id, no_unit, model_unit, owner, date_trx, hm_last, hm_km, qty_last, qty, name_operator, fbr, flow_start, flow_end, signature, foto, type, lkf_id, start_time, end_time, status, jde_operator, fuelman_id, dip_start, dip_end, sonding_start, sonding_end, reference, start, end',
   dataMasterTrasaksi: '++id, no_unit, hm_km, qty',
-  cards: '++id, title, subtitle, icon',
-  sondingMaster:'++id, station, cm , liters, site'
+  
 });
 
 export type { DataLkf, DataFormTrx, DataDashboard , SondingData, DataLkfUpdate, DataMasterTransaksi};

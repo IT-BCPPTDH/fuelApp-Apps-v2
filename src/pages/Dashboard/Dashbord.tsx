@@ -207,8 +207,7 @@ const DashboardFuelMan: React.FC = () => {
     const fetchShiftData = async () => {
       try {
         // Remove existing cardDash data from localStorage
-        localStorage.removeItem('cardDash');
-
+       
         // Get the latest LKF ID
         const lkfId = await getLatestLkfId();
 
@@ -412,26 +411,15 @@ const DashboardFuelMan: React.FC = () => {
         let formattedDate: string;
         if (typeof tanggal === 'string' && tanggal.includes('/')) {
           const [day, month, year] = tanggal.split('/');
-          if (!day || !month || !year) {
-
-          }
-          formattedDate = `${year}-${month}-${day}`
-          // Parse the formatted date into a valid Date object
-          const tanggalQuota = new Date(formattedDate);
-          if (isNaN(tanggalQuota.getTime())) {
-
-          }
-
-          // Format the date as 'yyyy-mm-dd'
-          const finalFormattedDate = tanggalQuota.toISOString().split('T')[0];
-          console.log('Formatted Date:', finalFormattedDate);
+          console.log("test",day,month,year)
+          formattedDate =`${day}-${month}-${year}`
+      
+          console.log('Formatted Date:', formattedDate);
 
           // Fetch quota data using the formatted date
-          const quotaData = await fetchQuotaData(finalFormattedDate);
+          const quotaData = await fetchQuotaData(formattedDate);
           console.log('Fetched Quota Login:', quotaData);
-        } else {
-
-        }
+        } 
 
       } catch (error) {
         console.error('Error in loadUnitDataQuota:', error);
