@@ -35,7 +35,7 @@ import { getLatestLkfDataDate, getLatestLkfId, getShiftDataByLkfId, getShiftData
 import { getStationData} from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
-import { chevronDownCircleOutline } from 'ionicons/icons';
+import { chevronDownCircleOutline, key } from 'ionicons/icons';
 // import { getAllQuota, getUnitQuotaActive } from "../../hooks/getQoutaUnit";
 
 interface Shift {
@@ -188,35 +188,7 @@ const [jdeOptions, setJdeOptions] = useState<
   }, []);
 
 
-  const debouncedUpdate = useCallback(
-    debounce(async (openingSonding: number | undefined, station: string | undefined) => {
-      if (openingSonding !== undefined && station !== undefined) {
-        try {
-          if (openingSonding === 0 && station === 'loginData') {
-            setOpeningDip(0);
-          } else {
-            const matchingData = sondingMasterData.find(
-              (item) => item.station === station && item.cm === openingSonding
-            );
-            if (matchingData) {
-              setOpeningDip(matchingData.liters);
-            } else {
-              setOpeningDip(undefined);
-            }
-          }
-        } catch (error) {
-          console.error('Failed to update opening dip', error);
-        }
-      }
-    }, 300), // Adjust the delay as needed
-    [sondingMasterData] // Dependency array
-  );
-
-  useEffect(() => {
-    debouncedUpdate(openingSonding, station);
-  }, [openingSonding, station, debouncedUpdate]);
-
-
+ 
 
 
   // const handleDateChange = (e: CustomEvent) => {
@@ -240,7 +212,7 @@ const [jdeOptions, setJdeOptions] = useState<
       const formattedDate = new Date(selectedDate).toLocaleDateString();
   
       setTanggalTrx(formattedDate);
-      localStorage.setItem("tanggalTransaksi", formattedDate); 
+      saveDataToStorage("tanggalTransaksi", formattedDate)
     }
   };
   
@@ -284,20 +256,31 @@ const [jdeOptions, setJdeOptions] = useState<
   const lkf_id = await getLatestLkfId();
 
   let latestDataDateFormatted = "";
-  const savedDate = localStorage.getItem("tanggalTransaksi");
-  
+  const savedDate =  await getDataFromStorage("tanggalTransaksi");
+
   if (savedDate) {
+  
     const transactionDate = new Date(savedDate);
-  
-    // Add 12 hours to the transactionDate
-    transactionDate.setHours(transactionDate.getHours() + 12);
-  
-    // Format the date to ISO string (or any format you prefer)
-    latestDataDateFormatted = transactionDate.toISOString(); 
-  } else {
-    console.error("No saved date available in localStorage for 'tanggalTransaksi'");
-  }
     
+    // Periksa apakah objek Date valid
+    if (!isNaN(transactionDate.getTime())) {
+      // Jika valid, tambahkan 12 jam ke tanggal
+      transactionDate.setHours(transactionDate.getHours() + 12);
+      
+      // Format tanggal ke ISO string
+      latestDataDateFormatted = transactionDate.toISOString(); 
+    } else {
+      // Jika tanggal tidak valid, log kesalahan
+      console.error("Saved date is invalid:", savedDate);
+      latestDataDateFormatted = "Invalid Date";  // Atau bisa menggunakan format fallback
+    }
+  } else {
+    // Jika tidak ada tanggal di localStorage
+    console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+    latestDataDateFormatted = "No Date Available";
+  }
+  
+  console.log("Formatted Date:", latestDataDateFormatted);
     let dataPost: DataLkf = {
       date: latestDataDateFormatted,
       shift: shiftSelected.name,
@@ -492,73 +475,102 @@ const doRefresh = async (event: CustomEvent) => {
   event.detail.complete(); 
 };
 
-// untuk Menampilkan Data
-useEffect(() => {
-  const loadShiftClose = async () => {
-    // const cachedShiftData = await getDataFromStorage('shiftCloseData');
-    
 
-      // Get login data from Capacitor Storage
-      const userData = await getDataFromStorage('loginData');
-      if (userData) {
-        const stationData = userData.station; 
-
-        if (stationData) {
-          // const shiftClose = await fetchShiftData(stationData); // Pass the selected date to fetch data
-          const lastLKF = localStorage.getItem('CapacitorStorage.lastLKF') ?? '[]'; 
-          let lkf = JSON.parse(lastLKF);
-          // console.log('123',lkf)
-          // console.log(234,stationData)
-          const shiftClose = lkf?.find((v:lkf) => v.station === stationData)
-          // console.log("Fetched Shift Close Data:", shiftClose);
-
-          // Filter to only include specific fields
-          // const filteredShiftClose = shiftClose.map((data: lkf) => ({
-          //   closing_sonding: data.closing_sonding,
-          //   closing_dip: data.closing_dip,
-          //   flow_meter_en: data.flow_meter_end,
-          //   hm_end: data.hm_end
-          // })).filter((data:lkf) => data.closing_sonding !== undefined && data.closing_dip !== undefined && data.flow_meter_en !== undefined);
-
-          // Log the filtered data for debugging
-          // console.log("Filtered Shift Close Data:", filteredShiftClose);
-          if (shiftClose) {
-            setCloseShift(shiftClose);
-            const latestShiftData = shiftClose; 
-            if (latestShiftData.closing_sonding !== undefined) {
-              setOpeningSonding(latestShiftData.closing_sonding); 
-            }
-            if (latestShiftData.flow_meter_end !== undefined) {
-              setFlowMeterAwal(latestShiftData.flow_meter_end); 
-            }
-            if (latestShiftData.closing_dip !== undefined) {
-              setOpeningDip(latestShiftData.closing_dip); 
-            }
-            if (latestShiftData.hm_end !== undefined) {
-              setHmAkhir(latestShiftData.hm_end);
-              setPrevHmAwal(latestShiftData.hm_end);  // Set HM Awal
-            }
-          }
-
-          const lastLkf = {
-            closing_sonding: shiftClose.closing_sonding,
-            closing_dip: shiftClose.closing_dip,
-            flow_meter_end: shiftClose.flow_meter_end,
-            hm_end: shiftClose.hm_end
-          };
-          
-
-          setCloseShift(lastLkf);
+const debouncedUpdate = useCallback(
+  debounce(async (openingSonding: number | undefined, station: string | undefined) => {
+    if (openingSonding !== undefined && station !== undefined) {
+      console.log('Debounced update triggered:', openingSonding, station);
+      try {
+        if (openingSonding === 0 && station === 'loginData') {
+          setOpeningDip(0);
         } else {
-          console.error("Station data not found in loginData");
+          // Find the matching data from sondingMasterData based on station and openingSonding
+          const matchingData = sondingMasterData.find(
+            (item) => item.station === station && item.cm === openingSonding
+          );
+          if (matchingData) {
+            setOpeningDip(matchingData.liters); // Set the opening dip value based on the match
+            console.log('Found matching data:', matchingData);
+          } else {
+            setOpeningDip(undefined); // If no match, set it to undefined
+            console.log('No matching data found');
+          }
         }
-      } else {
-        console.error("No loginData found in storage");
+      } catch (error) {
+        console.error('Failed to update opening dip', error);
       }
     }
+  }, 1000), 
+  [sondingMasterData] 
+);
 
-  loadShiftClose(); 
-}, [date,openingDip]); 
+
+useEffect(() => {
+  console.log('useEffect: openingSonding or station changed:', openingSonding, station);
+  debouncedUpdate(openingSonding, station);
+}, [openingSonding, station, debouncedUpdate]);
+
+
+useEffect(() => {
+  const loadShiftClose = async () => {
+    console.log('Loading shift close data...');
+    const userData = await getDataFromStorage('loginData');
+    if (userData) {
+      const stationData = userData.station;
+      console.log('Station data from loginData:', stationData);
+  
+      if (stationData) {
+        const lastLKF = await getDataFromStorage('lastLKF');
+        
+      
+        let lkf;
+        if (typeof lastLKF === 'string') {
+          try {
+            lkf = JSON.parse(lastLKF);
+            console.log('Parsed lastLKF:', lkf);
+          } catch (error) {
+            console.error('Error parsing lastLKF:', error);
+            return; 
+          }
+        } else {
+          // If it's already an object, no need to parse
+          lkf = lastLKF;
+          console.log('Using lastLKF as object:', lkf);
+        }
+  
+        const shiftClose = lkf?.find((v: any) => v.station === stationData);
+  
+        if (shiftClose) {
+          console.log('Shift close data found:', shiftClose);
+          setCloseShift(shiftClose);
+          const latestShiftData = shiftClose;
+  
+          if (latestShiftData.closing_sonding !== undefined) {
+            setOpeningSonding(latestShiftData.closing_sonding); 
+          }
+          if (latestShiftData.flow_meter_end !== undefined) {
+            setFlowMeterAwal(latestShiftData.flow_meter_end);
+          }
+          if (latestShiftData.closing_dip !== undefined) {
+            setOpeningDip(latestShiftData.closing_dip); 
+          }
+          if (latestShiftData.hm_end !== undefined) {
+            setHmAkhir(latestShiftData.hm_end);
+            setPrevHmAwal(latestShiftData.hm_end);
+          }
+        } else {
+          console.error('Shift close data not found for the station');
+        }
+      } else {
+        console.error('Station data not found in loginData');
+      }
+    } else {
+      console.error('No loginData found in storage');
+    }
+  };
+
+  loadShiftClose();
+}, [date, openingDip]);
 
 const handleFlowMeterAwalChange = (e: CustomEvent) => {
   const value = Number(e.detail.value);
@@ -646,9 +658,6 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
               type="number"
               value={openingSonding}
               onIonChange={handleOpeningSondingChange}
-
-             
-              // onIonInput={(e) => setOpeningSonding(Number(e.detail.value))}
             />
             {showError && openingSonding === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
@@ -724,26 +733,26 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
      <IonButton 
         className="check-button" 
         onClick={handlePost} 
-        // disabled={!isOnline}
+        disabled={!isOnline}
       >
         Mulai Kerja
       </IonButton>
      
      
-      {/* <IonToast
+      <IonToast
         isOpen={showToast}
         onDidDismiss={() => setShowToast(false)}
         message="Anda sedang offline. Silakan cek koneksi internet Anda."
         duration={2000}
-      /> */}
+      /> 
           </IonRow>
-          {/* <IonRow>
+         <IonRow>
       {!isOnline && (
         <IonLabel color="danger" style={{ marginTop: '10px'}}>
           <span style={{marginLeft:"15px", fontWeight:"600"}}> Device offline , periksa koneksi tablet </span>
         </IonLabel>
       )}
-      </IonRow> */}
+      </IonRow>
         </div>
      
       </IonContent>

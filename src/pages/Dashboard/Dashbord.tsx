@@ -26,7 +26,7 @@ import TableData from '../../components/Table';
 import { getLatestLkfId, getShiftDataByLkfId, getCalculationIssued, getCalculationReceive, getLatestLkfDataDate, getCalculationITransfer } from '../../utils/getData';
 import { getHomeByIdLkf, getHomeTable } from '../../hooks/getHome';
 import NetworkStatus from '../../components/network';
-import { fetchUnitData, getDataFromStorage, saveDataToStorage } from '../../services/dataService';
+import { fetchQuotaData, fetchUnitData, getDataFromStorage, saveDataToStorage } from '../../services/dataService';
 import { handLeftSharp, home, navigate } from 'ionicons/icons';
 import { updateDataInDB, updateDataInTrx, } from '../../utils/update';
 import { addDataToDB, addDataTrxType, updateDataToDB } from '../../utils/insertData';
@@ -334,12 +334,27 @@ const DashboardFuelMan: React.FC = () => {
 //   fetchDate();
 // }, []);
 
+
 useEffect(() => {
-  const savedDate = localStorage.getItem("tanggalTransaksi");
+  const tanggal = async () =>{
+    const savedDate = await getDataFromStorage("tanggalTransaksi");
   if (savedDate) {
-   
-    setTanggalTransaksi(new Date(savedDate).toLocaleDateString('en-GB'));  
+
+    const transactionDate = new Date(savedDate);
+    if (!isNaN(transactionDate.getTime())) {
+      setTanggalTransaksi(transactionDate.toLocaleDateString('en-GB'));
+    } else {
+      console.error("Invalid date format in localStorage:", savedDate);
+      setTanggalTransaksi("Invalid Date");
+    }
+  } else {
+    // Jika tidak ada tanggal yang disimpan
+    console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+    setTanggalTransaksi("No Date Available");
   }
+
+  }
+  tanggal()
 }, []);
 
 
@@ -384,15 +399,53 @@ const handleLogout = () => {
     loadUnitData();
   }, []);
 
+
+  useEffect(() => {
+    const loadUnitDataQuota = async () => {
+      try {
+        const tanggal = await getDataFromStorage('tanggalTransaksi');
+        if (!tanggal) {
+          throw new Error('tanggalTransaksi is not available in storage.');
+        }
+  
+        // Check if the date is in "dd/mm/yyyy" format and reformat to "yyyy-mm-dd"
+        let formattedDate: string;
+        if (typeof tanggal === 'string' && tanggal.includes('/')) {
+          const [day, month, year] = tanggal.split('/');
+          if (!day || !month || !year) {
+           
+          }
+          formattedDate =`${year}-${month}-${day}`
+        } else {
+          
+        }
+        // Parse the formatted date into a valid Date object
+        const tanggalQuota = new Date(formattedDate);
+        if (isNaN(tanggalQuota.getTime())) {
+         
+        }
+  
+        // Format the date as 'yyyy-mm-dd'
+        const finalFormattedDate = tanggalQuota.toISOString().split('T')[0];
+        console.log('Formatted Date:', finalFormattedDate);
+  
+        // Fetch quota data using the formatted date
+        const quotaData = await fetchQuotaData(finalFormattedDate);
+        console.log('Fetched Quota Login:', quotaData);
+      } catch (error) {
+        console.error('Error in loadUnitDataQuota:', error);
+      }
+    };
+  
+    loadUnitDataQuota();
+  }, []);
+
+
   const updateAllData = async () => {
     const units = await fetchUnitData();
     const unit = await getHomeTable(lkfId);
    
   }
-
-
-
-
 
   const TambahData = async () => {
     localStorage.getItem('cardDash');
