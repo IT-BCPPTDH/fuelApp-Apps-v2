@@ -382,27 +382,26 @@ const FormTRX: React.FC = () => {
     const loadUnitDataQuota = async () => {
       // Retrieve the transaction date from localStorage
       let latestDataDateFormatted = "";
-      const savedDate = localStorage.getItem("tanggalTransaksi");
+      const savedDate =  await getDataFromStorage("tanggalTransaksi");
       if (savedDate) {
-        const transactionDate = new Date(savedDate);
+        const transactionDate = new Date(savedDate) ;
         latestDataDateFormatted = transactionDate.toISOString();
       } else {
         console.error("No saved date available in localStorage for 'tanggalTransaksi'");
       }
   
-      // Default to today's date if no date is available
-      const today = latestDataDateFormatted
-        ? new Date(latestDataDateFormatted)
-        : new Date();
-      const formattedDate = today.toLocaleDateString("en-CA");
-      console.log("Formatted Date:", formattedDate);
+      // // Default to today's date if no date is available
+      // const today = latestDataDateFormatted
+      //   ? new Date(latestDataDateFormatted)
+      //   : new Date();
+      // const formattedDate = today.toLocaleDateString("en-CA");
+      // console.log("Formatted Date:", formattedDate);
   
       try {
         let quotaData;
         if (navigator.onLine) {
-          quotaData = await fetchQuotaData(formattedDate);
+          quotaData = await fetchQuotaData(latestDataDateFormatted);
         }
-  
         if (!quotaData || !Array.isArray(quotaData)) {
           console.warn(
             "Online quota data unavailable or failed. Attempting offline data."
@@ -415,19 +414,6 @@ const FormTRX: React.FC = () => {
           let foundUnitQuota = quotaData.find(
             (unit) => unit.unit_no === selectedUnit
           );
-  
-          if (!foundUnitQuota && navigator.onLine) {
-            // Check previous day's data if today’s quota is missing and online
-            const yesterday = new Date(today);
-            yesterday.setDate(today.getDate() - 1); // Go back one day
-            const formattedYesterday = yesterday.toLocaleDateString("en-CA");
-            console.log("Checking previous day's data:", formattedYesterday);
-  
-            const previousQuotaData = await fetchQuotaData(formattedYesterday);
-            foundUnitQuota = previousQuotaData?.find(
-              (unit) => unit.unit_no === selectedUnit
-            );
-          }
   
           if (foundUnitQuota?.is_active) {
             setCurrentUnitQuota(foundUnitQuota);
@@ -806,12 +792,7 @@ const FormTRX: React.FC = () => {
   // };
 
 
-  useEffect(() => {
-    const savedDate = localStorage.getItem("tanggalTransaksi");
-    if (savedDate) {
-      setTanggalTransaksi(new Date(savedDate).toLocaleString()); 
-    }
-  }, []);
+  
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault(); // Prevent default form submission behavior
@@ -851,19 +832,30 @@ const FormTRX: React.FC = () => {
     const lkf_id = await getLatestLkfId();
   
     let latestDataDateFormatted = "";
-    const savedDate = localStorage.getItem("tanggalTransaksi");
-    
+    const savedDate =  await getDataFromStorage("tanggalTransaksi");
     if (savedDate) {
+      // Mengonversi string tanggal ke objek Date
       const transactionDate = new Date(savedDate);
-    
-      // Add 12 hours to the transactionDate
-      transactionDate.setHours(transactionDate.getHours() + 12);
-    
-      // Format the date to ISO string (or any format you prefer)
-      latestDataDateFormatted = transactionDate.toISOString(); 
+      
+      // Periksa apakah objek Date valid
+      if (!isNaN(transactionDate.getTime())) {
+        // Jika valid, tambahkan 12 jam ke tanggal
+        transactionDate.setHours(transactionDate.getHours() + 12);
+        
+        // Format tanggal ke ISO string
+        latestDataDateFormatted = transactionDate.toISOString(); 
+      } else {
+        // Jika tanggal tidak valid, log kesalahan
+        console.error("Saved date is invalid:", savedDate);
+        latestDataDateFormatted = "Invalid Date";  // Atau bisa menggunakan format fallback
+      }
     } else {
+      // Jika tidak ada tanggal di localStorage
       console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+      latestDataDateFormatted = "No Date Available";
     }
+    
+    console.log("Formatted Date:", latestDataDateFormatted);
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
