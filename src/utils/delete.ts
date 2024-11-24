@@ -19,7 +19,7 @@ export const deleteAllDataMaster= async (): Promise<void> => {
   try {
     const count = await db.dataMasterTrasaksi.count(); // Get the count of entries
     if (count > 0) {
-      await db.dataTransaksi.clear(); // Clear all entries in the store
+      await db.dataMasterTrasaksi.clear(); // Clear all entries in the store
       console.log(`${count} entries removed from dataTransaksi.`);
     } else {
       console.log("No entries found in dataTransaksi to delete.");

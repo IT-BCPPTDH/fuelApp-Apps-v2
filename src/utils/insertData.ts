@@ -91,13 +91,7 @@ export const removeDataFromDB = async (id: string) => {
 
 
 
-export async function addDataDashboard(data: DataDashboard) {
-  try {
-    await db.cards.add(data);
-  } catch (error) {
-    console.error("Failed to add data to IndexedDB:", error);
-  }
-}
+
 
 export async function addDataTrxType(data: DataFormTrx) {
   try {
@@ -116,6 +110,7 @@ export async function addDataTrxType(data: DataFormTrx) {
 //   }
 // }
 
+// 
 
 export async function addDataHistory(data: DataFormTrx) {
   try {
@@ -137,11 +132,3 @@ export async function addDataHistory(data: DataFormTrx) {
 
 
 
-
-export async function addDataSonding(data: SondingData) {
-  try {
-    await db.sondingMaster.add(data);
-  } catch (error) {
-    console.error("Failed to add data to IndexedDB:", error);
-  }
-}

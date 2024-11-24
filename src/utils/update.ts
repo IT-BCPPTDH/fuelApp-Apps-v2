@@ -40,5 +40,6 @@ export const updateDataInDB = async (id: number, data: Partial<DataLkf>) => {
     }
   };
 
+  
 
 

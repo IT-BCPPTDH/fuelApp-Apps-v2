@@ -2,10 +2,8 @@ import { CapacitorHttp } from '@capacitor/core';
 import { ResponseError } from "../helper/responseError";
 
 const BELinkMaster = import.meta.env.VITE_BACKEND_URL;
-
 export async function getAllQuota(date:String) {
     const url = `${BELinkMaster}/api/quota-usage/get-active/${date}`;
-
     try {
         const response = await CapacitorHttp.get({
             url,
@@ -17,11 +15,8 @@ export async function getAllQuota(date:String) {
         if (response.status !== 200) {
             throw new ResponseError(`Failed to fetch data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
         }
-
         const data = response.data;
-
-        console.log('Successfully fetched quota data:', data);
-
+                console.log('Successfully fetched quota data Aktif:', data);
         return data;
     } catch (error: unknown) {
         if (error instanceof ResponseError) {
@@ -54,7 +49,7 @@ export async function getAllQuota(date:String) {
 
 //         const data = response.data;
 
-//         console.log('Successfully fetched quota data Aktif:', data);
+
 
 //         return data;
 //     } catch (error: unknown) {

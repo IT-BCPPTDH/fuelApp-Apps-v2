@@ -18,9 +18,6 @@ export async function getStation() {
         if (response.status !== 200) {
             throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
         }
-
-        // console.log('Successfully fetched station data:', response.data);
-
         return response.data;
     } catch (error: unknown) {
         if (error instanceof ResponseError) {

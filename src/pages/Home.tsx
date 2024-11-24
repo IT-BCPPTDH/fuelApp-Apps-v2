@@ -28,7 +28,6 @@ const Home = () => {
                     </IonRouterLink>
                   </>
                 )}
-
               </IonCol>
             </IonRow>
           </IonGrid>

@@ -20,14 +20,8 @@ import {
   IonItemDivider,
   IonImg,
   useIonRouter,
-  IonSelectOption,
-  IonModal,
-  InputCustomEvent,
-  InputChangeEventDetail,
-  IonPopover,
   useIonToast,
   IonAlert,
-  IonDatetime
 } from "@ionic/react";
 import {
   cameraOutline,
@@ -37,40 +31,25 @@ import {
 } from "ionicons/icons";
 import SignatureModal from "../../components/SignatureModal";
 import { getAllUnit } from "../../hooks/getAllUnit";
-
 import { postTransaksi } from "../../hooks/postTrx";
-import { DataFormTrx, DataMasterTransaksi } from "../../models/db";
-import { db } from "../../models/db";
-import { DataDashboard } from "../../models/db";
-import { addDataDashboard, addDataHistory, addDataTrxType } from "../../utils/insertData";
-import { getUser } from "../../hooks/getAllUser";
-import { convertToBase64 } from "../../utils/base64";
+import { DataFormTrx, } from "../../models/db";
+import { addDataHistory, addDataTrxType } from "../../utils/insertData";
 import {
-  bulkInsertDataMasterTransaksi,
   fetchLatestHmLast,
-  getFbrByUnit,
-  getLatestLkfDataDate,
   getLatestLkfId,
-
 } from "../../utils/getData";
-
-
 import { fetchOperatorData, fetchQuotaData, fetchUnitData, getDataFromStorage, removeDataFromStorage } from "../../services/dataService";
 import Select, { ActionMeta, SingleValue } from "react-select";
 import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getAllQuota } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
+
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
 
-// import CameraInput from "../../components/takeFoto";
 
 import { saveDataToStorage } from "../../services/dataService";
-import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
-
-
-
 interface Typetrx {
   id: number;
   name: string;
@@ -122,25 +101,17 @@ const typeTrx: Typetrx[] = [
   { id: 4, name: "Receipt KPC" },
 ];
 
-
-
-
 const compareWith = (o1: Typetrx, o2: Typetrx) => o1.id === o2.id;
 
 const FormTRX: React.FC = () => {
   const input1Ref = useRef<HTMLIonInputElement>(null);
   const input2Ref = useRef<HTMLIonInputElement>(null);
-
   const [selectedType, setSelectedType] = useState<Typetrx | undefined>(
     undefined
   );
-  // const [selectedUnit, setSelectedUnit] = useState<string | undefined>();
-
-  // const [signature, setSignature] = useState<File | null>(null);
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [data, setData] = useState<TableDataItem[] | undefined>(undefined);
   const [model, setModel] = useState<string>("");
-
   const [fullName, setFullName] = useState<string>("");
   const [unitOptions, setUnitOptions] = useState<
     {
@@ -187,7 +158,6 @@ const FormTRX: React.FC = () => {
   );
   const [presentToast] = useIonToast(); // Destructure the toast function
   const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined);
-
   const [sondingEnd, setSondingEnd] = useState<number | undefined>(undefined);
   const [Refrence, setRefrence] = useState<number | undefined>(undefined);
   const [stationData, setStationData] = useState<any>(null);
@@ -196,18 +166,13 @@ const FormTRX: React.FC = () => {
   const [showErrorType, setShowErrorType] = useState<boolean>(false);
   const [showJamError, setShowJamError] = useState<boolean>(false);
   const [showJamErrorInput, setShowJamErrorInput] = useState<boolean>(false);
-  // Ensure flowEnd is a number
-
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-
   const [status, setStatus] = useState<number>(1); // Default to 0
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-
   const [quotaMessage, setQuotaMessage] = useState("");
-
   const [unitQuota, setUnitQuota] = useState(0);
   const [usedQuota, setUsedQuota] = useState(0);
   const [remainingQuota, setRemainingQuota] = useState(0);
@@ -217,87 +182,61 @@ const FormTRX: React.FC = () => {
   const [employeeError, setemployeeError] = useState<boolean>(false);
   const [unitQouta, setUnitQouta] = useState(0);
   const [isError, setIsError] = useState(false);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedId, setSelectID] = useState<string | undefined>();
-  // const [operatorOptions, setOperatorOptions] = useState<{ id: number; JDE: string; fullname: string; }[]>([]);
   const [hmkmTRX, sethmkmTrx] = useState<number | undefined>(undefined); // HM/KM Transaksi
   const [hmLast, setHmLast] = useState<number>(0); // HM/KM Unit
-
-  // Ensure flowEnd is a number
   const [operatorOptions, setOperatorOptions] = useState<
     { JDE: string; fullname: string }[]
   >([]);
 
-
   const [selecTUnit, setSelectUnit] = useState<
-    { JDE: string; fullname: string }[]
-  >([]);
-
-
+    { JDE: string; fullname: string }[]>([]);
   const [transaksiData, setTransaksiData] = useState<any>(null);
   const [filteredUnits, setFilteredUnits] = useState(unitOptions);
-
   const [selectedUnit, setSelectedUnit] = useState<string>("");
-
   const [hmkmValue, setHmkmValue] = useState<number | null>(null);
   const [hmkmLast, setHmKmLast] = useState<number | null>(null);
   const [fbrResult, setFbrResult] = useState<number>(0);
   const [fbrResultOf, setFbrResultOf] = useState<number>(0);
   const [lkfId, setLkfId] = useState<string>('');
   const [qtyValue, setQtyValue] = useState<number | null>(null);
-
- 
-  // State untuk menyimpan data unit
-  // const [noUnit, setNoUnit] = useState<string>(''); // Nilai no_unit yang ingin dipanggil
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
   const [is_active, setis_active] = useState(false);
   const [quotaData, setQuotaData] = useState(null);
   const [currentUnitQuota, setCurrentUnitQuota] = useState<UnitQuota | null>(null);
   const [totalQuantityIssued, setTotalQuantityIssued] = useState<number>(0);
   const [opDip, setOpDip] = useState<number | null>(null)
- 
   const [station, setOpStation] = useState<string | null>(null)
   const [receipt, setOpReceipt] = useState<number | null>(null)
   const [transfer, setOpTransfer] = useState<string | null>(null)
   const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
   const [totalIssued, setTotalIssued] = useState<number | null>(null);
   const [shift, setShift] = useState<string | null>(null);
-
   const [showErrorIsi, setShowErrorIsi] = useState<boolean>(false);
-
   const [isiTime, setIsiTime] = useState<string | undefined>(undefined);
   const [selesaiTime, setSelesaiTime] = useState<string | undefined>(undefined);
-
   const [startTime, setStartTime] = useState<string>('');
   const [endTime, setEndTime] = useState<string>('');
-
-
   const [qoutaData, setquotaData] = useState<number | null>(null);
   const [modelUnit, setModelUnit] = useState<string>('');
   const [owner, setOwner] = useState<string>('');
   const [qtyLast, setQty] = useState<number>(0);
-
   const [photoFile, setPhotoFile] = useState<string | null>(null); // For the file
-
   const [signature, setSignature] = useState<string | null>(null);
-
   const [latestDate, setLatestDate] = useState<string>('');
   const [tanggalTransaksi, setTanggalTransaksi] = useState<string | null>(null);
   const [stock, setStock] = useState<number>(0);
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      setStatus(1); // Set status to 1 when online
+      setStatus(1); 
     };
-
     const handleOffline = () => {
       setIsOnline(false);
-      setStatus(0); // Keep status as 0 when offline
+      setStatus(0); 
     };
-
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
@@ -307,109 +246,28 @@ const FormTRX: React.FC = () => {
     };
   }, []);
 
-
- 
-
-  // useEffect(() => {
-  //   const loadUnitDataQuota = async () => {
-  //     const today = new Date();
-  //     const formattedDate = today.toISOString().split('T')[0];
-  //     try {
-  //       let quotaData;
-
-  //       if (navigator.onLine) {
-  //         quotaData = await fetchQuotaData(formattedDate);
-  //       }
-  //       if (!quotaData || !Array.isArray(quotaData)) {
-  //         console.warn('Online quota data unavailable or failed. Attempting offline data.');
-  //         quotaData = await getDataFromStorage('unitQuota');
-  //         console.log(qoutaData)
-  //       }
-
-  //       if (quotaData && Array.isArray(quotaData)) {
-  //         let foundUnitQuota = quotaData.find((unit) => unit.unit_no === selectedUnit);
-
-  //         if (!foundUnitQuota && navigator.onLine) {
-  //           // Check previous day's data if today’s quota is missing and online
-  //           const yesterday = new Date(today);
-  //           // yesterday.setDate(today.getDate() - 1);
-  //           const formattedYesterday = yesterday.toISOString().split('T')[0];
-  //           const previousQuotaData = await fetchQuotaData(formattedYesterday);
-
-  //           foundUnitQuota = previousQuotaData?.find((unit) => unit.unit_no === selectedUnit);
-  //         }
-
-  //         if (foundUnitQuota?.is_active) {
-  //           if (foundUnitQuota) {
-  //             setCurrentUnitQuota(foundUnitQuota);
-  //             const totalQuota = foundUnitQuota.quota;
-  //             const usedQuota = foundUnitQuota.used || 0;
-  //             const additionalQuota = foundUnitQuota.additional || 0;
-  //             const remainingQuota = totalQuota - usedQuota;
-  //             // ÷ jika offline remainingQuota
-  //             if (foundUnitQuota.is_active) {
-  //               setUnitQuota(totalQuota);
-
-  //               setRemainingQuota(remainingQuota);
-  //               setQuotaMessage(`Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`);
-
-  //               const issuedAmount = foundUnitQuota.issued || 0;
-  //               // Check if the issued amount exceeds the remaining quota
-  //               if (issuedAmount > remainingQuota) {
-  //                 setQuotaMessage(`Error: Issued amount exceeds remaining quota for ${selectedUnit}`);
-  //               }
-  //             } else {
-  //               setUnitQuota(0);
-  //               setRemainingQuota(0);
-  //               setQuotaMessage("Pembatasan kuota dinonaktifkan.");
-  //             }
-  //           }
-  //         }
-  //       } else {
-  //         setQuotaMessage("Offline quota data unavailable.");
-  //         console.error('No quota data available for the specified date or unit.');
-  //       }
-  //     } catch (error) {
-  //       console.error('Error fetching or loading quota data:', error);
-  //       setQuotaMessage("Error loading quota data.");
-  //     }
-  //   };
-
-  //   loadUnitDataQuota();
-  // }, [selectedUnit]);
- 
   useEffect(() => {
     const loadUnitDataQuota = async () => {
-      // Retrieve the transaction date from localStorage
-      let latestDataDateFormatted = "";
-      const savedDate =  await getDataFromStorage("tanggalTransaksi");
-      if (savedDate) {
-        const transactionDate = new Date(savedDate) ;
-        latestDataDateFormatted = transactionDate.toISOString();
-      } else {
-        console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+      const tanggal = await getDataFromStorage('tanggalTransaksi');
+      if (!tanggal) {
+        throw new Error('tanggalTransaksi is not available in storage.');
       }
-  
-      // // Default to today's date if no date is available
-      // const today = latestDataDateFormatted
-      //   ? new Date(latestDataDateFormatted)
-      //   : new Date();
-      // const formattedDate = today.toLocaleDateString("en-CA");
-      // console.log("Formatted Date:", formattedDate);
-  
+      let formattedDate: string;
       try {
         let quotaData;
         if (navigator.onLine) {
-          quotaData = await fetchQuotaData(latestDataDateFormatted);
+          if (typeof tanggal === 'string' && tanggal.includes('/')) {
+            const [day, month, year] = tanggal.split('/');
+            formattedDate =`${day}-${month}-${year}`
+            quotaData = await fetchQuotaData(formattedDate);
+          } 
         }
         if (!quotaData || !Array.isArray(quotaData)) {
           console.warn(
             "Online quota data unavailable or failed. Attempting offline data."
           );
           quotaData = await getDataFromStorage("unitQuota");
-          console.log("Offline Quota Data:", quotaData); // Log offline data for debugging
         }
-  
         if (quotaData && Array.isArray(quotaData)) {
           let foundUnitQuota = quotaData.find(
             (unit) => unit.unit_no === selectedUnit
@@ -454,11 +312,9 @@ const FormTRX: React.FC = () => {
   }, [selectedUnit, latestDate]);
   
   const loadDataQouta = useCallback(async (date: string) => {
-
     try {
       setLoading(true);
       const cachedData = await getDataFromStorage('unitQuota');
-      console.log("data Ofline ==", cachedData)
       if (cachedData) {
         setquotaData(cachedData);
       } else {
@@ -469,7 +325,6 @@ const FormTRX: React.FC = () => {
           site: station.site,
           fuel_station_type: station.fuel_station_type,
         }));
-        // setquotaData(formattedStations);
       }
     } catch (err) {
       console.error('Error loading station data:', err);
@@ -477,50 +332,26 @@ const FormTRX: React.FC = () => {
       setLoading(false);
       loadDataQouta(date)
     }
-
-  }, []);
-
-
-  useEffect(() => {
-    const storedData = localStorage.getItem("cardDataDashborad");
-    if (storedData) {
-      try {
-        const parsedData = JSON.parse(storedData);
-
-        console.log("Parsed data:", parsedData);
-
-        parsedData.forEach(async (item: DataDashboard) => {
-          await addDataDashboard(item);
-        });
-      } catch (error) {
-        console.error("Failed to parse stock data from local storage", error);
-      }
-    } else {
-
-    }
   }, []);
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      setStatus(1); // Change status to 1 when online
+      setStatus(1); 
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      setStatus(0); // Keep status as 0 when offline
+      setStatus(0); 
     };
 
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
-
-    // Cleanup event listeners on unmount
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
-
 
   useEffect(() => {
     const fetchStationData = () => {
@@ -542,8 +373,6 @@ const FormTRX: React.FC = () => {
     fetchStationData();
   }, []);
 
-
-
   const handleRadioChange = (event: CustomEvent) => {
     const selectedValue = event.detail.value as Typetrx;
     setSelectedType(selectedValue);
@@ -551,16 +380,10 @@ const FormTRX: React.FC = () => {
   };
 
   const isFormDisabled = !selectedUnit;
-
-
-
-
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files ? event.target.files[0] : null;
     if (file) {
       setPhoto(file);
-
-      // Create a preview of the selected photo
       const reader = new FileReader();
       reader.onloadend = () => {
         setPhotoPreview(reader.result as string);
@@ -579,31 +402,18 @@ const FormTRX: React.FC = () => {
   
     if (file) {
       try {
-       
-        console.log('Selected file:', file);
-        
         const uploadFoto = generateFoto(file); 
-        console.log('Generated signature:', uploadFoto ); 
         setPhoto(uploadFoto); 
-
         const fotoSignature = generateSignature(file); 
-        console.log('Generated signature:', fotoSignature); 
         setSignature(fotoSignature); 
-  
         const base64 = await convertToBase64(file);
-        console.log('Base64 representation:', base64); 
-  
-        
         setBase64(base64);
-  
       } catch (error) {
         console.error('Error handling file:', error);
       }
     }
   };
   
-
-
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -618,15 +428,12 @@ const FormTRX: React.FC = () => {
   };
 
   const generateSignature = (file: File): string => {
-    // Example: you could generate a hash, timestamp, or use any other method to create a signature
     return `${file.name}_${Date.now()}`;
   };
 
   const generateFoto = (file: File): string => {
-    // Example: you could generate a hash, timestamp, or use any other method to create a signature
     return `${file.name}_${Date.now()}`;
   };
-
 
   const handleClose = () => {
     route.push("/dashboard");
@@ -636,166 +443,33 @@ const FormTRX: React.FC = () => {
     flowMeterAkhir: number,
     cardData: any[] = [],
     setDataHome?: Function,
-    transactionType?: string // Optional parameter to check the transaction type
+    transactionType?: string 
   ) => {
-    // Check if transactionType is "Receipt" or "Receipt Kpc", skip if so
     if (transactionType === "Receipt" || transactionType === "Receipt Kpc") {
-      console.log("Transaction type is Receipt or Receipt Kpc; update skipped.");
-      return; // Exit the function without making any updates
+      return; 
     }
-
     const updatedCardData = cardData.map((item: any) =>
       item.title === "Flow Meter Akhir" ? { ...item, value: flowMeterAkhir } : item
     );
-
     if (setDataHome) {
-      setDataHome(updatedCardData); // Update state if the function is available
+      setDataHome(updatedCardData); 
     } else {
       console.warn("setDataHome function is not defined.");
     }
 
-    localStorage.setItem("cardDash", JSON.stringify(updatedCardData)); // Persist changes
+    localStorage.setItem("cardDash", JSON.stringify(updatedCardData)); 
   };
 
 
   useEffect(() => {
     const savedDate = localStorage.getItem("tanggalTransaksi");
     if (savedDate) {
-     
       setTanggalTransaksi(new Date(savedDate).toLocaleDateString('en-GB'));  
     }
   }, []);
-  
-  
-  
-  // const handlePost = async (e: React.FormEvent) => {
-  //   e.preventDefault(); // Prevent default form submission behavior
-
-  //   const validQuantity = quantity ?? 0;
-  //   if (isNaN(validQuantity) || validQuantity <= 0) {
-  //     setQuantityError("Qty Issued harus lebih besar dari 0");
-  //     setIsError(true);
-  //     return;
-  //   }
-
-  //   if (
-  //     !selectedType ||
-  //     !selectedUnit ||
-  //     !operatorOptions ||
-  //     quantity === null ||
-  //     fuelman_id === null ||
-  //     fbr === null ||
-  //     flowMeterAwal === null ||
-  //     flowMeterAkhir === null ||
-  //     !startTime ||
-  //     !endTime
-  //   ) {
-  //     setShowError(true);
-  //     setShowErrorType(true);
-  //     setemployeeError(true);
-  //     setShowJamError(true);
-  //     setShowErrorHmlast(true);
-  //     setShowJamErrorInput(true);
-  //     return;
-  //   }
-
-  //   const typeTrxValue = typeTrx[0];
-  //   const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
-  //   const fromDataId = Date.now().toString();
-
-  //   const lkf_id = await getLatestLkfId();
-
-  //   const dataPost: DataFormTrx = {
-  //     from_data_id: fromDataId,
-  //     no_unit: selectedUnit!,
-  //     model_unit: model!,
-  //     owner: owner!,
-  //     date_trx: new Date().toISOString(),
-  //     hm_last: Number(hmLast),
-  //     hm_km: Number(hmkmValue),
-  //     qty_last: qtyLast ?? 0,
-  //     qty: quantity ?? 0,
-  //     flow_start: Number(flowMeterAwal),
-  //     flow_end: flow_end,
-  //     name_operator: fullName!,
-  //     fbr: fbrResult,
-  //     lkf_id: lkf_id ?? "",
-  //     signature: signatureBase64 ?? "",
-  //     type: selectedType?.name ?? "",
-  //     foto: photoPreview ?? "",
-  //     fuelman_id: fuelman_id!,
-  //     jde_operator: fuelman_id!,
-  //     status: status ?? 0,
-  //     date: "",
-  //     start: startTime,
-  //     end: endTime,
-  //   };
-
-  //   try {
-  //     if (isOnline) {
-  //       const response = await postTransaksi(dataPost);
-  //       await insertNewData(dataPost);
-  //       await insertNewDataHistori(dataPost);
-  //       updateCard();
-
-  //       if (response.status === 200) {
-  //         dataPost.status = 1;
-  //         await insertNewData(dataPost);
-  //         await insertNewDataHistori(dataPost);
-  //         setIsAlertOpen(true);
-
-  //         if (quantity > 0) {
-  //           updateLocalStorageQuota(selectedUnit, quantity);
-  //         }
-
-  //         // Update Flow Meter Akhir in cardDash (online mode)
-  //         const cardDashOnline = JSON.parse(localStorage.getItem("cardDash") || "[]");
-  //         updateCardDashFlowMeter(flow_end, cardDashOnline);
-
-  //         alert("Transaksi sukses dikirim ke server");
-  //       }
-  //     } else {
-  //       const unitQuota = await getDataFromStorage("unitQuota");
-  //       const newQty = dataPost.qty;
-
-  //       for (let index = 0; index < unitQuota.length; index++) {
-  //         const element = unitQuota[index];
-
-  //         if (element.unit_no === dataPost.no_unit) {
-  //           element.used = element.used + newQty;
-  //         }
-  //       }
-
-  //       const cardDashOffline = JSON.parse(localStorage.getItem("cardDash") || "[]");
-  //       if (Array.isArray(cardDashOffline)) {
-  //         // Update Flow Meter Akhir in cardDash (offline mode)
-  //         updateCardDashFlowMeter(flow_end, cardDashOffline);
-  //       } else {
-  //         console.error("Invalid cardDash data in localStorage");
-  //       }
-
-  //       dataPost.status = 0;
-  //       await insertNewData(dataPost);
-  //       await insertNewDataHistori(dataPost);
-  //       await saveDataToStorage("unitQuota", unitQuota);
-        
-  //     }
-     
-  //     route.push("/dashboard");
-
-
-  //   } catch (error) {
-  //     console.error("Error occurred while posting data:", error);
-  //     setModalMessage("Error occurred while posting data: " + error);
-  //     setErrorModalOpen(true);
-  //   }
-  // };
-
-
-  
 
   const handlePost = async (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent default form submission behavior
+    e.preventDefault(); 
   
     const validQuantity = quantity ?? 0;
     if (isNaN(validQuantity) || validQuantity <= 0) {
@@ -834,10 +508,7 @@ const FormTRX: React.FC = () => {
     let latestDataDateFormatted = "";
     const savedDate =  await getDataFromStorage("tanggalTransaksi");
     if (savedDate) {
-      // Mengonversi string tanggal ke objek Date
       const transactionDate = new Date(savedDate);
-      
-      // Periksa apakah objek Date valid
       if (!isNaN(transactionDate.getTime())) {
         // Jika valid, tambahkan 12 jam ke tanggal
         transactionDate.setHours(transactionDate.getHours() + 12);
@@ -847,21 +518,18 @@ const FormTRX: React.FC = () => {
       } else {
         // Jika tanggal tidak valid, log kesalahan
         console.error("Saved date is invalid:", savedDate);
-        latestDataDateFormatted = "Invalid Date";  // Atau bisa menggunakan format fallback
+        latestDataDateFormatted = "Invalid Date";  
       }
     } else {
-      // Jika tidak ada tanggal di localStorage
       console.error("No saved date available in localStorage for 'tanggalTransaksi'");
       latestDataDateFormatted = "No Date Available";
     }
-    
-    console.log("Formatted Date:", latestDataDateFormatted);
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
       model_unit: model!,
       owner: owner!,
-      date_trx: latestDataDateFormatted, // Use ISO formatted date here
+      date_trx: latestDataDateFormatted,
       hm_last: Number(hmLast),
       hm_km: Number(hmkmValue),
       qty_last: qtyLast ?? 0,
@@ -881,30 +549,20 @@ const FormTRX: React.FC = () => {
       start: startTime,
       end: endTime,
     };
-  
     try {
       if (isOnline) {
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost);
         await addDataHistory(dataPost)
-    
-
-  
         updateCard();
-  
         if (response.status === 200) {
           dataPost.status = 1;
           await insertNewData(dataPost);
           await addDataHistory(dataPost)
-         
-  
           setIsAlertOpen(true);
-  
           if (quantity > 0) {
             updateLocalStorageQuota(selectedUnit, quantity);
           }
-  
-          // Update Flow Meter Akhir in cardDash (online mode)
           const cardDashOnline = JSON.parse(localStorage.getItem("cardDash") || "[]");
           updateCardDashFlowMeter(flow_end, cardDashOnline);
   
@@ -921,24 +579,16 @@ const FormTRX: React.FC = () => {
             element.used = element.used + newQty;
           }
         }
-  
         const cardDashOffline = JSON.parse(localStorage.getItem("cardDash") || "[]");
         if (Array.isArray(cardDashOffline)) {
-          // Update Flow Meter Akhir in cardDash (offline mode)
           updateCardDashFlowMeter(flow_end, cardDashOffline);
-        } else {
-          console.error("Invalid cardDash data in localStorage");
-        }
-  
+        } 
         dataPost.status = 0;
         await insertNewData(dataPost);
         await insertNewDataHistori(dataPost);
- 
         await saveDataToStorage("unitQuota", unitQuota);
       }
-
       route.push("/dashboard");
-  
     } catch (error) {
       console.error("Error occurred while posting data:", error);
       setModalMessage("Error occurred while posting data: " + error);
@@ -946,8 +596,6 @@ const FormTRX: React.FC = () => {
     }
   };
   
-  
-
   const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
     if (unitQuota) {
@@ -963,16 +611,9 @@ const FormTRX: React.FC = () => {
         }
         return unit;
       });
-
-
       await saveDataToStorage("unitQouta", JSON.stringify(updatedData));
     }
   };
-
-
-
-
-
 
   const insertNewData = async (data: DataFormTrx) => {
     try {
@@ -983,8 +624,6 @@ const FormTRX: React.FC = () => {
     }
   };
 
-  
-
   const insertNewDataHistori = async (data: DataFormTrx) => {
     try {
       await addDataHistory(data);
@@ -994,16 +633,10 @@ const FormTRX: React.FC = () => {
     }
   };
 
-
-  
-
-
-
   const handleSignatureConfirm = (newSignature: string) => {
     setSignatureBase64(newSignature);
 
   };
-
 
   useEffect(() => {
     const loadUnitData = async () => {
@@ -1038,7 +671,6 @@ const FormTRX: React.FC = () => {
 
   }, [operatorOptions]);
 
-
   useEffect(() => {
     const loadQoutaData = async () => {
       const cachedData = await getDataFromStorage('unitQouta');
@@ -1070,8 +702,6 @@ const FormTRX: React.FC = () => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
     if (e.nativeEvent.key === "Enter") {
       e.preventDefault();
-
-      // Check which input is focused and move to the next one
       if (input1Ref.current) {
         input2Ref.current?.setFocus();
       }
@@ -1092,23 +722,17 @@ const FormTRX: React.FC = () => {
     }
   };
   
-
-
   function setBase64(value: SetStateAction<string | undefined>): void {
     throw new Error("Function not implemented.");
   }
 
-
   useEffect(() => {
     const fetchJdeOptions = async () => {
       const storedJdeOptions = await getDataFromStorage("allOperator");
-
-
       if (storedJdeOptions) {
         try {
           if (typeof storedJdeOptions === 'string') {
             const parsedJdeOptions = JSON.parse(storedJdeOptions);
-
             setJdeOptions(parsedJdeOptions);
           } else {
             setJdeOptions([]);
@@ -1135,19 +759,13 @@ const FormTRX: React.FC = () => {
       console.warn("Operator options are empty. Cannot find matching option.");
       return;
     }
-
-
     const selectedJdeOption = operatorOptions.find((operator) =>
       String(operator.JDE).trim() === String(selectedValue).trim()
     );
-
     if (selectedJdeOption) {
-
       setFullName(selectedJdeOption.fullname);
       setFuelmanId(selectedValue);
     } else {
-
-      console.log("No matching operator option found.");
       setFullName("");
       setFuelmanId("");
     }
@@ -1181,40 +799,28 @@ const FormTRX: React.FC = () => {
     return isShift1 || isShift2;
   };
   
-
-  
-
-
   useEffect(() => {
     const determineShift = () => {
       const now = new Date();
       const currentHour = now.getHours();
       const isDayShift = currentHour >= 6 && currentHour < 18;
-      const isNightShift = currentHour >= 18 || currentHour < 6;
-
-      // Set the shift based on the current time
+      const isNightShift = currentHour >= 18 || currentHour < 6
       if (isDayShift) {
-        
         setShift('Day');
       } else if (isNightShift) {
-        setShift('Night Shift');
+        setShift('Night');
       }
     };
-
     determineShift();
   }, []);
-
 
   const handleStartTimeChange = (e: CustomEvent) => {
     const newStartTime = e.detail.value as string;
     setStartTime(newStartTime);
-  
-    // Get the current hour to determine the current shift
     const now = new Date();
     const currentHour = now.getHours();
     const isDayShift = currentHour >= 6 && currentHour < 18;
     const isNightShift = currentHour >= 18 || currentHour < 6;
-  
     // Define the shift start times based on current shift
     const shiftStart = isDayShift ? 6 : 18;  // 06:00 for Day shift, 18:00 for Night shift
     const shiftEnd = isDayShift ? 18 : 6;    // 18:00 for Day shift, 06:00 for Night shift
@@ -1234,7 +840,6 @@ const FormTRX: React.FC = () => {
       setShowJamErrorInput(false);
     }
   
-    // Proceed with endTime validation
     if (endTime) {
       if (!validateShiftTime(newStartTime, endTime)) {
         setShowJamError(true);
@@ -1290,7 +895,6 @@ const FormTRX: React.FC = () => {
       try {
         const parsedData = JSON.parse(dataFlowDash);
         if (Array.isArray(parsedData)) {
-          // Mencari item dengan title "Flow Meter Awal"
           const flowMeterItem = parsedData.find(
             (item: { title: string }) => item.title === "Flow Meter Akhir"
           );
@@ -1327,55 +931,37 @@ const FormTRX: React.FC = () => {
         setIsError(true);
         return;
       }
-  
       const quota = remainingQuota || 0;
-  
       if (typeof selectedUnit === "string" && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
-        // Validate against remaining quota for specific unit types
         if (inputQuantity > quota) {
           setQuantityError("Qty tidak boleh lebih besar dari sisa kuota.");
           setIsError(true);
           return;
         }
       } else {
-        // Validate against stock on hand
         if (inputQuantity > stock) {
           setQuantityError("Qty tidak boleh lebih besar dari Stock On Hand.");
           setIsError(true);
           return;
         }
       }
-    } else {
-      // Skip stock validation for other transaction types
-      console.log("Jenis transaksi tidak memerlukan validasi stok.");
     }
-  
-    // If all validations pass
     setQuantity(inputQuantity);
   };
-  
-
-
-
 
   const calculateFlowEnd = (typeTrx: string): string | number => {
     if (flowMeterAwal !== undefined && quantity !== undefined) {
       if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
-        // For "Receipt" or "Receipt KPC", simply return flowMeterAwal
         return flowMeterAwal !== 0 ? flowMeterAwal : "N/A";
       }
 
       if (typeTrx === "Issued" || typeTrx === "Transfer") {
-        // For "Issued" or "Transfer", calculate totalFlowEnd
         const totalFlowEnd = flowMeterAwal + (quantity ?? 0);
         return totalFlowEnd !== 0 ? totalFlowEnd : "N/A";
       }
     }
-    // Return empty string if no conditions are met or inputs are invalid
     return "";
   };
-
-
 
   const filteredUnitOptions = (selectedType &&
     (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer'))
@@ -1385,53 +971,34 @@ const FormTRX: React.FC = () => {
 
   }, [hmkmLast]);
 
- 
-
- 
-
-
- 
-
   const handleUnitChange = async (
     newValue: SingleValue<{ value: string; label: string }>,
     actionMeta: ActionMeta<{ value: string; label: string }>
   ) => {
     if (newValue) {
       const unitValue = newValue.value;
-      setSelectedUnit(unitValue); // Set the selected unit
-  
-      // Find the selected unit option from unitOptions
+      setSelectedUnit(unitValue); 
       const selectedUnitOption = unitOptions.find(
         (unit) => unit.unit_no === unitValue
       );
   
       if (selectedUnitOption) {
-        // Update state based on the online data
         setModel(selectedUnitOption.brand);
         setOwner(selectedUnitOption.owner);
-        setHmkmValue(selectedUnitOption.hm_km); // Set the hm_km value here
-        setHmKmLast(selectedUnitOption.hm_last); // Set hm_last if available
+        setHmkmValue(selectedUnitOption.hm_km); 
+        setHmKmLast(selectedUnitOption.hm_last); 
         setQtyValue(selectedUnitOption.qty);
-  
         const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
         setKoutaLimit(newKoutaLimit);
-  
         setShowError(
           unitValue.startsWith("LV") ||
           (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
         );
       } else {
-        console.log("You are offline");
-  
         try {
-          // Retrieve data from IndexedDB using fetchLatestHmLast
           const offlineData = await fetchLatestHmLast(unitValue);
-         
-  
           const offlineHM = await getDataFromStorage('lastTrx');
           const hmKmValues = offlineHM.map((item: { hm_km: number }) => item.hm_km);
-          console.log("HM KM Values:", hmKmValues);
-  
           if (offlineData.hm_km !== undefined) {
             setHmKmLast(offlineData.hm_km); // Set hm_km from offline data
           }
@@ -1455,28 +1022,19 @@ const FormTRX: React.FC = () => {
   };
 
   useEffect(() => {
-    const calculateFBR = (): number => {
-      // Ensure all values are numbers before calculation
+    const calculateFBR = (): num
+    ber => {
       if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
         const difference = hmkmValue - hmLast;
-        console.log('Difference offline/online (hmkmValue - hmLast):', difference);
-  
         if (qtyLast === 0) {
-          console.log('qtyLast cannot be zero');
           return 0;
         }
-  
         if (difference > 0) {
           const result = difference / qtyLast;
-          console.log('Calculated FBR offline/online:', result);
-          return parseFloat(result.toFixed(2)); // Round to 2 decimal places
-        } else {
-          console.log('Difference is not positive');
-        }
-      } else {
-        console.log('Invalid data: hmkmValue, hmLast, or qtyLast is not a number');
-      }
-      return 0; // Fallback in case the calculation doesn't happen
+          return parseFloat(result.toFixed(2)); 
+        } 
+      } 
+      return 0; 
     };
   
     const fbrResult = calculateFBR();
@@ -1484,13 +1042,9 @@ const FormTRX: React.FC = () => {
   
   }, [hmkmValue, hmLast, qtyLast]);
   
-  
-  
   useEffect(() => {
     const getOfflineData = async () => {
-  
       setHmLast(0);  
-
       const offlineData = await fetchLatestHmLast(selectedUnit);
       if (offlineData.hm_km !== undefined) {
         setHmLast(offlineData.hm_km);  
@@ -1500,50 +1054,34 @@ const FormTRX: React.FC = () => {
       }
 
     };
-
-   
     getOfflineData();
   }, [selectedUnit]);
  
-
-
-
-
   const calculateFBR = (): number => {
     if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast=== 'number') {
-      const difference = hmkmValue - hmLast;
-      console.log('Difference (hmLast - hmkm):', difference);
-
+      const difference = hmkmValue - hmLast
       if (qtyValue === 0) {
-        console.log('qtyValue cannot be zero');
         return 0;
       }
-
       if (difference > 0) {
         const result = difference / qtyLast;
-        console.log('Calculated FBR:', result);
         return parseFloat(result.toFixed(2));
-      } else {
-        console.log('Difference is not positive');
-      }
+      } 
     } else {
-     
+
     }
     return 0;
   };
 
-  // Update FBR result
   useEffect(() => {
     setFbrResult(calculateFBR());
   }, [hmkmValue, hmLast, qtyLast]);
 
   const showAlert = () => {
     setIsAlertOpen(true);
-
-    // Menambahkan delay 3 detik sebelum menutup alert
     setTimeout(() => {
       setIsAlertOpen(false);
-    }, 5000); // 3000ms = 3 detik
+    }, 3000); 
   };
 
   return (
@@ -1570,7 +1108,7 @@ const FormTRX: React.FC = () => {
           <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
           <IonTitle
             style={{
-              color: remainingQuota === 0 ? 'red' : '#8AAD43', // Jika remainingQuota 0, beri warna merah
+              color: remainingQuota === 0 ? 'red' : '#8AAD43', 
             }}
           >
             Sisa Kuota: {remainingQuota > 0 ? `${remainingQuota} Liter` : '0 Liter'}
@@ -1595,7 +1133,7 @@ const FormTRX: React.FC = () => {
                     <IonRadioGroup
                       style={{
                         backgroundColor: showErrorType && selectedType === undefined ? "rgba(255, 0, 0, 0.1)" : "transparent", // Apply red background if error
-                        padding: "10px", // Ensure the block has padding for visibility
+                        padding: "10px", 
                         borderRadius: "5px",
 
                       }}

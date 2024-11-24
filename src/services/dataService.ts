@@ -12,7 +12,7 @@ import { getDataLastLKF, getDataLastTrx, getPrevUnitTrx } from '../hooks/getData
 import { postAuthLogin } from '../hooks/useAuth';
 import { getHomeByIdLkf } from '../hooks/getHome';
 
-
+import { addHours } from 'date-fns'; 
 
 // Utility function to save data to Capacitor Preferences
 export const saveDataToStorage = async (key: string, data: any): Promise<void> => {
@@ -105,13 +105,42 @@ export const fetchUnitData = async (): Promise<any[]> => {
 
 
 // Fetch quota data from API and store it in Capacitor Preferences
+// export const fetchQuotaData = async (date: string): Promise<any[]> => {
+//   try {
+//     const response = await getAllQuota(date); 
+  
+//     if (response.status === '200' && Array.isArray(response.data)) {
+//       await saveDataToStorage('unitQuota', response.data);
+//       return response.data;
+//     } else {
+//       console.error('Unexpected data format');
+//       return [];
+//     }
+//   } catch (error) {
+//     console.error('Failed to fetch quota data', error);
+//     return [];
+//   }
+// };
+
+
 export const fetchQuotaData = async (date: string): Promise<any[]> => {
   try {
-    const response = await getAllQuota(date); 
+    const response = await getAllQuota(date);
   
     if (response.status === '200' && Array.isArray(response.data)) {
-      await saveDataToStorage('unitQuota', response.data);
-      return response.data;
+      // Menambahkan 12 jam ke setiap tanggal dalam data yang diterima
+      const updatedData = response.data.map((item: { date: string | number | Date; }) => {
+        if (item.date) {
+          const updatedDate = addHours(new Date(item.date), 12); // Menambahkan 12 jam
+          item.date = updatedDate.toISOString(); // Memperbarui tanggal dengan format ISO
+        }
+        return item;
+      });
+
+      // Menyimpan data yang telah diperbarui ke storage
+      await saveDataToStorage('unitQuota', updatedData);
+
+      return updatedData;
     } else {
       console.error('Unexpected data format');
       return [];
@@ -121,7 +150,6 @@ export const fetchQuotaData = async (date: string): Promise<any[]> => {
     return [];
   }
 };
-
 
 
 export const fetchSondingData = async (): Promise<any[]> => {
