@@ -44,7 +44,11 @@ import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getAllQuota } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
-import CameraInput from "../../components/takeFoto";
+
+import { deleteAllDataTransaksi } from "../../utils/delete";
+import { getCalculationIssued } from "../../utils/getData";
+
+
 import { saveDataToStorage } from "../../services/dataService";
 interface Typetrx {
   id: number;
@@ -1018,7 +1022,8 @@ const FormTRX: React.FC = () => {
   };
 
   useEffect(() => {
-    const calculateFBR = (): number => {
+    const calculateFBR = (): num
+    ber => {
       if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
         const difference = hmkmValue - hmLast;
         if (qtyLast === 0) {
@@ -1464,7 +1469,7 @@ const FormTRX: React.FC = () => {
               </IonRow>
               <IonRow>
                 <IonCol>
-                <CameraInput setPhotoPreview={setPhotoPreview} />
+                {/* <CameraInput setPhotoPreview={setPhotoPreview} /> */}
 
                 </IonCol>
                 <IonCol>
