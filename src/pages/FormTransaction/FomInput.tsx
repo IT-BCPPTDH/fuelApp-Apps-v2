@@ -1022,8 +1022,7 @@ const FormTRX: React.FC = () => {
   };
 
   useEffect(() => {
-    const calculateFBR = (): num
-    ber => {
+    const calculateFBR = (): number => {
       if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
         const difference = hmkmValue - hmLast;
         if (qtyLast === 0) {
