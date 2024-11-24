@@ -464,8 +464,24 @@ const FormTRX: React.FC = () => {
     }
   }, []);
 
+
+  const calculateFlowEnd = (typeTrx: string): string | number => {
+    if (flowMeterAwal !== undefined && quantity !== undefined) {
+      if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
+        const totalFlowEnd = flowMeterAwal;
+        return totalFlowEnd
+      }
+
+      if (typeTrx === "Issued" || typeTrx === "Transfer") {
+        const totalFlowEnd = flowMeterAwal + (quantity ?? 0);
+        return totalFlowEnd !== 0 ? totalFlowEnd : "N/A";
+      }
+    }
+    return "";
+  };
+  
   const handlePost = async (e: React.FormEvent) => {
-    e.preventDefault(); 
+    e.preventDefault();
   
     const validQuantity = quantity ?? 0;
     if (isNaN(validQuantity) || validQuantity <= 0) {
@@ -496,23 +512,28 @@ const FormTRX: React.FC = () => {
     }
   
     const typeTrxValue = typeTrx[0];
-    const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
-    const fromDataId = Date.now().toString();
+    let flow_end: number = 0;
+    if (typeTrxValue.name === "Receipt" || typeTrxValue.name === "Receipt KPC") {
+      flow_end = flowMeterAwal ?? 0;  
+    } else {
+      flow_end = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
+    }
   
+    const fromDataId = Date.now().toString();
+    
     const lkf_id = await getLatestLkfId();
   
     let latestDataDateFormatted = "";
-    const savedDate =  await getDataFromStorage("tanggalTransaksi");
+    const savedDate = await getDataFromStorage("tanggalTransaksi");
     if (savedDate) {
       const transactionDate = new Date(savedDate);
       if (!isNaN(transactionDate.getTime())) {
-        // Jika valid, tambahkan 12 jam ke tanggal
+        // If the date is valid, add 12 hours
         transactionDate.setHours(transactionDate.getHours() + 12);
         
-        // Format tanggal ke ISO string
+        // Format the date to ISO string
         latestDataDateFormatted = transactionDate.toISOString(); 
       } else {
-        // Jika tanggal tidak valid, log kesalahan
         console.error("Saved date is invalid:", savedDate);
         latestDataDateFormatted = "Invalid Date";  
       }
@@ -520,6 +541,7 @@ const FormTRX: React.FC = () => {
       console.error("No saved date available in localStorage for 'tanggalTransaksi'");
       latestDataDateFormatted = "No Date Available";
     }
+  
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -531,7 +553,7 @@ const FormTRX: React.FC = () => {
       qty_last: qtyLast ?? 0,
       qty: quantity ?? 0,
       flow_start: Number(flowMeterAwal),
-      flow_end: flow_end,
+      flow_end: flow_end,  // flow_end is set based on the logic above
       name_operator: fullName!,
       fbr: fbrResult,
       lkf_id: lkf_id ?? "",
@@ -545,16 +567,17 @@ const FormTRX: React.FC = () => {
       start: startTime,
       end: endTime,
     };
+  
     try {
       if (isOnline) {
         const response = await postTransaksi(dataPost);
         await insertNewData(dataPost);
-        await addDataHistory(dataPost)
+        await addDataHistory(dataPost);
         updateCard();
         if (response.status === 200) {
           dataPost.status = 1;
           await insertNewData(dataPost);
-          await addDataHistory(dataPost)
+          await addDataHistory(dataPost);
           setIsAlertOpen(true);
           if (quantity > 0) {
             updateLocalStorageQuota(selectedUnit, quantity);
@@ -591,6 +614,135 @@ const FormTRX: React.FC = () => {
       setErrorModalOpen(true);
     }
   };
+  
+  
+  // const handlePost = async (e: React.FormEvent) => {
+  //   e.preventDefault(); 
+  
+  //   const validQuantity = quantity ?? 0;
+  //   if (isNaN(validQuantity) || validQuantity <= 0) {
+  //     setQuantityError("Qty Issued harus lebih besar dari 0");
+  //     setIsError(true);
+  //     return;
+  //   }
+  
+  //   if (
+  //     !selectedType ||
+  //     !selectedUnit ||
+  //     !operatorOptions ||
+  //     quantity === null ||
+  //     fuelman_id === null ||
+  //     fbr === null ||
+  //     flowMeterAwal === null ||
+  //     flowMeterAkhir === null ||
+  //     !startTime ||
+  //     !endTime
+  //   ) {
+  //     setShowError(true);
+  //     setShowErrorType(true);
+  //     setemployeeError(true);
+  //     setShowJamError(true);
+  //     setShowErrorHmlast(true);
+  //     setShowJamErrorInput(true);
+  //     return;
+  //   }
+  
+  //   const typeTrxValue = typeTrx[0];
+  //   const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
+  //   const fromDataId = Date.now().toString();
+  
+  //   const lkf_id = await getLatestLkfId();
+  
+  //   let latestDataDateFormatted = "";
+  //   const savedDate =  await getDataFromStorage("tanggalTransaksi");
+  //   if (savedDate) {
+  //     const transactionDate = new Date(savedDate);
+  //     if (!isNaN(transactionDate.getTime())) {
+  //       // Jika valid, tambahkan 12 jam ke tanggal
+  //       transactionDate.setHours(transactionDate.getHours() + 12);
+        
+  //       // Format tanggal ke ISO string
+  //       latestDataDateFormatted = transactionDate.toISOString(); 
+  //     } else {
+  //       // Jika tanggal tidak valid, log kesalahan
+  //       console.error("Saved date is invalid:", savedDate);
+  //       latestDataDateFormatted = "Invalid Date";  
+  //     }
+  //   } else {
+  //     console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+  //     latestDataDateFormatted = "No Date Available";
+  //   }
+  //   const dataPost: DataFormTrx = {
+  //     from_data_id: fromDataId,
+  //     no_unit: selectedUnit!,
+  //     model_unit: model!,
+  //     owner: owner!,
+  //     date_trx: latestDataDateFormatted,
+  //     hm_last: Number(hmLast),
+  //     hm_km: Number(hmkmValue),
+  //     qty_last: qtyLast ?? 0,
+  //     qty: quantity ?? 0,
+  //     flow_start: Number(flowMeterAwal),
+  //     flow_end: flow_end,
+  //     name_operator: fullName!,
+  //     fbr: fbrResult,
+  //     lkf_id: lkf_id ?? "",
+  //     signature: signatureBase64 ?? "",
+  //     type: selectedType?.name ?? "",
+  //     foto: photoPreview ?? "",
+  //     fuelman_id: fuelman_id!,
+  //     jde_operator: fuelman_id!,
+  //     status: status ?? 0,
+  //     date: "",
+  //     start: startTime,
+  //     end: endTime,
+  //   };
+  //   try {
+  //     if (isOnline) {
+  //       const response = await postTransaksi(dataPost);
+  //       await insertNewData(dataPost);
+  //       await addDataHistory(dataPost)
+  //       updateCard();
+  //       if (response.status === 200) {
+  //         dataPost.status = 1;
+  //         await insertNewData(dataPost);
+  //         await addDataHistory(dataPost)
+  //         setIsAlertOpen(true);
+  //         if (quantity > 0) {
+  //           updateLocalStorageQuota(selectedUnit, quantity);
+  //         }
+  //         const cardDashOnline = JSON.parse(localStorage.getItem("cardDash") || "[]");
+  //         updateCardDashFlowMeter(flow_end, cardDashOnline);
+  
+  //         alert("Transaksi sukses dikirim ke server");
+  //       }
+  //     } else {
+  //       const unitQuota = await getDataFromStorage("unitQuota");
+  //       const newQty = dataPost.qty;
+  
+  //       for (let index = 0; index < unitQuota.length; index++) {
+  //         const element = unitQuota[index];
+  
+  //         if (element.unit_no === dataPost.no_unit) {
+  //           element.used = element.used + newQty;
+  //         }
+  //       }
+  //       const cardDashOffline = JSON.parse(localStorage.getItem("cardDash") || "[]");
+  //       if (Array.isArray(cardDashOffline)) {
+  //         updateCardDashFlowMeter(flow_end, cardDashOffline);
+  //       } 
+  //       dataPost.status = 0;
+  //       await insertNewData(dataPost);
+  //       await insertNewDataHistori(dataPost);
+  //       await saveDataToStorage("unitQuota", unitQuota);
+  //     }
+  //     route.push("/dashboard");
+  //   } catch (error) {
+  //     console.error("Error occurred while posting data:", error);
+  //     setModalMessage("Error occurred while posting data: " + error);
+  //     setErrorModalOpen(true);
+  //   }
+  // };
   
   const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
     const unitQuota = await getDataFromStorage("unitQouta");
@@ -945,19 +1097,7 @@ const FormTRX: React.FC = () => {
     setQuantity(inputQuantity);
   };
 
-  const calculateFlowEnd = (typeTrx: string): string | number => {
-    if (flowMeterAwal !== undefined && quantity !== undefined) {
-      if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
-        return flowMeterAwal !== 0 ? flowMeterAwal : "N/A";
-      }
-
-      if (typeTrx === "Issued" || typeTrx === "Transfer") {
-        const totalFlowEnd = flowMeterAwal + (quantity ?? 0);
-        return totalFlowEnd !== 0 ? totalFlowEnd : "N/A";
-      }
-    }
-    return "";
-  };
+ 
 
   const filteredUnitOptions = (selectedType &&
     (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer'))

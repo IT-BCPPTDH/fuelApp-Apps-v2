@@ -92,10 +92,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   }, []);
 
   useEffect(() => {
-    loadStationData();
+    loadStationData(); 
     const timeoutId = setTimeout(() => {
-      loadStationData();
-    }, 2000);
+      loadStationData(); 
+    }, 2000); 
     return () => clearTimeout(timeoutId);
   }, []);
 
@@ -182,11 +182,11 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     try {
       const cachedData = await getDataFromStorage("allOperator");
       if (cachedData && Array.isArray(cachedData)) {
-        setJdeOptions(cachedData);
+        setJdeOptions(cachedData); 
       } else {
         const fetchedJdeOptions = await fetchOperatorData();
         if (fetchedJdeOptions.length > 0) {
-          setJdeOptions(fetchedJdeOptions);
+          setJdeOptions(fetchedJdeOptions); 
         } else {
           console.error("No valid operator data fetched");
         }
@@ -197,7 +197,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   useEffect(() => {
-    loadOperator();
+    loadOperator(); 
   }, []);
 
   const loadUnitData = async () => {
@@ -348,4 +348,5 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     </IonPage>
   );
 };
+
 export default Login;

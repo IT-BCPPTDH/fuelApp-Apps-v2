@@ -18,11 +18,9 @@ import {
   useIonRouter,
   IonPage,
   IonCard,
-  IonImg,
   IonRefresher,
   IonRefresherContent,
   IonToast,
-  IonSpinner,
 } from "@ionic/react";
 
 import "./style.css";
@@ -97,8 +95,7 @@ const OpeningForm: React.FC = () => {
   const [jdeOptions, setJdeOptions] = useState<
   { JDE: string; fullname: string }[]
   >([]);
-  const [isTransaksiTanggalSet, setIsTransaksiTanggalSet] = useState(false);
-
+  
   useEffect(() => {
     const determineShift = () => {
       const now = new Date();
@@ -145,14 +142,8 @@ const OpeningForm: React.FC = () => {
       const formattedDate = new Date(selectedDate).toLocaleDateString();
       setTanggalTrx(formattedDate);
       saveDataToStorage("tanggalTransaksi", formattedDate)
-      setIsTransaksiTanggalSet(true);
     }
   };
-
-
-
- ;
-
 
   const handlePost = async () => {
     console.log(0)
@@ -421,19 +412,6 @@ const handleFlowMeterAwalChange = (e: CustomEvent) => {
   setFlowMeterAwal(value);
 };
 
-
-useEffect(() => {
-  setLoading(true); // Show spinner initially
-  const loadData = async () => {
-    // Simulate loading process
-    await fetchSondingOffline();
-    setTimeout(() => {
-      setLoading(false); // Hide spinner after 2 seconds
-    }, 2000);
-  };
-
-  loadData();
-}, []);
 const handleOpeningSondingChange = (e: CustomEvent) => {
   const value = e.detail.value;
 
@@ -484,36 +462,6 @@ const handleOpeningDipChange = (e: CustomEvent) => {
             <h4>Site : {site}</h4>
             <h4>Station : {station}</h4>
           </div>
-          <IonModal isOpen={loading} className="custom-modal">
-       
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '50%',
-            backgroundColor: '#73a33f00',
-          }}
-        >
-          <div style={{ textAlign: 'center', backgroundColor: '#73a33f00', padding: '20px', borderRadius: '8px' }}>
-          <IonImg
-           
-              src="logodhbaru1.png"
-              alt="Logo DH"
-              style={{
-                width: '220px',
-                height: '80px',
-                position: 'relative',
-                zIndex: 1,
-              }}
-            />
-           
-            <p style={{ justifyContent:"center" , fontSize:"36px" , color:"orange"}}>Proses Load Data!!</p>
-            <p style={{ justifyContent:"center" , fontSize:"24px" , color:"green"}}>Mohon Tunggu Sebentar!!</p>
-            <IonSpinner name="crescent"  className="ion-spinner"/>
-          </div>
-        </div>
-      </IonModal>
           <IonRow className="padding-content">
             <IonCol style={{ display: "grid" }}>
               <IonLabel>
@@ -567,7 +515,6 @@ const handleOpeningDipChange = (e: CustomEvent) => {
               type="number"
               value={openingSonding}
               onIonChange={handleOpeningSondingChange}
-              disabled={!isTransaksiTanggalSet}
             />
             {showError && openingSonding === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
@@ -585,7 +532,6 @@ const handleOpeningDipChange = (e: CustomEvent) => {
               onIonChange={handleOpeningDipChange}
               readonly={stationOptions.includes(station ||'')}
               onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
-              disabled={!isTransaksiTanggalSet}
 
             />
             {showError && openingDip === undefined && (
@@ -600,7 +546,6 @@ const handleOpeningDipChange = (e: CustomEvent) => {
               className={`custom-input`}
               type="number"
               value={flowMeterAwal}
-              disabled={!isTransaksiTanggalSet}
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
                 handleFlowMeterAwalChange(e); // Call the handler here
@@ -626,7 +571,6 @@ const handleOpeningDipChange = (e: CustomEvent) => {
               type="number"
               placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
               value={hmAkhir}
-              disabled={!isTransaksiTanggalSet}
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
                 if (station !== "FT" && value === 0) {
@@ -642,37 +586,33 @@ const handleOpeningDipChange = (e: CustomEvent) => {
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
-    <IonRow className="padding-content btn-start">
-    <IonButton
-        className="check-button"
-        onClick={handlePost}
-        disabled={!isOnline || !isTransaksiTanggalSet}
+          <IonRow className="padding-content btn-start">
+     <IonButton 
+        className="check-button" 
+        onClick={handlePost} 
+        disabled={!isOnline}
       >
         Mulai Kerja
       </IonButton>
+     
+     
       <IonToast
         isOpen={showToast}
         onDidDismiss={() => setShowToast(false)}
         message="Anda sedang offline. Silakan cek koneksi internet Anda."
         duration={2000}
       /> 
-    </IonRow>
-    <IonRow>
-          <IonLabel style={{marginLeft:"15px", fontWeight:"600"}} >Note : Pastikan Data Form Sessui Dengan Tanggal Yang Dipilih</IonLabel>
-        </IonRow>   
-    <IonRow>
+          </IonRow>
+         <IonRow>
       {!isOnline && (
         <IonLabel color="danger" style={{ marginTop: '10px'}}>
           <span style={{marginLeft:"15px", fontWeight:"600"}}> Device offline , periksa koneksi tablet </span>
         </IonLabel>
       )}
-      
       </IonRow>
         </div>
-       
-        
-      </IonContent>
      
+      </IonContent>
     </IonPage>
   );
 };
