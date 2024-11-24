@@ -159,6 +159,8 @@ const ReviewData: React.FC = () => {
           removeDataFromStorage("shiftData");
         }
       }
+      localStorage.removeItem("cardDash");
+      localStorage.removeItem("latestLkfData");
       removeDataFromStorage("unitQuota");
       removeDataFromStorage("lastLkfDataStation");
       removeDataFromStorage("lastClosingSonding");
@@ -171,9 +173,7 @@ const ReviewData: React.FC = () => {
       removeDataFromStorage("stationData");
       removeDataFromStorage("lastLKF");
       removeDataFromStorage("lastTrx");
-      removeDataFromStorage(" tanggalTransaksi");
-      removeDataFromStorage("cardDash");
-      removeDataFromStorage("latestLkfData");
+      removeDataFromStorage("tanggalTransaksi");
       await deleteAllDataTransaksi();
       await deleteAllClosingData();
       await deleteAllDataMaster();

@@ -282,27 +282,44 @@ const DashboardFuelMan: React.FC = () => {
     }
   };
 
+  // useEffect(() => {
+  //   const tanggal = async () => {
+  //     const savedDate = await getDataFromStorage("tanggalTransaksi");
+  //     if (savedDate) {
+  //       const transactionDate = new Date(savedDate);
+  //       if (!isNaN(transactionDate.getTime())) {
+  //         setTanggalTransaksi(transactionDate.toLocaleDateString("en-GB"));
+  //       } else {
+  //         console.error("Invalid date format in localStorage:", savedDate);
+  //         setTanggalTransaksi("Invalid Date");
+  //       }
+  //     } else {
+  //       // Jika tidak ada tanggal yang disimpan
+  //       console.error(
+  //         "No saved date available in localStorage for 'tanggalTransaksi'"
+  //       );
+  //       setTanggalTransaksi("No Date Available");
+  //     }
+  //   };
+  //   tanggal();
+  // }, []);
+
   useEffect(() => {
-    const tanggal = async () => {
-      const savedDate = await getDataFromStorage("tanggalTransaksi");
-      if (savedDate) {
-        const transactionDate = new Date(savedDate);
-        if (!isNaN(transactionDate.getTime())) {
-          setTanggalTransaksi(transactionDate.toLocaleDateString("en-GB"));
-        } else {
-          console.error("Invalid date format in localStorage:", savedDate);
-          setTanggalTransaksi("Invalid Date");
-        }
+  const tanggal = async () => {
+    const savedDate = await getDataFromStorage("tanggalTransaksi");
+    if (savedDate) {
+      const transactionDate = new Date(savedDate);
+      if (!isNaN(transactionDate.getTime())) {
+        setTanggalTransaksi(transactionDate.toLocaleDateString("en-GB"));
       } else {
-        // Jika tidak ada tanggal yang disimpan
-        console.error(
-          "No saved date available in localStorage for 'tanggalTransaksi'"
-        );
-        setTanggalTransaksi("No Date Available");
+        console.error("Invalid date format in localStorage:", savedDate);
+        setTanggalTransaksi("Invalid Date");
       }
-    };
-    tanggal();
-  }, []);
+    }
+  };
+  tanggal();
+}, []);
+
 
   const handleLogout = () => {
     route.push("/closing-data");
@@ -336,7 +353,7 @@ const DashboardFuelMan: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const loadUnitDataQuota = async () => {
+    const loadQuota = async () => {
       try {
         const tanggal = await getDataFromStorage("tanggalTransaksi");
         if (!tanggal) {
@@ -347,14 +364,18 @@ const DashboardFuelMan: React.FC = () => {
           const [day, month, year] = tanggal.split("/");
           formattedDate = `${day}-${month}-${year}`;
           const quotaData = await fetchQuotaData(formattedDate);
+          
+          console.log(quotaData)
+
         }
       } catch (error) {
         console.error("Error in loadUnitDataQuota:", error);
       }
     };
-    loadUnitDataQuota();
+    loadQuota();
   }, []);
-
+ 
+  
   const updateAllData = async () => {
     const units = await fetchUnitData();
     const unit = await getHomeTable(lkfId);
