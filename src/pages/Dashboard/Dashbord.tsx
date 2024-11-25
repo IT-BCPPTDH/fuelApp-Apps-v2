@@ -266,7 +266,7 @@ const DashboardFuelMan: React.FC = () => {
     if (isOnline) {
       console.log(2, "on");
       let dataPost = await getDataFromStorage("openingSonding");
-      if (dataPost.status === "pending") {
+      if (dataPost && dataPost.status === "pending") {
         console.log(3);
         const result = await postOpening(dataPost);
 
@@ -278,48 +278,27 @@ const DashboardFuelMan: React.FC = () => {
           saveDataToStorage("openingSonding", dataPost);
           await addDataToDB(dataPost);
         }
+      } else {
+        console.log("No data found or status is not 'pending'");
       }
     }
   };
-
-  // useEffect(() => {
-  //   const tanggal = async () => {
-  //     const savedDate = await getDataFromStorage("tanggalTransaksi");
-  //     if (savedDate) {
-  //       const transactionDate = new Date(savedDate);
-  //       if (!isNaN(transactionDate.getTime())) {
-  //         setTanggalTransaksi(transactionDate.toLocaleDateString("en-GB"));
-  //       } else {
-  //         console.error("Invalid date format in localStorage:", savedDate);
-  //         setTanggalTransaksi("Invalid Date");
-  //       }
-  //     } else {
-  //       // Jika tidak ada tanggal yang disimpan
-  //       console.error(
-  //         "No saved date available in localStorage for 'tanggalTransaksi'"
-  //       );
-  //       setTanggalTransaksi("No Date Available");
-  //     }
-  //   };
-  //   tanggal();
-  // }, []);
 
   useEffect(() => {
-  const tanggal = async () => {
-    const savedDate = await getDataFromStorage("tanggalTransaksi");
-    if (savedDate) {
-      const transactionDate = new Date(savedDate);
-      if (!isNaN(transactionDate.getTime())) {
-        setTanggalTransaksi(transactionDate.toLocaleDateString("en-GB"));
-      } else {
-        console.error("Invalid date format in localStorage:", savedDate);
-        setTanggalTransaksi("Invalid Date");
+    const tanggal = async () => {
+      const savedDate = await getDataFromStorage("tanggalTransaksi");
+      if (savedDate) {
+        const transactionDate = new Date(savedDate);
+        if (!isNaN(transactionDate.getTime())) {
+          setTanggalTransaksi(transactionDate.toLocaleDateString("en-GB"));
+        } else {
+          console.error("Invalid date format in localStorage:", savedDate);
+          setTanggalTransaksi("Invalid Date");
+        }
       }
-    }
-  };
-  tanggal();
-}, []);
-
+    };
+    tanggal();
+  }, []);
 
   const handleLogout = () => {
     route.push("/closing-data");
@@ -364,9 +343,6 @@ const DashboardFuelMan: React.FC = () => {
           const [day, month, year] = tanggal.split("/");
           formattedDate = `${day}-${month}-${year}`;
           const quotaData = await fetchQuotaData(formattedDate);
-          
-          console.log(quotaData)
-
         }
       } catch (error) {
         console.error("Error in loadUnitDataQuota:", error);
@@ -374,8 +350,7 @@ const DashboardFuelMan: React.FC = () => {
     };
     loadQuota();
   }, []);
- 
-  
+
   const updateAllData = async () => {
     const units = await fetchUnitData();
     const unit = await getHomeTable(lkfId);
@@ -416,13 +391,13 @@ const DashboardFuelMan: React.FC = () => {
               fuelman_id: item.fuelman_id,
               status: item.status ?? 1,
               jde_operator: item.jde_operator,
-              dip_start: 0, 
-              dip_end: 0, 
-              sonding_start: 0, 
-              sonding_end: 0, 
-              reference: 0, 
-              start: item.start, 
-              end: item.end, 
+              dip_start: 0,
+              dip_end: 0,
+              sonding_start: 0,
+              sonding_end: 0,
+              reference: 0,
+              start: item.start,
+              end: item.end,
               created_at: new Date().toISOString(),
               liters: 0,
               cm: 0,

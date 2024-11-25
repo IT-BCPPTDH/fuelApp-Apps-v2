@@ -14,11 +14,11 @@ export async function getStation() {
                 'Content-Type': 'application/json',
             }
         });
-
         if (response.status !== 200) {
             throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
         }
         return response.data;
+        
     } catch (error: unknown) {
         if (error instanceof ResponseError) {
             throw error;

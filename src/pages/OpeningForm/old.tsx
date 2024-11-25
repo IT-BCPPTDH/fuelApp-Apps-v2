@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState,useCallback, useRef } from "react";
 import {
   IonButton,
   IonCol,
@@ -18,11 +18,9 @@ import {
   useIonRouter,
   IonPage,
   IonCard,
-  IonImg,
   IonRefresher,
   IonRefresherContent,
   IonToast,
-  IonSpinner,
 } from "@ionic/react";
 
 import "./style.css";
@@ -31,7 +29,7 @@ import { addDataToDB, getOfflineData, removeDataFromDB } from "../../utils/inser
 import { DataLkf } from "../../models/db";
 import { getAllSonding } from "../../hooks/getAllSonding";
 import { getLatestLkfDataDate, getLatestLkfId, getShiftDataByLkfId, getShiftDataByStation } from "../../utils/getData";
-import { getStationData } from "../../hooks/getDataTrxStation";
+import { getStationData} from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
 
@@ -41,7 +39,7 @@ interface Shift {
   type: string;
 }
 
-interface lkf {
+interface lkf{
   close_data: number;
   closing_dip: number;
   closing_sonding: number;
@@ -58,7 +56,7 @@ const shifts: Shift[] = [
 interface CloseShift {
   closing_sonding: number;
   closing_dip: number;
-  flow_meter_end: number;
+  flow_meter_end: number; 
   hm_end: number;
 }
 
@@ -83,8 +81,8 @@ const OpeningForm: React.FC = () => {
   const [hmAkhir, setHmAkhir] = useState<number | undefined>(undefined);
   const [stationOptions, setStationOptions] = useState<string[]>([]);
   const [closeShift, setCloseShift] = useState<CloseShift | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false); 
+  const [error, setError] = useState<string | null>(null); 
   const router = useIonRouter();
   const [presentToast] = useIonToast();
   const [closingSonding, setClosingSonding] = useState<number | undefined>(undefined);
@@ -93,12 +91,11 @@ const OpeningForm: React.FC = () => {
   const input2Ref = useRef<HTMLIonInputElement>(null);
   const [showToast, setShowToast] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [tanggalTrx, setTanggalTrx] = useState(new Date().toLocaleDateString())
+  const [tanggalTrx , setTanggalTrx] = useState (new Date().toLocaleDateString())
   const [jdeOptions, setJdeOptions] = useState<
-    { JDE: string; fullname: string }[]
+  { JDE: string; fullname: string }[]
   >([]);
-  const [isTransaksiTanggalSet, setIsTransaksiTanggalSet] = useState(false);
-
+  
   useEffect(() => {
     const determineShift = () => {
       const now = new Date();
@@ -136,7 +133,7 @@ const OpeningForm: React.FC = () => {
 
     setLkfId(generateLkfId());
   }, [])
-
+ 
   const handleDateChange = (e: CustomEvent) => {
     const selectedDate = e.detail.value as string;
     if (selectedDate) {
@@ -145,13 +142,8 @@ const OpeningForm: React.FC = () => {
       const formattedDate = new Date(selectedDate).toLocaleDateString();
       setTanggalTrx(formattedDate);
       saveDataToStorage("tanggalTransaksi", formattedDate)
-      setIsTransaksiTanggalSet(true);
     }
   };
-
-
-
-
 
   const handlePost = async () => {
     console.log(0)
@@ -175,21 +167,21 @@ const OpeningForm: React.FC = () => {
       return;
     }
 
-    const lkf_id = await getLatestLkfId();
-    let latestDataDateFormatted = "";
-    const savedDate = await getDataFromStorage("tanggalTransaksi");
-    if (savedDate) {
-      const transactionDate = new Date(savedDate);
-      if (!isNaN(transactionDate.getTime())) {
-        // Jika valid, tambahkan 12 jam ke tanggal
-        transactionDate.setHours(transactionDate.getHours() + 12);
-        latestDataDateFormatted = transactionDate.toISOString();
-      } else {
-        latestDataDateFormatted = "Invalid Date";
-      }
+  const lkf_id = await getLatestLkfId();
+  let latestDataDateFormatted = "";
+  const savedDate =  await getDataFromStorage("tanggalTransaksi");
+  if (savedDate) {
+    const transactionDate = new Date(savedDate);
+    if (!isNaN(transactionDate.getTime())) {
+      // Jika valid, tambahkan 12 jam ke tanggal
+      transactionDate.setHours(transactionDate.getHours() + 12);
+      latestDataDateFormatted = transactionDate.toISOString(); 
     } else {
-      latestDataDateFormatted = "No Date Available";
+      latestDataDateFormatted = "Invalid Date";  
     }
+  } else {
+    latestDataDateFormatted = "No Date Available";
+  }
     let dataPost: DataLkf = {
       date: latestDataDateFormatted,
       shift: shiftSelected.name,
@@ -214,19 +206,19 @@ const OpeningForm: React.FC = () => {
       signature: "",
       close_data: 0,
       variant: 0,
-      status: 'pending'
+      status:'pending'
     };
 
     try {
       console.log(2)
-      if (isOnline) {
+      if(isOnline){
         console.log(3)
         const result = await postOpening(dataPost);
-
+  
         if (result.status === '201' && result.message === 'Data Created') {
           dataPost = {
             ...dataPost,
-            status: 'sent'
+            status:'sent'
           }
           presentToast({
             message: 'Data posted successfully!',
@@ -234,8 +226,8 @@ const OpeningForm: React.FC = () => {
             position: 'top',
             color: 'success',
           });
-          await addDataToDB(dataPost);
-
+          await addDataToDB(dataPost); 
+         
           router.push("/dashboard");
         } else {
           setShowError(true);
@@ -246,7 +238,7 @@ const OpeningForm: React.FC = () => {
             color: 'danger',
           });
         }
-      } else {
+      }else{
         console.log(4)
         saveDataToStorage("openingSonding", dataPost);
         await addDataToDB(dataPost);
@@ -261,7 +253,7 @@ const OpeningForm: React.FC = () => {
         position: 'top',
         color: 'warning',
       });
-      await addDataToDB(dataPost);
+      await addDataToDB(dataPost); 
       router.push("/dashboard");
     }
   };
@@ -299,7 +291,7 @@ const OpeningForm: React.FC = () => {
     const userData = async () => {
       const data = await getDataFromStorage('loginData');
       if (data) {
-        const parsedData = data;
+        const parsedData = data; 
         setFuelmanID(parsedData.jde);
         setFuelmanName(parsedData.fullname)
         setStation(parsedData.station);
@@ -308,153 +300,145 @@ const OpeningForm: React.FC = () => {
         console.error('No user data found in storage');
       }
     };
-
-    userData();
+  
+    userData(); 
   }, []);
 
-  const doRefresh = async (event: CustomEvent) => {
-    event.detail.complete();
-  };
-  const fetchSondingOffline = async () => {
-    try {
-      const sondingDataMaster = await getDataFromStorage('masterSonding');
-      const parsedSondingData =
-        typeof sondingDataMaster === 'string'
-          ? JSON.parse(sondingDataMaster)
-          : sondingDataMaster;
-      if (Array.isArray(parsedSondingData)) {
-        setSondingMasterData(parsedSondingData);
-      }
-    } catch (error) {
-      console.error('Error fetching sonding data:', error);
+const doRefresh = async (event: CustomEvent) => {
+  event.detail.complete(); 
+};
+const fetchSondingOffline = async () => {
+  try {
+    const sondingDataMaster = await getDataFromStorage('masterSonding');
+    const parsedSondingData =
+      typeof sondingDataMaster === 'string'
+        ? JSON.parse(sondingDataMaster)
+        : sondingDataMaster;
+    if (Array.isArray(parsedSondingData)) {
+      setSondingMasterData(parsedSondingData);
     }
-  };
+  } catch (error) {
+    console.error('Error fetching sonding data:', error);
+  }
+};
 
-  const updateOpeningDip = useCallback(() => {
-    if (openingSonding !== undefined) {
-      const matchingData = sondingMasterData.find(
-        (item) => item.station === station && item.cm === openingSonding
-      );
+const updateOpeningDip = useCallback(() => {
+  if (openingSonding !== undefined) {
+    const matchingData = sondingMasterData.find(
+      (item) => item.station === station && item.cm === openingSonding
+    );
 
-      if (matchingData) {
-        setOpeningDip(matchingData.liters);
-      } else {
-        setOpeningDip(undefined);
-      }
+    if (matchingData) {
+      setOpeningDip(matchingData.liters);
+    } else {
+      setOpeningDip(undefined);
     }
-  }, [openingSonding, sondingMasterData, station]);
+  }
+}, [openingSonding, sondingMasterData, station]);
 
-  useEffect(() => {
-    fetchSondingOffline();
-  }, []); // Initial data fetch
+useEffect(() => {
+  fetchSondingOffline();
+}, []); // Initial data fetch
 
-  useEffect(() => {
-    updateOpeningDip();
-  }, [openingSonding, sondingMasterData, station]); // Update openingDip based on changes
+useEffect(() => {
+  updateOpeningDip();
+}, [openingSonding, sondingMasterData, station]); // Update openingDip based on changes
 
-  useEffect(() => {
-    const loadShiftClose = async () => {
-      console.log('Loading shift close data...');
-      const userData = await getDataFromStorage('loginData');
-      if (userData) {
-        const stationData = userData.station;
-        if (stationData) {
-          const lastLKF = await getDataFromStorage('lastLKF');
-          let lkf;
-          if (typeof lastLKF === 'string') {
-            try {
-              lkf = JSON.parse(lastLKF);
-              console.log('Parsed lastLKF:', lkf);
-            } catch (error) {
-              console.error('Error parsing lastLKF:', error);
-              return;
-            }
-          } else {
-            lkf = lastLKF;
-            console.log('Using lastLKF as object:', lkf);
-          }
-
-          const shiftClose = lkf?.find((v: any) => v.station === stationData);
-
-          if (shiftClose) {
-            console.log('Shift close data found:', shiftClose);
-            setCloseShift(shiftClose);
-            const latestShiftData = shiftClose;
-
-            if (latestShiftData.closing_sonding !== undefined) {
-              setOpeningSonding(latestShiftData.closing_sonding);
-            }
-            if (latestShiftData.flow_meter_end !== undefined) {
-              setFlowMeterAwal(latestShiftData.flow_meter_end);
-            }
-            if (latestShiftData.closing_dip !== undefined) {
-              setOpeningDip(latestShiftData.closing_dip);
-            }
-            if (latestShiftData.hm_end !== undefined) {
-              setHmAkhir(latestShiftData.hm_end);
-              setPrevHmAwal(latestShiftData.hm_end);
-            }
-          } else {
-            console.error('Shift close data not found for the station');
+useEffect(() => {
+  const loadShiftClose = async () => {
+    console.log('Loading shift close data...');
+    const userData = await getDataFromStorage('loginData');
+    if (userData) {
+      const stationData = userData.station;
+      if (stationData) {
+        const lastLKF = await getDataFromStorage('lastLKF');
+        let lkf;
+        if (typeof lastLKF === 'string') {
+          try {
+            lkf = JSON.parse(lastLKF);
+            console.log('Parsed lastLKF:', lkf);
+          } catch (error) {
+            console.error('Error parsing lastLKF:', error);
+            return; 
           }
         } else {
-          console.error('Station data not found in loginData');
+          lkf = lastLKF;
+          console.log('Using lastLKF as object:', lkf);
+        }
+
+        const shiftClose = lkf?.find((v: any) => v.station === stationData);
+
+        if (shiftClose) {
+          console.log('Shift close data found:', shiftClose);
+          setCloseShift(shiftClose);
+          const latestShiftData = shiftClose;
+
+          if (latestShiftData.closing_sonding !== undefined) {
+            setOpeningSonding(latestShiftData.closing_sonding);
+          }
+          if (latestShiftData.flow_meter_end !== undefined) {
+            setFlowMeterAwal(latestShiftData.flow_meter_end);
+          }
+          if (latestShiftData.closing_dip !== undefined) {
+            setOpeningDip(latestShiftData.closing_dip); 
+          }
+          if (latestShiftData.hm_end !== undefined) {
+            setHmAkhir(latestShiftData.hm_end);
+            setPrevHmAwal(latestShiftData.hm_end);
+          }
+        } else {
+          console.error('Shift close data not found for the station');
         }
       } else {
-        console.error('No loginData found in storage');
+        console.error('Station data not found in loginData');
       }
-    };
-
-    loadShiftClose();
-  }, [date]);
-
-  const handleFlowMeterAwalChange = (e: CustomEvent) => {
-    const value = Number(e.detail.value);
-    if (prevFlowMeterAwal !== undefined && value < prevFlowMeterAwal) {
-      setShowError(true);
     } else {
-      setShowError(false);
-    }
-    setFlowMeterAwal(value);
-  };
-
-  useEffect(() => {
-    setLoading(true); // Show spinner initially
-    const loadData = async () => {
-      // Simulate loading process
-      await fetchSondingOffline();
-      setTimeout(() => {
-        setLoading(false); // Hide spinner after 2 seconds
-      }, 2000);
-    };
-
-    loadData();
-  }, []);
-  const handleOpeningSondingChange = (e: CustomEvent) => {
-    const value = e.detail.value;
-    if (value === null || value === "") {
-      setOpeningSonding(undefined);
-    } else {
-      const numericValue = Number(value);
-      if (!Number.isNaN(numericValue)) {
-        setOpeningSonding(numericValue);
-        console.log("Manual openingSonding update:", numericValue);
-      }
+      console.error('No loginData found in storage');
     }
   };
 
-  const handleOpeningDipChange = (e: CustomEvent) => {
-    const value = e.detail.value;
+  loadShiftClose();
+}, [date]);
 
-    if (value === null || value === '') {
-      setOpeningDip(undefined);
-    } else {
-      const numericValue = Number(value);
-      if (!Number.isNaN(numericValue)) {
-        setOpeningDip(numericValue);
-      }
+
+
+const handleFlowMeterAwalChange = (e: CustomEvent) => {
+  const value = Number(e.detail.value);
+  if (prevFlowMeterAwal !== undefined && value < prevFlowMeterAwal) {
+    setShowError(true);
+  } else {
+    setShowError(false);
+  }
+  setFlowMeterAwal(value);
+};
+
+const handleOpeningSondingChange = (e: CustomEvent) => {
+  const value = e.detail.value;
+
+  if (value === null || value === "") {
+    setOpeningSonding(undefined); 
+  } else {
+    const numericValue = Number(value);
+    if (!Number.isNaN(numericValue)) {
+      setOpeningSonding(numericValue); 
+      console.log("Manual openingSonding update:", numericValue);
     }
-  };
+  }
+};
+
+
+const handleOpeningDipChange = (e: CustomEvent) => {
+  const value = e.detail.value;
+
+  if (value === null || value === '') {
+    setOpeningDip(undefined);
+  } else {
+    const numericValue = Number(value);
+    if (!Number.isNaN(numericValue)) {
+      setOpeningDip(numericValue);
+    }
+  }
+};
 
 
   return (
@@ -465,10 +449,12 @@ const OpeningForm: React.FC = () => {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
+      <IonRefresher slot="fixed" onIonRefresh={doRefresh}>
           <IonRefresherContent refreshingSpinner="circles"
-          />
+           />
+          
         </IonRefresher>
+
         <div className="wrapper-content">
           <div className="padding-content">
             <h2 style={{ textAlign: "center", fontSize: "30px" }}>LKF ID : {id}</h2>
@@ -476,35 +462,6 @@ const OpeningForm: React.FC = () => {
             <h4>Site : {site}</h4>
             <h4>Station : {station}</h4>
           </div>
-          <IonModal isOpen={loading} className="custom-modal">
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '50%',
-                backgroundColor: '#73a33f00',
-              }}
-            >
-              <div style={{ textAlign: 'center', backgroundColor: '#73a33f00', padding: '20px', borderRadius: '8px' }}>
-                <IonImg
-
-                  src="logodhbaru1.png"
-                  alt="Logo DH"
-                  style={{
-                    width: '220px',
-                    height: '80px',
-                    position: 'relative',
-                    zIndex: 1,
-                  }}
-                />
-
-                <p style={{ justifyContent: "center", fontSize: "36px", color: "orange" }}>Proses Load Data!!</p>
-                <p style={{ justifyContent: "center", fontSize: "24px", color: "green" }}>Mohon Tunggu Sebentar!!</p>
-                <IonSpinner name="crescent" className="ion-spinner" />
-              </div>
-            </div>
-          </IonModal>
           <IonRow className="padding-content">
             <IonCol style={{ display: "grid" }}>
               <IonLabel>
@@ -539,9 +496,9 @@ const OpeningForm: React.FC = () => {
               </IonItem>
               <IonModal isOpen={showDateModal}>
                 <IonDatetime
-                  value={date || new Date().toISOString()}
+                  value={date || new Date().toISOString()} 
                   onIonChange={handleDateChange}
-                // max={new Date().toISOString()}  
+                  max={new Date().toISOString()}  
 
                 />
                 <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>
@@ -558,7 +515,6 @@ const OpeningForm: React.FC = () => {
               type="number"
               value={openingSonding}
               onIonChange={handleOpeningSondingChange}
-              disabled={!isTransaksiTanggalSet}
             />
             {showError && openingSonding === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
@@ -574,9 +530,8 @@ const OpeningForm: React.FC = () => {
               placeholder="Input opening dip dalam liter"
               value={openingDip}
               onIonChange={handleOpeningDipChange}
-              readonly={stationOptions.includes(station || '')}
+              readonly={stationOptions.includes(station ||'')}
               onIonInput={(e) => setOpeningDip(Number(e.detail.value))}
-              disabled={!isTransaksiTanggalSet}
 
             />
             {showError && openingDip === undefined && (
@@ -591,22 +546,21 @@ const OpeningForm: React.FC = () => {
               className={`custom-input`}
               type="number"
               value={flowMeterAwal}
-              disabled={!isTransaksiTanggalSet}
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
                 handleFlowMeterAwalChange(e); // Call the handler here
               }}
             />
-            {showError && (
-              <p style={{ color: "red" }}>
-                {flowMeterAwal === undefined
-                  ? '* Field harus diisi'
-                  : (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal)
-                    ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
-                    : ''
-                }
-              </p>
-            )}
+           {showError && (
+            <p style={{ color: "red" }}>
+              {flowMeterAwal === undefined
+                ? '* Field harus diisi'
+                : (prevFlowMeterAwal !== undefined && flowMeterAwal < prevFlowMeterAwal)
+                  ? '* Flow Meter Awal tidak boleh kurang dari nilai sebelumnya'
+                  : ''
+              }
+            </p>
+          )}
           </div>
           <div className="padding-content">
             <IonLabel>
@@ -617,7 +571,6 @@ const OpeningForm: React.FC = () => {
               type="number"
               placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
               value={hmAkhir}
-              disabled={!isTransaksiTanggalSet}
               onIonInput={(e) => {
                 const value = Number(e.detail.value);
                 if (station !== "FT" && value === 0) {
@@ -628,40 +581,38 @@ const OpeningForm: React.FC = () => {
                   setShowError(false);
                 }
               }}
-            />
+/>
             {showError && hmAkhir === undefined && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
           <IonRow className="padding-content btn-start">
-            <IonButton
-              className="check-button"
-              onClick={handlePost}
-              disabled={!isOnline || !isTransaksiTanggalSet}
-            >
-              Mulai Kerja
-            </IonButton>
-            <IonToast
-              isOpen={showToast}
-              onDidDismiss={() => setShowToast(false)}
-              message="Anda sedang offline. Silakan cek koneksi internet Anda."
-              duration={2000}
-            />
+     <IonButton 
+        className="check-button" 
+        onClick={handlePost} 
+        disabled={!isOnline}
+      >
+        Mulai Kerja
+      </IonButton>
+     
+     
+      <IonToast
+        isOpen={showToast}
+        onDidDismiss={() => setShowToast(false)}
+        message="Anda sedang offline. Silakan cek koneksi internet Anda."
+        duration={2000}
+      /> 
           </IonRow>
-          <IonRow>
-            <IonLabel style={{ marginLeft: "15px", fontWeight: "600" }} >Note : Pastikan Data Form Sessui Dengan Tanggal Yang Dipilih</IonLabel>
-          </IonRow>
-          <IonRow>
-            {!isOnline && (
-              <IonLabel color="danger" style={{ marginTop: '10px' }}>
-                <span style={{ marginLeft: "15px", fontWeight: "600" }}> Device offline , periksa koneksi tablet </span>
-              </IonLabel>
-            )}
-
-          </IonRow>
+         <IonRow>
+      {!isOnline && (
+        <IonLabel color="danger" style={{ marginTop: '10px'}}>
+          <span style={{marginLeft:"15px", fontWeight:"600"}}> Device offline , periksa koneksi tablet </span>
+        </IonLabel>
+      )}
+      </IonRow>
         </div>
+     
       </IonContent>
-
     </IonPage>
   );
 };

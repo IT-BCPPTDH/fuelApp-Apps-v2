@@ -55,29 +55,23 @@ export const removeDataFromStorage = async (key: string): Promise<void> => {
 };
 
 
-// Your existing fetchStationData function
-export const fetchStationData = async (): Promise<Station[]> => {
+export const fetchStationData = async (): Promise<any[]> => {
   try {
     const response = await getStation(); 
-    if (response?.data && Array.isArray(response.data)) {
-      const stations = response.data.map((station: Station) => ({
-        value: station.fuel_station_name,
-        label: station.fuel_station_name,
-        site: station.site,
-        fuel_station_type: station.fuel_station_type,
-        fuel_capacity: station.fuel_capacity,
-      }));
-      await saveDataToStorage('stationData', stations);
-      return stations;
+    if (response.status === '200' && Array.isArray(response.data)) {
+      await saveDataToStorage('allStation', response.data);
+      return response.data;
     } else {
-      console.error("No station data found");
+      console.error('Unexpected data format');
       return [];
     }
   } catch (error) {
-    console.error("Failed to fetch station data:", error);
+    console.error('Failed to fetch unit data', error);
     return [];
   }
 };
+
+
 
 
 // Fetch unit data from API and store it in Capacitor Preferences
