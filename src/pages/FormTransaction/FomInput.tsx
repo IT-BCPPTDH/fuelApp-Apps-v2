@@ -54,7 +54,11 @@ import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
 import { getAllQuota } from "../../hooks/getQoutaUnit";
 import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
-import CameraInput from "../../components/takeFoto";
+
+import { deleteAllDataTransaksi } from "../../utils/delete";
+import { getCalculationIssued } from "../../utils/getData";
+
+
 import { saveDataToStorage } from "../../services/dataService";
 interface Typetrx {
   id: number;
@@ -1707,7 +1711,6 @@ const FormTRX: React.FC = () => {
               </IonRow>
               <IonRow>
                 <IonCol>
-                  <CameraInput setPhotoPreview={setPhotoPreview} />
                 </IonCol>
                 <IonCol>
                   <IonCard style={{ height: "160px" }}>
