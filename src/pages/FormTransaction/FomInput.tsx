@@ -1,4 +1,11 @@
-import React, { useState, useEffect, Key, SetStateAction, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  Key,
+  SetStateAction,
+  useRef,
+  useCallback,
+} from "react";
 import {
   IonContent,
   IonHeader,
@@ -32,13 +39,16 @@ import {
 import SignatureModal from "../../components/SignatureModal";
 import { getAllUnit } from "../../hooks/getAllUnit";
 import { postTransaksi } from "../../hooks/postTrx";
-import { DataFormTrx, } from "../../models/db";
+import { DataFormTrx } from "../../models/db";
 import { addDataHistory, addDataTrxType } from "../../utils/insertData";
+import { fetchLatestHmLast, getLatestLkfId } from "../../utils/getData";
 import {
-  fetchLatestHmLast,
-  getLatestLkfId,
-} from "../../utils/getData";
-import { fetchOperatorData, fetchQuotaData, fetchUnitData, getDataFromStorage, removeDataFromStorage } from "../../services/dataService";
+  fetchOperatorData,
+  fetchQuotaData,
+  fetchUnitData,
+  getDataFromStorage,
+  removeDataFromStorage,
+} from "../../services/dataService";
 import Select, { ActionMeta, SingleValue } from "react-select";
 import { getLatestTrx } from "../../utils/getData";
 import { getPrevUnitTrx } from "../../hooks/getDataPrev";
@@ -70,7 +80,6 @@ interface UnitQuota {
   is_active?: boolean;
 }
 
-
 interface TableDataItem {
   hm_km: any;
   from_data_id: number;
@@ -88,7 +97,6 @@ interface TableDataItem {
 
   status: number;
 }
-
 
 const typeTrx: Typetrx[] = [
   { id: 1, name: "Issued" },
@@ -119,7 +127,7 @@ const FormTRX: React.FC = () => {
       brand: string;
       owner: string;
       model: string;
-      model_unit: string
+      model_unit: string;
     }[]
   >([]);
 
@@ -135,9 +143,7 @@ const FormTRX: React.FC = () => {
     undefined
   );
 
-  const [fotoBase64, setFotoBase64] = useState<string | undefined>(
-    undefined
-  );
+  const [fotoBase64, setFotoBase64] = useState<string | undefined>(undefined);
   const [fuelman_id, setFuelmanId] = useState<string>("");
   const [allUsers, setAllUser] = useState<string>("");
   const route = useIonRouter();
@@ -153,7 +159,9 @@ const FormTRX: React.FC = () => {
     undefined
   );
   const [presentToast] = useIonToast(); // Destructure the toast function
-  const [photoPreview, setPhotoPreview] = useState<string | undefined>(undefined);
+  const [photoPreview, setPhotoPreview] = useState<string | undefined>(
+    undefined
+  );
   const [sondingEnd, setSondingEnd] = useState<number | undefined>(undefined);
   const [Refrence, setRefrence] = useState<number | undefined>(undefined);
   const [stationData, setStationData] = useState<any>(null);
@@ -178,7 +186,7 @@ const FormTRX: React.FC = () => {
   const [employeeError, setemployeeError] = useState<boolean>(false);
   const [unitQouta, setUnitQouta] = useState(0);
   const [isError, setIsError] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedId, setSelectID] = useState<string | undefined>();
   const [hmkmTRX, sethmkmTrx] = useState<number | undefined>(undefined); // HM/KM Transaksi
   const [hmLast, setHmLast] = useState<number>(0); // HM/KM Unit
@@ -187,7 +195,8 @@ const FormTRX: React.FC = () => {
   >([]);
 
   const [selecTUnit, setSelectUnit] = useState<
-    { JDE: string; fullname: string }[]>([]);
+    { JDE: string; fullname: string }[]
+  >([]);
   const [transaksiData, setTransaksiData] = useState<any>(null);
   const [filteredUnits, setFilteredUnits] = useState(unitOptions);
   const [selectedUnit, setSelectedUnit] = useState<string>("");
@@ -195,68 +204,70 @@ const FormTRX: React.FC = () => {
   const [hmkmLast, setHmKmLast] = useState<number | null>(null);
   const [fbrResult, setFbrResult] = useState<number>(0);
   const [fbrResultOf, setFbrResultOf] = useState<number>(0);
-  const [lkfId, setLkfId] = useState<string>('');
+  const [lkfId, setLkfId] = useState<string>("");
   const [qtyValue, setQtyValue] = useState<number | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [is_active, setis_active] = useState(false);
   const [quotaData, setQuotaData] = useState(null);
-  const [currentUnitQuota, setCurrentUnitQuota] = useState<UnitQuota | null>(null);
+  const [currentUnitQuota, setCurrentUnitQuota] = useState<UnitQuota | null>(
+    null
+  );
   const [totalQuantityIssued, setTotalQuantityIssued] = useState<number>(0);
-  const [opDip, setOpDip] = useState<number | null>(null)
-  const [station, setOpStation] = useState<string | null>(null)
-  const [receipt, setOpReceipt] = useState<number | null>(null)
-  const [transfer, setOpTransfer] = useState<string | null>(null)
-  const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null)
+  const [opDip, setOpDip] = useState<number | null>(null);
+  const [station, setOpStation] = useState<string | null>(null);
+  const [receipt, setOpReceipt] = useState<number | null>(null);
+  const [transfer, setOpTransfer] = useState<string | null>(null);
+  const [receiveKpc, setOpReceiveKpc] = useState<number | null>(null);
   const [totalIssued, setTotalIssued] = useState<number | null>(null);
   const [shift, setShift] = useState<string | null>(null);
   const [showErrorIsi, setShowErrorIsi] = useState<boolean>(false);
   const [isiTime, setIsiTime] = useState<string | undefined>(undefined);
   const [selesaiTime, setSelesaiTime] = useState<string | undefined>(undefined);
-  const [startTime, setStartTime] = useState<string>('');
-  const [endTime, setEndTime] = useState<string>('');
+  const [startTime, setStartTime] = useState<string>("");
+  const [endTime, setEndTime] = useState<string>("");
   const [qoutaData, setquotaData] = useState<number | null>(null);
-  const [modelUnit, setModelUnit] = useState<string>('');
-  const [owner, setOwner] = useState<string>('');
+  const [modelUnit, setModelUnit] = useState<string>("");
+  const [owner, setOwner] = useState<string>("");
   const [qtyLast, setQty] = useState<number>(0);
   const [photoFile, setPhotoFile] = useState<string | null>(null); // For the file
   const [signature, setSignature] = useState<string | null>(null);
-  const [latestDate, setLatestDate] = useState<string>('');
+  const [latestDate, setLatestDate] = useState<string>("");
   const [tanggalTransaksi, setTanggalTransaksi] = useState<string | null>(null);
   const [stock, setStock] = useState<number>(0);
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      setStatus(1); 
+      setStatus(1);
     };
     const handleOffline = () => {
       setIsOnline(false);
-      setStatus(0); 
+      setStatus(0);
     };
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
   useEffect(() => {
     const loadUnitDataQuota = async () => {
-      const tanggal = await getDataFromStorage('tanggalTransaksi');
+      const tanggal = await getDataFromStorage("tanggalTransaksi");
       if (!tanggal) {
-        throw new Error('tanggalTransaksi is not available in storage.');
+        throw new Error("tanggalTransaksi is not available in storage.");
       }
       let formattedDate: string;
       try {
         let quotaData;
         if (navigator.onLine) {
-          if (typeof tanggal === 'string' && tanggal.includes('/')) {
-            const [day, month, year] = tanggal.split('/');
-            formattedDate =`${day}-${month}-${year}`
+          if (typeof tanggal === "string" && tanggal.includes("/")) {
+            const [day, month, year] = tanggal.split("/");
+            formattedDate = `${day}-${month}-${year}`;
             quotaData = await fetchQuotaData(formattedDate);
-          } 
+          }
         }
         if (!quotaData || !Array.isArray(quotaData)) {
           console.warn(
@@ -268,19 +279,19 @@ const FormTRX: React.FC = () => {
           let foundUnitQuota = quotaData.find(
             (unit) => unit.unit_no === selectedUnit
           );
-  
+
           if (foundUnitQuota?.is_active) {
             setCurrentUnitQuota(foundUnitQuota);
             const totalQuota = foundUnitQuota.quota;
             const usedQuota = foundUnitQuota.used || 0;
             const remainingQuota = totalQuota - usedQuota;
-  
+
             setUnitQuota(totalQuota);
             setRemainingQuota(remainingQuota);
             setQuotaMessage(
               `Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`
             );
-  
+
             const issuedAmount = foundUnitQuota.issued || 0;
             if (issuedAmount > remainingQuota) {
               setQuotaMessage(
@@ -294,23 +305,25 @@ const FormTRX: React.FC = () => {
           }
         } else {
           setQuotaMessage("Offline quota data unavailable.");
-          console.error("No quota data available for the specified date or unit.");
+          console.error(
+            "No quota data available for the specified date or unit."
+          );
         }
       } catch (error) {
         console.error("Error fetching or loading quota data:", error);
         setQuotaMessage("Error loading quota data.");
       }
     };
-  
+
     if (selectedUnit) {
       loadUnitDataQuota();
     }
   }, [selectedUnit, latestDate]);
-  
+
   const loadDataQouta = useCallback(async (date: string) => {
     try {
       setLoading(true);
-      const cachedData = await getDataFromStorage('unitQuota');
+      const cachedData = await getDataFromStorage("unitQuota");
       if (cachedData) {
         setquotaData(cachedData);
       } else {
@@ -323,29 +336,29 @@ const FormTRX: React.FC = () => {
         }));
       }
     } catch (err) {
-      console.error('Error loading station data:', err);
+      console.error("Error loading station data:", err);
     } finally {
       setLoading(false);
-      loadDataQouta(date)
+      loadDataQouta(date);
     }
   }, []);
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      setStatus(1); 
+      setStatus(1);
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      setStatus(0); 
+      setStatus(0);
     };
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
@@ -372,7 +385,6 @@ const FormTRX: React.FC = () => {
   const handleRadioChange = (event: CustomEvent) => {
     const selectedValue = event.detail.value as Typetrx;
     setSelectedType(selectedValue);
-
   };
 
   const isFormDisabled = !selectedUnit;
@@ -395,31 +407,31 @@ const FormTRX: React.FC = () => {
     setSignature: React.Dispatch<React.SetStateAction<string | null>>
   ) => {
     const file = event.target.files?.[0]; // Get the selected file
-  
+
     if (file) {
       try {
-        const uploadFoto = generateFoto(file); 
-        setPhoto(uploadFoto); 
-        const fotoSignature = generateSignature(file); 
-        setSignature(fotoSignature); 
+        const uploadFoto = generateFoto(file);
+        setPhoto(uploadFoto);
+        const fotoSignature = generateSignature(file);
+        setSignature(fotoSignature);
         const base64 = await convertToBase64(file);
         setBase64(base64);
       } catch (error) {
-        console.error('Error handling file:', error);
+        console.error("Error handling file:", error);
       }
     }
   };
-  
+
   const convertToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        resolve(reader.result as string); 
+        resolve(reader.result as string);
       };
       reader.onerror = (error) => {
         reject(error); // Reject on error
       };
-      reader.readAsDataURL(file); 
+      reader.readAsDataURL(file);
     });
   };
 
@@ -439,59 +451,57 @@ const FormTRX: React.FC = () => {
     flowMeterAkhir: number,
     cardData: any[] = [],
     setDataHome?: Function,
-    transactionType?: string 
+    transactionType?: string
   ) => {
     if (transactionType === "Receipt" || transactionType === "Receipt Kpc") {
-      return; 
+      return;
     }
     const updatedCardData = cardData.map((item: any) =>
-      item.title === "Flow Meter Akhir" ? { ...item, value: flowMeterAkhir } : item
+      item.title === "Flow Meter Akhir"
+        ? { ...item, value: flowMeterAkhir }
+        : item
     );
     if (setDataHome) {
-      setDataHome(updatedCardData); 
+      setDataHome(updatedCardData);
     } else {
       console.warn("setDataHome function is not defined.");
     }
 
-    localStorage.setItem("cardDash", JSON.stringify(updatedCardData)); 
+    localStorage.setItem("cardDash", JSON.stringify(updatedCardData));
   };
-
 
   useEffect(() => {
     const savedDate = localStorage.getItem("tanggalTransaksi");
     if (savedDate) {
-      setTanggalTransaksi(new Date(savedDate).toLocaleDateString('en-GB'));  
+      setTanggalTransaksi(new Date(savedDate).toLocaleDateString("en-GB"));
     }
   }, []);
 
- 
   const calculateFlowEnd = (typeTrx: string): number | string => {
     if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
-      return flowMeterAwal ?? 0;  
+      return flowMeterAwal ?? 0;
     }
-  
+
     if (flowMeterAwal !== undefined && quantity !== undefined) {
       if (typeTrx === "Issued" || typeTrx === "Transfer") {
         const totalFlowEnd = flowMeterAwal + (quantity ?? 0);
         return totalFlowEnd !== 0 ? totalFlowEnd : "N/A";
       }
     }
-  
+
     return "N/A";
   };
-  
-  
-  
+
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
-  
+
     const validQuantity = quantity ?? 0;
     if (isNaN(validQuantity) || validQuantity <= 0) {
       setQuantityError("Qty Issued harus lebih besar dari 0");
       setIsError(true);
       return;
     }
-  
+
     if (
       !selectedType ||
       !selectedUnit ||
@@ -512,34 +522,35 @@ const FormTRX: React.FC = () => {
       setShowJamErrorInput(true);
       return;
     }
-  
+
     const typeTrxValue = selectedType?.name;
     let flow_end: number = 0;
     if (typeTrxValue === "Receipt" || typeTrxValue === "Receipt KPC") {
-      flow_end = flowMeterAwal ?? 0;  
+      flow_end = flowMeterAwal ?? 0;
     } else {
       flow_end = Number(calculateFlowEnd(typeTrxValue)) || 0;
     }
     const fromDataId = Date.now().toString();
     const lkf_id = await getLatestLkfId();
-  
+
     let latestDataDateFormatted = "";
     const savedDate = await getDataFromStorage("tanggalTransaksi");
     if (savedDate) {
       const transactionDate = new Date(savedDate);
       if (!isNaN(transactionDate.getTime())) {
         transactionDate.setHours(transactionDate.getHours() + 12);
-        latestDataDateFormatted = transactionDate.toISOString(); 
+        latestDataDateFormatted = transactionDate.toISOString();
       } else {
         console.error("Saved date is invalid:", savedDate);
-        latestDataDateFormatted = "Invalid Date";  
+        latestDataDateFormatted = "Invalid Date";
       }
     } else {
-      console.error("No saved date available in localStorage for 'tanggalTransaksi'");
+      console.error(
+        "No saved date available in localStorage for 'tanggalTransaksi'"
+      );
       latestDataDateFormatted = "No Date Available";
     }
-  
-    
+
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -549,7 +560,7 @@ const FormTRX: React.FC = () => {
       hm_last: Number(hmLast),
       hm_km: Number(hmkmValue),
       qty_last: qtyLast ?? 0,
-      qty: quantity,  // Adjusted qty based on transaction type
+      qty: quantity, // Adjusted qty based on transaction type
       flow_start: Number(flowMeterAwal),
       flow_end: flow_end,
       name_operator: fullName!,
@@ -565,8 +576,8 @@ const FormTRX: React.FC = () => {
       start: startTime,
       end: endTime,
     };
-  
-console.log("Data Post Before Sending:", dataPost); 
+
+    console.log("Data Post Before Sending:", dataPost);
     try {
       if (isOnline) {
         const response = await postTransaksi(dataPost);
@@ -581,25 +592,29 @@ console.log("Data Post Before Sending:", dataPost);
           if (quantity > 0) {
             updateLocalStorageQuota(selectedUnit, quantity);
           }
-          const cardDashOnline = JSON.parse(localStorage.getItem("cardDash") || "[]");
+          const cardDashOnline = JSON.parse(
+            localStorage.getItem("cardDash") || "[]"
+          );
           updateCardDashFlowMeter(flow_end, cardDashOnline);
           alert("Transaksi sukses dikirim ke server");
         }
       } else {
         const unitQuota = await getDataFromStorage("unitQuota");
         const newQty = dataPost.qty;
-  
+
         for (let index = 0; index < unitQuota.length; index++) {
           const element = unitQuota[index];
-  
+
           if (element.unit_no === dataPost.no_unit) {
             element.used = element.used + newQty;
           }
         }
-        const cardDashOffline = JSON.parse(localStorage.getItem("cardDash") || "[]");
+        const cardDashOffline = JSON.parse(
+          localStorage.getItem("cardDash") || "[]"
+        );
         if (Array.isArray(cardDashOffline)) {
           updateCardDashFlowMeter(flow_end, cardDashOffline);
-        } 
+        }
         dataPost.status = 0;
         await insertNewData(dataPost);
         await insertNewDataHistori(dataPost);
@@ -612,19 +627,17 @@ console.log("Data Post Before Sending:", dataPost);
       setErrorModalOpen(true);
     }
   };
-  
-  
-  
+
   // const handlePost = async (e: React.FormEvent) => {
-  //   e.preventDefault(); 
-  
+  //   e.preventDefault();
+
   //   const validQuantity = quantity ?? 0;
   //   if (isNaN(validQuantity) || validQuantity <= 0) {
   //     setQuantityError("Qty Issued harus lebih besar dari 0");
   //     setIsError(true);
   //     return;
   //   }
-  
+
   //   if (
   //     !selectedType ||
   //     !selectedUnit ||
@@ -645,13 +658,13 @@ console.log("Data Post Before Sending:", dataPost);
   //     setShowJamErrorInput(true);
   //     return;
   //   }
-  
+
   //   const typeTrxValue = typeTrx[0];
   //   const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
   //   const fromDataId = Date.now().toString();
-  
+
   //   const lkf_id = await getLatestLkfId();
-  
+
   //   let latestDataDateFormatted = "";
   //   const savedDate =  await getDataFromStorage("tanggalTransaksi");
   //   if (savedDate) {
@@ -659,13 +672,13 @@ console.log("Data Post Before Sending:", dataPost);
   //     if (!isNaN(transactionDate.getTime())) {
   //       // Jika valid, tambahkan 12 jam ke tanggal
   //       transactionDate.setHours(transactionDate.getHours() + 12);
-        
+
   //       // Format tanggal ke ISO string
-  //       latestDataDateFormatted = transactionDate.toISOString(); 
+  //       latestDataDateFormatted = transactionDate.toISOString();
   //     } else {
   //       // Jika tanggal tidak valid, log kesalahan
   //       console.error("Saved date is invalid:", savedDate);
-  //       latestDataDateFormatted = "Invalid Date";  
+  //       latestDataDateFormatted = "Invalid Date";
   //     }
   //   } else {
   //     console.error("No saved date available in localStorage for 'tanggalTransaksi'");
@@ -712,16 +725,16 @@ console.log("Data Post Before Sending:", dataPost);
   //         }
   //         const cardDashOnline = JSON.parse(localStorage.getItem("cardDash") || "[]");
   //         updateCardDashFlowMeter(flow_end, cardDashOnline);
-  
+
   //         alert("Transaksi sukses dikirim ke server");
   //       }
   //     } else {
   //       const unitQuota = await getDataFromStorage("unitQuota");
   //       const newQty = dataPost.qty;
-  
+
   //       for (let index = 0; index < unitQuota.length; index++) {
   //         const element = unitQuota[index];
-  
+
   //         if (element.unit_no === dataPost.no_unit) {
   //           element.used = element.used + newQty;
   //         }
@@ -729,7 +742,7 @@ console.log("Data Post Before Sending:", dataPost);
   //       const cardDashOffline = JSON.parse(localStorage.getItem("cardDash") || "[]");
   //       if (Array.isArray(cardDashOffline)) {
   //         updateCardDashFlowMeter(flow_end, cardDashOffline);
-  //       } 
+  //       }
   //       dataPost.status = 0;
   //       await insertNewData(dataPost);
   //       await insertNewDataHistori(dataPost);
@@ -742,22 +755,27 @@ console.log("Data Post Before Sending:", dataPost);
   //     setErrorModalOpen(true);
   //   }
   // };
-  
-  const updateLocalStorageQuota = async (unit_no: string, issuedQuantity: number) => {
+
+  const updateLocalStorageQuota = async (
+    unit_no: string,
+    issuedQuantity: number
+  ) => {
     const unitQuota = await getDataFromStorage("unitQouta");
     if (unitQuota) {
       const parsedData = JSON.parse(unitQuota);
-      const updatedData = parsedData.map((unit: { unit_no: string; quota: number; used: number; }) => {
-        if (unit.unit_no === unit_no) {
-          const newUsed = unit.used + issuedQuantity;
-          return {
-            ...unit,
-            used: newUsed,
-            remainingQuota: unit.quota - newUsed
-          };
+      const updatedData = parsedData.map(
+        (unit: { unit_no: string; quota: number; used: number }) => {
+          if (unit.unit_no === unit_no) {
+            const newUsed = unit.used + issuedQuantity;
+            return {
+              ...unit,
+              used: newUsed,
+              remainingQuota: unit.quota - newUsed,
+            };
+          }
+          return unit;
         }
-        return unit;
-      });
+      );
       await saveDataToStorage("unitQouta", JSON.stringify(updatedData));
     }
   };
@@ -765,7 +783,6 @@ console.log("Data Post Before Sending:", dataPost);
   const insertNewData = async (data: DataFormTrx) => {
     try {
       await addDataTrxType(data);
-
     } catch (error) {
       console.error("Failed to insert new data:", error);
     }
@@ -774,7 +791,6 @@ console.log("Data Post Before Sending:", dataPost);
   const insertNewDataHistori = async (data: DataFormTrx) => {
     try {
       await addDataHistory(data);
-
     } catch (error) {
       console.error("Failed to insert new data:", error);
     }
@@ -782,18 +798,16 @@ console.log("Data Post Before Sending:", dataPost);
 
   const handleSignatureConfirm = (newSignature: string) => {
     setSignatureBase64(newSignature);
-
   };
 
   useEffect(() => {
     const loadUnitData = async () => {
-      const cachedUnitData = await getDataFromStorage('allUnit');
+      const cachedUnitData = await getDataFromStorage("allUnit");
       if (cachedUnitData) {
         setUnitOptions(cachedUnitData);
       } else {
         const units = await fetchUnitData();
         setUnitOptions(units);
-
       }
     };
 
@@ -802,7 +816,7 @@ console.log("Data Post Before Sending:", dataPost);
 
   useEffect(() => {
     const loadOperatorData = async () => {
-      const cachedData = await getDataFromStorage('allOperator');
+      const cachedData = await getDataFromStorage("allOperator");
       if (cachedData) {
         setOperatorOptions(cachedData);
       } else {
@@ -814,13 +828,11 @@ console.log("Data Post Before Sending:", dataPost);
     loadOperatorData();
   }, []);
 
-  useEffect(() => {
-
-  }, [operatorOptions]);
+  useEffect(() => {}, [operatorOptions]);
 
   useEffect(() => {
     const loadQoutaData = async () => {
-      const cachedData = await getDataFromStorage('unitQouta');
+      const cachedData = await getDataFromStorage("unitQouta");
       if (cachedData) {
         setQuotaData(cachedData);
       } else {
@@ -830,21 +842,17 @@ console.log("Data Post Before Sending:", dataPost);
     loadQoutaData();
   }, []);
 
-  useEffect(() => {
-
-  }, [qoutaData]);
+  useEffect(() => {}, [qoutaData]);
 
   const updateCard = async () => {
-    localStorage.removeItem('cardDash')
+    localStorage.removeItem("cardDash");
     const cards = await getHomeByIdLkf(lkfId);
-  }
-
+  };
 
   const updatedKuota = async (date: String) => {
-    removeDataFromStorage('unitQuota')
+    removeDataFromStorage("unitQuota");
     const cards = await getAllQuota(date);
-
-  }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLIonInputElement>) => {
     if (e.nativeEvent.key === "Enter") {
@@ -854,13 +862,11 @@ console.log("Data Post Before Sending:", dataPost);
       }
     }
   };
-  
 
   const handleHmkmUnitChange = (e: CustomEvent) => {
     const value = e.detail.value ? Number(e.detail.value) : null;
-  
+
     if (value !== null && value < hmLast) {
-      
       setShowError(true);
     } else {
       // Jika valid, update hmkmValue
@@ -868,7 +874,7 @@ console.log("Data Post Before Sending:", dataPost);
       setHmkmValue(value);
     }
   };
-  
+
   function setBase64(value: SetStateAction<string | undefined>): void {
     throw new Error("Function not implemented.");
   }
@@ -878,14 +884,17 @@ console.log("Data Post Before Sending:", dataPost);
       const storedJdeOptions = await getDataFromStorage("allOperator");
       if (storedJdeOptions) {
         try {
-          if (typeof storedJdeOptions === 'string') {
+          if (typeof storedJdeOptions === "string") {
             const parsedJdeOptions = JSON.parse(storedJdeOptions);
             setJdeOptions(parsedJdeOptions);
           } else {
             setJdeOptions([]);
           }
         } catch (error) {
-          console.error("Failed to parse JDE options from local storage", error);
+          console.error(
+            "Failed to parse JDE options from local storage",
+            error
+          );
           setJdeOptions([]);
         }
       } else {
@@ -901,13 +910,13 @@ console.log("Data Post Before Sending:", dataPost);
     newValue: SingleValue<{ value: string; label: string }>,
     actionMeta: ActionMeta<{ value: string; label: string }>
   ) => {
-    const selectedValue = newValue?.value?.trim() || '';
+    const selectedValue = newValue?.value?.trim() || "";
     if (!operatorOptions || operatorOptions.length === 0) {
       console.warn("Operator options are empty. Cannot find matching option.");
       return;
     }
-    const selectedJdeOption = operatorOptions.find((operator) =>
-      String(operator.JDE).trim() === String(selectedValue).trim()
+    const selectedJdeOption = operatorOptions.find(
+      (operator) => String(operator.JDE).trim() === String(selectedValue).trim()
     );
     if (selectedJdeOption) {
       setFullName(selectedJdeOption.fullname);
@@ -922,40 +931,43 @@ console.log("Data Post Before Sending:", dataPost);
     // Convert startTime and endTime to Date objects
     const start = new Date(`1970-01-01T${startTime}:00`);
     const end = new Date(`1970-01-01T${endTime}:00`);
-  
+
     // Shift 1: 06:00 - 18:00
     const shift1Start = new Date("1970-01-01T06:00:00");
     const shift1End = new Date("1970-01-01T18:00:00");
-  
+
     // Shift 2: 18:00 - 06:00 (next day for end time)
     const shift2Start = new Date("1970-01-01T18:00:00");
     const shift2End = new Date("1970-01-02T06:00:00"); // Next day
-  
+
     // Ensure endTime is not smaller than startTime
     if (end < start) {
       return false; // Invalid case: endTime is earlier than startTime
     }
-  
+
     // Check if startTime and endTime fit within either shift
     const isShift1 =
-      start >= shift1Start && start <= shift1End && end >= shift1Start && end <= shift1End;
+      start >= shift1Start &&
+      start <= shift1End &&
+      end >= shift1Start &&
+      end <= shift1End;
     const isShift2 =
       (start >= shift2Start || start < shift1Start) && // Handles overlap past midnight
       (end >= shift2Start || end < shift1Start);
-  
+
     return isShift1 || isShift2;
   };
-  
+
   useEffect(() => {
     const determineShift = () => {
       const now = new Date();
       const currentHour = now.getHours();
       const isDayShift = currentHour >= 6 && currentHour < 18;
-      const isNightShift = currentHour >= 18 || currentHour < 6
+      const isNightShift = currentHour >= 18 || currentHour < 6;
       if (isDayShift) {
-        setShift('Day');
+        setShift("Day");
       } else if (isNightShift) {
-        setShift('Night');
+        setShift("Night");
       }
     };
     determineShift();
@@ -969,16 +981,16 @@ console.log("Data Post Before Sending:", dataPost);
     const isDayShift = currentHour >= 6 && currentHour < 18;
     const isNightShift = currentHour >= 18 || currentHour < 6;
     // Define the shift start times based on current shift
-    const shiftStart = isDayShift ? 6 : 18;  // 06:00 for Day shift, 18:00 for Night shift
-    const shiftEnd = isDayShift ? 18 : 6;    // 18:00 for Day shift, 06:00 for Night shift
-  
+    const shiftStart = isDayShift ? 6 : 18; // 06:00 for Day shift, 18:00 for Night shift
+    const shiftEnd = isDayShift ? 18 : 6; // 18:00 for Day shift, 06:00 for Night shift
+
     // Validate start time based on the determined shift
     const newStartHour = new Date(`1970-01-01T${newStartTime}:00`).getHours();
-  
+
     // Check if the new start time falls within the valid shift range
     if (
       (isDayShift && (newStartHour < shiftStart || newStartHour >= shiftEnd)) ||
-      (isNightShift && (newStartHour < shiftStart && newStartHour >= shiftEnd))
+      (isNightShift && newStartHour < shiftStart && newStartHour >= shiftEnd)
     ) {
       setShowJamError(true);
       setShowJamErrorInput(true);
@@ -986,7 +998,7 @@ console.log("Data Post Before Sending:", dataPost);
       setShowJamError(false);
       setShowJamErrorInput(false);
     }
-  
+
     if (endTime) {
       if (!validateShiftTime(newStartTime, endTime)) {
         setShowJamError(true);
@@ -997,34 +1009,34 @@ console.log("Data Post Before Sending:", dataPost);
       }
     }
   };
-  
+
   const handleEndTimeChange = (e: CustomEvent) => {
     const newEndTime = e.detail.value as string;
     setEndTime(newEndTime);
-  
+
     // Get the current hour to determine the current shift
     const now = new Date();
     const currentHour = now.getHours();
     const isDayShift = currentHour >= 6 && currentHour < 18;
     const isNightShift = currentHour >= 18 || currentHour < 6;
-  
+
     // Define the shift start and end times based on current shift
-    const shiftStart = isDayShift ? 6 : 18;  // 06:00 for Day shift, 18:00 for Night shift
-    const shiftEnd = isDayShift ? 18 : 6;    // 18:00 for Day shift, 06:00 for Night shift
-  
+    const shiftStart = isDayShift ? 6 : 18; // 06:00 for Day shift, 18:00 for Night shift
+    const shiftEnd = isDayShift ? 18 : 6; // 18:00 for Day shift, 06:00 for Night shift
+
     // Convert the newEndTime to a Date object to extract the hours
     const newEndDate = new Date(`1970-01-01T${newEndTime}:00`);
     const newEndHour = newEndDate.getHours();
-  
+
     // Validate that the endTime is within the allowed shift time range
     const isEndTimeInShiftRange =
       (isDayShift && newEndHour >= shiftStart && newEndHour < shiftEnd) ||
       (isNightShift && (newEndHour >= shiftStart || newEndHour < shiftEnd));
-  
+
     // Check if endTime is earlier than startTime
     const newStartDate = new Date(`1970-01-01T${startTime}:00`);
     const isEndTimeAfterStartTime = newEndDate >= newStartDate;
-  
+
     // If endTime is not within shift range or endTime is earlier than startTime, show an error
     if (!isEndTimeInShiftRange || !isEndTimeAfterStartTime) {
       setShowJamError(true);
@@ -1034,7 +1046,6 @@ console.log("Data Post Before Sending:", dataPost);
       setShowJamErrorInput(false);
     }
   };
-  
 
   useEffect(() => {
     const dataFlowDash = localStorage.getItem("cardDash");
@@ -1063,15 +1074,15 @@ console.log("Data Post Before Sending:", dataPost);
     }
   }, []);
 
-
   const handleQuantityChange = (e: any) => {
     const inputQuantity = Number(e.detail.value);
-    const isIssuedOrTransfer = selectedType?.name === "Issued" || selectedType?.name === "Transfer";
-  
+    const isIssuedOrTransfer =
+      selectedType?.name === "Issued" || selectedType?.name === "Transfer";
+
     // Reset error states initially
     setQuantityError("");
     setIsError(false);
-  
+
     if (isIssuedOrTransfer) {
       if (isNaN(inputQuantity) || inputQuantity <= 0) {
         setQuantityError("Qty harus lebih besar dari 0.");
@@ -1079,7 +1090,10 @@ console.log("Data Post Before Sending:", dataPost);
         return;
       }
       const quota = remainingQuota || 0;
-      if (typeof selectedUnit === "string" && (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))) {
+      if (
+        typeof selectedUnit === "string" &&
+        (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))
+      ) {
         if (inputQuantity > quota) {
           setQuantityError("Qty tidak boleh lebih besar dari sisa kuota.");
           setIsError(true);
@@ -1096,15 +1110,17 @@ console.log("Data Post Before Sending:", dataPost);
     setQuantity(inputQuantity);
   };
 
- 
-
-  const filteredUnitOptions = (selectedType &&
-    (selectedType.name === 'Receipt' || selectedType.name === 'Receipt KPC' || selectedType.name === 'Transfer'))
-    ? unitOptions.filter(unit => unit.unit_no.startsWith("FT") || unit.unit_no.startsWith("TK"))
-    : unitOptions;
-  useEffect(() => {
-
-  }, [hmkmLast]);
+  const filteredUnitOptions =
+    selectedType &&
+    (selectedType.name === "Receipt" ||
+      selectedType.name === "Receipt KPC" ||
+      selectedType.name === "Transfer")
+      ? unitOptions.filter(
+          (unit) =>
+            unit.unit_no.startsWith("FT") || unit.unit_no.startsWith("TK")
+        )
+      : unitOptions;
+  useEffect(() => {}, [hmkmLast]);
 
   const handleUnitChange = async (
     newValue: SingleValue<{ value: string; label: string }>,
@@ -1112,28 +1128,33 @@ console.log("Data Post Before Sending:", dataPost);
   ) => {
     if (newValue) {
       const unitValue = newValue.value;
-      setSelectedUnit(unitValue); 
+      setSelectedUnit(unitValue);
       const selectedUnitOption = unitOptions.find(
         (unit) => unit.unit_no === unitValue
       );
-  
+
       if (selectedUnitOption) {
         setModel(selectedUnitOption.brand);
         setOwner(selectedUnitOption.owner);
-        setHmkmValue(selectedUnitOption.hm_km); 
-        setHmKmLast(selectedUnitOption.hm_last); 
+        setHmkmValue(selectedUnitOption.hm_km);
+        setHmKmLast(selectedUnitOption.hm_last);
         setQtyValue(selectedUnitOption.qty);
-        const newKoutaLimit = unitValue.startsWith("LV") || unitValue.startsWith("HLV") ? unitQouta : 0;
+        const newKoutaLimit =
+          unitValue.startsWith("LV") || unitValue.startsWith("HLV")
+            ? unitQouta
+            : 0;
         setKoutaLimit(newKoutaLimit);
         setShowError(
           unitValue.startsWith("LV") ||
-          (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+            (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
         );
       } else {
         try {
           const offlineData = await fetchLatestHmLast(unitValue);
-          const offlineHM = await getDataFromStorage('lastTrx');
-          const hmKmValues = offlineHM.map((item: { hm_km: number }) => item.hm_km);
+          const offlineHM = await getDataFromStorage("lastTrx");
+          const hmKmValues = offlineHM.map(
+            (item: { hm_km: number }) => item.hm_km
+          );
           if (offlineData.hm_km !== undefined) {
             setHmKmLast(offlineData.hm_km); // Set hm_km from offline data
           }
@@ -1146,12 +1167,13 @@ console.log("Data Post Before Sending:", dataPost);
           if (offlineData.qty_last !== undefined) {
             setQtyValue(offlineData.qty_last); // Set qty from offline data
           }
-  
         } catch (error) {
           console.error("Failed to retrieve data from IndexedDB:", error);
         }
-  
-        console.warn(`Unit with value ${unitValue} was not found in unitOptions.`);
+
+        console.warn(
+          `Unit with value ${unitValue} was not found in unitOptions.`
+        );
       }
     }
   };
@@ -1165,76 +1187,96 @@ console.log("Data Post Before Sending:", dataPost);
   //       }
   //       if (difference > 0) {
   //         const result = difference / qtyLast;
-  //         return parseFloat(result.toFixed(2)); 
-  //       } 
-  //     } 
-  //     return 0; 
+  //         return parseFloat(result.toFixed(2));
+  //       }
+  //     }
+  //     return 0;
   //   };
-  
+
   //   const fbrResult = calculateFBR();
   //   setFbrResultOf(fbrResult);
-  
+
   // }, [hmkmValue, hmLast, qtyLast]);
- 
+
   useEffect(() => {
     const calculateFBR = (): number => {
       let effectiveHmkmValue = hmkmValue;
-      if (Array.isArray(typeTrx) && typeTrx.some(item => item.name === 'Transfer Receipt' || item.name === 'Receipt KPC')) {
-        effectiveHmkmValue = 0; 
+      if (
+        Array.isArray(typeTrx) &&
+        typeTrx.some(
+          (item) =>
+            item.name === "Transfer Receipt" || item.name === "Receipt KPC"
+        )
+      ) {
+        effectiveHmkmValue = 0;
       }
-      if (isFormDisabled || Array.isArray(typeTrx) && typeTrx.some(item => item.name === 'Receipt' || item.name === 'Receipt KPC')) {
+      if (
+        isFormDisabled ||
+        (Array.isArray(typeTrx) &&
+          typeTrx.some(
+            (item) => item.name === "Receipt" || item.name === "Receipt KPC"
+          ))
+      ) {
         return 0; // Skip calculation and return 0
       }
-  
+
       let effectiveQtyLast = qtyLast;
-      if (Array.isArray(typeTrx) && typeTrx.some(item => item.name === 'Receipt' || item.name === 'Receipt KPC')) {
+      if (
+        Array.isArray(typeTrx) &&
+        typeTrx.some(
+          (item) => item.name === "Receipt" || item.name === "Receipt KPC"
+        )
+      ) {
         effectiveQtyLast = 0; // Ignore qtyLast for these transaction types
       }
-  
-   
-      if (typeof effectiveHmkmValue === 'number' && typeof hmLast === 'number' && typeof effectiveQtyLast === 'number') {
+
+      if (
+        typeof effectiveHmkmValue === "number" &&
+        typeof hmLast === "number" &&
+        typeof effectiveQtyLast === "number"
+      ) {
         const difference = effectiveHmkmValue - hmLast;
         if (effectiveQtyLast === 0 || difference <= 0) {
-          return 0; 
+          return 0;
         }
         const result = difference / effectiveQtyLast;
-        return parseFloat(result.toFixed(2)); 
+        return parseFloat(result.toFixed(2));
       }
-      return 0; 
+      return 0;
     };
     const fbrResult = calculateFBR();
     setFbrResultOf(fbrResult);
-  
-  }, [hmkmValue, hmLast, qtyLast, typeTrx, isFormDisabled]); 
-  
+  }, [hmkmValue, hmLast, qtyLast, typeTrx, isFormDisabled]);
 
   useEffect(() => {
     const getOfflineData = async () => {
-      setHmLast(0);  
+      setHmLast(0);
       const offlineData = await fetchLatestHmLast(selectedUnit);
       if (offlineData.hm_km !== undefined) {
-        setHmLast(offlineData.hm_km);  
-        setQty(offlineData.qty_last || 0)
+        setHmLast(offlineData.hm_km);
+        setQty(offlineData.qty_last || 0);
       } else {
-        setHmLast(0); 
+        setHmLast(0);
       }
-
     };
     getOfflineData();
   }, [selectedUnit]);
- 
+
   const calculateFBR = (): number => {
-    if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast=== 'number') {
-      const difference = hmkmValue - hmLast
+    if (
+      typeof hmkmValue === "number" &&
+      typeof hmLast === "number" &&
+      typeof qtyLast === "number"
+    ) {
+      const difference = hmkmValue - hmLast;
       if (qtyValue === 0) {
         return 0;
       }
       if (difference > 0) {
         const result = difference / qtyLast;
         return parseFloat(result.toFixed(2));
-      } 
+      }
     } else {
-
     }
     return 0;
   };
@@ -1247,51 +1289,50 @@ console.log("Data Post Before Sending:", dataPost);
     setIsAlertOpen(true);
     setTimeout(() => {
       setIsAlertOpen(false);
-    }, 3000); 
+    }, 3000);
   };
-
 
   return (
     <IonPage>
       <IonHeader translucent={true} className="ion-no-border">
         <IonToolbar className="custom-header">
-          <IonTitle>
-            Form Tambah Transaksi
-          </IonTitle>
+          <IonTitle>Form Tambah Transaksi</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent>
         <div style={{ marginTop: "20px", padding: "15px" }}>
-          {(selectedUnit?.startsWith("LV") || selectedUnit?.startsWith("HLV")) && (
+          {(selectedUnit?.startsWith("LV") ||
+            selectedUnit?.startsWith("HLV")) && <IonRow></IonRow>}
+          {currentUnitQuota?.is_active && (
             <IonRow>
-
+              <IonCol>
+                <IonItemDivider
+                  style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
+                  <IonLabel style={{ display: "flex" }}>
+                    <IonImg
+                      style={{ width: "40px" }}
+                      src="Glyph.png"
+                      alt="Logo DH"
+                    />
+                    <IonTitle
+                      style={{
+                        color: remainingQuota === 0 ? "red" : "#8AAD43",
+                      }}>
+                      Sisa Kuota:{" "}
+                      {remainingQuota > 0
+                        ? `${remainingQuota} Liter`
+                        : "0 Liter"}
+                    </IonTitle>
+                  </IonLabel>
+                </IonItemDivider>
+              </IonCol>
             </IonRow>
           )}
-        {currentUnitQuota?.is_active && (
-  <IonRow>
-    <IonCol>
-      <IonItemDivider style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
-        <IonLabel style={{ display: "flex" }}>
-          <IonImg style={{ width: "40px" }} src="Glyph.png" alt="Logo DH" />
-          <IonTitle
-            style={{
-              color: remainingQuota === 0 ? 'red' : '#8AAD43', 
-            }}
-          >
-            Sisa Kuota: {remainingQuota > 0 ? `${remainingQuota} Liter` : '0 Liter'}
-          </IonTitle>
-        </IonLabel>
-      </IonItemDivider>
-    </IonCol>
-  </IonRow>
-)}
           <div style={{ marginTop: "30px" }}>
-            
-            <IonGrid>  
-            <h1>Shift: {shift}</h1>
+            <IonGrid>
+              <h1>Shift: {shift}</h1>
               <IonRow>
-                <IonCol size="8"
-                >
+                <IonCol size="8">
                   <div>
                     <IonLabel style={{ fontWeigt: "Bold", fontSize: "16px" }}>
                       Pilih Transaksi
@@ -1299,19 +1340,25 @@ console.log("Data Post Before Sending:", dataPost);
                     </IonLabel>
                     <IonRadioGroup
                       style={{
-                        backgroundColor: showErrorType && selectedType === undefined ? "rgba(255, 0, 0, 0.1)" : "transparent", // Apply red background if error
-                        padding: "10px", 
+                        backgroundColor:
+                          showErrorType && selectedType === undefined
+                            ? "rgba(255, 0, 0, 0.1)"
+                            : "transparent", // Apply red background if error
+                        padding: "10px",
                         borderRadius: "5px",
-
                       }}
                       className="radio-display"
                       value={selectedType}
                       onIonChange={handleRadioChange}
-                      compareWith={compareWith}
-                    >
+                      compareWith={compareWith}>
                       {typeTrx.map((type) => (
-                        <IonItem style={{ fontWeigt: "500px", fontSize: "20px" }} key={type.id} className="item-no-border" >
-                          <IonRadio labelPlacement="end" value={type}>{type.name}</IonRadio>
+                        <IonItem
+                          style={{ fontWeigt: "500px", fontSize: "20px" }}
+                          key={type.id}
+                          className="item-no-border">
+                          <IonRadio labelPlacement="end" value={type}>
+                            {type.name}
+                          </IonRadio>
                         </IonItem>
                       ))}
                     </IonRadioGroup>
@@ -1357,8 +1404,8 @@ console.log("Data Post Before Sending:", dataPost);
                     }
                     onChange={handleUnitChange}
                     options={filteredUnitOptions.map((unit) => ({
-                      value: unit.unit_no || '',
-                      label: unit.unit_no || '',
+                      value: unit.unit_no || "",
+                      label: unit.unit_no || "",
                     }))}
                     isSearchable={true}
                   />
@@ -1382,9 +1429,10 @@ console.log("Data Post Before Sending:", dataPost);
               <IonGrid>
                 <IonRow>
                   <IonCol size="12">
-                    <div><IonLabel>
-                      Owner <span style={{ color: "red" }}>*</span>
-                    </IonLabel>
+                    <div>
+                      <IonLabel>
+                        Owner <span style={{ color: "red" }}>*</span>
+                      </IonLabel>
                       <IonInput
                         style={{ background: "#E8E8E8" }}
                         className="custom-input"
@@ -1394,9 +1442,9 @@ console.log("Data Post Before Sending:", dataPost);
                         placeholder="Input Owner"
                         readonly
                         disabled={isFormDisabled}
-                      /></div>
+                      />
+                    </div>
                   </IonCol>
-
                 </IonRow>
               </IonGrid>
               <IonRow>
@@ -1412,7 +1460,6 @@ console.log("Data Post Before Sending:", dataPost);
                     placeholder="Input HM/KM Unit"
                     // value={hmkmLast} // Fallback to hmkmLast
                     value={isNaN(hmLast) ? 0 : hmLast}
-                    
                     // onIonChange={(e) => setHmLast(Number(e.detail.value))}
                     disabled
                   />
@@ -1432,15 +1479,13 @@ console.log("Data Post Before Sending:", dataPost);
                     placeholder="Input HM Terakhir"
                     onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
-                   
-                    />
-                    {showError && (
-                      <div style={{ color: "red" }}>
-                        HM/KM Unit Tidak Boleh Kecil Dari HM/KM Terakhir Transaksi
-                      </div>
-                    )}
+                  />
+                  {showError && (
+                    <div style={{ color: "red" }}>
+                      HM/KM Unit Tidak Boleh Kecil Dari HM/KM Terakhir Transaksi
+                    </div>
+                  )}
                 </IonCol>
-
               </IonRow>
               <IonRow>
                 <IonCol>
@@ -1513,24 +1558,24 @@ console.log("Data Post Before Sending:", dataPost);
                       setFlowMeterAkhir(Number(e.detail.value))
                     }
                     value={
-                      typeof calculateFlowEnd(selectedType?.name || "") === "number"
+                      typeof calculateFlowEnd(selectedType?.name || "") ===
+                      "number"
                         ? calculateFlowEnd(selectedType?.name || "")
                         : ""
                     }
                     disabled
                     placeholder=""
                   />
-
                 </IonCol>
               </IonRow>
               <IonRow>
-
                 <IonCol
                   style={{
-                    backgroundColor: employeeError ? "rgba(255, 0, 0, 0.1)" : "transparent", 
-                    padding: "10px", 
-                  }}
-                >
+                    backgroundColor: employeeError
+                      ? "rgba(255, 0, 0, 0.1)"
+                      : "transparent",
+                    padding: "10px",
+                  }}>
                   <IonLabel className="label-input">
                     Select Employee ID <span style={{ color: "red" }}>*</span>
                   </IonLabel>
@@ -1542,13 +1587,15 @@ console.log("Data Post Before Sending:", dataPost);
                         marginTop: "10px",
                         backgroundColor: "white",
                         zIndex: 10,
-                        height: "57px", 
+                        height: "57px",
                       }),
                       control: (provided) => ({
                         ...provided,
-                        height: "57px", 
-                        minHeight: "57px", 
-                        borderColor: employeeError ? "red" : provided.borderColor, // Highlight border red on error
+                        height: "57px",
+                        minHeight: "57px",
+                        borderColor: employeeError
+                          ? "red"
+                          : provided.borderColor, // Highlight border red on error
                       }),
                       valueContainer: (provided) => ({
                         ...provided,
@@ -1559,11 +1606,15 @@ console.log("Data Post Before Sending:", dataPost);
                         lineHeight: "57px", // Center text vertically
                       }),
                     }}
-                    value={fuelman_id ? { value: fuelman_id, label: fuelman_id } : null}
+                    value={
+                      fuelman_id
+                        ? { value: fuelman_id, label: fuelman_id }
+                        : null
+                    }
                     onChange={handleChangeEmployeeId}
                     options={operatorOptions.map((operator) => ({
-                      value: operator.JDE || '',
-                      label: operator.JDE || '',
+                      value: operator.JDE || "",
+                      label: operator.JDE || "",
                     }))}
                     placeholder="Select Employee ID"
                     isSearchable={true}
@@ -1591,7 +1642,6 @@ console.log("Data Post Before Sending:", dataPost);
                     disabled={isFormDisabled}
                   />
                 </IonCol>
-
               </IonRow>
               <IonRow>
                 <IonCol>
@@ -1601,16 +1651,24 @@ console.log("Data Post Before Sending:", dataPost);
                   <IonInput
                     className="custom-input"
                     type="time"
-                    onIonChange={handleStartTimeChange} 
+                    onIonChange={handleStartTimeChange}
                     disabled={isFormDisabled}
                     value={startTime}
                   />
-                  <IonRow> {showJamError && (
-                    <IonLabel style={{ color: 'red', fontSize: '14px', marginTop: '8px' }}>
-                      Pengiputan pada jam harus sesuai dengan shift saat ini  !!!
-                    </IonLabel>
-                  )}</IonRow>
-                  
+                  <IonRow>
+                    {" "}
+                    {showJamError && (
+                      <IonLabel
+                        style={{
+                          color: "red",
+                          fontSize: "14px",
+                          marginTop: "8px",
+                        }}>
+                        Pengiputan pada jam harus sesuai dengan shift saat ini
+                        !!!
+                      </IonLabel>
+                    )}
+                  </IonRow>
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1623,22 +1681,33 @@ console.log("Data Post Before Sending:", dataPost);
                     disabled={isFormDisabled}
                     value={endTime}
                   />
-                  {showJamErrorInput
-                  && startTime && endTime && endTime < startTime && (
-                    <p style={{ color: "red" }}>* Jam selesai tidak boleh lebih kecil dari jam mulai</p>
-                  )}
-                  <IonRow> {showJamError && (
-                    <IonLabel style={{ color: 'red', fontSize: '14px', marginTop: '8px' }}>
-                      Pengiputan pada jam harus sesuai dengan shift saat ini  !!!
-                    </IonLabel>
-                  )}</IonRow>
+                  {showJamErrorInput &&
+                    startTime &&
+                    endTime &&
+                    endTime < startTime && (
+                      <p style={{ color: "red" }}>
+                        * Jam selesai tidak boleh lebih kecil dari jam mulai
+                      </p>
+                    )}
+                  <IonRow>
+                    {" "}
+                    {showJamError && (
+                      <IonLabel
+                        style={{
+                          color: "red",
+                          fontSize: "14px",
+                          marginTop: "8px",
+                        }}>
+                        Pengiputan pada jam harus sesuai dengan shift saat ini
+                        !!!
+                      </IonLabel>
+                    )}
+                  </IonRow>
                 </IonCol>
-
               </IonRow>
               <IonRow>
                 <IonCol>
-                <CameraInput setPhotoPreview={setPhotoPreview} />
-
+                  <CameraInput setPhotoPreview={setPhotoPreview} />
                 </IonCol>
                 <IonCol>
                   <IonCard style={{ height: "160px" }}>
@@ -1647,14 +1716,20 @@ console.log("Data Post Before Sending:", dataPost);
                       accept="image/*"
                       id="signatureInput"
                       style={{ display: "none" }}
-                      onChange={(e) => handleFileChange(e, setPhotoFile, setBase64, setSignature)}
+                      onChange={(e) =>
+                        handleFileChange(
+                          e,
+                          setPhotoFile,
+                          setBase64,
+                          setSignature
+                        )
+                      }
                     />
-                    <IonButton 
+                    <IonButton
                       color="warning"
                       size="small"
                       onClick={() => setIsSignatureModalOpen(true)}
-                      disabled={isFormDisabled}
-                    >
+                      disabled={isFormDisabled}>
                       <IonIcon slot="start" icon={pencilOutline} />
                       Tanda Tangan
                     </IonButton>
@@ -1672,30 +1747,28 @@ console.log("Data Post Before Sending:", dataPost);
                 </IonCol>
               </IonRow>
               <div style={{ marginTop: "60px", float: "inline-end" }}>
-              
                 <IonButton
                   style={{ height: "48px" }}
                   onClick={handleClose}
-                  color="light"
-                >
+                  color="light">
                   <IonIcon slot="start" icon={closeCircleOutline} />
                   Tutup Form
                 </IonButton>
-                <IonButton 
+                <IonButton
                   disabled={
                     isError ||
                     quantity === null ||
                     !validateShiftTime(startTime, endTime) ||
                     showJamError
-                     // Disable if time validation fails
+                    // Disable if time validation fails
                   }
                   onClick={(e) => {
                     handlePost(e);
                     showAlert();
                   }}
-                  
-                  className={`check-button ${isOnline ? "button-save-data" : "button-save-draft"}`}
-                >
+                  className={`check-button ${
+                    isOnline ? "button-save-data" : "button-save-draft"
+                  }`}>
                   <IonIcon slot="start" icon={saveOutline} />
                   {isOnline ? "Simpan Data" : "Simpan Data Ke Draft"}
                 </IonButton>
@@ -1703,27 +1776,23 @@ console.log("Data Post Before Sending:", dataPost);
             </IonGrid>
           </div>
         </div>
-     
+
         <SignatureModal
           isOpen={isSignatureModalOpen}
           onClose={() => setIsSignatureModalOpen(false)}
           onConfirm={handleSignatureConfirm}
         />
-       <div>
+        <div>
           <IonAlert
-            
             isOpen={isAlertOpen}
             header="Pastikan Data Terisi Semua"
             message="Simpan Data "
-            buttons={['OK']}
-            style={{ width: '400' }} 
+            buttons={["OK"]}
+            style={{ width: "400" }}
           />
-     </div>
-  
+        </div>
       </IonContent>
     </IonPage>
   );
 };
 export default FormTRX;
-
-
