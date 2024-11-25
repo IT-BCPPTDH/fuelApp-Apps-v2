@@ -14,7 +14,6 @@ export async function getStation() {
                 'Content-Type': 'application/json',
             }
         });
-        console.log("Station data fetched successfully:", response.data);
         if (response.status !== 200) {
             throw new ResponseError(`Failed to fetch station data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
         }

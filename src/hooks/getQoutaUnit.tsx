@@ -16,7 +16,6 @@ export async function getAllQuota(date:String) {
             throw new ResponseError(`Failed to fetch data. Status: ${response.status} ${response.data?.statusText || 'Error'}`, response);
         }
         const data = response.data;
-                console.log('Successfully fetched quota data Aktif:', data);
         return data;
     } catch (error: unknown) {
         if (error instanceof ResponseError) {

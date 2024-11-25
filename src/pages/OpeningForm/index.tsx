@@ -149,9 +149,8 @@ const OpeningForm: React.FC = () => {
     }
   };
 
-
-
- ;
+  
+  
 
 
   const handlePost = async () => {
@@ -550,7 +549,7 @@ const handleOpeningDipChange = (e: CustomEvent) => {
                 <IonDatetime
                   value={date || new Date().toISOString()} 
                   onIonChange={handleDateChange}
-                  max={new Date().toISOString()}  
+                  // max={new Date().toISOString()}  
 
                 />
                 <IonButton color="success" onClick={() => setShowDateModal(false)}>Close</IonButton>

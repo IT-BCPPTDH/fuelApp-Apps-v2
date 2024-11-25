@@ -464,21 +464,23 @@ const FormTRX: React.FC = () => {
     }
   }, []);
 
-
-  const calculateFlowEnd = (typeTrx: string): string | number => {
+ 
+  const calculateFlowEnd = (typeTrx: string): number | string => {
+    if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
+      return flowMeterAwal ?? 0;  
+    }
+  
     if (flowMeterAwal !== undefined && quantity !== undefined) {
-      if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
-        const totalFlowEnd = flowMeterAwal;
-        return totalFlowEnd
-      }
-
       if (typeTrx === "Issued" || typeTrx === "Transfer") {
         const totalFlowEnd = flowMeterAwal + (quantity ?? 0);
         return totalFlowEnd !== 0 ? totalFlowEnd : "N/A";
       }
     }
-    return "";
+  
+    return "N/A";
   };
+  
+  
   
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -511,16 +513,14 @@ const FormTRX: React.FC = () => {
       return;
     }
   
-    const typeTrxValue = typeTrx[0];
+    const typeTrxValue = selectedType?.name;
     let flow_end: number = 0;
-    if (typeTrxValue.name === "Receipt" || typeTrxValue.name === "Receipt KPC") {
+    if (typeTrxValue === "Receipt" || typeTrxValue === "Receipt KPC") {
       flow_end = flowMeterAwal ?? 0;  
     } else {
-      flow_end = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
+      flow_end = Number(calculateFlowEnd(typeTrxValue)) || 0;
     }
-  
     const fromDataId = Date.now().toString();
-    
     const lkf_id = await getLatestLkfId();
   
     let latestDataDateFormatted = "";
@@ -528,10 +528,7 @@ const FormTRX: React.FC = () => {
     if (savedDate) {
       const transactionDate = new Date(savedDate);
       if (!isNaN(transactionDate.getTime())) {
-        // If the date is valid, add 12 hours
         transactionDate.setHours(transactionDate.getHours() + 12);
-        
-        // Format the date to ISO string
         latestDataDateFormatted = transactionDate.toISOString(); 
       } else {
         console.error("Saved date is invalid:", savedDate);
@@ -542,6 +539,7 @@ const FormTRX: React.FC = () => {
       latestDataDateFormatted = "No Date Available";
     }
   
+    
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -551,9 +549,9 @@ const FormTRX: React.FC = () => {
       hm_last: Number(hmLast),
       hm_km: Number(hmkmValue),
       qty_last: qtyLast ?? 0,
-      qty: quantity ?? 0,
+      qty: quantity,  // Adjusted qty based on transaction type
       flow_start: Number(flowMeterAwal),
-      flow_end: flow_end,  // flow_end is set based on the logic above
+      flow_end: flow_end,
       name_operator: fullName!,
       fbr: fbrResult,
       lkf_id: lkf_id ?? "",
@@ -568,6 +566,7 @@ const FormTRX: React.FC = () => {
       end: endTime,
     };
   
+console.log("Data Post Before Sending:", dataPost); 
     try {
       if (isOnline) {
         const response = await postTransaksi(dataPost);
@@ -584,7 +583,6 @@ const FormTRX: React.FC = () => {
           }
           const cardDashOnline = JSON.parse(localStorage.getItem("cardDash") || "[]");
           updateCardDashFlowMeter(flow_end, cardDashOnline);
-  
           alert("Transaksi sukses dikirim ke server");
         }
       } else {
@@ -614,6 +612,7 @@ const FormTRX: React.FC = () => {
       setErrorModalOpen(true);
     }
   };
+  
   
   
   // const handlePost = async (e: React.FormEvent) => {
@@ -1157,26 +1156,58 @@ const FormTRX: React.FC = () => {
     }
   };
 
+  // useEffect(() => {
+  //   const calculateFBR = (): number => {
+  //     if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
+  //       const difference = hmkmValue - hmLast;
+  //       if (qtyLast === 0) {
+  //         return 0;
+  //       }
+  //       if (difference > 0) {
+  //         const result = difference / qtyLast;
+  //         return parseFloat(result.toFixed(2)); 
+  //       } 
+  //     } 
+  //     return 0; 
+  //   };
+  
+  //   const fbrResult = calculateFBR();
+  //   setFbrResultOf(fbrResult);
+  
+  // }, [hmkmValue, hmLast, qtyLast]);
+ 
   useEffect(() => {
     const calculateFBR = (): number => {
-      if (typeof hmkmValue === 'number' && typeof hmLast === 'number' && typeof qtyLast === 'number') {
-        const difference = hmkmValue - hmLast;
-        if (qtyLast === 0) {
-          return 0;
+      let effectiveHmkmValue = hmkmValue;
+      if (Array.isArray(typeTrx) && typeTrx.some(item => item.name === 'Transfer Receipt' || item.name === 'Receipt KPC')) {
+        effectiveHmkmValue = 0; 
+      }
+      if (isFormDisabled || Array.isArray(typeTrx) && typeTrx.some(item => item.name === 'Receipt' || item.name === 'Receipt KPC')) {
+        return 0; // Skip calculation and return 0
+      }
+  
+      let effectiveQtyLast = qtyLast;
+      if (Array.isArray(typeTrx) && typeTrx.some(item => item.name === 'Receipt' || item.name === 'Receipt KPC')) {
+        effectiveQtyLast = 0; // Ignore qtyLast for these transaction types
+      }
+  
+   
+      if (typeof effectiveHmkmValue === 'number' && typeof hmLast === 'number' && typeof effectiveQtyLast === 'number') {
+        const difference = effectiveHmkmValue - hmLast;
+        if (effectiveQtyLast === 0 || difference <= 0) {
+          return 0; 
         }
-        if (difference > 0) {
-          const result = difference / qtyLast;
-          return parseFloat(result.toFixed(2)); 
-        } 
-      } 
+        const result = difference / effectiveQtyLast;
+        return parseFloat(result.toFixed(2)); 
+      }
       return 0; 
     };
-  
     const fbrResult = calculateFBR();
     setFbrResultOf(fbrResult);
   
-  }, [hmkmValue, hmLast, qtyLast]);
+  }, [hmkmValue, hmLast, qtyLast, typeTrx, isFormDisabled]); 
   
+
   useEffect(() => {
     const getOfflineData = async () => {
       setHmLast(0);  
@@ -1218,6 +1249,7 @@ const FormTRX: React.FC = () => {
       setIsAlertOpen(false);
     }, 3000); 
   };
+
 
   return (
     <IonPage>
@@ -1400,14 +1432,15 @@ const FormTRX: React.FC = () => {
                     placeholder="Input HM Terakhir"
                     onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
-                  />
-
-                  {showError && (
-                    <div style={{ color: "red" }}>
-                      HM/KM Unit Tidak Boleh Kecil Dari HM/KM Terakhir Transaksi
-                    </div>
-                  )}
+                   
+                    />
+                    {showError && (
+                      <div style={{ color: "red" }}>
+                        HM/KM Unit Tidak Boleh Kecil Dari HM/KM Terakhir Transaksi
+                      </div>
+                    )}
                 </IonCol>
+
               </IonRow>
               <IonRow>
                 <IonCol>

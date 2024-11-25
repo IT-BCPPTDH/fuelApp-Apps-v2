@@ -96,9 +96,6 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
     setLoading(true);
     try {
       const rawData = await getAllDataTrx(lkfId);
-      console.log("Raw data fetched:", rawData); // Log the response
-  
-      // Ensure we are working with an array
       const dataArray = rawData || []; // Default to an empty array if no data is found
   
       // Check if dataArray is an array

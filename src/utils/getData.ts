@@ -270,33 +270,29 @@ export const fetchLatestHmLast = async (
   selectedUnit: string
 ): Promise<{ hm_km?: number; model_unit?: string; owner?: string; qty_last?: number }> => {
   try {
-   
-    const latestEntry = await db.dataMasterTrasaksi
-      .where('no_unit')        // Filter by unit
-      .equals(selectedUnit)    // Select the correct unit
-      .sortBy('date_trx');     // Sort by transaction date (ascending order)
+    // Fetch entries for the selected unit
+    const latestEntries = await db.dataMasterTrasaksi
+      .where('no_unit')
+      .equals(selectedUnit)
+      .sortBy('date_trx');
+    if (latestEntries.length  > 0) {
+      const latestEntry = latestEntries[latestEntries.length - 1];
+      console.log("Latest entry found:", latestEntry);
 
-  
-   
-    const latestEntryReversed = latestEntry.reverse()[0]; // Get the first element after reversing
-
-    if (latestEntryReversed) {
-      console.log("Latest entry found:", latestEntryReversed);
       return {
-        hm_km: latestEntryReversed.hm_km,        
-        qty_last: latestEntryReversed.qty   
+        hm_km: latestEntry.hm_km,        
+        qty_last: latestEntry.qty
       };
-
     } else {
       console.warn("No valid data found for unit:", selectedUnit);
       return {};
     }
   } catch (error) {
-    // Handling errors and returning an empty object
     console.error("Failed to fetch the latest entry from IndexedDB:", error);
     return {};
   }
 };
+
 
 
 
