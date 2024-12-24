@@ -43,7 +43,7 @@ interface TableDataItem {
   start:string;
   end:string;
   created_by:string;
-  date_trx: Date;
+  date_trx: String;
   photo:string;
   signature:string;
 }
