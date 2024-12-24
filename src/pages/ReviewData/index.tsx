@@ -261,8 +261,12 @@ const ReviewData: React.FC = () => {
             (item: { title: string }) => item.title === "Opening Dip"
           );
 
+          const transfer = cardDash.find(
+            (item: { title: string }) => item.title === "Transfer"
+          );
+
           if (totalIsssued) {
-            setTotalIssued(Number(totalIsssued.value || 0));
+            setTotalIssued(Number(totalIsssued.value + transfer.value|| 0));
           }
 
           if (closeData) {
