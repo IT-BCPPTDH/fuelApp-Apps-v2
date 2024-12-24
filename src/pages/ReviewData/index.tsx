@@ -65,6 +65,7 @@ const ReviewData: React.FC = () => {
   const [flowMeteAkhir, setFlowMeterAkhir] = useState<number>();
 
   const [totalIssued, setTotalIssued] = useState<number>();
+  const [totalMeter, setTotalMeter] = useState<number>();
   const [stockOnHand, setDataStock] = useState<number>();
   const [flowMeterAwal, setFlowMeterAwal] = useState<number>();
   const [totalVariance, setTotalVariance] = useState(0);
@@ -266,8 +267,11 @@ const ReviewData: React.FC = () => {
           );
 
           if (totalIsssued) {
-            setTotalIssued(Number(totalIsssued.value + transfer.value|| 0));
+            setTotalIssued(Number(totalIsssued.value|| 0));
+            setTotalMeter(Number(totalIsssued.value + transfer.value?transfer.value:0|| 0))
           }
+
+          
 
           if (closeData) {
             setDataStock(Number(closeData.value || 0));
