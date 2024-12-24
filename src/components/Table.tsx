@@ -181,7 +181,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       formattedDate =`${day}-${month}-${year}`
     } 
     console.log(333,data)
-    const bulkData = data
+    const bulkData : any = data
     .filter(item => item.status === 0)
     .map(item => ({
       from_data_id: item.from_data_id,

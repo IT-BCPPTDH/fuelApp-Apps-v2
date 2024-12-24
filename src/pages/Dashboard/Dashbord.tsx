@@ -35,7 +35,7 @@ import {
   getDataFromStorage,
   saveDataToStorage,
 } from "../../services/dataService";
-import { addDataToDB, addDataTrxType, clearDataTrxType, replaceDataTrxType } from "../../utils/insertData";
+import { addDataToDB, addDataTrxType, clearDataTrxType } from "../../utils/insertData";
 import { postOpening, updateData } from "../../hooks/serviceApi";
 import useOnlineStatus from "../../helper/onlineStatus";
 import { updateQuota } from "../../hooks/getQoutaUnit";
