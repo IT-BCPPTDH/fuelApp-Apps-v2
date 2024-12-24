@@ -351,7 +351,7 @@ const ReviewData: React.FC = () => {
             </IonItem>
             <IonItem>
               <IonLabel style={{ fontSize: "18px" }} className="font-review">
-                Total Meter : {totalIssued}
+                Total Meter : {totalMeter}
               </IonLabel>
             </IonItem>
             <IonItem>
