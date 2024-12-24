@@ -210,6 +210,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     const units = await fetchLasLKF();
   };
   useEffect(() => {
+    loadUnitDataQuota()
     loadUnitData();
     loadLastTrx();
     loadLastLKF();
@@ -228,6 +229,33 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       console.error("Failed to fetch sonding master data", error);
     }
   };
+
+  const loadUnitDataQuota = async () => {
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    try {
+        const quotaData = await fetchQuotaData(formattedDate);
+        // console.log('Fetched Qouta Login ', quotaData);
+  
+        // if (quotaData && Array.isArray(quotaData)) {
+        //     let foundUnitQuota = quotaData.find((unit) => unit.no_unit === selectedUnit);
+  
+        //     if (!foundUnitQuota) {
+        //         const yesterday = new Date(today);
+        //         yesterday.setDate(today.getDate() - 1);
+        //         const formattedYesterday = yesterday.toISOString().split('T')[0];
+        //         const previousQuotaData = await fetchQuotaData(formattedYesterday);
+        //         // console.log('Fetched previous quota data:', previousQuotaData);
+        //         foundUnitQuota = previousQuotaData.find((unit) => unit.no_unit === selectedUnit);
+        //     }
+        // } else {
+        //     console.error('No quota data found for the specified date');
+        // }
+    } catch (error) {
+        console.error('Error fetching quota data:', error);
+    }
+  };
+  
 
   return (
     <IonPage>

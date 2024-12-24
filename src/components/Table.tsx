@@ -40,7 +40,12 @@ interface TableDataItem {
   jde_operator: string;
   name_operator: string;
   status: number;
- 
+  start:string;
+  end:string;
+  created_by:string;
+  date_trx: Date;
+  photo:string;
+  signature:string;
 }
 
 
@@ -105,6 +110,9 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       }
   
       // Map the fetched data to table data structure
+      console.log('data array', dataArray)
+      const opening = await getDataFromStorage("openingSonding");
+      console.log(111,opening)
       const mappedData: TableDataItem[] = dataArray.map((item: any) => ({
         from_data_id: item.from_data_id ?? 0,
         unit_no: item.no_unit || '',
@@ -120,11 +128,17 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         hm_km: item.hm_km,
         jde_operator: item.fuelman_id || '',
         name_operator: item.name_operator || item.name__operator || '',
+        start:item.start,
+        end:item.end,
+        created_by: opening.jde,
+        date_trx: item.date_trx,
+        signature: item.signature,
+        photo: item.foto,
         // Adjusting the status mapping to handle different status codes
         status: item.status === 1 || item.status === '1' ? 1 : 0, // Ensure it maps 1 as 'sent'
       }));
-  
-      setData(mappedData); // Update table data with the mapped status
+      const sortedData = mappedData.sort((a, b) => a.from_data_id - b.from_data_id)
+      setData(sortedData); // Update table data with the mapped status
     } catch (error) {
       console.error("Failed to fetch data:", error);
       setShowToast(true); // Show a toast message in case of an error
@@ -159,19 +173,22 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       createdBy = parsedData.jde || '';
     }
     const tanggal = await getDataFromStorage('tanggalTransaksi');
+    // const opening = await getDataFromStorage("openingSonding");
     let formattedDate: string;
     if (typeof tanggal === 'string' && tanggal.includes('/')) {
       const [day, month, year] = tanggal.split('/');
       console.log("test",day,month,year)
       formattedDate =`${day}-${month}-${year}`
     } 
-    
-    const bulkData = data.map(item => ({
+    console.log(333,data)
+    const bulkData = data
+    .filter(item => item.status === 0)
+    .map(item => ({
       from_data_id: item.from_data_id,
       no_unit: item.unit_no,
       model_unit: item.model_unit,
       owner: item.owner,
-      date_trx: formattedDate,
+      date_trx: item.date_trx,
       hm_last: item.hm_last,
       hm_km: item.hm_km,
       qty_last: item.qty_last,
@@ -180,31 +197,32 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       flow_end: item.fm_akhir,
       name_operator: item.name_operator,
       fbr: parseFloat(item.fbr_historis),
-      signature: signatureBase64,
-      photo: signatureBase64,
+      signature: item.signature,
+      photo: item.photo,
       type: item.jenis_trx,
       lkf_id: nomorLKF || undefined,
       jde_operator: item.jde_operator,
-      created_by: createdBy,
-      start: new Date().toISOString(),
-      end: new Date().toISOString(),
-     
+      created_by: item.created_by,
+      start: `1970-01-01T${item?.start}:00`,
+      end: `1970-01-01T${item?.end}:00`
     }));
   
     try {
+      console.log(999,bulkData)
       if (navigator.onLine) {
         const responses = await postBulkData(bulkData);
         console.log("Bulk insert responses:", responses);
-        
-        const updatedData = data.map((item) => ({
-          ...item,
-          status: 1,
-        }));
-  
-        await Promise.all(updatedData.map(async (item) => {
-          await updateDataInTrx(item.from_data_id, { status: item.status });
-        }));
-        setData(updatedData);
+        if(responses.status === '200'){
+          const updatedData = data.map((item) => ({
+            ...item,
+            status: 1,
+          }));
+    
+          await Promise.all(updatedData.map(async (item) => {
+            await updateDataInTrx(item.from_data_id, { status: item.status });
+          }));
+          setData(updatedData);
+        }
         
       }
       const totalInserted = bulkData.length;

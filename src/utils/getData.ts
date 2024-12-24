@@ -305,6 +305,16 @@ export const bulkInsertDataMasterTransaksi = async (data: DataMasterTransaksi[])
   }
 };
 
+export const UpdateBulkInsertDataMasterTransaksi = async (data: DataMasterTransaksi[]) => {
+  try {
+    await db.dataMasterTrasaksi.clear()
+    await db.dataMasterTrasaksi.bulkPut(data); // Use bulkPut to insert multiple entries
+    console.log("Bulk insert successful for dataMasterTrasaksi");
+  } catch (error) {
+    console.error("Bulk insert failed for dataMasterTrasaksi:", error);
+  }
+};
+
 
 export const getLatestLkfDataDate = async (): Promise<{ lkf_id?: string; date?: string } | undefined> => {
   try {

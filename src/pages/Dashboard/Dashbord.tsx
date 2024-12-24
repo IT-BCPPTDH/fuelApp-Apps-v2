@@ -23,17 +23,23 @@ import {
   getCalculationReceive,
   getLatestLkfDataDate,
   getCalculationITransfer,
+  bulkInsertDataMasterTransaksi,
+  UpdateBulkInsertDataMasterTransaksi,
 } from "../../utils/getData";
 import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import NetworkStatus from "../../components/network";
 import {
+  fetchLasTrx,
   fetchQuotaData,
   fetchUnitData,
   getDataFromStorage,
   saveDataToStorage,
 } from "../../services/dataService";
-import { addDataToDB, addDataTrxType } from "../../utils/insertData";
-import { postOpening } from "../../hooks/serviceApi";
+import { addDataToDB, addDataTrxType, clearDataTrxType, replaceDataTrxType } from "../../utils/insertData";
+import { postOpening, updateData } from "../../hooks/serviceApi";
+import useOnlineStatus from "../../helper/onlineStatus";
+import { updateQuota } from "../../hooks/getQoutaUnit";
+import { postLog } from "../../hooks/useAuth";
 
 interface cardDash {
   title: string;
@@ -159,17 +165,27 @@ const DashboardFuelMan: React.FC = () => {
   ]);
 
   useEffect(() => {
-    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    const updateOflineStatus = () => setIsOnline(navigator.onLine);
+    // const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    // const updateOflineStatus = () => setIsOnline(navigator.onLine);
 
-    window.addEventListener("online", updateOnlineStatus);
-    window.addEventListener("offline", updateOnlineStatus);
+    // window.addEventListener("online", updateOnlineStatus);
+    // window.addEventListener("offline", updateOnlineStatus);
 
-    return () => {
-      window.removeEventListener("online", updateOnlineStatus);
-      window.removeEventListener("offline", updateOnlineStatus);
-    };
+    // return () => {
+    //   window.removeEventListener("online", updateOnlineStatus);
+    //   window.removeEventListener("offline", updateOnlineStatus);
+    // };
+    // console.log("ngecek")
+    checkOn()
+    
   }, []);
+
+  const checkOn = async () =>{
+    // console.log("ngecek2")
+    const on = await useOnlineStatus()
+    // console.log('on',on)
+    setIsOnline(on)
+  }
 
   useEffect(() => {
     const userData = async () => {
@@ -259,38 +275,126 @@ const DashboardFuelMan: React.FC = () => {
 
     fetchShiftData();
     checkOpening();
+    
   }, []);
 
   const checkOpening = async () => {
-    console.log(1, isOnline);
     if (isOnline) {
-      console.log(2, "on");
       let dataPost = await getDataFromStorage("openingSonding");
       if (dataPost && dataPost.status === "pending") {
-        console.log(3);
         const result = await postOpening(dataPost);
-
         if (result.status === "201" && result.message === "Data Created") {
           dataPost = {
             ...dataPost,
             status: "sent",
           };
-          saveDataToStorage("openingSonding", dataPost);
+
+          await saveDataToStorage("openingSonding", dataPost);
           await addDataToDB(dataPost);
         }
-      } else {
-        console.log("No data found or status is not 'pending'");
       }
     }
   };
 
+  const checkUpdateQuota = async () =>{
+    const quotaUpdate = await getDataFromStorage("quotaUpdate");
+    // console.log(19,quotaUpdate)
+    if(quotaUpdate){
+      let data = quotaUpdate.filter((v:any) => v.status === 'pending')
+      
+      if(data.length === 0){
+        loadUnitDataQuota()
+      }else{
+        let dataUp = []
+        for(let i = 0; i < data.length;i++){
+          const response = await updateQuota(data[i])
+          if(response.status === '200'){
+            const updatedData = quotaUpdate.map((item:any) => {
+              // console.log(0,item.id,data[i].id)
+              if (item.id === data[i].id) {
+                return { ...item, status: "sent" };  
+              }else{
+                return item;  
+              }
+            });
+            dataUp = updatedData
+          }
+        }
+        // console.log(dataUp)
+        await saveDataToStorage("quotaUpdate", dataUp);
+      }
+    }else{
+      console.log('get Quota Update')
+      loadUnitDataQuota()
+    }
+  }
+
+  const loadLastTrx = async () => {
+    const units = await fetchLasTrx();
+    const transaksiDataParsed =
+          typeof units === "string"
+            ? JSON.parse(units)
+            : units;
+        if (
+          Array.isArray(transaksiDataParsed) &&
+          transaksiDataParsed.length > 0
+        ) {
+          // console.log(transaksiDataParsed)
+          await UpdateBulkInsertDataMasterTransaksi(transaksiDataParsed);
+        }
+  };
+
+  const loadUnitDataQuota = async () => {
+    // console.log(111)
+    const opening = await getDataFromStorage("openingSonding");
+    const today = new Date(opening.date);
+    console.log(0,today)
+    const formattedDate = today.toISOString().split('T')[0];
+    // console.log(1,formattedDate)
+    try {
+      console.log("date",formattedDate)
+        const quotaData = await fetchQuotaData(formattedDate);
+        // console.log(123,quotaData)
+        // console.log('Fetched Qouta Login ', quotaData);
+  
+        // if (quotaData && Array.isArray(quotaData)) {
+        //     let foundUnitQuota = quotaData.find((unit) => unit.no_unit === selectedUnit);
+  
+        //     if (!foundUnitQuota) {
+        //         const yesterday = new Date(today);
+        //         yesterday.setDate(today.getDate() - 1);
+        //         const formattedYesterday = yesterday.toISOString().split('T')[0];
+        //         const previousQuotaData = await fetchQuotaData(formattedYesterday);
+        //         // console.log('Fetched previous quota data:', previousQuotaData);
+        //         foundUnitQuota = previousQuotaData.find((unit) => unit.no_unit === selectedUnit);
+        //     }
+        // } else {
+        //     console.error('No quota data found for the specified date');
+        // }
+    } catch (error) {
+        console.error('Error fetching quota data:', error);
+    }
+  };
+
+  // useEffect(() => {
+    
+    
+  //   checkUpdateQuota()
+  // }, [])
+  
+
+ 
+
   useEffect(() => {
     const tanggal = async () => {
-      const savedDate = await getDataFromStorage("tanggalTransaksi");
+      const savedDate = await getDataFromStorage("openingSonding");
+      // console.log(savedDate)
+      setLkfId(savedDate.lkf_id)
       if (savedDate) {
-        const transactionDate = new Date(savedDate);
+        const transactionDate = new Date(savedDate.date);
         if (!isNaN(transactionDate.getTime())) {
-          setTanggalTransaksi(transactionDate.toLocaleDateString("en-GB"));
+          setTanggalTransaksi(transactionDate.toLocaleDateString("id-ID"));
+          // console.log(1234,transactionDate.toLocaleDateString("id-ID"))
         } else {
           console.error("Invalid date format in localStorage:", savedDate);
           setTanggalTransaksi("Invalid Date");
@@ -331,25 +435,25 @@ const DashboardFuelMan: React.FC = () => {
     loadUnitData();
   }, []);
 
-  useEffect(() => {
-    const loadQuota = async () => {
-      try {
-        const tanggal = await getDataFromStorage("tanggalTransaksi");
-        if (!tanggal) {
-          throw new Error("tanggalTransaksi is not available in storage.");
-        }
-        let formattedDate: string;
-        if (typeof tanggal === "string" && tanggal.includes("/")) {
-          const [day, month, year] = tanggal.split("/");
-          formattedDate = `${day}-${month}-${year}`;
-          const quotaData = await fetchQuotaData(formattedDate);
-        }
-      } catch (error) {
-        console.error("Error in loadUnitDataQuota:", error);
-      }
-    };
-    loadQuota();
-  }, []);
+  // useEffect(() => {
+  //   const loadQuota = async () => {
+  //     try {
+  //       const tanggal = await getDataFromStorage("tanggalTransaksi");
+  //       if (!tanggal) {
+  //         throw new Error("tanggalTransaksi is not available in storage.");
+  //       }
+  //       let formattedDate: string;
+  //       if (typeof tanggal === "string" && tanggal.includes("/")) {
+  //         const [day, month, year] = tanggal.split("/");
+  //         formattedDate = `${day}-${month}-${year}`;
+  //         const quotaData = await fetchQuotaData(formattedDate);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error in loadUnitDataQuota:", error);
+  //     }
+  //   };
+  //   loadQuota();
+  // }, []);
 
   const updateAllData = async () => {
     const units = await fetchUnitData();
@@ -362,12 +466,16 @@ const DashboardFuelMan: React.FC = () => {
   };
 
   const handleRefresh = async () => {
+    checkUpdateQuota()
+    loadLastTrx()
+    handleLog()
     if (lkfId) {
-      setLoading(true);
       try {
         const response = await getHomeTable(lkfId);
+        console.log(123,response)
         if (response && response.data && Array.isArray(response.data)) {
           const newData = response.data;
+          await clearDataTrxType();
           for (const item of newData) {
             const dataPost: DataFormTrx = {
               date: new Date().toISOString(),
@@ -410,26 +518,41 @@ const DashboardFuelMan: React.FC = () => {
             "Expected an array in response.data but got:",
             response
           );
-          setData([]);
+          // setData([]);
         }
       } catch (error) {
         console.error("Failed to refresh data:", error);
         setError("Failed to refresh data");
-        setData([]);
+        // setData([]);
       } finally {
         setLoading(false);
       }
     } else {
       console.log("No LKF ID to refresh data for");
-      setData([]);
+      // setData([]);
       setLoading(false);
     }
     updateAllData();
   };
 
+  const handleLog = async () =>{
+    const data = await getDataFromStorage("dataLog");
+
+    if(data.login_status === "pending"){
+      const response = await postLog(data)
+      if(response.status === '200'){
+        let updata = {
+          ...data,
+          login_status:'sent'
+        }
+        saveDataToStorage('dataLog',updata)
+      }
+    }
+  }
+
   useEffect(() => {
     IssuedTotal();
-  }, [lkfId]);
+  }, []);
 
   useEffect(() => {
     const cachedData = localStorage.getItem("cardDash");
@@ -478,7 +601,7 @@ const DashboardFuelMan: React.FC = () => {
 
       modifyDataExample(data);
     }
-  }, []);
+  }, [data]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -496,15 +619,17 @@ const DashboardFuelMan: React.FC = () => {
         if (latestShiftData.opening_dip !== undefined) {
           setOpeningDip(latestShiftData.opening_dip);
         }
-      } else {
-        console.error("No cached shift data found");
       }
+      // else {
+      //   console.error("No cached shift data found");
+      // }
     } catch (error) {
       console.error("Error fetching shift data:", error);
     } finally {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -627,7 +752,7 @@ const DashboardFuelMan: React.FC = () => {
     if (lkfId) {
       fetchcardDash(lkfId);
     }
-  }, [lkfId]);
+  }, []);
 
   const IssuedTotal = async () => {
     try {
@@ -658,7 +783,7 @@ const DashboardFuelMan: React.FC = () => {
               </div>
             </IonCol>
             <IonCol style={{ textAlign: "right" }}>
-              <div
+              {/* <div
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -673,9 +798,9 @@ const DashboardFuelMan: React.FC = () => {
                     backgroundColor: isOnline ? "#73A33F" : "red",
                     marginRight: "5px",
                   }}
-                />
+                /> */}
                 <NetworkStatus />
-              </div>
+              {/* </div> */}
             </IonCol>
           </IonRow>
         </IonHeader>

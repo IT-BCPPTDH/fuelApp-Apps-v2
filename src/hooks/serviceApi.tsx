@@ -58,13 +58,16 @@ export const postOpening = async (params: PostOpeningParams): Promise<any> => {
       data: params,
     });
     const responseData = response.data || {};
-    if (response.status !== 201 || responseData.message !== "Data Created") {
+    // console.log(10,response.status)
+    if (response.status !== 200 || responseData.message !== "Data Created") {
       console.error("Response Error:", responseData);
       throw new ResponseError(
         "Failed to post opening data",
         response,
         responseData
       );
+    }else{
+      return responseData
     }
   } catch (error) {
     console.error("Error during postOpening:", error);

@@ -101,6 +101,14 @@ export async function addDataTrxType(data: DataFormTrx) {
   }
 }
 
+export async function clearDataTrxType() {
+  try {
+    await db.dataTransaksi.clear();
+  } catch (error) {
+    console.error("Failed to add data to IndexedDB:", error);
+  }
+}
+
 
 // export async function addDataHistory(data: DataFormTrx) {
 //   try {

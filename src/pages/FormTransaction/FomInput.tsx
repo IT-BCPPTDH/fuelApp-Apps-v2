@@ -184,6 +184,7 @@ const FormTRX: React.FC = () => {
   const [unitQuota, setUnitQuota] = useState(0);
   const [usedQuota, setUsedQuota] = useState(0);
   const [remainingQuota, setRemainingQuota] = useState(0);
+  const [checkUnit, setCheckUnit] = useState<boolean>(false)
   const [quantity, setQuantity] = useState<number | null>(0);
   const [quantityLast, setQuantityLast] = useState<number | null>(0);
   const [quantityError, setQuantityError] = useState("");
@@ -213,7 +214,7 @@ const FormTRX: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [is_active, setis_active] = useState(false);
-  const [quotaData, setQuotaData] = useState(null);
+  // const [quotaData, setQuotaData] = useState(null);
   const [currentUnitQuota, setCurrentUnitQuota] = useState<UnitQuota | null>(
     null
   );
@@ -256,73 +257,6 @@ const FormTRX: React.FC = () => {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
-
-  useEffect(() => {
-    const loadUnitDataQuota = async () => {
-      const tanggal = await getDataFromStorage("tanggalTransaksi");
-      if (!tanggal) {
-        throw new Error("tanggalTransaksi is not available in storage.");
-      }
-      let formattedDate: string;
-      try {
-        let quotaData;
-        if (navigator.onLine) {
-          if (typeof tanggal === "string" && tanggal.includes("/")) {
-            const [day, month, year] = tanggal.split("/");
-            formattedDate = `${day}-${month}-${year}`;
-            quotaData = await fetchQuotaData(formattedDate);
-          }
-        }
-        if (!quotaData || !Array.isArray(quotaData)) {
-          console.warn(
-            "Online quota data unavailable or failed. Attempting offline data."
-          );
-          quotaData = await getDataFromStorage("unitQuota");
-        }
-        if (quotaData && Array.isArray(quotaData)) {
-          let foundUnitQuota = quotaData.find(
-            (unit) => unit.unit_no === selectedUnit
-          );
-
-          if (foundUnitQuota?.is_active) {
-            setCurrentUnitQuota(foundUnitQuota);
-            const totalQuota = foundUnitQuota.quota;
-            const usedQuota = foundUnitQuota.used || 0;
-            const remainingQuota = totalQuota - usedQuota;
-
-            setUnitQuota(totalQuota);
-            setRemainingQuota(remainingQuota);
-            setQuotaMessage(
-              `Sisa Kuota ${selectedUnit}: ${remainingQuota} Liter`
-            );
-
-            const issuedAmount = foundUnitQuota.issued || 0;
-            if (issuedAmount > remainingQuota) {
-              setQuotaMessage(
-                `Error: Issued amount exceeds remaining quota for ${selectedUnit}`
-              );
-            }
-          } else {
-            setQuotaMessage("Pembatasan kuota dinonaktifkan.");
-            setUnitQuota(0);
-            setRemainingQuota(0);
-          }
-        } else {
-          setQuotaMessage("Offline quota data unavailable.");
-          console.error(
-            "No quota data available for the specified date or unit."
-          );
-        }
-      } catch (error) {
-        console.error("Error fetching or loading quota data:", error);
-        setQuotaMessage("Error loading quota data.");
-      }
-    };
-
-    if (selectedUnit) {
-      loadUnitDataQuota();
-    }
-  }, [selectedUnit, latestDate]);
 
   const loadDataQouta = useCallback(async (date: string) => {
     try {
@@ -454,32 +388,30 @@ const FormTRX: React.FC = () => {
   const updateCardDashFlowMeter = (
     flowMeterAkhir: number,
     cardData: any[] = [],
-    setDataHome?: Function,
-    transactionType?: string
   ) => {
-    if (transactionType === "Receipt" || transactionType === "Receipt Kpc") {
-      return;
-    }
+    // if (transactionType === "Receipt" || transactionType === "Receipt Kpc") {
+    //   return;
+    // }
     const updatedCardData = cardData.map((item: any) =>
       item.title === "Flow Meter Akhir"
         ? { ...item, value: flowMeterAkhir }
         : item
     );
-    if (setDataHome) {
-      setDataHome(updatedCardData);
-    } else {
-      console.warn("setDataHome function is not defined.");
-    }
+    // if (setDataHome) {
+    //   setDataHome(updatedCardData);
+    // } else {
+    //   console.warn("setDataHome function is not defined.");
+    // }
 
     localStorage.setItem("cardDash", JSON.stringify(updatedCardData));
   };
 
-  useEffect(() => {
-    const savedDate = localStorage.getItem("tanggalTransaksi");
-    if (savedDate) {
-      setTanggalTransaksi(new Date(savedDate).toLocaleDateString("en-GB"));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const savedDate = localStorage.getItem("tanggalTransaksi");
+  //   if (savedDate) {
+  //     setTanggalTransaksi(new Date(savedDate).toLocaleDateString("en-GB"));
+  //   }
+  // }, []);
 
   const calculateFlowEnd = (typeTrx: string): number | string => {
     if (typeTrx === "Receipt" || typeTrx === "Receipt KPC") {
@@ -526,7 +458,7 @@ const FormTRX: React.FC = () => {
       setShowJamErrorInput(true);
       return;
     }
-
+    // console.log(1,flowMeterAwal,flowMeterAkhir)
     const typeTrxValue = selectedType?.name;
     let flow_end: number = 0;
     if (typeTrxValue === "Receipt" || typeTrxValue === "Receipt KPC") {
@@ -538,14 +470,14 @@ const FormTRX: React.FC = () => {
     const lkf_id = await getLatestLkfId();
 
     let latestDataDateFormatted = "";
-    const savedDate = await getDataFromStorage("tanggalTransaksi");
-    if (savedDate) {
-      const transactionDate = new Date(savedDate);
+    const savedDate = await getDataFromStorage("openingSonding");
+    if (savedDate.date) {
+      const transactionDate = new Date(savedDate.date);
       if (!isNaN(transactionDate.getTime())) {
         transactionDate.setHours(transactionDate.getHours() + 12);
         latestDataDateFormatted = transactionDate.toISOString();
       } else {
-        console.error("Saved date is invalid:", savedDate);
+        console.error("Saved date is invalid:", savedDate.date);
         latestDataDateFormatted = "Invalid Date";
       }
     } else {
@@ -554,7 +486,7 @@ const FormTRX: React.FC = () => {
       );
       latestDataDateFormatted = "No Date Available";
     }
-
+    // console.log(2,flowMeterAwal,flow_end)
     const dataPost: DataFormTrx = {
       from_data_id: fromDataId,
       no_unit: selectedUnit!,
@@ -581,28 +513,62 @@ const FormTRX: React.FC = () => {
       end: endTime,
     };
 
-    console.log("Data Post Before Sending:", dataPost);
+    // console.log("Data Post Before Sending:", dataPost);
     try {
-      if (isOnline) {
-        const response = await postTransaksi(dataPost);
-        await insertNewData(dataPost);
-        await addDataHistory(dataPost);
-        updateCard();
-        if (response.status === 200) {
-          dataPost.status = 1;
-          await insertNewData(dataPost);
-          await addDataHistory(dataPost);
-          setIsAlertOpen(true);
-          if (quantity > 0) {
-            updateLocalStorageQuota(selectedUnit, quantity);
-          }
-          const cardDashOnline = JSON.parse(
-            localStorage.getItem("cardDash") || "[]"
-          );
-          updateCardDashFlowMeter(flow_end, cardDashOnline);
-          alert("Transaksi sukses dikirim ke server");
-        }
-      } else {
+      // if (isOnline) {
+      //   const response = await postTransaksi(dataPost);
+      //   await insertNewData(dataPost);
+      //   await addDataHistory(dataPost);
+      //   updateCard();
+      //   console.log(response.status)
+      //   if (response.status === 200) {
+      //     dataPost.status = 1;
+      //     await insertNewData(dataPost);
+      //     await addDataHistory(dataPost);
+      //     // setIsAlertOpen(true);
+      //     // if (quantity > 0) {
+      //     //   updateLocalStorageQuota(selectedUnit, quantity);
+      //     // }
+      //     const unitQuota = await getDataFromStorage("unitQuota");
+      //   const newQty = dataPost.qty;
+
+      //   for (let index = 0; index < unitQuota.length; index++) {
+      //     const element = unitQuota[index];
+
+      //     if (element.unit_no === dataPost.no_unit) {
+      //       element.used = element.used + newQty;
+      //       updateQuota(element.id,element.used + newQty)
+      //     }
+      //   }
+      //     const cardDashOnline = JSON.parse(
+      //       localStorage.getItem("cardDash") || "[]"
+      //     );
+      //     updateCardDashFlowMeter(flow_end, cardDashOnline);
+      //     alert("Transaksi sukses dikirim ke server");
+      //   }else{
+      //     const unitQuota = await getDataFromStorage("unitQuota");
+      //   const newQty = dataPost.qty;
+
+      //   for (let index = 0; index < unitQuota.length; index++) {
+      //     const element = unitQuota[index];
+
+      //     if (element.unit_no === dataPost.no_unit) {
+      //       updateQuota(element.id,element.used + newQty)
+      //       element.used = element.used + newQty;
+      //     }
+      //   }
+      //   const cardDashOffline = JSON.parse(
+      //     localStorage.getItem("cardDash") || "[]"
+      //   );
+      //   if (Array.isArray(cardDashOffline)) {
+      //     updateCardDashFlowMeter(flow_end, cardDashOffline);
+      //   }
+      //   dataPost.status = 0;
+      //   await insertNewData(dataPost);
+      //   await insertNewDataHistori(dataPost);
+      //   await saveDataToStorage("unitQuota", unitQuota);
+      //   }
+      // } else {
         const unitQuota = await getDataFromStorage("unitQuota");
         const newQty = dataPost.qty;
 
@@ -610,6 +576,7 @@ const FormTRX: React.FC = () => {
           const element = unitQuota[index];
 
           if (element.unit_no === dataPost.no_unit) {
+            updateQuota(element.id, newQty)
             element.used = element.used + newQty;
           }
         }
@@ -623,7 +590,7 @@ const FormTRX: React.FC = () => {
         await insertNewData(dataPost);
         await insertNewDataHistori(dataPost);
         await saveDataToStorage("unitQuota", unitQuota);
-      }
+      // }
       route.push("/dashboard");
     } catch (error) {
       console.error("Error occurred while posting data:", error);
@@ -631,134 +598,6 @@ const FormTRX: React.FC = () => {
       setErrorModalOpen(true);
     }
   };
-
-  // const handlePost = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-
-  //   const validQuantity = quantity ?? 0;
-  //   if (isNaN(validQuantity) || validQuantity <= 0) {
-  //     setQuantityError("Qty Issued harus lebih besar dari 0");
-  //     setIsError(true);
-  //     return;
-  //   }
-
-  //   if (
-  //     !selectedType ||
-  //     !selectedUnit ||
-  //     !operatorOptions ||
-  //     quantity === null ||
-  //     fuelman_id === null ||
-  //     fbr === null ||
-  //     flowMeterAwal === null ||
-  //     flowMeterAkhir === null ||
-  //     !startTime ||
-  //     !endTime
-  //   ) {
-  //     setShowError(true);
-  //     setShowErrorType(true);
-  //     setemployeeError(true);
-  //     setShowJamError(true);
-  //     setShowErrorHmlast(true);
-  //     setShowJamErrorInput(true);
-  //     return;
-  //   }
-
-  //   const typeTrxValue = typeTrx[0];
-  //   const flow_end: number = Number(calculateFlowEnd(typeTrxValue.name)) || 0;
-  //   const fromDataId = Date.now().toString();
-
-  //   const lkf_id = await getLatestLkfId();
-
-  //   let latestDataDateFormatted = "";
-  //   const savedDate =  await getDataFromStorage("tanggalTransaksi");
-  //   if (savedDate) {
-  //     const transactionDate = new Date(savedDate);
-  //     if (!isNaN(transactionDate.getTime())) {
-  //       // Jika valid, tambahkan 12 jam ke tanggal
-  //       transactionDate.setHours(transactionDate.getHours() + 12);
-
-  //       // Format tanggal ke ISO string
-  //       latestDataDateFormatted = transactionDate.toISOString();
-  //     } else {
-  //       // Jika tanggal tidak valid, log kesalahan
-  //       console.error("Saved date is invalid:", savedDate);
-  //       latestDataDateFormatted = "Invalid Date";
-  //     }
-  //   } else {
-  //     console.error("No saved date available in localStorage for 'tanggalTransaksi'");
-  //     latestDataDateFormatted = "No Date Available";
-  //   }
-  //   const dataPost: DataFormTrx = {
-  //     from_data_id: fromDataId,
-  //     no_unit: selectedUnit!,
-  //     model_unit: model!,
-  //     owner: owner!,
-  //     date_trx: latestDataDateFormatted,
-  //     hm_last: Number(hmLast),
-  //     hm_km: Number(hmkmValue),
-  //     qty_last: qtyLast ?? 0,
-  //     qty: quantity ?? 0,
-  //     flow_start: Number(flowMeterAwal),
-  //     flow_end: flow_end,
-  //     name_operator: fullName!,
-  //     fbr: fbrResult,
-  //     lkf_id: lkf_id ?? "",
-  //     signature: signatureBase64 ?? "",
-  //     type: selectedType?.name ?? "",
-  //     foto: photoPreview ?? "",
-  //     fuelman_id: fuelman_id!,
-  //     jde_operator: fuelman_id!,
-  //     status: status ?? 0,
-  //     date: "",
-  //     start: startTime,
-  //     end: endTime,
-  //   };
-  //   try {
-  //     if (isOnline) {
-  //       const response = await postTransaksi(dataPost);
-  //       await insertNewData(dataPost);
-  //       await addDataHistory(dataPost)
-  //       updateCard();
-  //       if (response.status === 200) {
-  //         dataPost.status = 1;
-  //         await insertNewData(dataPost);
-  //         await addDataHistory(dataPost)
-  //         setIsAlertOpen(true);
-  //         if (quantity > 0) {
-  //           updateLocalStorageQuota(selectedUnit, quantity);
-  //         }
-  //         const cardDashOnline = JSON.parse(localStorage.getItem("cardDash") || "[]");
-  //         updateCardDashFlowMeter(flow_end, cardDashOnline);
-
-  //         alert("Transaksi sukses dikirim ke server");
-  //       }
-  //     } else {
-  //       const unitQuota = await getDataFromStorage("unitQuota");
-  //       const newQty = dataPost.qty;
-
-  //       for (let index = 0; index < unitQuota.length; index++) {
-  //         const element = unitQuota[index];
-
-  //         if (element.unit_no === dataPost.no_unit) {
-  //           element.used = element.used + newQty;
-  //         }
-  //       }
-  //       const cardDashOffline = JSON.parse(localStorage.getItem("cardDash") || "[]");
-  //       if (Array.isArray(cardDashOffline)) {
-  //         updateCardDashFlowMeter(flow_end, cardDashOffline);
-  //       }
-  //       dataPost.status = 0;
-  //       await insertNewData(dataPost);
-  //       await insertNewDataHistori(dataPost);
-  //       await saveDataToStorage("unitQuota", unitQuota);
-  //     }
-  //     route.push("/dashboard");
-  //   } catch (error) {
-  //     console.error("Error occurred while posting data:", error);
-  //     setModalMessage("Error occurred while posting data: " + error);
-  //     setErrorModalOpen(true);
-  //   }
-  // };
 
   const updateLocalStorageQuota = async (
     unit_no: string,
@@ -768,13 +607,13 @@ const FormTRX: React.FC = () => {
     if (unitQuota) {
       const parsedData = JSON.parse(unitQuota);
       const updatedData = parsedData.map(
-        (unit: { unit_no: string; quota: number; used: number }) => {
+        (unit: { unit_no: string; quota: number; used: number, additional:number }) => {
           if (unit.unit_no === unit_no) {
             const newUsed = unit.used + issuedQuantity;
             return {
               ...unit,
               used: newUsed,
-              remainingQuota: unit.quota - newUsed,
+              remainingQuota: unit.quota + unit.additional - newUsed,
             };
           }
           return unit;
@@ -834,17 +673,17 @@ const FormTRX: React.FC = () => {
 
   useEffect(() => {}, [operatorOptions]);
 
-  useEffect(() => {
-    const loadQoutaData = async () => {
-      const cachedData = await getDataFromStorage("unitQouta");
-      if (cachedData) {
-        setQuotaData(cachedData);
-      } else {
-      }
-    };
+  // useEffect(() => {
+  //   const loadQoutaData = async () => {
+  //     const cachedData = await getDataFromStorage("unitQouta");
+  //     if (cachedData) {
+  //       setQuotaData(cachedData);
+  //     } else {
+  //     }
+  //   };
 
-    loadQoutaData();
-  }, []);
+  //   loadQoutaData();
+  // }, []);
 
   useEffect(() => {}, [qoutaData]);
 
@@ -902,7 +741,7 @@ const FormTRX: React.FC = () => {
           setJdeOptions([]);
         }
       } else {
-        console.log("No JDE options found in local storage");
+        // console.log("No JDE options found in local storage");
         setJdeOptions([]);
       }
     };
@@ -932,10 +771,18 @@ const FormTRX: React.FC = () => {
   };
 
   const validateShiftTime = (startTime: string, endTime: string): boolean => {
+    let data:any = localStorage.getItem('openingSonding')
+    if(data){
+      data = JSON.parse(data)
+    }
     // Convert startTime and endTime to Date objects
-    const start = new Date(`1970-01-01T${startTime}:00`);
-    const end = new Date(`1970-01-01T${endTime}:00`);
-
+    let start = new Date(`1970-01-01T${startTime}:00`);
+    let end = new Date(`1970-01-01T${endTime}:00`);
+    // console.log(11,startTime)
+    if(+endTime.split(':')[0] >= 0 && +endTime.split(':')[0] <= 6){
+      // console.log('ih')
+      end = new Date(`1970-01-02T${endTime}:00`);
+    }
     // Shift 1: 06:00 - 18:00
     const shift1Start = new Date("1970-01-01T06:00:00");
     const shift1End = new Date("1970-01-01T18:00:00");
@@ -958,49 +805,47 @@ const FormTRX: React.FC = () => {
     const isShift2 =
       (start >= shift2Start || start < shift1Start) && // Handles overlap past midnight
       (end >= shift2Start || end < shift1Start);
-
     return isShift1 || isShift2;
   };
 
   useEffect(() => {
-    const determineShift = () => {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const isDayShift = currentHour >= 6 && currentHour < 18;
-      const isNightShift = currentHour >= 18 || currentHour < 6;
-      if (isDayShift) {
-        setShift("Day");
-      } else if (isNightShift) {
-        setShift("Night");
+    const determineShift = async () => {
+      let data = await getDataFromStorage("openingSonding");
+      
+      if (data.shift) {
+        setShift(data.shift);
       }
     };
     determineShift();
-  }, []);
+  }, [checkUnit]);
 
-  const handleStartTimeChange = (e: CustomEvent) => {
+  const handleStartTimeChange = async (e: CustomEvent) => {
     const newStartTime = e.detail.value as string;
     setStartTime(newStartTime);
-    const now = new Date();
-    const currentHour = now.getHours();
-    const isDayShift = currentHour >= 6 && currentHour < 18;
-    const isNightShift = currentHour >= 18 || currentHour < 6;
+    // const now = new Date();
+    // const currentHour = now.getHours();
+    let data = await getDataFromStorage("openingSonding");
+    // const isDayShift = shift >= 6 && currentHour < 18;
+    // const isNightShift = currentHour >= 18 || currentHour < 6;
     // Define the shift start times based on current shift
-    const shiftStart = isDayShift ? 6 : 18; // 06:00 for Day shift, 18:00 for Night shift
-    const shiftEnd = isDayShift ? 18 : 6; // 18:00 for Day shift, 06:00 for Night shift
+    const shiftStart = data.shift === 'Day' ? 6 : 18; // 06:00 for Day shift, 18:00 for Night shift
+    const shiftEnd = data.shift === 'Night' ? 6 : 18; // 18:00 for Day shift, 06:00 for Night shift
 
     // Validate start time based on the determined shift
     const newStartHour = new Date(`1970-01-01T${newStartTime}:00`).getHours();
 
     // Check if the new start time falls within the valid shift range
+    // console.log('start',newStartHour,newStartHour >= 18 && newStartHour < 24 && newStartHour <=  6 && newStartHour >= 0)
     if (
-      (isDayShift && (newStartHour < shiftStart || newStartHour >= shiftEnd)) ||
-      (isNightShift && newStartHour < shiftStart && newStartHour >= shiftEnd)
+      (data.shift === 'Day' && (newStartHour >= shiftStart || newStartHour < shiftEnd)) ||
+      (data.shift === "Night" && newStartHour >= 18 && newStartHour < 24 || newStartHour <=  6)
     ) {
-      setShowJamError(true);
-      setShowJamErrorInput(true);
-    } else {
       setShowJamError(false);
       setShowJamErrorInput(false);
+    } else {
+      
+      setShowJamError(true);
+      setShowJamErrorInput(true);
     }
 
     if (endTime) {
@@ -1014,38 +859,61 @@ const FormTRX: React.FC = () => {
     }
   };
 
-  const handleEndTimeChange = (e: CustomEvent) => {
+  const handleEndTimeChange = async (e: CustomEvent) => {
     const newEndTime = e.detail.value as string;
     setEndTime(newEndTime);
 
+    let data = await getDataFromStorage("openingSonding");
     // Get the current hour to determine the current shift
-    const now = new Date();
-    const currentHour = now.getHours();
-    const isDayShift = currentHour >= 6 && currentHour < 18;
-    const isNightShift = currentHour >= 18 || currentHour < 6;
+    // const now = new Date();
+    // const currentHour = now.getHours();
+    // const isDayShift = currentHour >= 6 && currentHour < 18;
+    // const isNightShift = currentHour >= 18 || currentHour < 6;
 
     // Define the shift start and end times based on current shift
-    const shiftStart = isDayShift ? 6 : 18; // 06:00 for Day shift, 18:00 for Night shift
-    const shiftEnd = isDayShift ? 18 : 6; // 18:00 for Day shift, 06:00 for Night shift
+    const shiftStart = data.shift === 'Day' ? 6 : 18; // 06:00 for Day shift, 18:00 for Night shift
+    const shiftEnd = data.shift === 'Night' ? 6 : 18; // 18:00 for Day shift, 06:00 for Night shift
 
     // Convert the newEndTime to a Date object to extract the hours
     const newEndDate = new Date(`1970-01-01T${newEndTime}:00`);
     const newEndHour = newEndDate.getHours();
 
     // Validate that the endTime is within the allowed shift time range
+    
     const isEndTimeInShiftRange =
-      (isDayShift && newEndHour >= shiftStart && newEndHour < shiftEnd) ||
-      (isNightShift && (newEndHour >= shiftStart || newEndHour < shiftEnd));
+      (data.shift === 'Day'  && newEndHour >= shiftStart && newEndHour < shiftEnd) ||
+      (data.shift === 'Night' && newEndHour >= 18 && newEndHour < 24 || newEndHour <=  6);
 
     // Check if endTime is earlier than startTime
-    const newStartDate = new Date(`1970-01-01T${startTime}:00`);
-    const isEndTimeAfterStartTime = newEndDate >= newStartDate;
+    let newStartDate = new Date()
+    let end = newEndDate
+    // console.log('okok',+startTime.split(':')[0])
+    if(data.shift === 'Night' && +startTime.split(':')[0] >= 0 && +startTime.split(':')[0] <= 6){
+      newStartDate = new Date(`1970-01-01T${startTime}:00`);
+      end = newEndDate
+    }else{
+      // console.log('okok2',newEndHour)
+      if(newEndHour >=0 && newEndHour < 6){
+        // console.log(3)
+        newStartDate = new Date(`1970-01-01T${startTime}:00`);
+        end = new Date(`1970-01-02T${newEndHour < 10? "0"+newEndHour :newEndHour}:00`);
+      }else{
+        // console.log(4)
+        newStartDate = new Date(`1970-01-01T${startTime}:00`);
+        end = newEndDate
+      }
+    }
+    // console.log('end',end,newStartDate,end >= newStartDate)
+    const isEndTimeAfterStartTime = end >= newStartDate;
 
     // If endTime is not within shift range or endTime is earlier than startTime, show an error
+    // console.log(0,isEndTimeInShiftRange,isEndTimeAfterStartTime)
     if (!isEndTimeInShiftRange || !isEndTimeAfterStartTime) {
+      // console.log(111)
       setShowJamError(true);
       setShowJamErrorInput(true);
     } else {
+      // console.log(222)
       setShowJamError(false);
       setShowJamErrorInput(false);
     }
@@ -1078,6 +946,27 @@ const FormTRX: React.FC = () => {
     }
   }, []);
 
+  const updateQuota = async (id:String,used:Number) =>{
+    const quotaUpdate = await getDataFromStorage("quotaUpdate");
+    let data =[]
+    if(quotaUpdate){
+      data = [...quotaUpdate]
+      data.push({
+        id:id,
+        used:used,
+        status:'pending'
+      })
+    }else{
+      data.push({
+        id:id,
+        used:used,
+        status:'pending'
+      })
+    }
+    // console.log("quota",data)
+    await saveDataToStorage("quotaUpdate", data);
+  }
+
   const handleQuantityChange = (e: any) => {
     const inputQuantity = Number(e.detail.value);
     const isIssuedOrTransfer =
@@ -1088,23 +977,27 @@ const FormTRX: React.FC = () => {
     setIsError(false);
 
     if (isIssuedOrTransfer) {
+      
       if (isNaN(inputQuantity) || inputQuantity <= 0) {
         setQuantityError("Qty harus lebih besar dari 0.");
         setIsError(true);
         return;
       }
       const quota = remainingQuota || 0;
+      console.log(0,checkUnit)
       if (
-        typeof selectedUnit === "string" &&
-        (selectedUnit.startsWith("LV") || selectedUnit.startsWith("HLV"))
+        checkUnit
       ) {
+        // console.log(1)
         if (inputQuantity > quota) {
+          console.log(2)
           setQuantityError("Qty tidak boleh lebih besar dari sisa kuota.");
           setIsError(true);
           return;
         }
       } else {
         if (inputQuantity > stock) {
+          // console.log(3)
           setQuantityError("Qty tidak boleh lebih besar dari Stock On Hand.");
           setIsError(true);
           return;
@@ -1113,6 +1006,7 @@ const FormTRX: React.FC = () => {
     }
     setQuantity(inputQuantity);
   };
+
 
   const filteredUnitOptions =
     selectedType &&
@@ -1130,6 +1024,7 @@ const FormTRX: React.FC = () => {
     newValue: SingleValue<{ value: string; label: string }>,
     actionMeta: ActionMeta<{ value: string; label: string }>
   ) => {
+    const cachedData = await getDataFromStorage("unitQuota");
     if (newValue) {
       const unitValue = newValue.value;
       setSelectedUnit(unitValue);
@@ -1137,21 +1032,31 @@ const FormTRX: React.FC = () => {
         (unit) => unit.unit_no === unitValue
       );
 
+      let quota = cachedData?.find((v:any) => v.unit_no === unitValue)
+
+      if(quota){
+        setCheckUnit(true)
+        setRemainingQuota(quota.quota + quota.additional - quota.used)
+      }else{
+        setCheckUnit(false)
+      }
+
+
       if (selectedUnitOption) {
         setModel(selectedUnitOption.brand);
         setOwner(selectedUnitOption.owner);
         setHmkmValue(selectedUnitOption.hm_km);
         setHmKmLast(selectedUnitOption.hm_last);
         setQtyValue(selectedUnitOption.qty);
-        const newKoutaLimit =
-          unitValue.startsWith("LV") || unitValue.startsWith("HLV")
-            ? unitQouta
-            : 0;
-        setKoutaLimit(newKoutaLimit);
-        setShowError(
-          unitValue.startsWith("LV") ||
-            (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
-        );
+        // const newKoutaLimit =
+        //   unitValue.startsWith("LV") || unitValue.startsWith("HLV")
+        //     ? unitQouta
+        //     : 0;
+        // setKoutaLimit(newKoutaLimit);
+        // setShowError(
+        //   unitValue.startsWith("LV") ||
+        //     (unitValue.startsWith("HLV") && newKoutaLimit < unitQouta)
+        // );
       } else {
         try {
           const offlineData = await fetchLatestHmLast(unitValue);
@@ -1171,6 +1076,7 @@ const FormTRX: React.FC = () => {
           if (offlineData.qty_last !== undefined) {
             setQtyValue(offlineData.qty_last); // Set qty from offline data
           }
+
         } catch (error) {
           console.error("Failed to retrieve data from IndexedDB:", error);
         }
@@ -1305,9 +1211,8 @@ const FormTRX: React.FC = () => {
       </IonHeader>
       <IonContent>
         <div style={{ marginTop: "20px", padding: "15px" }}>
-          {(selectedUnit?.startsWith("LV") ||
-            selectedUnit?.startsWith("HLV")) && <IonRow></IonRow>}
-          {currentUnitQuota?.is_active && (
+          {(checkUnit) && <IonRow></IonRow>}
+          {/* {currentUnitQuota?.is_active && ( */}
             <IonRow>
               <IonCol>
                 <IonItemDivider
@@ -1320,18 +1225,20 @@ const FormTRX: React.FC = () => {
                     />
                     <IonTitle
                       style={{
-                        color: remainingQuota === 0 ? "red" : "#8AAD43",
+                        color: checkUnit?remainingQuota === 0 ? "red" : "#8AAD43":"#8AAD43",
                       }}>
                       Sisa Kuota:{" "}
-                      {remainingQuota > 0
+                      {checkUnit?
+                      remainingQuota > 0
                         ? `${remainingQuota} Liter`
-                        : "0 Liter"}
+                        : "0 Liter"
+                      :"unit tanpa quota"}
                     </IonTitle>
                   </IonLabel>
                 </IonItemDivider>
               </IonCol>
             </IonRow>
-          )}
+          {/* )} */}
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
               <h1>Shift: {shift}</h1>
@@ -1710,7 +1617,36 @@ const FormTRX: React.FC = () => {
                 </IonCol>
               </IonRow>
               <IonRow>
-                <IonCol>
+              <IonCol>
+                  <IonCard style={{ height: "160px" }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="photoInput"
+                      style={{ display: "none" }}
+                      onChange={handlePhotoChange}
+                    />
+                    <IonButton
+                      size="small"
+                      onClick={() =>
+                        document.getElementById("photoInput")?.click()
+                      }
+                      disabled={isFormDisabled}
+                    >
+                      <IonIcon slot="start" icon={cameraOutline} />
+                      Ambil Foto *
+                    </IonButton>
+                    {photoPreview && (
+                      <IonCard style={{ marginTop: "10px", padding: "10px" }}>
+                        <IonLabel>Preview:</IonLabel>
+                        <IonImg
+                          src={photoPreview}
+                          alt="Photo Preview"
+                          style={{ maxWidth: "100%", maxHeight: "200px" }}
+                        />
+                      </IonCard>
+                    )}
+                  </IonCard>
                 </IonCol>
                 <IonCol>
                   <IonCard style={{ height: "160px" }}>
@@ -1762,7 +1698,8 @@ const FormTRX: React.FC = () => {
                     isError ||
                     quantity === null ||
                     !validateShiftTime(startTime, endTime) ||
-                    showJamError
+                    showJamError ||
+                    hmkmValue === null || hmkmValue === undefined
                     // Disable if time validation fails
                   }
                   onClick={(e) => {

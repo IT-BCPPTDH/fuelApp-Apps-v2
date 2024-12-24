@@ -32,6 +32,7 @@ import {
   getDataFromStorage,
 } from "../../services/dataService";
 import { getHomeByIdLkf } from "../../hooks/getHome";
+import { updateLog } from "../../hooks/useAuth";
 const FormClosing: React.FC = () => {
   const route = useIonRouter();
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
@@ -219,6 +220,7 @@ const FormClosing: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    handleLog()
     const calculatedCloseData = calculateCloseData();
     const finalCloseData =
       calculatedCloseData === 0 ? closingDip : calculatedCloseData;
@@ -257,8 +259,10 @@ const FormClosing: React.FC = () => {
         (response.status === 200 || response.status === 201)
       ) {
         await updateDataToDB(UpdateData);
+        localStorage.removeItem('CapacitorStorage.openingSonding');
         route.push("/review-data");
       } else {
+        localStorage.removeItem('CapacitorStorage.openingSonding');
         localStorage.setItem("latestLkfData", JSON.stringify(UpdateData));
         route.push("/review-data");
         setShowError(true);
@@ -277,6 +281,20 @@ const FormClosing: React.FC = () => {
       setShowError(true);
     }
   };
+
+  const handleLog = async () =>{
+    let data = await getDataFromStorage("CapacitorStorage.dataLog");
+    data = {
+      ...data,
+      logout_time:new Date()
+    }
+    if(data.logout_status === "pending"){
+      const response = await updateLog(data)
+      if(response.status === '200'){
+        localStorage.removeItem('dataLog')
+      }
+    }
+  }
 
   const handleHmEndChange = (e: CustomEvent) => {
     const hmEndInput = Number(e.detail.value);

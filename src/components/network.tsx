@@ -3,20 +3,19 @@ import React, { useEffect, useState } from 'react';
 // Function to check server connection
 const checkServerStatus = async (serverUrl: string): Promise<boolean> => {
   try {
-    const response = await fetch(serverUrl);
-    // If the response is OK, return true (online)
+    const response = await fetch(serverUrl, { method: 'GET' });
     return response.ok;
   } catch (error) {
     console.error('Server ping failed:', error);
-    return false; // If there's an error, assume offline
+    return false; 
   }
 };
 
-const NetworkStatus = () => {
+const NetworkStatus: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
   const [serverStatus, setServerStatus] = useState<boolean>(false);
 
-  const serverUrl = 'http://10.27.240.110'; // Corrected URL
+  const serverUrl = import.meta.env.VITE_BACKEND_URL+'/online'
 
   // Effect to monitor online/offline status
   useEffect(() => {
@@ -36,28 +35,63 @@ const NetworkStatus = () => {
 
   // Effect to ping server periodically (only when online)
   useEffect(() => {
+    const fetchServerStatus = async () => {
+      const isServerOnline = await checkServerStatus(serverUrl);
+      setServerStatus(isServerOnline);
+    };
+
     if (isOnline) {
+      fetchServerStatus();
       const intervalId = setInterval(async () => {
         const isServerOnline = await checkServerStatus(serverUrl);
         setServerStatus(isServerOnline);
-      }, 5000); // Ping every 5 seconds (adjust as necessary)
-
-      return () => clearInterval(intervalId); // Cleanup interval on unmount
+      }, 5000); // Ping every 5 seconds
+      
+      return () => clearInterval(intervalId); 
     } else {
-      setServerStatus(false); // If offline, assume server is down
+      setServerStatus(false); 
     }
-  }, [isOnline]);
+  }, [isOnline, serverUrl]);
 
   return (
-    <div style={{ color: isOnline && serverStatus ? 'green' : 'red', fontSize: '15px', marginTop: '0px' }}>
-      <p>
-        {isOnline
-          ? serverStatus
-            ? 'Online (Server Connected)'
-            : 'Online'
-          : 'Offline'}
-      </p>
-    </div>
+    <>
+              <div
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  marginRight: "15px",
+                  color: "green",
+                }}>
+                <div
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    borderRadius: "50%",
+                    backgroundColor: serverStatus ? "#73A33F" : "red",
+                    marginRight: "5px",
+                  }}
+                />
+      {
+        serverStatus?(
+          <>
+          <div style={{ color:'green' , fontSize: '15px', marginTop: '0px' }}>
+            <p>
+              online
+            </p>
+          </div>
+          </>
+        ):(
+          <>
+            <div style={{ color:'red' , fontSize: '15px', marginTop: '0px' }}>
+              <p>
+                offline
+              </p>
+            </div>
+          </>
+        )
+      }
+      </div>
+    </>
   );
 };
 
