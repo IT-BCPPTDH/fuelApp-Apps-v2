@@ -1704,7 +1704,7 @@ const FormTRX: React.FC = () => {
                   }
                   onClick={(e) => {
                     handlePost(e);
-                    showAlert();
+                    // showAlert();
                   }}
                   className={`check-button ${
                     isOnline ? "button-save-data" : "button-save-draft"

@@ -22,7 +22,9 @@ import { postBulkData } from '../hooks/bulkInsert';
 import { checkmarkCircleOutline } from 'ionicons/icons';
 import { updateDataInTrx } from '../utils/update';
 import { getHomeByIdLkf, getHomeTable } from '../hooks/getHome';
-import { getDataFromStorage } from '../services/dataService';
+import { getDataFromStorage, saveDataToStorage } from '../services/dataService';
+import { postOpening } from '../hooks/serviceApi';
+import { addDataToDB } from '../utils/insertData';
 
 interface TableDataItem {
   hm_km: any;
@@ -159,6 +161,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       });
       return;
     }
+    checkOpening()
   
     if (!data || data.length === 0) {
       setError("No data available for insertion");
@@ -180,7 +183,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       console.log("test",day,month,year)
       formattedDate =`${day}-${month}-${year}`
     } 
-    console.log(333,data)
+  
     const bulkData : any = data
     .filter(item => item.status === 0)
     .map(item => ({
@@ -208,7 +211,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
     }));
   
     try {
-      console.log(999,bulkData)
+
       if (navigator.onLine) {
         const responses = await postBulkData(bulkData);
         console.log("Bulk insert responses:", responses);
@@ -245,7 +248,23 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
     }
   };
   
+  const checkOpening = async () => {
+    if (isOnline) {
+      let dataPost = await getDataFromStorage("openingSonding");
+      if (dataPost && dataPost.status === "pending") {
+        const result = await postOpening(dataPost);
+        if (result.status === "201" && result.message === "Data Created") {
+          dataPost = {
+            ...dataPost,
+            status: "sent",
+          };
 
+          await saveDataToStorage("openingSonding", dataPost);
+          await addDataToDB(dataPost);
+        }
+      }
+    }
+  };
 
 
  
