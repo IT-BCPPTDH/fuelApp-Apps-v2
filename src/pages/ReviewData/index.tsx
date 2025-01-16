@@ -67,6 +67,7 @@ const ReviewData: React.FC = () => {
   const [totalIssued, setTotalIssued] = useState<number>();
   const [totalMeter, setTotalMeter] = useState<number>();
   const [stockOnHand, setDataStock] = useState<number>();
+  const [totalTransfer, setTotalTransfer] = useState<number>();
   const [flowMeterAwal, setFlowMeterAwal] = useState<number>();
   const [totalVariance, setTotalVariance] = useState(0);
   const [totalDataFlowMeter, setTotalFlowMeter] = useState<number>();
@@ -268,10 +269,11 @@ const ReviewData: React.FC = () => {
 
           if (totalIsssued) {
             setTotalIssued(Number(totalIsssued.value|| 0));
-            setTotalMeter(Number(totalIsssued.value + transfer.value?transfer.value:0|| 0))
           }
 
           
+          const ttlTf = totalIsssued.value + transfer.value
+          setTotalMeter(ttlTf)
 
           if (closeData) {
             setDataStock(Number(closeData.value || 0));
@@ -288,6 +290,9 @@ const ReviewData: React.FC = () => {
           }
           if (openingDip) {
             setOpeningDip(Number(openingDip.value || 0));
+          }
+          if(transfer){
+            setTotalTransfer(Number(transfer.value))
           }
         }
       } catch (error) {
@@ -321,12 +326,17 @@ const ReviewData: React.FC = () => {
             </IonItem>
             <IonItem>
               <IonLabel style={{ fontSize: "18px" }} className="font-review">
+                Stock On Hand : {stockOnHand}
+              </IonLabel>
+            </IonItem>
+            <IonItem>
+              <IonLabel style={{ fontSize: "18px" }} className="font-review">
                 Receive : {totalReceipt}
               </IonLabel>
             </IonItem>
             <IonItem>
               <IonLabel style={{ fontSize: "18px" }} className="font-review">
-                Stock On Hand : {stockOnHand}
+                Transfer : {totalTransfer}
               </IonLabel>
             </IonItem>
             <IonItem>
