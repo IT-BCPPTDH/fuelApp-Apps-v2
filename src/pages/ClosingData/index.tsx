@@ -268,6 +268,7 @@ const FormClosing: React.FC = () => {
         setShowError(true);
       }
     } catch (error) {
+      localStorage.removeItem('CapacitorStorage.openingSonding');
       if (error instanceof ResponseError) {
         console.error("Update Data Error:", {
           message: error.message,

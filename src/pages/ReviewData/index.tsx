@@ -163,24 +163,25 @@ const ReviewData: React.FC = () => {
       }
       localStorage.removeItem("cardDash");
       localStorage.removeItem("latestLkfData");
-      removeDataFromStorage("unitQuota");
-      removeDataFromStorage("lastLkfDataStation");
-      removeDataFromStorage("lastClosingSonding");
-      removeDataFromStorage("lastDipLiter");
-      removeDataFromStorage("lastFlowMeter");
-      removeDataFromStorage("shiftCloseData");
-      removeDataFromStorage("loginData");
-      removeDataFromStorage("allOperator");
-      removeDataFromStorage("allUnit");
-      removeDataFromStorage("stationData");
-      removeDataFromStorage("lastLKF");
-      removeDataFromStorage("lastTrx");
-      removeDataFromStorage("tanggalTransaksi");
+      await removeDataFromStorage("unitQuota");
+      await removeDataFromStorage("openingSonding");
+      await removeDataFromStorage("lastLkfDataStation");
+      await removeDataFromStorage("lastClosingSonding");
+      await removeDataFromStorage("lastDipLiter");
+      await removeDataFromStorage("lastFlowMeter");
+      await removeDataFromStorage("shiftCloseData");
+      await removeDataFromStorage("loginData");
+      await removeDataFromStorage("allOperator");
+      await removeDataFromStorage("allUnit");
+      await removeDataFromStorage("stationData");
+      await removeDataFromStorage("lastLKF");
+      await removeDataFromStorage("lastTrx");
+      await removeDataFromStorage("tanggalTransaksi");
       await deleteAllDataTransaksi();
       await deleteAllClosingData();
       await deleteAllDataMaster();
       route.push("/");
-      window.location.href = "/";
+      // window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
     }

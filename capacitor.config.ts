@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
+  appId: 'co.id.ptdh.fuel.app',
   appName: 'FuelApp',
   webDir: 'dist',
   // bundledWebRuntime:false,
@@ -13,6 +13,12 @@ const config: CapacitorConfig = {
       enabled: true,
     },
   },
+  server: {
+    hostname: 'localhost',
+    androidScheme: 'http',
+    iosScheme: 'http',
+    cleartext: true, 
+  }
 };
 
 export default config;

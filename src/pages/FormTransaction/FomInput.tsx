@@ -508,7 +508,7 @@ const FormTRX: React.FC = () => {
       fuelman_id: fuelman_id!,
       jde_operator: fuelman_id!,
       status: status ?? 0,
-      date: "",
+      date: Date.now().toString(),
       start: startTime,
       end: endTime,
     };
@@ -770,8 +770,8 @@ const FormTRX: React.FC = () => {
     }
   };
 
-  const validateShiftTime = (startTime: string, endTime: string): boolean => {
-    let data:any = localStorage.getItem('openingSonding')
+  const validateShiftTime = async (startTime: string, endTime: string) => {
+    let data:any = await getDataFromStorage('openingSonding')
     if(data){
       data = JSON.parse(data)
     }

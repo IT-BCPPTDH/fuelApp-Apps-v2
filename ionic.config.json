@@ -1,9 +1,7 @@
 {
   "name": "New-Fuel-App",
   "integrations": {
-    "capacitor": {
-      
-    }
+    "capacitor": {}
   },
-  "type": "react-vite"
+  "type": "react"
 }

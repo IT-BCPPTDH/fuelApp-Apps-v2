@@ -181,9 +181,7 @@ const DashboardFuelMan: React.FC = () => {
   }, []);
 
   const checkOn = async () =>{
-    // console.log("ngecek2")
     const on = await useOnlineStatus()
-    // console.log('on',on)
     setIsOnline(on)
   }
 

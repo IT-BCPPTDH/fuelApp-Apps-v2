@@ -34,6 +34,7 @@ import { getLatestLkfDataDate, getLatestLkfId, getShiftDataByLkfId, getShiftData
 import { getStationData } from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
+import useOnlineStatus from "../../helper/onlineStatus";
 
 interface Shift {
   id: number;
@@ -116,14 +117,20 @@ const OpeningForm: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-    return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
-    };
-  }, []);
+    // const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    // window.addEventListener('online', updateOnlineStatus);
+    // window.addEventListener('offline', updateOnlineStatus);
+    // return () => {
+    //   window.removeEventListener('online', updateOnlineStatus);
+    //   window.removeEventListener('offline', updateOnlineStatus);
+    // };
+    checkOn()
+  }, [isOnline]);
+
+  const checkOn = async () =>{
+    const on = await useOnlineStatus()
+    setIsOnline(on)
+  }
 
   const handleShiftChange = (selectedShift: Shift) => {
     setShiftSelected(selectedShift);
@@ -153,7 +160,7 @@ const OpeningForm: React.FC = () => {
 
 const checkData = async () =>{
   let dataOpening = await getDataFromStorage("openingSonding");
-  if(dataOpening.lkf_id){
+  if(dataOpening.jde){
     router.push("/dashboard");
   }
 }
@@ -241,12 +248,13 @@ const checkData = async () =>{
     };
 
     try {
-      // console.log(2)
+      console.log(11)
       if (isOnline) {
-        // console.log(3)
+        console.log(22)
         const result = await postOpening(dataPost);
         console.log("status",result.status)
         if (result.status === '201' && result.message === 'Data Created') {
+          console.log(1)
           dataPost = {
             ...dataPost,
             status: 'sent'
@@ -263,16 +271,21 @@ const checkData = async () =>{
 
           router.push("/dashboard");
         } else {
-          setShowError(true);
+          console.log(2)
+          saveDataToStorage("openingSonding", dataPost);
+          saveDataToStorage("dataLog", dataLog);
+          // setShowError(true);
+          await addDataToDB(dataPost);
           presentToast({
             message: 'Failed to post data.',
             duration: 2000,
             position: 'top',
             color: 'danger',
           });
+          router.push("/dashboard");
         }
       } else {
-        // console.log(4)
+        console.log(3)
         saveDataToStorage("openingSonding", dataPost);
         saveDataToStorage("dataLog", dataLog);
         await addDataToDB(dataPost);
@@ -280,6 +293,9 @@ const checkData = async () =>{
       }
 
     } catch (error) {
+      console.log(4)
+      saveDataToStorage("openingSonding", dataPost);
+      saveDataToStorage("dataLog", dataLog);
       setShowError(true);
       presentToast({
         message: 'You are offline. Data saved locally and will be sent when online.',
