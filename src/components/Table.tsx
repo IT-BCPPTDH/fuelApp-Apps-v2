@@ -69,6 +69,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
   const [lkfId, setLkfId] = useState<string>('');
   const [presentToast] = useIonToast();
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine); 
+  const [btnToServer, setBtnToServer] = useState<boolean>(false);
 
   const [signatureBase64, setSignatureBase64] = useState<string | undefined>(
     undefined
@@ -112,9 +113,9 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       }
   
       // Map the fetched data to table data structure
-      console.log('data array', dataArray)
+      // console.log('data array', dataArray)
       const opening = await getDataFromStorage("openingSonding");
-      console.log(111,opening)
+      // console.log(111,opening)
       const mappedData: TableDataItem[] = dataArray.map((item: any) => ({
         from_data_id: item.from_data_id ?? 0,
         unit_no: item.no_unit || '',
@@ -152,6 +153,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
 
 
   const handleBulkInsert = async () => {
+    setBtnToServer(true)
     if (!navigator.onLine) {
       await presentToast({
         message: "Perangkat offline! Mohon pastikan terkoneksi dengan jaringan.",
@@ -159,6 +161,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         position: 'bottom',
         color: 'danger',
       });
+      setBtnToServer(false)
       return;
     }
     checkOpening()
@@ -180,7 +183,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
     let formattedDate: string;
     if (typeof tanggal === 'string' && tanggal.includes('/')) {
       const [day, month, year] = tanggal.split('/');
-      console.log("test",day,month,year)
+      // console.log("test",day,month,year)
       formattedDate =`${day}-${month}-${year}`
     } 
   
@@ -235,6 +238,8 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         duration: 2000,
         position: 'top',
       });
+      setBtnToServer(false)
+
       setError(null);
   
     } catch (error) {
@@ -245,6 +250,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         duration: 2000,
         position: 'bottom',
       });
+      setBtnToServer(false)
     }
   };
   
@@ -397,7 +403,7 @@ useEffect(() => {
         </IonButton>
       </div>
       <IonGrid style={{ float: "inline-end" }}>
-        <IonButton className='check-button' onClick={handleBulkInsert}>Save Data To Server</IonButton>
+        <IonButton className='check-button' onClick={handleBulkInsert} disabled={btnToServer}>Save Data To Server</IonButton>
       </IonGrid>
 
       <IonToast

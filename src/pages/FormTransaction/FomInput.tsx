@@ -397,6 +397,7 @@ const FormTRX: React.FC = () => {
         ? { ...item, value: flowMeterAkhir }
         : item
     );
+
     // if (setDataHome) {
     //   setDataHome(updatedCardData);
     // } else {
@@ -888,17 +889,24 @@ const FormTRX: React.FC = () => {
     let newStartDate = new Date()
     let end = newEndDate
     // console.log('okok',+startTime.split(':')[0])
-    if(data.shift === 'Night' && +startTime.split(':')[0] >= 0 && +startTime.split(':')[0] <= 6){
-      newStartDate = new Date(`1970-01-01T${startTime}:00`);
-      end = newEndDate
-    }else{
-      // console.log('okok2',newEndHour)
-      if(newEndHour >=0 && newEndHour < 6){
-        // console.log(3)
+    if(data.shift === 'Night'){
+      if(+startTime.split(':')[0] >= 0 && +startTime.split(':')[0] <= 6){
+        console.log(1)
+        newStartDate = new Date(`1970-01-01T${startTime}:00`);
+        end = newEndDate
+      }else if(newEndHour >=0 && newEndHour < 6){
+        console.log(2)
         newStartDate = new Date(`1970-01-01T${startTime}:00`);
         end = new Date(`1970-01-02T${newEndHour < 10? "0"+newEndHour :newEndHour}:00`);
       }else{
         // console.log(4)
+        newStartDate = new Date(`1970-01-01T${startTime}:00`);
+        end = newEndDate
+      }
+    }else{
+      // console.log('okok2',newEndHour)
+      console.log(2)
+      if(newEndHour >= shiftStart && newEndHour < shiftEnd){
         newStartDate = new Date(`1970-01-01T${startTime}:00`);
         end = newEndDate
       }

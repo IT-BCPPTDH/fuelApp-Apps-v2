@@ -161,6 +161,7 @@ const ReviewData: React.FC = () => {
           removeDataFromStorage("shiftData");
         }
       }
+      localStorage.removeItem('CapacitorStorage.openingSonding');
       localStorage.removeItem("cardDash");
       localStorage.removeItem("latestLkfData");
       await removeDataFromStorage("unitQuota");
@@ -181,7 +182,7 @@ const ReviewData: React.FC = () => {
       await deleteAllClosingData();
       await deleteAllDataMaster();
       route.push("/");
-      // window.location.href = "/";
+      window.location.href = "/";
     } catch (error) {
       console.error("Logout failed:", error);
     }

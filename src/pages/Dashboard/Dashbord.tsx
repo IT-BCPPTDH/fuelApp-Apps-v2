@@ -163,21 +163,11 @@ const DashboardFuelMan: React.FC = () => {
     { title: "Total Flow Meter", value: "No Data", icon: "total.svg" },
     { title: "Variance", value: "No Data", icon: "variance.svg" },
   ]);
+  const [btnRefresh, setBtnRefresh] = useState<boolean>(false);
+
 
   useEffect(() => {
-    // const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    // const updateOflineStatus = () => setIsOnline(navigator.onLine);
-
-    // window.addEventListener("online", updateOnlineStatus);
-    // window.addEventListener("offline", updateOnlineStatus);
-
-    // return () => {
-    //   window.removeEventListener("online", updateOnlineStatus);
-    //   window.removeEventListener("offline", updateOnlineStatus);
-    // };
-    // console.log("ngecek")
     checkOn()
-    
   }, []);
 
   const checkOn = async () =>{
@@ -214,7 +204,7 @@ const DashboardFuelMan: React.FC = () => {
           const qtyTransfer =
             typeof calculationTransfer === "number" ? calculationTransfer : 0;
           const openingDip = shiftData.openingDip ?? 0;
-          const stockOnHand = openingDip + qtyReceive - qtyIssued;
+          const stockOnHand = openingDip + qtyReceive - qtyIssued - (calculationTransfer?calculationTransfer:0);
           const balance = stockOnHand - qtyIssued;
           setStockOnHand(stockOnHand);
           const cardData = [
@@ -464,13 +454,15 @@ const DashboardFuelMan: React.FC = () => {
   };
 
   const handleRefresh = async () => {
-    checkUpdateQuota()
-    loadLastTrx()
-    handleLog()
+    setBtnRefresh(true)
+    await checkUpdateQuota()
+    await loadLastTrx()
+    await handleLog()
     if (lkfId) {
       try {
+        // console.log(1,lkfId)
         const response = await getHomeTable(lkfId);
-        console.log(123,response)
+        // console.log(123,response)
         if (response && response.data && Array.isArray(response.data)) {
           const newData = response.data;
           await clearDataTrxType();
@@ -511,7 +503,9 @@ const DashboardFuelMan: React.FC = () => {
             await addDataTrxType(dataPost);
           }
           setData(newData);
+          setBtnRefresh(false)
         } else {
+          setBtnRefresh(false)
           console.error(
             "Expected an array in response.data but got:",
             response
@@ -519,10 +513,12 @@ const DashboardFuelMan: React.FC = () => {
           // setData([]);
         }
       } catch (error) {
+        setBtnRefresh(false)
         console.error("Failed to refresh data:", error);
         setError("Failed to refresh data");
         // setData([]);
       } finally {
+        setBtnRefresh(false)
         setLoading(false);
       }
     } else {
@@ -664,7 +660,7 @@ const DashboardFuelMan: React.FC = () => {
       }
 
       const dataHome = await getHomeByIdLkf(lkfId);
-
+      
       if (
         dataHome &&
         dataHome.data &&
@@ -672,6 +668,7 @@ const DashboardFuelMan: React.FC = () => {
         dataHome.data.length > 0
       ) {
         const item = dataHome.data[0];
+
         const openingDip = item.total_opening || 0;
         const received = item.total_receive || 0;
         const receivedKpc = item.total_receive_kpc || 0;
@@ -680,7 +677,7 @@ const DashboardFuelMan: React.FC = () => {
         const stockOnHand =
           openingDip + received + receivedKpc - issued - transfer;
         const totalReceive = received + receivedKpc;
-
+        
         const fetchedResult = await getCalculationIssued(lkfId);
 
         setTotalQuantityIssued(fetchedResult ?? 0);
@@ -804,7 +801,7 @@ const DashboardFuelMan: React.FC = () => {
         </IonHeader>
         <div className="content">
           <div className="btn-start">
-            <IonButton color="primary" onClick={handleRefresh}>
+            <IonButton color="primary" onClick={handleRefresh} disabled={btnRefresh}>
               <IonImg src="refresh.svg" alt="Refresh" />
               Refresh
             </IonButton>
