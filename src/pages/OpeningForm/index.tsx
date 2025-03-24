@@ -148,6 +148,7 @@ const OpeningForm: React.FC = () => {
   const handleDateChange = (e: CustomEvent) => {
     const selectedDate = e.detail.value as string;
     if (selectedDate) {
+      console.log(12,selectedDate)
       setDate(selectedDate);
       setShowDateModal(false);
       const formattedDate = new Date(selectedDate).toLocaleDateString();
@@ -192,13 +193,14 @@ const checkData = async () =>{
     const lkf_id = await getLatestLkfId();
     let latestDataDateFormatted = "";
     const savedDate = date
-
+    console.log(123,date)
     if (savedDate) {
-      const transactionDate = new Date(savedDate);
-      if (!isNaN(transactionDate.getTime())) {
+      const transactionDate = savedDate;
+      if (transactionDate) {
         // Jika valid, tambahkan 12 jam ke tanggal
-        transactionDate.setHours(transactionDate.getHours());
-        latestDataDateFormatted = transactionDate.toISOString();
+        // transactionDate.setHours(transactionDate.getHours());
+        latestDataDateFormatted = transactionDate;
+        // latestDataDateFormatted = transactionDate.toISOString();
       } else {
         latestDataDateFormatted = "Invalid Date";
       }

@@ -370,7 +370,19 @@ const DashboardFuelMan: React.FC = () => {
   //   checkUpdateQuota()
   // }, [])
   
-
+  function formatToDDMMYYYY(dateString: string): string {
+    const date = new Date(dateString);
+    
+    // Convert to GMT+8
+    const options: Intl.DateTimeFormatOptions = {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'Asia/Singapore', // GMT+8
+    };
+  
+    return date.toLocaleDateString('en-GB', options); // en-GB ensures DD/MM/YYYY format
+  }
  
 
   useEffect(() => {
@@ -379,9 +391,10 @@ const DashboardFuelMan: React.FC = () => {
       // console.log(savedDate)
       setLkfId(savedDate.lkf_id)
       if (savedDate) {
-        const transactionDate = new Date(savedDate.date);
-        if (!isNaN(transactionDate.getTime())) {
-          setTanggalTransaksi(transactionDate.toLocaleDateString("id-ID"));
+        const transactionDate = savedDate.date;
+        if (transactionDate) {
+          const dt = transactionDate.split('T')
+          setTanggalTransaksi(dt[0]);
           // console.log(1234,transactionDate.toLocaleDateString("id-ID"))
         } else {
           console.error("Invalid date format in localStorage:", savedDate);
@@ -504,6 +517,7 @@ const DashboardFuelMan: React.FC = () => {
           }
           setData(newData);
           setBtnRefresh(false)
+          window.location.reload()
         } else {
           setBtnRefresh(false)
           console.error(
@@ -825,7 +839,7 @@ const DashboardFuelMan: React.FC = () => {
               Fuelman : {fuelmanName} : {fuelmanID}
             </IonLabel>
             {tanggalTransaksi ? (
-              <IonLabel>Tanggal: {tanggalTransaksi}</IonLabel>
+              <IonLabel>Tanggal: {formatToDDMMYYYY(tanggalTransaksi)}</IonLabel>
             ) : (
               <IonLabel>Tidak ada tanggal yang disimpan.</IonLabel>
             )}
