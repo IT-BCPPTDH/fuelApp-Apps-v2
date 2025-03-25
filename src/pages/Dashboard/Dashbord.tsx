@@ -30,6 +30,7 @@ import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import NetworkStatus from "../../components/network";
 import {
   fetchLasTrx,
+  fetchOperatorData,
   fetchQuotaData,
   fetchUnitData,
   getDataFromStorage,
@@ -466,11 +467,26 @@ const DashboardFuelMan: React.FC = () => {
     route.push("/transaction");
   };
 
+  const loadOperator = async () => {
+      try {
+          const fetchedJdeOptions = await fetchOperatorData();
+          console.log(fetchedJdeOptions)
+      } catch (error) {
+        console.error("Error loading operator data:", error);
+      }
+    };
+
+  const loadUnitData = async () => {
+      const units = await fetchUnitData();
+    };
+
   const handleRefresh = async () => {
     setBtnRefresh(true)
     await checkUpdateQuota()
     await loadLastTrx()
     await handleLog()
+    await loadOperator()
+    await loadUnitData()
     if (lkfId) {
       try {
         // console.log(1,lkfId)
