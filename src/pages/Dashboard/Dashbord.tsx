@@ -286,36 +286,37 @@ const DashboardFuelMan: React.FC = () => {
   };
 
   const checkUpdateQuota = async () =>{
-    const quotaUpdate = await getDataFromStorage("quotaUpdate");
-    // console.log(19,quotaUpdate)
-    if(quotaUpdate){
-      let data = quotaUpdate.filter((v:any) => v.status === 'pending')
+    // const quotaUpdate = await getDataFromStorage("quotaUpdate");
+    // // console.log(19,quotaUpdate)
+    // if(quotaUpdate){
+    //   let data = quotaUpdate.filter((v:any) => v.status === 'pending')
       
-      if(data.length === 0){
-        loadUnitDataQuota()
-      }else{
-        let dataUp = []
-        for(let i = 0; i < data.length;i++){
-          const response = await updateQuota(data[i])
-          if(response.status === '200'){
-            const updatedData = quotaUpdate.map((item:any) => {
-              // console.log(0,item.id,data[i].id)
-              if (item.id === data[i].id) {
-                return { ...item, status: "sent" };  
-              }else{
-                return item;  
-              }
-            });
-            dataUp = updatedData
-          }
-        }
-        // console.log(dataUp)
-        await saveDataToStorage("quotaUpdate", dataUp);
-      }
-    }else{
-      console.log('get Quota Update')
-      loadUnitDataQuota()
-    }
+    //   if(data.length === 0){
+    //     loadUnitDataQuota()
+    //   }else{
+    //     let dataUp = []
+    //     for(let i = 0; i < data.length;i++){
+    //       const response = await updateQuota(data[i])
+    //       if(response.status === '200'){
+    //         const updatedData = quotaUpdate.map((item:any) => {
+    //           // console.log(0,item.id,data[i].id)
+    //           if (item.id === data[i].id) {
+    //             return { ...item, status: "sent" };  
+    //           }else{
+    //             return item;  
+    //           }
+    //         });
+    //         dataUp = updatedData
+    //       }
+    //     }
+    //     // console.log(dataUp)
+    //     await saveDataToStorage("quotaUpdate", dataUp);
+    //   }
+    // }else{
+    //   console.log('get Quota Update')
+    //   loadUnitDataQuota()
+    // }
+    await loadUnitDataQuota()
   }
 
   const loadLastTrx = async () => {
@@ -343,23 +344,6 @@ const DashboardFuelMan: React.FC = () => {
     try {
       console.log("date",formattedDate)
         const quotaData = await fetchQuotaData(formattedDate);
-        // console.log(123,quotaData)
-        // console.log('Fetched Qouta Login ', quotaData);
-  
-        // if (quotaData && Array.isArray(quotaData)) {
-        //     let foundUnitQuota = quotaData.find((unit) => unit.no_unit === selectedUnit);
-  
-        //     if (!foundUnitQuota) {
-        //         const yesterday = new Date(today);
-        //         yesterday.setDate(today.getDate() - 1);
-        //         const formattedYesterday = yesterday.toISOString().split('T')[0];
-        //         const previousQuotaData = await fetchQuotaData(formattedYesterday);
-        //         // console.log('Fetched previous quota data:', previousQuotaData);
-        //         foundUnitQuota = previousQuotaData.find((unit) => unit.no_unit === selectedUnit);
-        //     }
-        // } else {
-        //     console.error('No quota data found for the specified date');
-        // }
     } catch (error) {
         console.error('Error fetching quota data:', error);
     }
