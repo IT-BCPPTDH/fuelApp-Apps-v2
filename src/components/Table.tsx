@@ -160,7 +160,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         if(data.length === 0){
           loadUnitDataQuota()
         }else{
-          console.log(111111)
+          // console.log(111111)
           let dataUp = []
           for(let i = 0; i < data.length;i++){
             const response = await updateQuota(data[i])
@@ -453,7 +453,7 @@ useEffect(() => {
       <IonGrid style={{ float: "inline-end" }}>
         <IonButton className='check-button' 
         onClick={() => {
-            // checkUpdateQuota();
+            checkUpdateQuota();
             handleBulkInsert();
           }}
           disabled={btnToServer}>Save Data To Server</IonButton>
