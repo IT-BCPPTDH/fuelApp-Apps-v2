@@ -285,39 +285,38 @@ const DashboardFuelMan: React.FC = () => {
     }
   };
 
-  const checkUpdateQuota = async () =>{
-    const quotaUpdate = await getDataFromStorage("quotaUpdate");
-    // console.log(19,quotaUpdate)
-    if(quotaUpdate){
-      let data = quotaUpdate.filter((v:any) => v.status === 'pending')
-      
-      if(data.length === 0){
-        loadUnitDataQuota()
-      }else{
-        let dataUp = []
-        for(let i = 0; i < data.length;i++){
-          const response = await updateQuota(data[i])
-          if(response.status === '200'){
-            const updatedData = quotaUpdate.map((item:any) => {
-              // console.log(0,item.id,data[i].id)
-              if (item.id === data[i].id) {
-                return { ...item, status: "sent" };  
-              }else{
-                return item;  
-              }
-            });
-            dataUp = updatedData
-          }
-        }
-        // console.log(dataUp)
-        await saveDataToStorage("quotaUpdate", dataUp);
-      }
-    }else{
-      console.log('get Quota Update')
-      loadUnitDataQuota()
+  const checkUpdateQuota = async () => {
+    const quotaUpdate: any[] = await getDataFromStorage("quotaUpdate");
+  
+    if (!quotaUpdate) {
+      console.log("get Quota Update");
+      loadUnitDataQuota();
+      return;
     }
-    // await loadUnitDataQuota()
-  }
+  
+    const pendingItems = quotaUpdate.filter((v: any) => v.status === "pending");
+  
+    if (pendingItems.length === 0) {
+      loadUnitDataQuota();
+      return;
+    }
+  
+    let updatedQuota = [...quotaUpdate];
+  
+    for (const item of pendingItems) {
+      console.log("processing item ID:", item.id);
+      const response = await updateQuota(item);
+  
+      if (response.status === "200") {
+        updatedQuota = updatedQuota.map((q: any) =>
+          q.id === item.id ? { ...q, status: "sent" } : q
+        );
+      }
+    }
+  
+    console.log("updated quota:", updatedQuota);
+    await saveDataToStorage("quotaUpdate", updatedQuota);
+  };
 
   const loadLastTrx = async () => {
     const units = await fetchLasTrx();
@@ -907,7 +906,7 @@ const DashboardFuelMan: React.FC = () => {
             <IonImg src="plus.svg" />
             <span style={{ marginLeft: "10px" }}>Tambah Data</span>
           </IonButton>
-          <TableData setPendingStatus={setPendingStatus} />
+          <TableData setPendingStatus={setPendingStatus} checkUpdateQuota={checkUpdateQuota}/>
         </IonGrid>
       </IonContent>
     </IonPage>

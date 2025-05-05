@@ -54,9 +54,10 @@ interface TableDataItem {
 
 interface TableDataProps {
   setPendingStatus: React.Dispatch<React.SetStateAction<boolean>>;
+  checkUpdateQuota: () => Promise<void>
 }
 
-const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
+const TableData: React.FC<TableDataProps> = ({ setPendingStatus,checkUpdateQuota }) =>  {
 
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -151,54 +152,54 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
     }
   };
   
-  const checkUpdateQuota = async () =>{
-      const quotaUpdate = await getDataFromStorage("quotaUpdate");
-      // console.log(19,quotaUpdate)
-      if(quotaUpdate){
-        let data = quotaUpdate.filter((v:any) => v.status === 'pending')
+  // const checkUpdateQuota = async () =>{
+  //     const quotaUpdate = await getDataFromStorage("quotaUpdate");
+  //     // console.log(19,quotaUpdate)
+  //     if(quotaUpdate){
+  //       let data = quotaUpdate.filter((v:any) => v.status === 'pending')
         
-        if(data.length === 0){
-          loadUnitDataQuota()
-        }else{
-          // console.log(111111)
-          let dataUp = []
-          for(let i = 0; i < data.length;i++){
-            const response = await updateQuota(data[i])
-            if(response.status === '200'){
-              const updatedData = quotaUpdate.map((item:any) => {
-                // console.log(0,item.id,data[i].id)
-                if (item.id === data[i].id) {
-                  return { ...item, status: "sent" };  
-                }else{
-                  return item;  
-                }
-              });
-              dataUp = updatedData
-            }
-          }
-          // console.log(dataUp)
-          await saveDataToStorage("quotaUpdate", dataUp);
-        }
-      }else{
-        console.log('get Quota Update')
-        loadUnitDataQuota()
-      }
-    }
+  //       if(data.length === 0){
+  //         loadUnitDataQuota()
+  //       }else{
+  //         console.log(111111,data)
+  //         let dataUp = []
+  //         for(let i = 0; i < data.length;i++){
+  //           const response = await updateQuota(data[i])
+  //           if(response.status === '200'){
+  //             const updatedData = await quotaUpdate.map((item:any) => {
+  //               // console.log(0,item.id,data[i].id)
+  //               if (item.id === data[i].id) {
+  //                 return { ...item, status: "sent" };  
+  //               }else{
+  //                 return item;  
+  //               }
+  //             });
+  //             dataUp = updatedData
+  //           }
+  //         }
+  //         // console.log(dataUp)
+  //         await saveDataToStorage("quotaUpdate", dataUp);
+  //       }
+  //     }else{
+  //       console.log('get Quota Update')
+  //       loadUnitDataQuota()
+  //     }
+  //   }
 
-    const loadUnitDataQuota = async () => {
-        // console.log(111)
-        const opening = await getDataFromStorage("openingSonding");
-        const today = new Date(opening.date);
-        console.log(0,today)
-        const formattedDate = today.toISOString().split('T')[0];
-        // console.log(1,formattedDate)
-        try {
-          console.log("date",formattedDate)
-            const quotaData = await fetchQuotaData(formattedDate);
-        } catch (error) {
-            console.error('Error fetching quota data:', error);
-        }
-      };
+  //   const loadUnitDataQuota = async () => {
+  //       // console.log(111)
+  //       const opening = await getDataFromStorage("openingSonding");
+  //       const today = new Date(opening.date);
+  //       console.log(0,today)
+  //       const formattedDate = today.toISOString().split('T')[0];
+  //       // console.log(1,formattedDate)
+  //       try {
+  //         console.log("date",formattedDate)
+  //           const quotaData = await fetchQuotaData(formattedDate);
+  //       } catch (error) {
+  //           console.error('Error fetching quota data:', error);
+  //       }
+  //     };
 
   const handleBulkInsert = async () => {
     setBtnToServer(true)
@@ -271,7 +272,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
             ...item,
             status: 1,
           }));
-          await loadUnitDataQuota()
+          // await loadUnitDataQuota()
           await Promise.all(updatedData.map(async (item) => {
             await updateDataInTrx(item.from_data_id, { status: item.status });
           }));
