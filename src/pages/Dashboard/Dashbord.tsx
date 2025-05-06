@@ -290,14 +290,15 @@ const DashboardFuelMan: React.FC = () => {
   
     if (!quotaUpdate) {
       console.log("get Quota Update");
-      loadUnitDataQuota();
+      await loadUnitDataQuota();
       return;
     }
   
     const pendingItems = quotaUpdate.filter((v: any) => v.status === "pending");
   
     if (pendingItems.length === 0) {
-      loadUnitDataQuota();
+      console.log(11)
+      await loadUnitDataQuota();
       return;
     }
   
@@ -343,6 +344,7 @@ const DashboardFuelMan: React.FC = () => {
     try {
       console.log("date",formattedDate)
         const quotaData = await fetchQuotaData(formattedDate);
+        console.log(quotaData)
     } catch (error) {
         console.error('Error fetching quota data:', error);
     }
