@@ -517,6 +517,13 @@ const checkData = async () =>{
     }
   };
 
+  const convertToGMT6 = (dateInput: string | Date) => {
+    const date = new Date(dateInput);
+    // Get time in UTC and add 6 hours (6 * 60 * 60 * 1000)
+    const offsetDate = new Date(date.getTime() + 6 * 60 * 60 * 1000);
+    return offsetDate.toISOString();
+  };
+
 
   return (
     <IonPage>
@@ -600,7 +607,7 @@ const checkData = async () =>{
               </IonItem>
               <IonModal isOpen={showDateModal}>
                 <IonDatetime
-                  value={date || new Date().toISOString()}
+                  value={convertToGMT6(date) || convertToGMT6(new Date())}
                   onIonChange={handleDateChange}
                 // max={new Date().toISOString()}  
 
