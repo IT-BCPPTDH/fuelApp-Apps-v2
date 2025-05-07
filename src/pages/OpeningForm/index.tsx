@@ -517,10 +517,10 @@ const checkData = async () =>{
     }
   };
 
-  const convertToGMT6 = (dateInput: string | Date) => {
+  const convertToGMT8 = (dateInput: string | Date) => {
     const date = new Date(dateInput);
-    // Get time in UTC and add 6 hours (6 * 60 * 60 * 1000)
-    const offsetDate = new Date(date.getTime() + 6 * 60 * 60 * 1000);
+    // Add 8 hours in milliseconds
+    const offsetDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
     return offsetDate.toISOString();
   };
 
@@ -607,7 +607,7 @@ const checkData = async () =>{
               </IonItem>
               <IonModal isOpen={showDateModal}>
                 <IonDatetime
-                  value={convertToGMT6(date) || convertToGMT6(new Date())}
+                  value={convertToGMT8(date) || convertToGMT8(new Date())}
                   onIonChange={handleDateChange}
                 // max={new Date().toISOString()}  
 
