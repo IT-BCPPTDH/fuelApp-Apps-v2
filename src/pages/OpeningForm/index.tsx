@@ -80,7 +80,7 @@ const OpeningForm: React.FC = () => {
   const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
-  const [date, setDate] = useState<string>(new Date().toISOString());
+  const [date, setDate] = useState<string>(new Date((new Date().getTime() + 8 * 60 * 60 * 1000)).toISOString());
   const [hmAkhir, setHmAkhir] = useState<number | undefined>(undefined);
   const [stationOptions, setStationOptions] = useState<string[]>([]);
   const [closeShift, setCloseShift] = useState<CloseShift | null>(null);
@@ -196,6 +196,7 @@ const checkData = async () =>{
     console.log(123,date)
     if (savedDate) {
       const transactionDate = savedDate;
+      console.log(transactionDate)
       if (transactionDate) {
         // Jika valid, tambahkan 12 jam ke tanggal
         // transactionDate.setHours(transactionDate.getHours());
@@ -250,13 +251,13 @@ const checkData = async () =>{
     };
 
     try {
-      console.log(11)
+      // console.log(11)
       if (isOnline) {
-        console.log(22)
+        // console.log(22)
         const result = await postOpening(dataPost);
         console.log("status",result.status)
         if (result.status === '201' && result.message === 'Data Created') {
-          console.log(1)
+          // console.log(1)
           dataPost = {
             ...dataPost,
             status: 'sent'
@@ -273,7 +274,7 @@ const checkData = async () =>{
 
           router.push("/dashboard");
         } else {
-          console.log(2)
+          // console.log(2)
           saveDataToStorage("openingSonding", dataPost);
           saveDataToStorage("dataLog", dataLog);
           // setShowError(true);
@@ -287,7 +288,7 @@ const checkData = async () =>{
           router.push("/dashboard");
         }
       } else {
-        console.log(3)
+        // console.log(3)
         saveDataToStorage("openingSonding", dataPost);
         saveDataToStorage("dataLog", dataLog);
         await addDataToDB(dataPost);
