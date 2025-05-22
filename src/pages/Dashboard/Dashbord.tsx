@@ -908,7 +908,7 @@ const DashboardFuelMan: React.FC = () => {
             <IonImg src="plus.svg" />
             <span style={{ marginLeft: "10px" }}>Tambah Data</span>
           </IonButton>
-          <TableData setPendingStatus={setPendingStatus} checkUpdateQuota={checkUpdateQuota}/>
+          <TableData setPendingStatus={setPendingStatus} checkUpdateQuota={checkUpdateQuota} setBtnRefresh={setBtnRefresh}/>
         </IonGrid>
       </IonContent>
     </IonPage>

@@ -55,9 +55,10 @@ interface TableDataItem {
 interface TableDataProps {
   setPendingStatus: React.Dispatch<React.SetStateAction<boolean>>;
   checkUpdateQuota: () => Promise<void>
+  setBtnRefresh:React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const TableData: React.FC<TableDataProps> = ({ setPendingStatus,checkUpdateQuota }) =>  {
+const TableData: React.FC<TableDataProps> = ({ setPendingStatus,checkUpdateQuota, setBtnRefresh }) =>  {
 
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -81,6 +82,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus,checkUpdateQuota
     // Check if there are any pending items
     const hasPendingData = data.some(item => item.status === 0); // Assuming status 0 means pending
     setPendingStatus(hasPendingData);
+    setBtnRefresh(hasPendingData)
   }, [data, setPendingStatus]);
   
 
