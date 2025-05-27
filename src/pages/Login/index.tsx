@@ -181,27 +181,33 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       //   }
 
       // } else {
-          const quota = await getDataFromStorage("unitQuota");
-          quota?.length>0?console.log("ada quota"):loadUnitDataQuota()
+          // const quota = await getDataFromStorage("unitQuota");
+          // quota?.length>0?console.log("ada quota"):
+          loadUnitDataQuota()
           
-          const unit = await getDataFromStorage("allUnit");
-          unit?.length>0?console.log('ada unit'):loadUnitData();
+          // const unit = await getDataFromStorage("allUnit");
+          // unit?.length>0?console.log('ada unit'):
+          loadUnitData();
           
-          const lastTrx = await getDataFromStorage("lastTrx")
-          lastTrx?.length>0?console.log("ada lastTrx"):loadLastTrx();
+          // const lastTrx = await getDataFromStorage("lastTrx")
+          // lastTrx?.length>0?console.log("ada lastTrx"):
+          loadLastTrx();
           
-          const lastLkf = await getDataFromStorage("lastLKF");
-          lastLkf?.length>0?console.log('ada lastLKF'):loadLastLKF();
+          // const lastLkf = await getDataFromStorage("lastLKF");
+          // lastLkf?.length>0?console.log('ada lastLKF'):
+          loadLastLKF();
           
           const sonding = await getDataFromStorage("masterSonding");
-          sonding?.length>0?console.log("ada master sonding"):fetchSondingMasterData();
+          sonding?.length>0?console.log("ada master sonding"):
+          fetchSondingMasterData();
           
           // const operator = await getDataFromStorage("allOperator");
           // operator?.length>0?console.log("ada operator"):
           loadOperator(); 
           
-          const station = await getDataFromStorage("allStation");
-          station?.length>0?console.log("ada station"):loadStationData(); 
+          // const station = await getDataFromStorage("allStation");
+          // station?.length>0?console.log("ada station"):
+          loadStationData(); 
         // console.warn("Tidak ada data transaksi yang tersedia di localStorage.");
         showTimedAlert()
       // }
