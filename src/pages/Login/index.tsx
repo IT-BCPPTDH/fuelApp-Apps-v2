@@ -196,8 +196,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           const sonding = await getDataFromStorage("masterSonding");
           sonding?.length>0?console.log("ada master sonding"):fetchSondingMasterData();
           
-          const operator = await getDataFromStorage("allOperator");
-          operator?.length>0?console.log("ada operator"):loadOperator(); 
+          // const operator = await getDataFromStorage("allOperator");
+          // operator?.length>0?console.log("ada operator"):
+          loadOperator(); 
           
           const station = await getDataFromStorage("allStation");
           station?.length>0?console.log("ada station"):loadStationData(); 
