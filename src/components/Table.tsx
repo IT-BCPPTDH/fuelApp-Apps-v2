@@ -404,6 +404,7 @@ useEffect(() => {
             <IonCol><IonText>Model Unit</IonText></IonCol>
             <IonCol><IonText>FBR Histori</IonText></IonCol>
             <IonCol><IonText>Jenis Trx</IonText></IonCol>
+            <IonCol><IonText>HM/KM</IonText></IonCol>
             <IonCol><IonText>QTY Issued</IonText></IonCol>
             <IonCol><IonText>FM Awal</IonText></IonCol>
             <IonCol><IonText>FM Akhir</IonText></IonCol>
@@ -433,6 +434,7 @@ useEffect(() => {
       <IonCol><IonText>{item.model_unit}</IonText></IonCol>
       <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
       <IonCol><IonText>{item.jenis_trx}</IonText></IonCol>
+      <IonCol><IonText>{item.hm_km}</IonText></IonCol>
       <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
       <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
       <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
