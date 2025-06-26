@@ -11,5 +11,5 @@
       </a>
     </div>`}o.innerHTML=i,document.querySelector(`.${d}`).appendChild(o)}export{r as webUpdateCheck_checkAndNotice,w as webUpdateCheck_showNotify};
 //# sourceMappingURL=plugin-web-update-notify.js.map
-        window.webUpdateNotifyVersion = "4fb4029";
+        window.webUpdateNotifyVersion = "6027c27";
         webUpdateCheck_checkAndNotice({"logVersion":true,"checkInterval":30000});

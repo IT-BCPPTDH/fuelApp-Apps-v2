@@ -49,6 +49,7 @@ interface TableDataItem {
   date_trx: String;
   photo:string;
   signature:string;
+  entry:any;
 }
 
 
@@ -141,6 +142,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus,checkUpdateQuota
         date_trx: item.date_trx,
         signature: item.signature,
         photo: item.foto,
+        entry:Number(item.date),
         // Adjusting the status mapping to handle different status codes
         status: item.status === 1 || item.status === '1' ? 1 : 0, // Ensure it maps 1 as 'sent'
       }));
@@ -399,20 +401,25 @@ useEffect(() => {
       </IonRow>
       <IonCard>
         <IonGrid style={{ overflow: "auto" }}>
-          <IonRow style={{ background: "#737373", color: "white", width: "900px" }}>
+          <IonRow style={{ background: "#737373", color: "white", width: "1500px" }}>
             <IonCol><IonText>No Unit</IonText></IonCol>
             <IonCol><IonText>Model Unit</IonText></IonCol>
             <IonCol><IonText>FBR Histori</IonText></IonCol>
             <IonCol><IonText>Jenis Trx</IonText></IonCol>
             <IonCol><IonText>HM/KM</IonText></IonCol>
+            <IonCol><IonText>Owner</IonText></IonCol>
             <IonCol><IonText>QTY Issued</IonText></IonCol>
             <IonCol><IonText>FM Awal</IonText></IonCol>
             <IonCol><IonText>FM Akhir</IonText></IonCol>
             <IonCol><IonText>Fullname</IonText></IonCol>
+            <IonCol><IonText>ID</IonText></IonCol>
+            <IonCol><IonText>Start</IonText></IonCol>
+            <IonCol><IonText>Stop</IonText></IonCol>
+            <IonCol><IonText>Time Entry</IonText></IonCol>
             <IonCol><IonText>Status</IonText></IonCol>
           </IonRow>
           {/* {paginatedData.map((item: TableDataItem) => (
-            <IonRow style={{ width: "900px" }} key={item.from_data_id}>
+            <IonRow style={{ width: "1500px" }} key={item.from_data_id}>
               <IonCol><IonText>{item.unit_no}</IonText></IonCol>
               <IonCol><IonText>{item.model_unit}</IonText></IonCol>
               <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
@@ -429,16 +436,21 @@ useEffect(() => {
   const displayFmAkhir = (item.jenis_trx === 'Receipt' || item.jenis_trx === 'Receipt KPC') ? item.fm_awal : item.fm_akhir;
 
   return (
-    <IonRow style={{ width: "900px" }} key={item.from_data_id}>
+    <IonRow style={{ width: "1500px" }} key={item.from_data_id}>
       <IonCol><IonText>{item.unit_no}</IonText></IonCol>
       <IonCol><IonText>{item.model_unit}</IonText></IonCol>
       <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
       <IonCol><IonText>{item.jenis_trx}</IonText></IonCol>
       <IonCol><IonText>{item.hm_km}</IonText></IonCol>
+      <IonCol><IonText>{item.owner}</IonText></IonCol>
       <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
       <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
       <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
       <IonCol><IonText>{item.name_operator}</IonText></IonCol>
+      <IonCol><IonText>{item.jde_operator}</IonText></IonCol>
+      <IonCol><IonText>{item.start}</IonText></IonCol>
+      <IonCol><IonText>{item.end}</IonText></IonCol>
+      <IonCol><IonText>{new Date(item.entry).toLocaleString()}</IonText></IonCol>
       <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol>
     </IonRow>
   );

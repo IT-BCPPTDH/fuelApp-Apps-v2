@@ -156,6 +156,7 @@ const DashboardFuelMan: React.FC = () => {
     { title: "Opening Dip", value: "No Data", icon: "openingdeep.svg" },
     { title: "Receipt", value: "No Data", icon: "receipt.svg" },
     { title: "Stock On Hand", value: "No Data", icon: "stock.svg" },
+    { title: "Gross Dip", value: "No Data", icon: "stock.svg" },
     { title: "QTY Issued", value: "No Data", icon: "issued.svg" },
     { title: "Balance", value: "No Data", icon: "balance.svg" },
     { title: "Closing Dip", value: "No Data", icon: "close.svg" },
@@ -197,6 +198,7 @@ const DashboardFuelMan: React.FC = () => {
           const shiftData = await getShiftDataByLkfId(lkfId);
           const calculationIssued = await getCalculationIssued(lkfId);
           const calculationReceive = await getCalculationReceive(lkfId);
+          console.log(100,calculationReceive)
           const calculationTransfer = await getCalculationITransfer(lkfId);
           const qtyReceive =
             typeof calculationReceive === "number" ? calculationReceive : 0;
@@ -207,6 +209,7 @@ const DashboardFuelMan: React.FC = () => {
           const openingDip = shiftData.openingDip ?? 0;
           const stockOnHand = openingDip + qtyReceive - qtyIssued - (calculationTransfer?calculationTransfer:0);
           const balance = stockOnHand - qtyIssued;
+          const grossDip = openingDip + qtyReceive
           setStockOnHand(stockOnHand);
           const cardData = [
             {
@@ -250,6 +253,11 @@ const DashboardFuelMan: React.FC = () => {
             {
               title: "Stock On Hand",
               value: stockOnHand || 0,
+              icon: "stock.svg",
+            },
+            {
+              title: "Gross Dip",
+              value: grossDip || 0,
               icon: "stock.svg",
             },
             // { title: 'Variance', value: (shiftData.openingDip ?? 0) - (balance ?? 0), icon: 'variance.svg' }

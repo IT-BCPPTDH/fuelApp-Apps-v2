@@ -174,6 +174,7 @@ const checkData = async () =>{
     //   return;
     // }
     // console.log(openingDip,openingSonding)
+    setLoading(true);
     const data = await getDataFromStorage('loginData');
     if (
       !date ||
@@ -271,13 +272,14 @@ const checkData = async () =>{
           saveDataToStorage("openingSonding", dataPost);
           saveDataToStorage("dataLog", dataLog);
           await addDataToDB(dataPost);
-
+          setLoading(false);
           router.push("/dashboard");
         } else {
           // console.log(2)
           saveDataToStorage("openingSonding", dataPost);
           saveDataToStorage("dataLog", dataLog);
           // setShowError(true);
+          setLoading(false);
           await addDataToDB(dataPost);
           presentToast({
             message: 'Failed to post data.',
@@ -291,6 +293,7 @@ const checkData = async () =>{
         // console.log(3)
         saveDataToStorage("openingSonding", dataPost);
         saveDataToStorage("dataLog", dataLog);
+        setLoading(false);
         await addDataToDB(dataPost);
         router.push("/dashboard");
       }
