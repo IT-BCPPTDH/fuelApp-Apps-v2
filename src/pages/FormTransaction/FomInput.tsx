@@ -29,6 +29,7 @@ import {
   useIonRouter,
   useIonToast,
   IonAlert,
+  IonLoading,
 } from "@ionic/react";
 import {
   cameraOutline,
@@ -431,7 +432,9 @@ const FormTRX: React.FC = () => {
 
   const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setLoading(true);
+    
+     
     const validQuantity = quantity ?? 0;
     if (isNaN(validQuantity) || validQuantity <= 0) {
       setQuantityError("Qty Issued harus lebih besar dari 0");
@@ -573,7 +576,7 @@ const FormTRX: React.FC = () => {
         const unitQuota = await getDataFromStorage("unitQuota");
         const newQty = dataPost.qty;
 
-        for (let index = 0; index < unitQuota.length; index++) {
+        for (let index = 0; index < unitQuota?.length; index++) {
           const element = unitQuota[index];
 
           if (element.unit_no === dataPost.no_unit) {
@@ -592,8 +595,12 @@ const FormTRX: React.FC = () => {
         await insertNewDataHistori(dataPost);
         await saveDataToStorage("unitQuota", unitQuota);
       // }
-      route.push("/dashboard");
+      // setTimeout(() => {
+        setLoading(false);
+        route.push("/dashboard");
+    // }, 5000);
     } catch (error) {
+      setLoading(false);
       console.error("Error occurred while posting data:", error);
       setModalMessage("Error occurred while posting data: " + error);
       setErrorModalOpen(true);
@@ -656,7 +663,7 @@ const FormTRX: React.FC = () => {
     };
 
     loadUnitData();
-  }, []);
+  }, [loading]);
 
   useEffect(() => {
     const loadOperatorData = async () => {
@@ -1212,6 +1219,7 @@ const FormTRX: React.FC = () => {
 
   return (
     <IonPage>
+      <IonLoading isOpen={loading} message={"Loading..."} />
       <IonHeader translucent={true} className="ion-no-border">
         <IonToolbar className="custom-header">
           <IonTitle>Form Tambah Transaksi</IonTitle>
@@ -1724,7 +1732,7 @@ const FormTRX: React.FC = () => {
             </IonGrid>
           </div>
         </div>
-
+        
         <SignatureModal
           isOpen={isSignatureModalOpen}
           onClose={() => setIsSignatureModalOpen(false)}

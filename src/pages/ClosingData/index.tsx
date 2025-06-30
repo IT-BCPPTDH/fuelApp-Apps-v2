@@ -15,6 +15,7 @@ import {
   IonTextarea,
   IonLabel,
   useIonRouter,
+  IonLoading,
 } from "@ionic/react";
 import { pencilOutline, closeCircleOutline, saveOutline } from "ionicons/icons";
 import "./style.css";
@@ -50,6 +51,7 @@ const FormClosing: React.FC = () => {
   const [flowMeterEnd, setFlowMeterEnd] = useState<number | undefined>(
     undefined
   );
+  const [loading, setLoading] = useState<boolean>(false);
   const [hmEnd, setHmEnd] = useState<number>(0);
   const [stockOnHand, setStockOnHand] = useState<number>(0);
 
@@ -227,6 +229,7 @@ const FormClosing: React.FC = () => {
 
   const handleSubmit = async () => {
     handleLog()
+    setLoading(true)
     const calculatedCloseData = calculateCloseData();
     const finalCloseData =
       calculatedCloseData === 0 ? closingDip : calculatedCloseData;
@@ -266,15 +269,18 @@ const FormClosing: React.FC = () => {
       ) {
         await updateDataToDB(UpdateData);
         // localStorage.removeItem('CapacitorStorage.openingSonding');
+        setLoading(false)
         route.push("/review-data");
       } else {
         // localStorage.removeItem('CapacitorStorage.openingSonding');
         localStorage.setItem("latestLkfData", JSON.stringify(UpdateData));
+        setLoading(false)
         route.push("/review-data");
         setShowError(true);
       }
     } catch (error) {
       // localStorage.removeItem('CapacitorStorage.openingSonding');
+        setLoading(false)
       if (error instanceof ResponseError) {
         console.error("Update Data Error:", {
           message: error.message,
@@ -396,6 +402,7 @@ const FormClosing: React.FC = () => {
 
   return (
     <IonPage>
+      <IonLoading isOpen={loading} message={"Loading..."} />
       <IonHeader translucent={true} className="ion-no-border">
         <IonToolbar className="custom-header">
           <IonTitle>Form Data Closing Stock (Dip) & Sonding</IonTitle>
