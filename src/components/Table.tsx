@@ -110,7 +110,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus,checkUpdateQuota
     try {
       const rawData = await getAllDataTrx(lkfId);
       const dataArray = rawData || []; // Default to an empty array if no data is found
-  
+      console.log(111,dataArray)
       // Check if dataArray is an array
       if (!Array.isArray(dataArray)) {
         console.error("Received data is not an array:", dataArray);
@@ -134,15 +134,16 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus,checkUpdateQuota
         fm_akhir: item.flow_end ?? 0,
         hm_last: item.hm_last,
         hm_km: item.hm_km,
-        jde_operator: item.fuelman_id || '',
+        jde_operator: item.fuelman_id?item.fuelman_id:item.jde_operator ,
         name_operator: item.name_operator || item.name__operator || '',
-        start:item.start,
-        end:item.end,
+        start:item.start.slice(0, 5),
+        end:item.end.slice(0, 5),
         created_by: opening.jde,
         date_trx: item.date_trx,
         signature: item.signature,
         photo: item.foto,
-        entry:Number(item.date),
+        entry:new Date(isNaN(item.date) ? item.date : Number(item.date)).toLocaleString(),
+        //  instanceof Date?item.date:new Date(Number(item.entry)).toLocaleString(),
         // Adjusting the status mapping to handle different status codes
         status: item.status === 1 || item.status === '1' ? 1 : 0, // Ensure it maps 1 as 'sent'
       }));
@@ -450,7 +451,7 @@ useEffect(() => {
       <IonCol><IonText>{item.jde_operator}</IonText></IonCol>
       <IonCol><IonText>{item.start}</IonText></IonCol>
       <IonCol><IonText>{item.end}</IonText></IonCol>
-      <IonCol><IonText>{new Date(item.entry).toLocaleString()}</IonText></IonCol>
+      <IonCol><IonText>{item.entry}</IonText></IonCol>
       <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol>
     </IonRow>
   );
