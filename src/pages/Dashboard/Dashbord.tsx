@@ -271,8 +271,6 @@ const DashboardFuelMan: React.FC = () => {
     };
 
     fetchShiftData();
-    checkOpening();
-    
   }, []);
 
   const checkOpening = async () => {
@@ -475,6 +473,7 @@ const DashboardFuelMan: React.FC = () => {
 
   const handleRefresh = async () => {
     setBtnRefresh(true)
+    await checkOpening();
     await checkUpdateQuota()
     await loadLastTrx()
     await handleLog()

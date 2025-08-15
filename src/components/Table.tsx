@@ -218,7 +218,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus,checkUpdateQuota
       setBtnToServer(false)
       return;
     }
-    checkOpening()
+    await checkOpening()
   
     if (!data || data.length === 0) {
       setError("No data available for insertion");

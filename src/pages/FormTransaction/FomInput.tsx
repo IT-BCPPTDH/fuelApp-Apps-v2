@@ -241,6 +241,7 @@ const FormTRX: React.FC = () => {
   const [latestDate, setLatestDate] = useState<string>("");
   const [tanggalTransaksi, setTanggalTransaksi] = useState<string | null>(null);
   const [stock, setStock] = useState<number>(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -430,180 +431,128 @@ const FormTRX: React.FC = () => {
     return "N/A";
   };
 
-  const handlePost = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePost = async () => {
+    if (isSubmitting) {
+      return;
+    }
+    setIsSubmitting(true);
     setLoading(true);
-    
-     
-    const validQuantity = quantity ?? 0;
-    if (isNaN(validQuantity) || validQuantity <= 0) {
-      setQuantityError("Qty Issued harus lebih besar dari 0");
-      setIsError(true);
-      return;
-    }
 
-    if (
-      !selectedType ||
-      !selectedUnit ||
-      !operatorOptions ||
-      quantity === null ||
-      fuelman_id === null ||
-      fbr === null ||
-      flowMeterAwal === null ||
-      flowMeterAkhir === null ||
-      !startTime ||
-      !endTime
-    ) {
-      setShowError(true);
-      setShowErrorType(true);
-      setemployeeError(true);
-      setShowJamError(true);
-      setShowErrorHmlast(true);
-      setShowJamErrorInput(true);
-      return;
-    }
-    // console.log(1,flowMeterAwal,flowMeterAkhir)
-    const typeTrxValue = selectedType?.name;
-    let flow_end: number = 0;
-    if (typeTrxValue === "Receipt" || typeTrxValue === "Receipt KPC") {
-      flow_end = flowMeterAwal ?? 0;
-    } else {
-      flow_end = Number(calculateFlowEnd(typeTrxValue)) || 0;
-    }
-    const fromDataId = Date.now().toString();
-    const lkf_id = await getLatestLkfId();
-
-    let latestDataDateFormatted = "";
-    const savedDate = await getDataFromStorage("openingSonding");
-    if (savedDate.date) {
-      const transactionDate = new Date(savedDate.date);
-      if (!isNaN(transactionDate.getTime())) {
-        transactionDate.setHours(transactionDate.getHours() + 12);
-        latestDataDateFormatted = transactionDate.toISOString();
-      } else {
-        console.error("Saved date is invalid:", savedDate.date);
-        latestDataDateFormatted = "Invalid Date";
-      }
-    } else {
-      console.error(
-        "No saved date available in localStorage for 'tanggalTransaksi'"
-      );
-      latestDataDateFormatted = "No Date Available";
-    }
-    // console.log(2,flowMeterAwal,flow_end)
-    const dataPost: DataFormTrx = {
-      from_data_id: fromDataId,
-      no_unit: selectedUnit!,
-      model_unit: model!,
-      owner: owner!,
-      date_trx: latestDataDateFormatted,
-      hm_last: Number(hmLast),
-      hm_km: Number(hmkmValue),
-      qty_last: qtyLast ?? 0,
-      qty: quantity, // Adjusted qty based on transaction type
-      flow_start: Number(flowMeterAwal),
-      flow_end: flow_end,
-      name_operator: fullName!,
-      fbr: fbrResult,
-      lkf_id: lkf_id ?? "",
-      signature: signatureBase64 ?? "",
-      type: selectedType?.name ?? "",
-      foto: photoPreview ?? "",
-      fuelman_id: fuelman_id!,
-      jde_operator: fuelman_id!,
-      status: status ?? 0,
-      date: Date.now().toString(),
-      start: startTime,
-      end: endTime,
-    };
-
-    // console.log("Data Post Before Sending:", dataPost);
     try {
-      // if (isOnline) {
-      //   const response = await postTransaksi(dataPost);
-      //   await insertNewData(dataPost);
-      //   await addDataHistory(dataPost);
-      //   updateCard();
-      //   console.log(response.status)
-      //   if (response.status === 200) {
-      //     dataPost.status = 1;
-      //     await insertNewData(dataPost);
-      //     await addDataHistory(dataPost);
-      //     // setIsAlertOpen(true);
-      //     // if (quantity > 0) {
-      //     //   updateLocalStorageQuota(selectedUnit, quantity);
-      //     // }
-      //     const unitQuota = await getDataFromStorage("unitQuota");
-      //   const newQty = dataPost.qty;
+      const validQuantity = quantity ?? 0;
+      if (isNaN(validQuantity) || validQuantity <= 0) {
+        setQuantityError("Qty Issued harus lebih besar dari 0");
+        setIsError(true);
+        return;
+      }
 
-      //   for (let index = 0; index < unitQuota.length; index++) {
-      //     const element = unitQuota[index];
+      if (
+        !selectedType ||
+        !selectedUnit ||
+        !operatorOptions ||
+        quantity === null ||
+        fuelman_id === null ||
+        fbr === null ||
+        flowMeterAwal === null ||
+        flowMeterAkhir === null ||
+        !startTime ||
+        !endTime
+      ) {
+        setShowError(true);
+        setShowErrorType(true);
+        setemployeeError(true);
+        setShowJamError(true);
+        // setShowErrorHmlast(true);
+        setShowJamErrorInput(true);
+        return;
+      }
+      
+      const typeTrxValue = selectedType?.name;
+      let flow_end: number = 0;
+      if (typeTrxValue === "Receipt" || typeTrxValue === "Receipt KPC") {
+        flow_end = flowMeterAwal ?? 0;
+      } else {
+        flow_end = Number(calculateFlowEnd(typeTrxValue)) || 0;
+      }
+      const fromDataId = Date.now().toString();
+      const lkf_id = await getLatestLkfId();
 
-      //     if (element.unit_no === dataPost.no_unit) {
-      //       element.used = element.used + newQty;
-      //       updateQuota(element.id,element.used + newQty)
-      //     }
-      //   }
-      //     const cardDashOnline = JSON.parse(
-      //       localStorage.getItem("cardDash") || "[]"
-      //     );
-      //     updateCardDashFlowMeter(flow_end, cardDashOnline);
-      //     alert("Transaksi sukses dikirim ke server");
-      //   }else{
-      //     const unitQuota = await getDataFromStorage("unitQuota");
-      //   const newQty = dataPost.qty;
+      let latestDataDateFormatted = "";
+      const savedDate = await getDataFromStorage("openingSonding");
+      if (savedDate.date) {
+        const transactionDate = new Date(savedDate.date);
+        if (!isNaN(transactionDate.getTime())) {
+          transactionDate.setHours(transactionDate.getHours() + 12);
+          latestDataDateFormatted = transactionDate.toISOString();
+        } else {
+          console.error("Saved date is invalid:", savedDate.date);
+          latestDataDateFormatted = "Invalid Date";
+        }
+      } else {
+        console.error(
+          "No saved date available in localStorage for 'tanggalTransaksi'"
+        );
+        latestDataDateFormatted = "No Date Available";
+      }
+      
+      const dataPost: DataFormTrx = {
+        from_data_id: fromDataId,
+        no_unit: selectedUnit!,
+        model_unit: model!,
+        owner: owner!,
+        date_trx: latestDataDateFormatted,
+        hm_last: Number(hmLast),
+        hm_km: Number(hmkmValue),
+        qty_last: qtyLast ?? 0,
+        qty: quantity,
+        flow_start: Number(flowMeterAwal),
+        flow_end: flow_end,
+        name_operator: fullName!,
+        fbr: fbrResult,
+        lkf_id: lkf_id ?? "",
+        signature: signatureBase64 ?? "",
+        type: selectedType?.name ?? "",
+        foto: photoPreview ?? "",
+        fuelman_id: fuelman_id!,
+        jde_operator: fuelman_id!,
+        status: 0, // Always offline for now
+        date: Date.now().toString(),
+        start: startTime,
+        end: endTime,
+      };
 
-      //   for (let index = 0; index < unitQuota.length; index++) {
-      //     const element = unitQuota[index];
+      const unitQuota = await getDataFromStorage("unitQuota");
+      const newQty = dataPost.qty;
 
-      //     if (element.unit_no === dataPost.no_unit) {
-      //       updateQuota(element.id,element.used + newQty)
-      //       element.used = element.used + newQty;
-      //     }
-      //   }
-      //   const cardDashOffline = JSON.parse(
-      //     localStorage.getItem("cardDash") || "[]"
-      //   );
-      //   if (Array.isArray(cardDashOffline)) {
-      //     updateCardDashFlowMeter(flow_end, cardDashOffline);
-      //   }
-      //   dataPost.status = 0;
-      //   await insertNewData(dataPost);
-      //   await insertNewDataHistori(dataPost);
-      //   await saveDataToStorage("unitQuota", unitQuota);
-      //   }
-      // } else {
-        const unitQuota = await getDataFromStorage("unitQuota");
-        const newQty = dataPost.qty;
-
-        for (let index = 0; index < unitQuota?.length; index++) {
+      if (unitQuota && Array.isArray(unitQuota)) {
+        for (let index = 0; index < unitQuota.length; index++) {
           const element = unitQuota[index];
-
           if (element.unit_no === dataPost.no_unit) {
-            updateQuota(element.id, newQty)
+            updateQuota(element.id, newQty);
             element.used = element.used + newQty;
           }
         }
-        const cardDashOffline = JSON.parse(
-          localStorage.getItem("cardDash") || "[]"
-        );
-        if (Array.isArray(cardDashOffline)) {
-          updateCardDashFlowMeter(flow_end, cardDashOffline);
-        }
-        dataPost.status = 0;
-        await insertNewData(dataPost);
-        await insertNewDataHistori(dataPost);
         await saveDataToStorage("unitQuota", unitQuota);
-      // }
-      // setTimeout(() => {
-        setLoading(false);
-        route.push("/dashboard");
-    // }, 5000);
+      }
+
+      const cardDashOffline = JSON.parse(
+        localStorage.getItem("cardDash") || "[]"
+      );
+      if (Array.isArray(cardDashOffline)) {
+        updateCardDashFlowMeter(flow_end, cardDashOffline);
+      }
+
+      await insertNewData(dataPost);
+      await insertNewDataHistori(dataPost);
+
+      route.push("/dashboard");
     } catch (error) {
-      setLoading(false);
       console.error("Error occurred while posting data:", error);
       setModalMessage("Error occurred while posting data: " + error);
       setErrorModalOpen(true);
+    } finally {
+      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -716,12 +665,12 @@ const FormTRX: React.FC = () => {
 
   const handleHmkmUnitChange = (e: CustomEvent) => {
     const value = e.detail.value ? Number(e.detail.value) : null;
-
+    console.log(value , hmLast)
     if (value !== null && value < hmLast) {
-      setShowError(true);
+      setShowErrorHmlast(true);
     } else {
       // Jika valid, update hmkmValue
-      setShowError(false);
+      setShowErrorHmlast(false);
       setHmkmValue(value);
     }
   };
@@ -761,6 +710,7 @@ const FormTRX: React.FC = () => {
     newValue: SingleValue<{ value: string; label: string }>,
     actionMeta: ActionMeta<{ value: string; label: string }>
   ) => {
+    setemployeeError(false)
     const selectedValue = newValue?.value?.trim() || "";
     if (!operatorOptions || operatorOptions.length === 0) {
       console.warn("Operator options are empty. Cannot find matching option.");
@@ -1391,9 +1341,9 @@ const FormTRX: React.FC = () => {
                     disabled
                   />
 
-                  {showErrorHmlast && hmkmLast === undefined && (
+                  {/* {showErrorHmlast && hmkmLast === undefined && (
                     <p style={{ color: "red" }}>* Field harus diisi</p>
-                  )}
+                  )} */}
                 </IonCol>
                 <IonCol>
                   <IonLabel>
@@ -1407,7 +1357,7 @@ const FormTRX: React.FC = () => {
                     onIonChange={handleHmkmUnitChange}
                     onKeyDown={handleKeyDown}
                   />
-                  {showError && (
+                  {showErrorHmlast && (
                     <div style={{ color: "red" }}>
                       HM/KM Unit Tidak Boleh Kecil Dari HM/KM Terakhir Transaksi
                     </div>
@@ -1711,6 +1661,7 @@ const FormTRX: React.FC = () => {
                 </IonButton>
                 <IonButton
                   disabled={
+                    // isSubmitting ||
                     isError ||
                     quantity === null ||
                     !validateShiftTime(startTime, endTime) ||
@@ -1719,8 +1670,9 @@ const FormTRX: React.FC = () => {
                     // Disable if time validation fails
                   }
                   onClick={(e) => {
-                    handlePost(e);
+                    // handlePost(e);
                     // showAlert();
+                    setIsAlertOpen(true);
                   }}
                   className={`check-button ${
                     isOnline ? "button-save-data" : "button-save-draft"
@@ -1742,9 +1694,26 @@ const FormTRX: React.FC = () => {
           <IonAlert
             isOpen={isAlertOpen}
             header="Pastikan Data Terisi Semua"
-            message="Simpan Data "
-            buttons={["OK"]}
-            style={{ width: "400" }}
+            message="Simpan Data?"
+            buttons={[
+              {
+                text: 'Cancel',
+                role: 'cancel',
+                handler: () => {
+                  // setLoading(true)
+                  setIsAlertOpen(false); // just close
+                },
+              },
+              {
+                text: 'OK',
+                handler: () => {
+                  // handleSave(); // your custom save function
+                  handlePost();
+                  setIsAlertOpen(false);
+                },
+              },
+            ]}
+            onDidDismiss={() => setIsAlertOpen(false)}
           />
         </div>
       </IonContent>

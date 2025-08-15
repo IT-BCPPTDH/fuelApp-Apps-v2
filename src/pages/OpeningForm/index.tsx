@@ -179,7 +179,7 @@ const checkData = async () =>{
     if (
       !date ||
       !shiftSelected ||
-      hmAkhir === undefined ||
+      hmAkhir === undefined || hmAkhir === null ||
       openingDip === undefined || openingDip === null ||
       openingSonding === undefined || openingSonding === null ||
       flowMeterAwal === undefined || flowMeterAwal === null ||
@@ -188,6 +188,7 @@ const checkData = async () =>{
       station === undefined ||
       id === undefined
     ) {
+      setLoading(false)
       setShowError(true);
       return;
     }
@@ -527,7 +528,7 @@ const checkData = async () =>{
     const offsetDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
     return offsetDate.toISOString();
   };
-
+  // console.log(11,station?.includes("FT"))
 
   return (
     <IonPage>
@@ -687,9 +688,9 @@ const checkData = async () =>{
               HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
             </IonLabel>
             <IonInput
-              className={`custom-input ${showError && (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0)) ? "input-error" : ""}`}
+              className={`custom-input ${showError && (hmAkhir === undefined || (station?.includes("FT") && hmAkhir === 0) || (station?.includes("FT") && hmAkhir === null) ) ? "input-error" : ""}`}
               type="number"
-              placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
+              placeholder={station?.includes("FT")? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
               value={hmAkhir}
               // disabled={!isTransaksiTanggalSet}
               onIonInput={(e) => {
@@ -703,7 +704,7 @@ const checkData = async () =>{
                 }
               }}
             />
-            {showError && hmAkhir === undefined  && (
+            {showError && (hmAkhir === undefined || hmAkhir === null)  && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>
