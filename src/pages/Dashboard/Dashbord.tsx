@@ -30,6 +30,7 @@ import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import NetworkStatus from "../../components/network";
 import {
   fetchLasTrx,
+  fetchOperatorData,
   fetchQuotaData,
   fetchUnitData,
   getDataFromStorage,
@@ -155,6 +156,7 @@ const DashboardFuelMan: React.FC = () => {
     { title: "Opening Dip", value: "No Data", icon: "openingdeep.svg" },
     { title: "Receipt", value: "No Data", icon: "receipt.svg" },
     { title: "Stock On Hand", value: "No Data", icon: "stock.svg" },
+    { title: "Gross Dip", value: "No Data", icon: "stock.svg" },
     { title: "QTY Issued", value: "No Data", icon: "issued.svg" },
     { title: "Balance", value: "No Data", icon: "balance.svg" },
     { title: "Closing Dip", value: "No Data", icon: "close.svg" },
@@ -163,27 +165,15 @@ const DashboardFuelMan: React.FC = () => {
     { title: "Total Flow Meter", value: "No Data", icon: "total.svg" },
     { title: "Variance", value: "No Data", icon: "variance.svg" },
   ]);
+  const [btnRefresh, setBtnRefresh] = useState<boolean>(false);
+
 
   useEffect(() => {
-    // const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    // const updateOflineStatus = () => setIsOnline(navigator.onLine);
-
-    // window.addEventListener("online", updateOnlineStatus);
-    // window.addEventListener("offline", updateOnlineStatus);
-
-    // return () => {
-    //   window.removeEventListener("online", updateOnlineStatus);
-    //   window.removeEventListener("offline", updateOnlineStatus);
-    // };
-    // console.log("ngecek")
     checkOn()
-    
   }, []);
 
   const checkOn = async () =>{
-    // console.log("ngecek2")
     const on = await useOnlineStatus()
-    // console.log('on',on)
     setIsOnline(on)
   }
 
@@ -208,6 +198,7 @@ const DashboardFuelMan: React.FC = () => {
           const shiftData = await getShiftDataByLkfId(lkfId);
           const calculationIssued = await getCalculationIssued(lkfId);
           const calculationReceive = await getCalculationReceive(lkfId);
+          console.log(100,calculationReceive)
           const calculationTransfer = await getCalculationITransfer(lkfId);
           const qtyReceive =
             typeof calculationReceive === "number" ? calculationReceive : 0;
@@ -216,8 +207,9 @@ const DashboardFuelMan: React.FC = () => {
           const qtyTransfer =
             typeof calculationTransfer === "number" ? calculationTransfer : 0;
           const openingDip = shiftData.openingDip ?? 0;
-          const stockOnHand = openingDip + qtyReceive - qtyIssued;
+          const stockOnHand = openingDip + qtyReceive - qtyIssued - (calculationTransfer?calculationTransfer:0);
           const balance = stockOnHand - qtyIssued;
+          const grossDip = openingDip + qtyReceive
           setStockOnHand(stockOnHand);
           const cardData = [
             {
@@ -263,6 +255,11 @@ const DashboardFuelMan: React.FC = () => {
               value: stockOnHand || 0,
               icon: "stock.svg",
             },
+            {
+              title: "Gross Dip",
+              value: grossDip || 0,
+              icon: "stock.svg",
+            },
             // { title: 'Variance', value: (shiftData.openingDip ?? 0) - (balance ?? 0), icon: 'variance.svg' }
           ];
           localStorage.setItem("cardDash", JSON.stringify(cardData));
@@ -274,8 +271,6 @@ const DashboardFuelMan: React.FC = () => {
     };
 
     fetchShiftData();
-    checkOpening();
-    
   }, []);
 
   const checkOpening = async () => {
@@ -296,38 +291,39 @@ const DashboardFuelMan: React.FC = () => {
     }
   };
 
-  const checkUpdateQuota = async () =>{
-    const quotaUpdate = await getDataFromStorage("quotaUpdate");
-    // console.log(19,quotaUpdate)
-    if(quotaUpdate){
-      let data = quotaUpdate.filter((v:any) => v.status === 'pending')
-      
-      if(data.length === 0){
-        loadUnitDataQuota()
-      }else{
-        let dataUp = []
-        for(let i = 0; i < data.length;i++){
-          const response = await updateQuota(data[i])
-          if(response.status === '200'){
-            const updatedData = quotaUpdate.map((item:any) => {
-              // console.log(0,item.id,data[i].id)
-              if (item.id === data[i].id) {
-                return { ...item, status: "sent" };  
-              }else{
-                return item;  
-              }
-            });
-            dataUp = updatedData
-          }
-        }
-        // console.log(dataUp)
-        await saveDataToStorage("quotaUpdate", dataUp);
-      }
-    }else{
-      console.log('get Quota Update')
-      loadUnitDataQuota()
+  const checkUpdateQuota = async () => {
+    const quotaUpdate: any[] = await getDataFromStorage("quotaUpdate");
+  
+    if (!quotaUpdate) {
+      console.log("get Quota Update");
+      await loadUnitDataQuota();
+      return;
     }
-  }
+  
+    const pendingItems = quotaUpdate.filter((v: any) => v.status === "pending");
+  
+    if (pendingItems.length === 0) {
+      console.log(11)
+      await loadUnitDataQuota();
+      return;
+    }
+  
+    let updatedQuota = [...quotaUpdate];
+  
+    for (const item of pendingItems) {
+      console.log("processing item ID:", item.id);
+      const response = await updateQuota(item);
+  
+      if (response.status === "200") {
+        updatedQuota = updatedQuota.map((q: any) =>
+          q.id === item.id ? { ...q, status: "sent" } : q
+        );
+      }
+    }
+  
+    console.log("updated quota:", updatedQuota);
+    await saveDataToStorage("quotaUpdate", updatedQuota);
+  };
 
   const loadLastTrx = async () => {
     const units = await fetchLasTrx();
@@ -348,29 +344,13 @@ const DashboardFuelMan: React.FC = () => {
     // console.log(111)
     const opening = await getDataFromStorage("openingSonding");
     const today = new Date(opening.date);
-    console.log(0,today)
+    
     const formattedDate = today.toISOString().split('T')[0];
     // console.log(1,formattedDate)
     try {
       console.log("date",formattedDate)
         const quotaData = await fetchQuotaData(formattedDate);
-        // console.log(123,quotaData)
-        // console.log('Fetched Qouta Login ', quotaData);
-  
-        // if (quotaData && Array.isArray(quotaData)) {
-        //     let foundUnitQuota = quotaData.find((unit) => unit.no_unit === selectedUnit);
-  
-        //     if (!foundUnitQuota) {
-        //         const yesterday = new Date(today);
-        //         yesterday.setDate(today.getDate() - 1);
-        //         const formattedYesterday = yesterday.toISOString().split('T')[0];
-        //         const previousQuotaData = await fetchQuotaData(formattedYesterday);
-        //         // console.log('Fetched previous quota data:', previousQuotaData);
-        //         foundUnitQuota = previousQuotaData.find((unit) => unit.no_unit === selectedUnit);
-        //     }
-        // } else {
-        //     console.error('No quota data found for the specified date');
-        // }
+        console.log(quotaData)
     } catch (error) {
         console.error('Error fetching quota data:', error);
     }
@@ -382,7 +362,19 @@ const DashboardFuelMan: React.FC = () => {
   //   checkUpdateQuota()
   // }, [])
   
-
+  function formatToDDMMYYYY(dateString: string): string {
+    const date = new Date(dateString);
+    
+    // Convert to GMT+8
+    const options: Intl.DateTimeFormatOptions = {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'Asia/Singapore', // GMT+8
+    };
+  
+    return date.toLocaleDateString('en-GB', options); // en-GB ensures DD/MM/YYYY format
+  }
  
 
   useEffect(() => {
@@ -391,9 +383,10 @@ const DashboardFuelMan: React.FC = () => {
       // console.log(savedDate)
       setLkfId(savedDate.lkf_id)
       if (savedDate) {
-        const transactionDate = new Date(savedDate.date);
-        if (!isNaN(transactionDate.getTime())) {
-          setTanggalTransaksi(transactionDate.toLocaleDateString("id-ID"));
+        const transactionDate = savedDate.date;
+        if (transactionDate) {
+          const dt = transactionDate.split('T')
+          setTanggalTransaksi(dt[0]);
           // console.log(1234,transactionDate.toLocaleDateString("id-ID"))
         } else {
           console.error("Invalid date format in localStorage:", savedDate);
@@ -465,14 +458,32 @@ const DashboardFuelMan: React.FC = () => {
     route.push("/transaction");
   };
 
+  const loadOperator = async () => {
+      try {
+          const fetchedJdeOptions = await fetchOperatorData();
+          console.log(fetchedJdeOptions)
+      } catch (error) {
+        console.error("Error loading operator data:", error);
+      }
+    };
+
+  const loadUnitData = async () => {
+      const units = await fetchUnitData();
+    };
+
   const handleRefresh = async () => {
-    checkUpdateQuota()
-    loadLastTrx()
-    handleLog()
+    setBtnRefresh(true)
+    await checkOpening();
+    await checkUpdateQuota()
+    await loadLastTrx()
+    await handleLog()
+    await loadOperator()
+    await loadUnitData()
     if (lkfId) {
       try {
+        // console.log(1,lkfId)
         const response = await getHomeTable(lkfId);
-        console.log(123,response)
+        // console.log(123,response)
         if (response && response.data && Array.isArray(response.data)) {
           const newData = response.data;
           await clearDataTrxType();
@@ -513,7 +524,10 @@ const DashboardFuelMan: React.FC = () => {
             await addDataTrxType(dataPost);
           }
           setData(newData);
+          setBtnRefresh(false)
+          window.location.reload()
         } else {
+          setBtnRefresh(false)
           console.error(
             "Expected an array in response.data but got:",
             response
@@ -521,10 +535,12 @@ const DashboardFuelMan: React.FC = () => {
           // setData([]);
         }
       } catch (error) {
+        setBtnRefresh(false)
         console.error("Failed to refresh data:", error);
         setError("Failed to refresh data");
         // setData([]);
       } finally {
+        setBtnRefresh(false)
         setLoading(false);
       }
     } else {
@@ -666,7 +682,7 @@ const DashboardFuelMan: React.FC = () => {
       }
 
       const dataHome = await getHomeByIdLkf(lkfId);
-
+      
       if (
         dataHome &&
         dataHome.data &&
@@ -674,6 +690,7 @@ const DashboardFuelMan: React.FC = () => {
         dataHome.data.length > 0
       ) {
         const item = dataHome.data[0];
+
         const openingDip = item.total_opening || 0;
         const received = item.total_receive || 0;
         const receivedKpc = item.total_receive_kpc || 0;
@@ -682,7 +699,7 @@ const DashboardFuelMan: React.FC = () => {
         const stockOnHand =
           openingDip + received + receivedKpc - issued - transfer;
         const totalReceive = received + receivedKpc;
-
+        
         const fetchedResult = await getCalculationIssued(lkfId);
 
         setTotalQuantityIssued(fetchedResult ?? 0);
@@ -806,7 +823,7 @@ const DashboardFuelMan: React.FC = () => {
         </IonHeader>
         <div className="content">
           <div className="btn-start">
-            <IonButton color="primary" onClick={handleRefresh}>
+            <IonButton color="primary" onClick={handleRefresh} disabled={btnRefresh}>
               <IonImg src="refresh.svg" alt="Refresh" />
               Refresh
             </IonButton>
@@ -830,7 +847,7 @@ const DashboardFuelMan: React.FC = () => {
               Fuelman : {fuelmanName} : {fuelmanID}
             </IonLabel>
             {tanggalTransaksi ? (
-              <IonLabel>Tanggal: {tanggalTransaksi}</IonLabel>
+              <IonLabel>Tanggal: {formatToDDMMYYYY(tanggalTransaksi)}</IonLabel>
             ) : (
               <IonLabel>Tidak ada tanggal yang disimpan.</IonLabel>
             )}
@@ -898,7 +915,7 @@ const DashboardFuelMan: React.FC = () => {
             <IonImg src="plus.svg" />
             <span style={{ marginLeft: "10px" }}>Tambah Data</span>
           </IonButton>
-          <TableData setPendingStatus={setPendingStatus} />
+          <TableData setPendingStatus={setPendingStatus} checkUpdateQuota={checkUpdateQuota} setBtnRefresh={setBtnRefresh}/>
         </IonGrid>
       </IonContent>
     </IonPage>

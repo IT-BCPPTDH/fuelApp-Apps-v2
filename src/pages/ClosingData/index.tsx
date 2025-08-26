@@ -15,6 +15,7 @@ import {
   IonTextarea,
   IonLabel,
   useIonRouter,
+  IonLoading,
 } from "@ionic/react";
 import { pencilOutline, closeCircleOutline, saveOutline } from "ionicons/icons";
 import "./style.css";
@@ -22,10 +23,10 @@ import Cookies from "js-cookie";
 import { ResponseError, updateData } from "../../hooks/serviceApi";
 import { DataLkf } from "../../models/db";
 import { getLatestLkfId } from "../../utils/getData";
-import { updateDataInDB } from "../../utils/update";
+// import { updateDataInDB } from "../../utils/update";
 import SignatureModal from "../../components/SignatureModal";
-import { getAllSonding } from "../../hooks/getAllSonding";
-import { getStation } from "../../hooks/useStation";
+// import { getAllSonding } from "../../hooks/getAllSonding";
+// import { getStation } from "../../hooks/useStation";
 import { updateDataToDB } from "../../utils/insertData";
 import {
   fetchSondingData,
@@ -50,6 +51,7 @@ const FormClosing: React.FC = () => {
   const [flowMeterEnd, setFlowMeterEnd] = useState<number | undefined>(
     undefined
   );
+  const [loading, setLoading] = useState<boolean>(false);
   const [hmEnd, setHmEnd] = useState<number>(0);
   const [stockOnHand, setStockOnHand] = useState<number>(0);
 
@@ -131,7 +133,9 @@ const FormClosing: React.FC = () => {
 
     getcardDash();
   }, []);
+
   const fetchSondingOffline = async () => {
+    console.log(100)
     try {
       const sondingDataMaster = await getDataFromStorage("masterSonding");
       const parsedSondingData =
@@ -139,8 +143,10 @@ const FormClosing: React.FC = () => {
           ? JSON.parse(sondingDataMaster)
           : sondingDataMaster;
       if (parsedSondingData) {
+        console.log(101)
         setSondingMasterData(parsedSondingData);
       } else {
+        console.log(102)
         console.warn("No valid masterSonding data found.");
       }
     } catch (error) {
@@ -173,26 +179,26 @@ const FormClosing: React.FC = () => {
     updateClosingDip();
   }, [closingSonding, station, sondingMasterData]);
 
-  useEffect(() => {
-    const updateClosingDip = () => {
-      if (
-        closingSonding !== undefined &&
-        station !== undefined &&
-        sondingMasterData.length > 0
-      ) {
-        const matchingData = sondingMasterData.find(
-          (item) => item.station === station && item.cm === closingSonding
-        );
-        if (matchingData) {
-          setOpeningDip(matchingData.liters);
-        } else {
-          setOpeningDip(undefined);
-        }
-      }
-    };
+  // useEffect(() => {
+  //   const updateClosingDip = () => {
+  //     if (
+  //       closingSonding !== undefined &&
+  //       station !== undefined &&
+  //       sondingMasterData.length > 0
+  //     ) {
+  //       const matchingData = sondingMasterData.find(
+  //         (item) => item.station === station && item.cm === closingSonding
+  //       );
+  //       if (matchingData) {
+  //         setOpeningDip(matchingData.liters);
+  //       } else {
+  //         setOpeningDip(undefined);
+  //       }
+  //     }
+  //   };
 
-    updateClosingDip();
-  }, [closingSonding, station, sondingMasterData]);
+  //   updateClosingDip();
+  // }, [closingSonding, station, sondingMasterData]);
 
   useEffect(() => {
     if (closingDip !== undefined && closeData !== undefined) {
@@ -211,9 +217,11 @@ const FormClosing: React.FC = () => {
   const handleClosingSondingChange = (e: CustomEvent) => {
     const value = e.detail.value;
     if (value === "") {
+      console.log(1)
       setShowClosingSondingError(true);
       setClosingSonding(null);
     } else {
+      console.log(2)
       setClosingSonding(Number(value));
       setShowClosingSondingError(false);
     }
@@ -221,6 +229,7 @@ const FormClosing: React.FC = () => {
 
   const handleSubmit = async () => {
     handleLog()
+    setLoading(true)
     const calculatedCloseData = calculateCloseData();
     const finalCloseData =
       calculatedCloseData === 0 ? closingDip : calculatedCloseData;
@@ -259,15 +268,19 @@ const FormClosing: React.FC = () => {
         (response.status === 200 || response.status === 201)
       ) {
         await updateDataToDB(UpdateData);
-        localStorage.removeItem('CapacitorStorage.openingSonding');
+        // localStorage.removeItem('CapacitorStorage.openingSonding');
+        setLoading(false)
         route.push("/review-data");
       } else {
-        localStorage.removeItem('CapacitorStorage.openingSonding');
+        // localStorage.removeItem('CapacitorStorage.openingSonding');
         localStorage.setItem("latestLkfData", JSON.stringify(UpdateData));
+        setLoading(false)
         route.push("/review-data");
         setShowError(true);
       }
     } catch (error) {
+      // localStorage.removeItem('CapacitorStorage.openingSonding');
+        setLoading(false)
       if (error instanceof ResponseError) {
         console.error("Update Data Error:", {
           message: error.message,
@@ -312,24 +325,24 @@ const FormClosing: React.FC = () => {
   };
 
   const varianceColor = variant !== undefined && variant < 0 ? "red" : "black";
-  useEffect(() => {
-    const loadSondingData = async () => {
-      const cachedSondingData = await getDataFromStorage("allSonding");
-      console.log("Cached Sonding Data:", cachedSondingData);
+  // useEffect(() => {
+  //   const loadSondingData = async () => {
+  //     const cachedSondingData = await getDataFromStorage("allSonding");
+  //     console.log("Cached Sonding Data:", cachedSondingData);
 
-      if (cachedSondingData) {
-        setSondingData(cachedSondingData);
-        setSondingMasterData(cachedSondingData);
-      } else {
-        const Sonding = await fetchSondingData();
-        console.log("Fetched Sonding Data:", Sonding);
-        setSondingData(Sonding);
-        setSondingMasterData(Sonding);
-      }
-    };
+  //     if (cachedSondingData) {
+  //       setSondingData(cachedSondingData);
+  //       setSondingMasterData(cachedSondingData);
+  //     } else {
+  //       const Sonding = await fetchSondingData();
+  //       console.log("Fetched Sonding Data:", Sonding);
+  //       setSondingData(Sonding);
+  //       setSondingMasterData(Sonding);
+  //     }
+  //   };
 
-    loadSondingData();
-  }, []);
+  //   loadSondingData();
+  // }, []);
 
   useEffect(() => {
     const fetchLoginData = async () => {
@@ -389,6 +402,7 @@ const FormClosing: React.FC = () => {
 
   return (
     <IonPage>
+      <IonLoading isOpen={loading} message={"Loading..."} />
       <IonHeader translucent={true} className="ion-no-border">
         <IonToolbar className="custom-header">
           <IonTitle>Form Data Closing Stock (Dip) & Sonding</IonTitle>
@@ -429,7 +443,7 @@ const FormClosing: React.FC = () => {
                 <IonCol>
                   <IonLabel>Close Dip (Liters) *</IonLabel>
                   <IonInput
-                    style={{ background: "#cfcfcf" }}
+                    // style={{ background: "#cfcfcf" }}
                     className="custom-input"
                     type="number"
                     placeholder="Input Close Dip (Liters)"

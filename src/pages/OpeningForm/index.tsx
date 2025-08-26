@@ -34,6 +34,7 @@ import { getLatestLkfDataDate, getLatestLkfId, getShiftDataByLkfId, getShiftData
 import { getStationData } from "../../hooks/getDataTrxStation";
 import { saveDataToStorage, getDataFromStorage, fetchShiftData, getOperator } from "../../services/dataService";
 import { debounce } from "../../utils/debounce";
+import useOnlineStatus from "../../helper/onlineStatus";
 
 interface Shift {
   id: number;
@@ -79,7 +80,7 @@ const OpeningForm: React.FC = () => {
   const [sondingMasterData, setSondingMasterData] = useState<any[]>([]);
   const [openingSonding, setOpeningSonding] = useState<number | undefined>(undefined);
   const [prevFlowMeterAwal, setPrevFlowMeterAwal] = useState<number | undefined>(undefined);
-  const [date, setDate] = useState<string>(new Date().toISOString());
+  const [date, setDate] = useState<string>(new Date((new Date().getTime() + 8 * 60 * 60 * 1000)).toISOString());
   const [hmAkhir, setHmAkhir] = useState<number | undefined>(undefined);
   const [stationOptions, setStationOptions] = useState<string[]>([]);
   const [closeShift, setCloseShift] = useState<CloseShift | null>(null);
@@ -116,14 +117,20 @@ const OpeningForm: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-    return () => {
-      window.removeEventListener('online', updateOnlineStatus);
-      window.removeEventListener('offline', updateOnlineStatus);
-    };
-  }, []);
+    // const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    // window.addEventListener('online', updateOnlineStatus);
+    // window.addEventListener('offline', updateOnlineStatus);
+    // return () => {
+    //   window.removeEventListener('online', updateOnlineStatus);
+    //   window.removeEventListener('offline', updateOnlineStatus);
+    // };
+    checkOn()
+  }, [isOnline]);
+
+  const checkOn = async () =>{
+    const on = await useOnlineStatus()
+    setIsOnline(on)
+  }
 
   const handleShiftChange = (selectedShift: Shift) => {
     setShiftSelected(selectedShift);
@@ -141,6 +148,7 @@ const OpeningForm: React.FC = () => {
   const handleDateChange = (e: CustomEvent) => {
     const selectedDate = e.detail.value as string;
     if (selectedDate) {
+      console.log(12,selectedDate)
       setDate(selectedDate);
       setShowDateModal(false);
       const formattedDate = new Date(selectedDate).toLocaleDateString();
@@ -153,7 +161,7 @@ const OpeningForm: React.FC = () => {
 
 const checkData = async () =>{
   let dataOpening = await getDataFromStorage("openingSonding");
-  if(dataOpening.lkf_id){
+  if(dataOpening.jde){
     router.push("/dashboard");
   }
 }
@@ -166,11 +174,12 @@ const checkData = async () =>{
     //   return;
     // }
     // console.log(openingDip,openingSonding)
+    setLoading(true);
     const data = await getDataFromStorage('loginData');
     if (
       !date ||
       !shiftSelected ||
-      hmAkhir === undefined ||
+      hmAkhir === undefined || hmAkhir === null ||
       openingDip === undefined || openingDip === null ||
       openingSonding === undefined || openingSonding === null ||
       flowMeterAwal === undefined || flowMeterAwal === null ||
@@ -179,19 +188,22 @@ const checkData = async () =>{
       station === undefined ||
       id === undefined
     ) {
+      setLoading(false)
       setShowError(true);
       return;
     }
     const lkf_id = await getLatestLkfId();
     let latestDataDateFormatted = "";
     const savedDate = date
-
+    console.log(123,date)
     if (savedDate) {
-      const transactionDate = new Date(savedDate);
-      if (!isNaN(transactionDate.getTime())) {
+      const transactionDate = savedDate;
+      console.log(transactionDate)
+      if (transactionDate) {
         // Jika valid, tambahkan 12 jam ke tanggal
-        transactionDate.setHours(transactionDate.getHours());
-        latestDataDateFormatted = transactionDate.toISOString();
+        // transactionDate.setHours(transactionDate.getHours());
+        latestDataDateFormatted = transactionDate;
+        // latestDataDateFormatted = transactionDate.toISOString();
       } else {
         latestDataDateFormatted = "Invalid Date";
       }
@@ -241,12 +253,13 @@ const checkData = async () =>{
     };
 
     try {
-      // console.log(2)
+      // console.log(11)
       if (isOnline) {
-        // console.log(3)
+        // console.log(22)
         const result = await postOpening(dataPost);
         console.log("status",result.status)
         if (result.status === '201' && result.message === 'Data Created') {
+          // console.log(1)
           dataPost = {
             ...dataPost,
             status: 'sent'
@@ -260,26 +273,36 @@ const checkData = async () =>{
           saveDataToStorage("openingSonding", dataPost);
           saveDataToStorage("dataLog", dataLog);
           await addDataToDB(dataPost);
-
+          setLoading(false);
           router.push("/dashboard");
         } else {
-          setShowError(true);
+          // console.log(2)
+          saveDataToStorage("openingSonding", dataPost);
+          saveDataToStorage("dataLog", dataLog);
+          // setShowError(true);
+          setLoading(false);
+          await addDataToDB(dataPost);
           presentToast({
             message: 'Failed to post data.',
             duration: 2000,
             position: 'top',
             color: 'danger',
           });
+          router.push("/dashboard");
         }
       } else {
-        // console.log(4)
+        // console.log(3)
         saveDataToStorage("openingSonding", dataPost);
         saveDataToStorage("dataLog", dataLog);
+        setLoading(false);
         await addDataToDB(dataPost);
         router.push("/dashboard");
       }
 
     } catch (error) {
+      console.log(4)
+      saveDataToStorage("openingSonding", dataPost);
+      saveDataToStorage("dataLog", dataLog);
       setShowError(true);
       presentToast({
         message: 'You are offline. Data saved locally and will be sent when online.',
@@ -499,6 +522,13 @@ const checkData = async () =>{
     }
   };
 
+  const convertToGMT8 = (dateInput: string | Date) => {
+    const date = new Date(dateInput);
+    // Add 8 hours in milliseconds
+    const offsetDate = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+    return offsetDate.toISOString();
+  };
+  // console.log(11,station?.includes("FT"))
 
   return (
     <IonPage>
@@ -582,7 +612,7 @@ const checkData = async () =>{
               </IonItem>
               <IonModal isOpen={showDateModal}>
                 <IonDatetime
-                  value={date || new Date().toISOString()}
+                  value={convertToGMT8(date) || convertToGMT8(new Date())}
                   onIonChange={handleDateChange}
                 // max={new Date().toISOString()}  
 
@@ -658,9 +688,9 @@ const checkData = async () =>{
               HM Awal (Khusus Fuel Truck wajib disi sesuai dengan HM/KM Kendaraan)
             </IonLabel>
             <IonInput
-              className={`custom-input ${showError && (hmAkhir === undefined || (station !== "FT" && hmAkhir === 0)) ? "input-error" : ""}`}
+              className={`custom-input ${showError && (hmAkhir === undefined || (station?.includes("FT") && hmAkhir === 0) || (station?.includes("FT") && hmAkhir === null) ) ? "input-error" : ""}`}
               type="number"
-              placeholder={station === "FT" ? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
+              placeholder={station?.includes("FT")? "Input HM Awal (0 jika di Fuel Truck)" : "Input HM Awal"}
               value={hmAkhir}
               // disabled={!isTransaksiTanggalSet}
               onIonInput={(e) => {
@@ -674,7 +704,7 @@ const checkData = async () =>{
                 }
               }}
             />
-            {showError && hmAkhir === undefined  && (
+            {showError && (hmAkhir === undefined || hmAkhir === null)  && (
               <p style={{ color: "red" }}>* Field harus diisi</p>
             )}
           </div>

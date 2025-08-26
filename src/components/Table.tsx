@@ -22,9 +22,10 @@ import { postBulkData } from '../hooks/bulkInsert';
 import { checkmarkCircleOutline } from 'ionicons/icons';
 import { updateDataInTrx } from '../utils/update';
 import { getHomeByIdLkf, getHomeTable } from '../hooks/getHome';
-import { getDataFromStorage, saveDataToStorage } from '../services/dataService';
+import { fetchQuotaData, getDataFromStorage, saveDataToStorage } from '../services/dataService';
 import { postOpening } from '../hooks/serviceApi';
 import { addDataToDB } from '../utils/insertData';
+import { updateQuota } from '../hooks/getQoutaUnit';
 
 interface TableDataItem {
   hm_km: any;
@@ -48,14 +49,17 @@ interface TableDataItem {
   date_trx: String;
   photo:string;
   signature:string;
+  entry:any;
 }
 
 
 interface TableDataProps {
   setPendingStatus: React.Dispatch<React.SetStateAction<boolean>>;
+  checkUpdateQuota: () => Promise<void>
+  setBtnRefresh:React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
+const TableData: React.FC<TableDataProps> = ({ setPendingStatus,checkUpdateQuota, setBtnRefresh }) =>  {
 
   const itemsPerPage = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,6 +73,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
   const [lkfId, setLkfId] = useState<string>('');
   const [presentToast] = useIonToast();
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine); 
+  const [btnToServer, setBtnToServer] = useState<boolean>(false);
 
   const [signatureBase64, setSignatureBase64] = useState<string | undefined>(
     undefined
@@ -78,6 +83,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
     // Check if there are any pending items
     const hasPendingData = data.some(item => item.status === 0); // Assuming status 0 means pending
     setPendingStatus(hasPendingData);
+    setBtnRefresh(hasPendingData)
   }, [data, setPendingStatus]);
   
 
@@ -104,7 +110,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
     try {
       const rawData = await getAllDataTrx(lkfId);
       const dataArray = rawData || []; // Default to an empty array if no data is found
-  
+      console.log(111,dataArray)
       // Check if dataArray is an array
       if (!Array.isArray(dataArray)) {
         console.error("Received data is not an array:", dataArray);
@@ -112,9 +118,9 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
       }
   
       // Map the fetched data to table data structure
-      console.log('data array', dataArray)
+      // console.log('data array', dataArray)
       const opening = await getDataFromStorage("openingSonding");
-      console.log(111,opening)
+      // console.log(111,opening)
       const mappedData: TableDataItem[] = dataArray.map((item: any) => ({
         from_data_id: item.from_data_id ?? 0,
         unit_no: item.no_unit || '',
@@ -128,14 +134,16 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         fm_akhir: item.flow_end ?? 0,
         hm_last: item.hm_last,
         hm_km: item.hm_km,
-        jde_operator: item.fuelman_id || '',
+        jde_operator: item.fuelman_id?item.fuelman_id:item.jde_operator ,
         name_operator: item.name_operator || item.name__operator || '',
-        start:item.start,
-        end:item.end,
+        start:item.start.slice(0, 5),
+        end:item.end.slice(0, 5),
         created_by: opening.jde,
         date_trx: item.date_trx,
         signature: item.signature,
         photo: item.foto,
+        entry:new Date(isNaN(item.date) ? item.date : Number(item.date)).toLocaleString(),
+        //  instanceof Date?item.date:new Date(Number(item.entry)).toLocaleString(),
         // Adjusting the status mapping to handle different status codes
         status: item.status === 1 || item.status === '1' ? 1 : 0, // Ensure it maps 1 as 'sent'
       }));
@@ -149,9 +157,57 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
     }
   };
   
+  // const checkUpdateQuota = async () =>{
+  //     const quotaUpdate = await getDataFromStorage("quotaUpdate");
+  //     // console.log(19,quotaUpdate)
+  //     if(quotaUpdate){
+  //       let data = quotaUpdate.filter((v:any) => v.status === 'pending')
+        
+  //       if(data.length === 0){
+  //         loadUnitDataQuota()
+  //       }else{
+  //         console.log(111111,data)
+  //         let dataUp = []
+  //         for(let i = 0; i < data.length;i++){
+  //           const response = await updateQuota(data[i])
+  //           if(response.status === '200'){
+  //             const updatedData = await quotaUpdate.map((item:any) => {
+  //               // console.log(0,item.id,data[i].id)
+  //               if (item.id === data[i].id) {
+  //                 return { ...item, status: "sent" };  
+  //               }else{
+  //                 return item;  
+  //               }
+  //             });
+  //             dataUp = updatedData
+  //           }
+  //         }
+  //         // console.log(dataUp)
+  //         await saveDataToStorage("quotaUpdate", dataUp);
+  //       }
+  //     }else{
+  //       console.log('get Quota Update')
+  //       loadUnitDataQuota()
+  //     }
+  //   }
 
+  //   const loadUnitDataQuota = async () => {
+  //       // console.log(111)
+  //       const opening = await getDataFromStorage("openingSonding");
+  //       const today = new Date(opening.date);
+  //       console.log(0,today)
+  //       const formattedDate = today.toISOString().split('T')[0];
+  //       // console.log(1,formattedDate)
+  //       try {
+  //         console.log("date",formattedDate)
+  //           const quotaData = await fetchQuotaData(formattedDate);
+  //       } catch (error) {
+  //           console.error('Error fetching quota data:', error);
+  //       }
+  //     };
 
   const handleBulkInsert = async () => {
+    setBtnToServer(true)
     if (!navigator.onLine) {
       await presentToast({
         message: "Perangkat offline! Mohon pastikan terkoneksi dengan jaringan.",
@@ -159,9 +215,10 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         position: 'bottom',
         color: 'danger',
       });
+      setBtnToServer(false)
       return;
     }
-    checkOpening()
+    await checkOpening()
   
     if (!data || data.length === 0) {
       setError("No data available for insertion");
@@ -180,7 +237,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
     let formattedDate: string;
     if (typeof tanggal === 'string' && tanggal.includes('/')) {
       const [day, month, year] = tanggal.split('/');
-      console.log("test",day,month,year)
+      // console.log("test",day,month,year)
       formattedDate =`${day}-${month}-${year}`
     } 
   
@@ -220,7 +277,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
             ...item,
             status: 1,
           }));
-    
+          // await loadUnitDataQuota()
           await Promise.all(updatedData.map(async (item) => {
             await updateDataInTrx(item.from_data_id, { status: item.status });
           }));
@@ -235,6 +292,8 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         duration: 2000,
         position: 'top',
       });
+      setBtnToServer(false)
+
       setError(null);
   
     } catch (error) {
@@ -245,6 +304,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
         duration: 2000,
         position: 'bottom',
       });
+      setBtnToServer(false)
     }
   };
   
@@ -273,7 +333,7 @@ const TableData: React.FC<TableDataProps> = ({ setPendingStatus }) =>  {
 useEffect(() => {
   const handleOnline = () => {
     console.log("Network is back online, syncing data...");
-    handleBulkInsert();
+    // handleBulkInsert();
   };
 
   window.addEventListener('online', handleOnline);
@@ -342,19 +402,25 @@ useEffect(() => {
       </IonRow>
       <IonCard>
         <IonGrid style={{ overflow: "auto" }}>
-          <IonRow style={{ background: "#737373", color: "white", width: "900px" }}>
+          <IonRow style={{ background: "#737373", color: "white", width: "1500px" }}>
             <IonCol><IonText>No Unit</IonText></IonCol>
             <IonCol><IonText>Model Unit</IonText></IonCol>
             <IonCol><IonText>FBR Histori</IonText></IonCol>
             <IonCol><IonText>Jenis Trx</IonText></IonCol>
+            <IonCol><IonText>HM/KM</IonText></IonCol>
+            <IonCol><IonText>Owner</IonText></IonCol>
             <IonCol><IonText>QTY Issued</IonText></IonCol>
             <IonCol><IonText>FM Awal</IonText></IonCol>
             <IonCol><IonText>FM Akhir</IonText></IonCol>
             <IonCol><IonText>Fullname</IonText></IonCol>
+            <IonCol><IonText>ID</IonText></IonCol>
+            <IonCol><IonText>Start</IonText></IonCol>
+            <IonCol><IonText>Stop</IonText></IonCol>
+            <IonCol><IonText>Time Entry</IonText></IonCol>
             <IonCol><IonText>Status</IonText></IonCol>
           </IonRow>
           {/* {paginatedData.map((item: TableDataItem) => (
-            <IonRow style={{ width: "900px" }} key={item.from_data_id}>
+            <IonRow style={{ width: "1500px" }} key={item.from_data_id}>
               <IonCol><IonText>{item.unit_no}</IonText></IonCol>
               <IonCol><IonText>{item.model_unit}</IonText></IonCol>
               <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
@@ -371,15 +437,21 @@ useEffect(() => {
   const displayFmAkhir = (item.jenis_trx === 'Receipt' || item.jenis_trx === 'Receipt KPC') ? item.fm_awal : item.fm_akhir;
 
   return (
-    <IonRow style={{ width: "900px" }} key={item.from_data_id}>
+    <IonRow style={{ width: "1500px" }} key={item.from_data_id}>
       <IonCol><IonText>{item.unit_no}</IonText></IonCol>
       <IonCol><IonText>{item.model_unit}</IonText></IonCol>
       <IonCol><IonText>{item.fbr_historis}</IonText></IonCol>
       <IonCol><IonText>{item.jenis_trx}</IonText></IonCol>
+      <IonCol><IonText>{item.hm_km}</IonText></IonCol>
+      <IonCol><IonText>{item.owner}</IonText></IonCol>
       <IonCol><IonText>{item.qty_issued}</IonText></IonCol>
       <IonCol><IonText>{item.fm_awal}</IonText></IonCol>
       <IonCol><IonText>{item.fm_akhir}</IonText></IonCol>
       <IonCol><IonText>{item.name_operator}</IonText></IonCol>
+      <IonCol><IonText>{item.jde_operator}</IonText></IonCol>
+      <IonCol><IonText>{item.start}</IonText></IonCol>
+      <IonCol><IonText>{item.end}</IonText></IonCol>
+      <IonCol><IonText>{item.entry}</IonText></IonCol>
       <IonCol><IonText>{displayStatus(item.status)}</IonText></IonCol>
     </IonRow>
   );
@@ -397,7 +469,12 @@ useEffect(() => {
         </IonButton>
       </div>
       <IonGrid style={{ float: "inline-end" }}>
-        <IonButton className='check-button' onClick={handleBulkInsert}>Save Data To Server</IonButton>
+        <IonButton className='check-button' 
+        onClick={() => {
+            checkUpdateQuota();
+            handleBulkInsert();
+          }}
+          disabled={btnToServer}>Save Data To Server</IonButton>
       </IonGrid>
 
       <IonToast

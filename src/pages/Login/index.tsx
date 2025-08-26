@@ -32,6 +32,7 @@ import Select from "react-select";
 import { bulkInsertDataMasterTransaksi } from "../../utils/getData";
 import { getAllSonding } from "../../hooks/getAllSonding";
 import { getTrasaksiSemua } from "../../hooks/getAllTransaksi";
+import NetworkStatus from "../../components/network";
 interface LoginProps {
   onLoginSuccess: () => void;
 }
@@ -59,6 +60,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAlert, setShowAlert] = useState<boolean>(false);
+  const [showAlertUpdate, setShowAlertUpdate] = useState<boolean>(false);
   const [dtTrx, setDtTrx] = useState<{ hm_km: string; no_unit: string }[]>([]);
 
   const [transaksiData, setTransaksiData] = useState<any>(null);
@@ -66,6 +68,16 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [jdeOptions, setJdeOptions] = useState<
     { JDE: string; fullname: string }[]
   >([]);
+
+  const showTimedAlert = () => {
+    console.log(1)
+    setShowAlertUpdate(true);
+    setTimeout(() => {
+      setShowAlertUpdate(false);
+      window.location.reload()
+    }, 1000); // 2 seconds
+  };
+
 
   const loadStationData = useCallback(async () => {
     try {
@@ -154,22 +166,51 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
   const handleGet = async () => {
     try {
-      const transaksiData = await getDataFromStorage("lastTrx");
-      if (transaksiData) {
-        const transaksiDataParsed =
-          typeof transaksiData === "string"
-            ? JSON.parse(transaksiData)
-            : transaksiData;
-        if (
-          Array.isArray(transaksiDataParsed) &&
-          transaksiDataParsed.length > 0
-        ) {
-          await bulkInsertDataMasterTransaksi(transaksiDataParsed);
-        } else {
-        }
-      } else {
-        console.warn("Tidak ada data transaksi yang tersedia di localStorage.");
-      }
+      // const transaksiData = await getDataFromStorage("lastTrx");
+      // if (transaksiData) {
+      //   const transaksiDataParsed =
+      //     typeof transaksiData === "string"
+      //       ? JSON.parse(transaksiData)
+      //       : transaksiData;
+      //   if (
+      //     Array.isArray(transaksiDataParsed) &&
+      //     transaksiDataParsed.length > 0
+      //   ) {
+      //     await bulkInsertDataMasterTransaksi(transaksiDataParsed);
+      //   } else {
+      //   }
+
+      // } else {
+          // const quota = await getDataFromStorage("unitQuota");
+          // quota?.length>0?console.log("ada quota"):
+          loadUnitDataQuota()
+          
+          // const unit = await getDataFromStorage("allUnit");
+          // unit?.length>0?console.log('ada unit'):
+          loadUnitData();
+          
+          // const lastTrx = await getDataFromStorage("lastTrx")
+          // lastTrx?.length>0?console.log("ada lastTrx"):
+          loadLastTrx();
+          
+          // const lastLkf = await getDataFromStorage("lastLKF");
+          // lastLkf?.length>0?console.log('ada lastLKF'):
+          loadLastLKF();
+          
+          const sonding = await getDataFromStorage("masterSonding");
+          sonding?.length>0?console.log("ada master sonding"):
+          fetchSondingMasterData();
+          
+          // const operator = await getDataFromStorage("allOperator");
+          // operator?.length>0?console.log("ada operator"):
+          loadOperator(); 
+          
+          // const station = await getDataFromStorage("allStation");
+          // station?.length>0?console.log("ada station"):
+          loadStationData(); 
+        // console.warn("Tidak ada data transaksi yang tersedia di localStorage.");
+        showTimedAlert()
+      // }
     } catch (error) {
       console.error(
         "Error saat melakukan bulk insert dari localStorage:",
@@ -269,7 +310,10 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 </IonCol>
               </IonRow>
               <IonRow>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
                 <span className="sub-title">Fuel App V2.0</span>
+                <NetworkStatus />
+              </div>
               </IonRow>
               <IonRow className="mt-content">
                 {alreadyLoggedIn ? (
@@ -371,6 +415,13 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           header={"Login Sukses"}
           message={"Anda berhasil login!"}
           buttons={["OK"]}
+        />
+
+        <IonAlert
+          isOpen={showAlertUpdate}
+          header="Fuel App V2.Berhasil"
+          message="Data telah terupdate!"
+          buttons={[]}
         />
       </IonContent>
     </IonPage>

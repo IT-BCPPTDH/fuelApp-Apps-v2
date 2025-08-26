@@ -1,10 +1,16 @@
 {
-	"appId": "io.ionic.starter",
+	"appId": "co.id.ptdh.fuel.app",
 	"appName": "FuelApp",
 	"webDir": "dist",
 	"plugins": {
 		"CapacitorHttp": {
 			"enabled": true
 		}
+	},
+	"server": {
+		"hostname": "localhost",
+		"androidScheme": "http",
+		"iosScheme": "http",
+		"cleartext": true
 	}
 }
