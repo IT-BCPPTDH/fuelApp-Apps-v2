@@ -59,7 +59,6 @@ import { getHomeByIdLkf, getHomeTable } from "../../hooks/getHome";
 import { deleteAllDataTransaksi } from "../../utils/delete";
 import { getCalculationIssued } from "../../utils/getData";
 
-
 import { saveDataToStorage } from "../../services/dataService";
 interface Typetrx {
   id: number;
@@ -185,7 +184,7 @@ const FormTRX: React.FC = () => {
   const [unitQuota, setUnitQuota] = useState(0);
   const [usedQuota, setUsedQuota] = useState(0);
   const [remainingQuota, setRemainingQuota] = useState(0);
-  const [checkUnit, setCheckUnit] = useState<boolean>(false)
+  const [checkUnit, setCheckUnit] = useState<boolean>(false);
   const [quantity, setQuantity] = useState<number | null>(0);
   const [quantityLast, setQuantityLast] = useState<number | null>(0);
   const [quantityError, setQuantityError] = useState("");
@@ -389,7 +388,7 @@ const FormTRX: React.FC = () => {
 
   const updateCardDashFlowMeter = (
     flowMeterAkhir: number,
-    cardData: any[] = [],
+    cardData: any[] = []
   ) => {
     // if (transactionType === "Receipt" || transactionType === "Receipt Kpc") {
     //   return;
@@ -466,7 +465,7 @@ const FormTRX: React.FC = () => {
         setShowJamErrorInput(true);
         return;
       }
-      
+
       const typeTrxValue = selectedType?.name;
       let flow_end: number = 0;
       if (typeTrxValue === "Receipt" || typeTrxValue === "Receipt KPC") {
@@ -494,7 +493,7 @@ const FormTRX: React.FC = () => {
         );
         latestDataDateFormatted = "No Date Available";
       }
-      
+
       const dataPost: DataFormTrx = {
         from_data_id: fromDataId,
         no_unit: selectedUnit!,
@@ -564,7 +563,12 @@ const FormTRX: React.FC = () => {
     if (unitQuota) {
       const parsedData = JSON.parse(unitQuota);
       const updatedData = parsedData.map(
-        (unit: { unit_no: string; quota: number; used: number, additional:number }) => {
+        (unit: {
+          unit_no: string;
+          quota: number;
+          used: number;
+          additional: number;
+        }) => {
           if (unit.unit_no === unit_no) {
             const newUsed = unit.used + issuedQuantity;
             return {
@@ -665,7 +669,7 @@ const FormTRX: React.FC = () => {
 
   const handleHmkmUnitChange = (e: CustomEvent) => {
     const value = e.detail.value ? Number(e.detail.value) : null;
-    console.log(value , hmLast)
+    console.log(value, hmLast);
     if (value !== null && value < hmLast) {
       setShowErrorHmlast(true);
     } else {
@@ -710,7 +714,7 @@ const FormTRX: React.FC = () => {
     newValue: SingleValue<{ value: string; label: string }>,
     actionMeta: ActionMeta<{ value: string; label: string }>
   ) => {
-    setemployeeError(false)
+    setemployeeError(false);
     const selectedValue = newValue?.value?.trim() || "";
     if (!operatorOptions || operatorOptions.length === 0) {
       console.warn("Operator options are empty. Cannot find matching option.");
@@ -729,24 +733,24 @@ const FormTRX: React.FC = () => {
   };
 
   const validateShiftTime = async (startTime: string, endTime: string) => {
-    let data:any = await getDataFromStorage('openingSonding')
-    if(data){
-      data = JSON.parse(data)
+    let data: any = await getDataFromStorage("openingSonding");
+    if (data) {
+      data = JSON.parse(data);
     }
     // Convert startTime and endTime to Date objects
     let start = new Date(`1970-01-01T${startTime}:00`);
     let end = new Date(`1970-01-01T${endTime}:00`);
     // console.log(11,startTime)
-    if(+endTime.split(':')[0] >= 0 && +endTime.split(':')[0] <= 6){
+    if (+endTime.split(":")[0] >= 0 && +endTime.split(":")[0] <= 6) {
       // console.log('ih')
       end = new Date(`1970-01-02T${endTime}:00`);
     }
     // Shift 1: 06:00 - 18:00
-    const shift1Start = new Date("1970-01-01T06:00:00");
+    const shift1Start = new Date("1970-01-01T05:00:00");
     const shift1End = new Date("1970-01-01T18:00:00");
 
     // Shift 2: 18:00 - 06:00 (next day for end time)
-    const shift2Start = new Date("1970-01-01T18:00:00");
+    const shift2Start = new Date("1970-01-01T17:00:00");
     const shift2End = new Date("1970-01-02T06:00:00"); // Next day
 
     // Ensure endTime is not smaller than startTime
@@ -761,15 +765,17 @@ const FormTRX: React.FC = () => {
       end >= shift1Start &&
       end <= shift1End;
     const isShift2 =
-      (start >= shift2Start || start < shift1Start) && // Handles overlap past midnight
-      (end >= shift2Start || end < shift1Start);
+      (start >= shift2Start || start < shift2End) && // Handles overlap past midnight
+      (end >= shift2Start || end < shift2End);
+    console.log(isShift1);
+    console.log(isShift2);
     return isShift1 || isShift2;
   };
 
   useEffect(() => {
     const determineShift = async () => {
       let data = await getDataFromStorage("openingSonding");
-      
+
       if (data.shift) {
         setShift(data.shift);
       }
@@ -786,8 +792,8 @@ const FormTRX: React.FC = () => {
     // const isDayShift = shift >= 6 && currentHour < 18;
     // const isNightShift = currentHour >= 18 || currentHour < 6;
     // Define the shift start times based on current shift
-    const shiftStart = data.shift === 'Day' ? 6 : 18; // 06:00 for Day shift, 18:00 for Night shift
-    const shiftEnd = data.shift === 'Night' ? 6 : 18; // 18:00 for Day shift, 06:00 for Night shift
+    const shiftStart = data.shift === "Day" ? 5 : 17; // 06:00 for Day shift, 18:00 for Night shift
+    const shiftEnd = data.shift === "Night" ? 6 : 18; // 18:00 for Day shift, 06:00 for Night shift
 
     // Validate start time based on the determined shift
     const newStartHour = new Date(`1970-01-01T${newStartTime}:00`).getHours();
@@ -795,22 +801,27 @@ const FormTRX: React.FC = () => {
     // Check if the new start time falls within the valid shift range
     // console.log('start',newStartHour,newStartHour >= 18 && newStartHour < 24 && newStartHour <=  6 && newStartHour >= 0)
     if (
-      (data.shift === 'Day' && (newStartHour >= shiftStart || newStartHour < shiftEnd)) ||
-      (data.shift === "Night" && newStartHour >= 18 && newStartHour < 24 || newStartHour <=  6)
+      (data.shift === "Day" &&
+        (newStartHour >= shiftStart || newStartHour < shiftEnd)) ||
+      (data.shift === "Night" && newStartHour >= 17 && newStartHour < 24) ||
+      newStartHour <= 6
     ) {
+      console.log(11);
       setShowJamError(false);
       setShowJamErrorInput(false);
     } else {
-      
+      console.log(22);
       setShowJamError(true);
       setShowJamErrorInput(true);
     }
 
     if (endTime) {
       if (!validateShiftTime(newStartTime, endTime)) {
+        console.log(19);
         setShowJamError(true);
         setShowJamErrorInput(true); // Show error if validation fails
       } else {
+        console.log(220);
         setShowJamError(false);
         setShowJamErrorInput(false); // Hide error if validation is successful
       }
@@ -829,43 +840,48 @@ const FormTRX: React.FC = () => {
     // const isNightShift = currentHour >= 18 || currentHour < 6;
 
     // Define the shift start and end times based on current shift
-    const shiftStart = data.shift === 'Day' ? 6 : 18; // 06:00 for Day shift, 18:00 for Night shift
-    const shiftEnd = data.shift === 'Night' ? 6 : 18; // 18:00 for Day shift, 06:00 for Night shift
+    const shiftStart = data.shift === "Day" ? 5 : 17; // 06:00 for Day shift, 18:00 for Night shift
+    const shiftEnd = data.shift === "Night" ? 6 : 18; // 18:00 for Day shift, 06:00 for Night shift
 
     // Convert the newEndTime to a Date object to extract the hours
     const newEndDate = new Date(`1970-01-01T${newEndTime}:00`);
     const newEndHour = newEndDate.getHours();
 
     // Validate that the endTime is within the allowed shift time range
-    
+
     const isEndTimeInShiftRange =
-      (data.shift === 'Day'  && newEndHour >= shiftStart && newEndHour < shiftEnd) ||
-      (data.shift === 'Night' && newEndHour >= 18 && newEndHour < 24 || newEndHour <=  6);
+      (data.shift === "Day" &&
+        newEndHour >= shiftStart &&
+        newEndHour < shiftEnd) ||
+      (data.shift === "Night" && newEndHour >= 17 && newEndHour < 24) ||
+      newEndHour <= 6;
 
     // Check if endTime is earlier than startTime
-    let newStartDate = new Date()
-    let end = newEndDate
+    let newStartDate = new Date();
+    let end = newEndDate;
     // console.log('okok',+startTime.split(':')[0])
-    if(data.shift === 'Night'){
-      if(+startTime.split(':')[0] >= 0 && +startTime.split(':')[0] <= 6){
-        console.log(1)
+    if (data.shift === "Night") {
+      if (+startTime.split(":")[0] >= 0 && +startTime.split(":")[0] <= 6) {
+        console.log(1);
         newStartDate = new Date(`1970-01-01T${startTime}:00`);
-        end = newEndDate
-      }else if(newEndHour >=0 && newEndHour < 6){
-        console.log(2)
+        end = newEndDate;
+      } else if (newEndHour >= 0 && newEndHour < 6) {
+        console.log(2);
         newStartDate = new Date(`1970-01-01T${startTime}:00`);
-        end = new Date(`1970-01-02T${newEndHour < 10? "0"+newEndHour :newEndHour}:00`);
-      }else{
+        end = new Date(
+          `1970-01-02T${newEndHour < 10 ? "0" + newEndHour : newEndHour}:00`
+        );
+      } else {
         // console.log(4)
         newStartDate = new Date(`1970-01-01T${startTime}:00`);
-        end = newEndDate
+        end = newEndDate;
       }
-    }else{
+    } else {
       // console.log('okok2',newEndHour)
-      console.log(2)
-      if(newEndHour >= shiftStart && newEndHour < shiftEnd){
+      console.log(2);
+      if (newEndHour >= shiftStart && newEndHour < shiftEnd) {
         newStartDate = new Date(`1970-01-01T${startTime}:00`);
-        end = newEndDate
+        end = newEndDate;
       }
     }
     // console.log('end',end,newStartDate,end >= newStartDate)
@@ -911,26 +927,26 @@ const FormTRX: React.FC = () => {
     }
   }, []);
 
-  const updateQuota = async (id:String,used:Number) =>{
+  const updateQuota = async (id: String, used: Number) => {
     const quotaUpdate = await getDataFromStorage("quotaUpdate");
-    let data =[]
-    if(quotaUpdate){
-      data = [...quotaUpdate]
+    let data = [];
+    if (quotaUpdate) {
+      data = [...quotaUpdate];
       data.push({
-        id:id,
-        used:used,
-        status:'pending'
-      })
-    }else{
+        id: id,
+        used: used,
+        status: "pending",
+      });
+    } else {
       data.push({
-        id:id,
-        used:used,
-        status:'pending'
-      })
+        id: id,
+        used: used,
+        status: "pending",
+      });
     }
     // console.log("quota",data)
     await saveDataToStorage("quotaUpdate", data);
-  }
+  };
 
   const handleQuantityChange = (e: any) => {
     const inputQuantity = Number(e.detail.value);
@@ -942,20 +958,17 @@ const FormTRX: React.FC = () => {
     setIsError(false);
 
     if (isIssuedOrTransfer) {
-      
       if (isNaN(inputQuantity) || inputQuantity <= 0) {
         setQuantityError("Qty harus lebih besar dari 0.");
         setIsError(true);
         return;
       }
       const quota = remainingQuota || 0;
-      console.log(0,checkUnit)
-      if (
-        checkUnit
-      ) {
+      console.log(0, checkUnit);
+      if (checkUnit) {
         // console.log(1)
         if (inputQuantity > quota) {
-          console.log(2)
+          console.log(2);
           setQuantityError("Qty tidak boleh lebih besar dari sisa kuota.");
           setIsError(true);
           return;
@@ -971,7 +984,6 @@ const FormTRX: React.FC = () => {
     }
     setQuantity(inputQuantity);
   };
-
 
   const filteredUnitOptions =
     selectedType &&
@@ -997,15 +1009,14 @@ const FormTRX: React.FC = () => {
         (unit) => unit.unit_no === unitValue
       );
 
-      let quota = cachedData?.find((v:any) => v.unit_no === unitValue)
+      let quota = cachedData?.find((v: any) => v.unit_no === unitValue);
 
-      if(quota){
-        setCheckUnit(true)
-        setRemainingQuota(quota.quota + quota.additional - quota.used)
-      }else{
-        setCheckUnit(false)
+      if (quota) {
+        setCheckUnit(true);
+        setRemainingQuota(quota.quota + quota.additional - quota.used);
+      } else {
+        setCheckUnit(false);
       }
-
 
       if (selectedUnitOption) {
         setModel(selectedUnitOption.brand);
@@ -1041,7 +1052,6 @@ const FormTRX: React.FC = () => {
           if (offlineData.qty_last !== undefined) {
             setQtyValue(offlineData.qty_last); // Set qty from offline data
           }
-
         } catch (error) {
           console.error("Failed to retrieve data from IndexedDB:", error);
         }
@@ -1177,33 +1187,39 @@ const FormTRX: React.FC = () => {
       </IonHeader>
       <IonContent>
         <div style={{ marginTop: "20px", padding: "15px" }}>
-          {(checkUnit) && <IonRow></IonRow>}
+          {checkUnit && <IonRow></IonRow>}
           {/* {currentUnitQuota?.is_active && ( */}
-            <IonRow>
-              <IonCol>
-                <IonItemDivider
-                  style={{ border: "solid", color: "#8AAD43", width: "400px" }}>
-                  <IonLabel style={{ display: "flex" }}>
-                    <IonImg
-                      style={{ width: "40px" }}
-                      src="Glyph.png"
-                      alt="Logo DH"
-                    />
-                    <IonTitle
-                      style={{
-                        color: checkUnit?remainingQuota === 0 ? "red" : "#8AAD43":"#8AAD43",
-                      }}>
-                      Sisa Kuota:{" "}
-                      {checkUnit?
-                      remainingQuota > 0
+          <IonRow>
+            <IonCol>
+              <IonItemDivider
+                style={{ border: "solid", color: "#8AAD43", width: "400px" }}
+              >
+                <IonLabel style={{ display: "flex" }}>
+                  <IonImg
+                    style={{ width: "40px" }}
+                    src="Glyph.png"
+                    alt="Logo DH"
+                  />
+                  <IonTitle
+                    style={{
+                      color: checkUnit
+                        ? remainingQuota === 0
+                          ? "red"
+                          : "#8AAD43"
+                        : "#8AAD43",
+                    }}
+                  >
+                    Sisa Kuota:{" "}
+                    {checkUnit
+                      ? remainingQuota > 0
                         ? `${remainingQuota} Liter`
                         : "0 Liter"
-                      :"unit tanpa quota"}
-                    </IonTitle>
-                  </IonLabel>
-                </IonItemDivider>
-              </IonCol>
-            </IonRow>
+                      : "unit tanpa quota"}
+                  </IonTitle>
+                </IonLabel>
+              </IonItemDivider>
+            </IonCol>
+          </IonRow>
           {/* )} */}
           <div style={{ marginTop: "30px" }}>
             <IonGrid>
@@ -1227,12 +1243,14 @@ const FormTRX: React.FC = () => {
                       className="radio-display"
                       value={selectedType}
                       onIonChange={handleRadioChange}
-                      compareWith={compareWith}>
+                      compareWith={compareWith}
+                    >
                       {typeTrx.map((type) => (
                         <IonItem
                           style={{ fontWeigt: "500px", fontSize: "20px" }}
                           key={type.id}
-                          className="item-no-border">
+                          className="item-no-border"
+                        >
                           <IonRadio labelPlacement="end" value={type}>
                             {type.name}
                           </IonRadio>
@@ -1452,7 +1470,8 @@ const FormTRX: React.FC = () => {
                       ? "rgba(255, 0, 0, 0.1)"
                       : "transparent",
                     padding: "10px",
-                  }}>
+                  }}
+                >
                   <IonLabel className="label-input">
                     Select Employee ID <span style={{ color: "red" }}>*</span>
                   </IonLabel>
@@ -1540,7 +1559,8 @@ const FormTRX: React.FC = () => {
                           color: "red",
                           fontSize: "14px",
                           marginTop: "8px",
-                        }}>
+                        }}
+                      >
                         Pengiputan pada jam harus sesuai dengan shift saat ini
                         !!!
                       </IonLabel>
@@ -1574,7 +1594,8 @@ const FormTRX: React.FC = () => {
                           color: "red",
                           fontSize: "14px",
                           marginTop: "8px",
-                        }}>
+                        }}
+                      >
                         Pengiputan pada jam harus sesuai dengan shift saat ini
                         !!!
                       </IonLabel>
@@ -1583,7 +1604,7 @@ const FormTRX: React.FC = () => {
                 </IonCol>
               </IonRow>
               <IonRow>
-              <IonCol>
+                <IonCol>
                   <IonCard style={{ height: "160px" }}>
                     <input
                       type="file"
@@ -1634,7 +1655,8 @@ const FormTRX: React.FC = () => {
                       color="warning"
                       size="small"
                       onClick={() => setIsSignatureModalOpen(true)}
-                      disabled={isFormDisabled}>
+                      disabled={isFormDisabled}
+                    >
                       <IonIcon slot="start" icon={pencilOutline} />
                       Tanda Tangan
                     </IonButton>
@@ -1655,7 +1677,8 @@ const FormTRX: React.FC = () => {
                 <IonButton
                   style={{ height: "48px" }}
                   onClick={handleClose}
-                  color="light">
+                  color="light"
+                >
                   <IonIcon slot="start" icon={closeCircleOutline} />
                   Tutup Form
                 </IonButton>
@@ -1666,7 +1689,8 @@ const FormTRX: React.FC = () => {
                     quantity === null ||
                     !validateShiftTime(startTime, endTime) ||
                     showJamError ||
-                    hmkmValue === null || hmkmValue === undefined
+                    hmkmValue === null ||
+                    hmkmValue === undefined
                     // Disable if time validation fails
                   }
                   onClick={(e) => {
@@ -1676,7 +1700,8 @@ const FormTRX: React.FC = () => {
                   }}
                   className={`check-button ${
                     isOnline ? "button-save-data" : "button-save-draft"
-                  }`}>
+                  }`}
+                >
                   <IonIcon slot="start" icon={saveOutline} />
                   {isOnline ? "Simpan Data" : "Simpan Data Ke Draft"}
                 </IonButton>
@@ -1684,7 +1709,7 @@ const FormTRX: React.FC = () => {
             </IonGrid>
           </div>
         </div>
-        
+
         <SignatureModal
           isOpen={isSignatureModalOpen}
           onClose={() => setIsSignatureModalOpen(false)}
@@ -1697,15 +1722,15 @@ const FormTRX: React.FC = () => {
             message="Simpan Data?"
             buttons={[
               {
-                text: 'Cancel',
-                role: 'cancel',
+                text: "Cancel",
+                role: "cancel",
                 handler: () => {
                   // setLoading(true)
                   setIsAlertOpen(false); // just close
                 },
               },
               {
-                text: 'OK',
+                text: "OK",
                 handler: () => {
                   // handleSave(); // your custom save function
                   handlePost();
